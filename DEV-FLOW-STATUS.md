@@ -16,8 +16,8 @@
 | 1  | Verify Spec Initialized         | ✅ Complete | 2026-11-01T19:29:08Z | 2026-11-01T19:29:41Z | 0 |
 | 2  | Implement Product               | ✅ Complete | 2026-11-01T19:29:41Z | 2026-11-01T22:26:46Z | 177 |
 | 3  | Documentation and User Docs     | ✅ Complete | 2026-11-01T22:26:46Z | 2026-11-01T22:41:32Z | 14 |
-| 4  | Code and Design Review          | 🔄 In Progress | 2026-11-01T22:41:32Z | — | — |
-| 5  | Prepare Review PRD              | ⬜ Pending | — | — | — |
+| 4  | Code and Design Review          | ✅ Complete | 2026-11-01T22:41:32Z | 2026-11-01T22:57:18Z | 16 |
+| 5  | Prepare Review PRD              | 🔄 In Progress | 2026-11-01T22:57:18Z | — | — |
 | 6  | Archive Original Spec           | ⬜ Pending | — | — | — |
 | 7  | Spec Review Fixes               | ⬜ Pending | — | — | — |
 | 8  | Implement Review Fixes          | ⬜ Pending | — | — | — |
@@ -41,3 +41,4 @@
 - 2026-11-01T21:36Z: Step 2 at ~148 min. Slices 1a-1..1a-3 complete and verified (all 16 screens have state holders); 1a-4 starting. Open: decision-detail Snooze, budget resolved-vs-dismissed, racy Swift loading-phase assertions in earlier tests.
 - 2026-11-01T22:26:46Z: Step 2 complete in 177 min. All 4 slices verified; draft PR opened so CI runs (acceptance 7). Step 3 (docs) starting.
 - 2026-11-01T22:41:32Z: Step 3 complete (docs; 12 doc files, snippets compiled and run by the agent, 0 broken links; AGENTS.md claim of staleness checked and found false). Step 4 starting: 4 parallel read-only reviewers (domain+application, presentation+umbrella, tests+build+CI, iOS+docs+spec), then one agent reproduces serious findings, then the review PRD is written.
+- 2026-11-01T22:57:18Z: Step 4 complete. 4 reviewers (52 findings) + verification (12 of 14 reproduced, 3 ratings corrected). Review PRD written: 51 requirements (P0 3, P1 23, P2 25) at phase-1a-shared-contracts-auto-review-PRD.md. Step 5 (review-prd) starting. CI on PR #5: shared, contract, security green; ios running at last check.
