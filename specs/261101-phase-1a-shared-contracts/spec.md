@@ -52,7 +52,7 @@ Functional requirements are the PRD's, scoped to what Phase 1a delivers. IDs are
 
 Read from the server's shared type definitions. The PRD should be updated as part of this phase (task P0.2).
 
-1. **No `decideNowCount`.** The attention feed returns `deskBadgeCount` (items new today or with a `decideBy` due or overdue), `totalCount` and `countsBySourceKind`. FR-032 and FR-030 must say how the app derives "Decide now" (client-side from `decideBy` and `severity`) and which number drives the badge. Decision needed (see research Q1).
+1. **No `decideNowCount`; decided: match the web app.** The attention feed returns `deskBadgeCount` (items new today or with a `decideBy` due or overdue), `totalCount` and `countsBySourceKind`. The badge shows `deskBadgeCount`. "Decide now" is `decideBy` due today or past only (no severity rule), mirroring the server's `isDecideNow`, with `isNewToday` and UTC day boundaries mirrored in domain tests. FR-030 and FR-032 are corrected in the PRD (done), and `decideBy` is a string: `today`, `this_week`, `whenever`, a `YYYY-MM-DD` date, or null.
 2. **Eleven attention source kinds**, not the short list the PRD implies: `approval`, `decision`, `issue_thread_interaction`, `join_request`, `recovery_action`, `productivity_review`, `blocker_attention`, `review`, `failed_run`, `budget_alert`, `agent_error_alert`. Kinds the app cannot act on open "Open in web app".
 3. **Six interaction kinds**, including `connection_intent`: `suggest_tasks`, `ask_user_questions`, `request_confirmation`, `request_checkbox_confirmation`, `request_item_verdicts`, `connection_intent`. The sixth is unsupported in v1.
 4. **Health exposure field** is `deploymentExposure`, not `exposure`.
@@ -109,7 +109,7 @@ None to users. `PaperclipCore.createGraph(allowInsecureLocal:)` gains a mode par
 | Sealed hierarchies explode (attention details, interactions, effects) | Model only what screens render; keep an `Unsupported(kind)` branch |
 | Fakes drift from real adapters | Shared contract suites; fakes extend them |
 | Large phase delays the UI | Slices 1a-1 to 1a-4 each merge on their own; UI streams start per slice |
-| Open decision on the badge count (section 5, item 1) | Resolve in research Q1 before slice 1a-2 starts |
+| Domain mirrors of `isDecideNow` and `isNewToday` drift from the server | Table-driven tests copied from the web app's cases; Phase 1b contract test against the pinned server |
 
 ## 12. Timeline and milestones
 

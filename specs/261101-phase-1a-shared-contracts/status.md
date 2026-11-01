@@ -21,12 +21,12 @@ Update this file after every task and phase. It is the single source of progress
 - [x] Research questions identified (`research.md`)
 - [x] Phase files initialized
 - [ ] `/dev-flow:review-spec` run and findings resolved
-- [ ] PRD updated for the server differences in spec section 5
+- [x] PRD updated for the badge decision (FR-030, FR-032, FR-082, design conventions); [ ] other server differences in spec section 5 (source kinds, sixth interaction kind, `deploymentExposure`)
 
 ## Blockers
 
 - Phase 0 pull requests #1 to #3 are not merged yet. Phase 1a branches stack on `phase-0/contract-server`.
-- Decision needed before slice 1a-2: how "Decide now" and the badge count are derived (research Q1).
+- None for the badge: resolved 2026-11-01 (match the web app, `deskBadgeCount`).
 
 ## Recent activity
 

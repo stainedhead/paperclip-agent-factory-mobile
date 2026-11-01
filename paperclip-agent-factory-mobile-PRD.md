@@ -173,11 +173,11 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 ### Inbox (Attention feed)
 
-**FR-030:** The Inbox tab loads `GET /api/companies/{c}/attention?sort=decide&limit=50` with cursor paging, and groups items into **Decide now** (`decideBy = today` or `severity = critical`), **This week**, and **Whenever**.
+**FR-030:** The Inbox tab loads `GET /api/companies/{c}/attention?sort=decide&limit=50` with cursor paging, and groups items into **Decide now** (`decideBy` is `today` or a date that is today or earlier, using UTC days, which is the server's own rule and the web app's), **This week** (`decideBy` is `this_week` or a later date this week), and **Whenever** (`decideBy` is `whenever` or not set). Severity orders items within a group; it never moves an item between groups.
 
 **FR-031:** Each card shows severity, source kind, subject title and identifier, `whyNow`, origin agent and relative time. Filter chips come from `countsBySourceKind`.
 
-**FR-032:** `decideNowCount` drives the Inbox tab badge and the app icon badge.
+**FR-032:** The Inbox tab badge and the app icon badge show the feed's `deskBadgeCount`, the same number the web app shows: distinct items that are new today (UTC day) or whose `decideBy` is due or overdue, counted by the server before paging. The app never computes its own badge. (`decideNowCount` does not exist on the server.)
 
 **FR-033:** Inline actions appear only when `inlineResolvable` is true and the role allows them:
 - `approval`: Approve / Reject (Reject asks for a note);
@@ -240,7 +240,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 **FR-081:** The app registers its push token with the relay after pairing, keyed by board key id; revoking the key unregisters the device.
 
-**FR-082:** Default payloads are **content-free**: instance id, company id, item key, kind, severity and `decideNowCount`, with generic text ("2 decisions need you in Acme Labs"). Optional rich previews fetch the title on-device (iOS Notification Service Extension, Android handler) over the user's network.
+**FR-082:** Default payloads are **content-free**: instance id, company id, item key, kind, severity and the `deskBadgeCount`, with generic text ("2 decisions need you in Acme Labs"). Optional rich previews fetch the title on-device (iOS Notification Service Extension, Android handler) over the user's network.
 
 **FR-083:** Notification rules per instance and company: severity threshold (default high), kinds (approvals, decisions, questions, failed runs, budget, agent errors), quiet hours, mute.
 
@@ -291,7 +291,7 @@ Screens 1–8 are mocked on the [UI canvas](https://claude.ai/artifact/9NMV8bCwZ
 
 **Design conventions shown in the mocks** (`Paperclip-Remote-mobile-UI-design.html`; all figures are demo data):
 - Every list and dashboard header carries an "Updated <time>" label (FR-095). The mocks never show a "live" badge, because live updates depend on the server accepting board keys on the WebSocket (FR-090).
-- The Inbox header count and tab badge equal `decideNowCount` (FR-032) and match the number of cards under "Decide now".
+- The Inbox header count and the tab badge both show `deskBadgeCount` (FR-032), worded "<n> new or due today". The "Decide now" group holds only items whose decide-by is due, so it can hold fewer cards than the badge.
 - Destructive actions (Reject, Pause, Cancel run, destructive decision options) use the destructive colour; actions gated by device authentication (FR-014) carry a lock glyph on the primary button.
 - "Watch on lock screen" (Live Activity) is not in v1; it is a v1.1 item and is not drawn on the Run viewer.
 - Decision detail offers Snooze in the top bar, using the same snooze options and endpoint as FR-034.

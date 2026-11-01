@@ -9,7 +9,7 @@ TDD throughout: failing test, minimum code, refactor. Each slice is a vertical f
 ## Phase breakdown
 
 1. **1a-1 Instances, secrets, settings, auth, roles.** Screens 15, 8, 16, 9, 13. First because every other slice needs "which factory and company am I in, and what may I do".
-2. **1a-2 Attention, decisions, approvals, budget incidents.** Screens 1, 2, 3, 12. Needs research Q1 resolved.
+2. **1a-2 Attention, decisions, approvals, budget incidents.** Screens 1, 2, 3, 12. Badge decision made (match the web app).
 3. **1a-3 Work, agents, runs, factory.** Screens 4, 10, 5, 6, 11, 7.
 4. **1a-4 Completion.** Demo data matches the mocks, contract suites, `RefreshVisibleScreen`, interop review.
 
