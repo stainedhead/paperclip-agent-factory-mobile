@@ -49,3 +49,16 @@ Process correction for this slice: every group below was written test first, run
 - Domain `Severity`, `Money`, `DecideBy`, `AttentionRules`, `InboxGrouping`, source/approval/interaction kinds, `ResolverAudience`: compile red, then stubs for `isDecideNow`/`isNewToday`/`group`/`InboxGrouping.group` gave 6 assertion failures (`expected true but was false`, `expected [DecideNow, Whenever]`), then green. One test row was wrong, not the code (on a UTC Sunday the next day is already next week); corrected with the reason in the row label.
 - Domain `InlineActionPolicy`, `Decision` model and `validateInputs`, `ApprovalActions`, `BudgetIncident.validate`, `SnoozeTimes`: compile red (255 errors), then stubs gave 24 assertion failures, then green.
 - Fakes: `AttentionCacheContract` + `FakeAttentionCacheContractTest` red (missing `AttentionFixtures`/`FakeAttentionCache`), then green. The gateway fakes carry the server's rules and have `AttentionFakesBehaviourTest`.
+- Application `RefreshInbox`, `LoadInbox`, `LoadMoreInbox`: compile red (52 errors), then stubs returning `Failure(Malformed)` / an empty flow gave 9 assertion failures (casts of a failure to success, `expected 1 but was 0`, `Expected item but found Complete`), then green.
+- Application `SnoozeItem`, `DismissItem`, `UndoDismiss`, `SetDecideBy` (+ `MutationResult`): compile red (54 errors), then stubs returning `Failed(Malformed)` gave 15 assertion failures (`expected Denied but was Failed`, window and time-zone cases), then green.
+- Application `LoadDecision`, `DecideDecision`, `DismissDecision`, `PollDecisionExecution`: compile red (70 errors), then stubs gave 24 assertion failures (device-auth, ordering, reconcile and polling-interval cases), then green.
+- Application `LoadApproval`, `ApproveApproval`, `RejectApproval`, `RequestRevision`, `CommentOnApproval`: compile red, then stubs gave 26 assertion failures, then green.
+- Application `LoadBudgetIncident`, `ResolveBudgetIncident`: compile red, then stubs gave 15 assertion failures (operator cannot raise, 422 reason surfaced, reconcile when the incident left the active list), then green.
+- Konsist `UseCaseBoundaryRulesTest`: the presentation-gateway rule was checked by temporarily importing `AttentionGateway` into `Common.kt` (the rule failed), then reverted.
+
+## Slice 1a-2 decisions in code
+
+- 2026-11-01: mutation use cases return `MutationResult` (`Done`, `Denied`, `Invalid`, `NotAuthorized`, `Failed`, `Reconciled`). `Reconciled` means the call failed with a timeout or conflict and the entity was read once to learn the truth; for approvals a 422 `Rejected` also re-reads because the server answers "already resolved" with 422, not 409. For a budget incident that left the active list the use case reports status `Unknown` ("no longer active").
+- 2026-11-01: order inside every mutation use case: permission, status and input validation, device authentication, one gateway call, optional re-read. A viewer never reaches biometrics; a missing note never triggers a prompt.
+- 2026-11-01: `FakeApprovalGateway` exposes its `store` map instead of a `put` function because detekt allows 10 functions per class.
+- 2026-11-01: `PollDecisionExecution` reads up to ten times, one second apart (virtual time in tests), and returns the last read even if it is still running; the state holder decides what to show.

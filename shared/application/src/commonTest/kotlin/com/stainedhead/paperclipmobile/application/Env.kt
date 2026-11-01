@@ -4,16 +4,26 @@ import com.stainedhead.paperclipmobile.application.auth.KeyEnrollment
 import com.stainedhead.paperclipmobile.application.auth.KeyRevoker
 import com.stainedhead.paperclipmobile.application.auth.SignedOutMarker
 import com.stainedhead.paperclipmobile.domain.AppSettings
+import com.stainedhead.paperclipmobile.domain.CompanyContext
+import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.Instance
+import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAppSettingsStore
+import com.stainedhead.paperclipmobile.testing.fakes.FakeApprovalGateway
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAttentionCache
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAttentionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAuthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
+import com.stainedhead.paperclipmobile.testing.fakes.FakeBudgetGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
+import com.stainedhead.paperclipmobile.testing.fakes.FakeDecisionGateway
+import com.stainedhead.paperclipmobile.testing.fakes.FakeDeviceTimeZone
 import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIdGenerator
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInstanceRepository
@@ -34,11 +44,23 @@ class Env(
     val biometrics = FakeBiometrics()
     val browser = FakePairingBrowser()
     val ids = FakeIdGenerator("inst-")
+    val attention = FakeAttentionGateway(clock)
+    val attentionCache = FakeAttentionCache()
+    val decisions = FakeDecisionGateway()
+    val approvals = FakeApprovalGateway()
+    val budgets = FakeBudgetGateway()
+    val timeZone = FakeDeviceTimeZone()
+    val scope = CompanyScope(InstanceId("inst-1"), TestData.acme)
     val validate = ValidateInstanceAddress(allowInsecureLocal = false)
     val deviceAuth = DeviceAuthGuard(biometrics)
     val revoker = KeyRevoker(auth)
     val signedOut = SignedOutMarker(repository)
     val enrollment = KeyEnrollment(auth, secrets, repository, clock, settings)
+
+    fun context(
+        role: Role = Role.Owner,
+        userId: String? = "user-1",
+    ) = CompanyContext(scope, role, userId)
 
     suspend fun storeToken(instance: Instance = TestData.instance()) {
         secrets.put(SecretKey(instance.id, SecretName.BoardToken), Secret.of(TestData.TOKEN), SecretPolicy(false))

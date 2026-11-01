@@ -20,7 +20,8 @@ import com.stainedhead.paperclipmobile.testing.TestData
 class FakeApprovalGateway(
     approvals: List<Approval> = listOf(AttentionFixtures.approval()),
 ) : ApprovalGateway {
-    private val store = approvals.associateBy { it.id }.toMutableMap()
+    /** The approvals the "server" holds. Tests change them to model something resolved elsewhere. */
+    val store = approvals.associateBy { it.id }.toMutableMap()
     val calls = mutableMapOf<String, Int>()
     val failures = mutableMapOf<String, DomainError>()
     val notes = mutableListOf<String?>()
