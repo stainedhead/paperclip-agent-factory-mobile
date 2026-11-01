@@ -1,6 +1,6 @@
 # Status: Phase 1a shared contracts
 
-**Created:** 2026-11-01 · **Spec dir:** `specs/261101-phase-1a-shared-contracts/`
+**Created:** 2026-11-01 · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts/`
 
 Update this file after every task and phase. It is the single source of progress.
 
@@ -8,12 +8,12 @@ Update this file after every task and phase. It is the single source of progress
 
 | Phase | State |
 |---|---|
-| Phase 0 Specification | In Progress |
-| Phase 1 Research and data model | Not Started |
-| Phase 2 Architecture and plan | Not Started |
-| Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation (slices 1a-1 to 1a-4) | Built (1a-1 to 1a-4 on the branch, awaiting PRs); acceptance criteria below |
-| Phase 5 Completion and archive | Not Started |
+| Phase 0 Specification | Complete (reviewed 2026-11-01) |
+| Phase 1 Research and data model | Complete (research answers with file:line in `research.md`; data dictionary) |
+| Phase 2 Architecture and plan | Complete (sequence diagrams in `architecture.md`; ADR-010 to ADR-029) |
+| Phase 3 Task breakdown | Complete at slice level (`tasks.md`) |
+| Phase 4 Implementation (slices 1a-1 to 1a-4) | Complete on `feat/phase-1a-shared-contracts`; acceptance criteria 1 to 6 and 8 to 14 met, criterion 7 (CI) tracked on draft PR #5 |
+| Phase 5 Completion and archive | Archived 2026-11-01 as the first step of the review-fix cycle. Code review found 51 issues (3 P0, 24 P1, 24 P2) that are tracked and fixed in `specs/archive/261101-phase-1a-shared-contracts-auto-review/` (created next) and the review PRD |
 
 ## Phase 0 checklist
 

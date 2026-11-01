@@ -37,7 +37,7 @@ The exported surface used from Swift is only the six state holders, their state/
 - 2026-11-01: `PaperclipCore.createGraph(allowInsecureLocal:)` keeps its signature and now builds a fakes-backed graph; the spec's live/demo mode parameter is deferred to Phase 1b (spec section 9).
 - 2026-11-01: `UpdateInstance` and `ObserveInstances` gained a sibling `GetInstance` use case, and `CheckCredentials`, `LoadInstanceAccess` and `KeyEnrollment` exist beyond the spec's list, because FR-015, FR-022 and the shared enrollment needed them.
 
-- 2026-11-01: this spec lives in `specs/261101-phase-1a-shared-contracts/`; the product PRD stays at the repository root instead of being moved into it, because it is shared by every phase and linked from the README, AGENTS.md and CLAUDE.md.
+- 2026-11-01: this spec lives in `specs/archive/261101-phase-1a-shared-contracts/`; the product PRD stays at the repository root instead of being moved into it, because it is shared by every phase and linked from the README, AGENTS.md and CLAUDE.md.
 
 ## Lessons learned
 

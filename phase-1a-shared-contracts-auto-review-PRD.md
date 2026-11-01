@@ -2,7 +2,7 @@
 
 **Created:** 2026-11-01
 **Status:** Draft, from the dev-flow Step 4 review of `feat/phase-1a-shared-contracts`
-**Source spec:** [specs/261101-phase-1a-shared-contracts](specs/261101-phase-1a-shared-contracts/spec.md)
+**Source spec:** [specs/archive/261101-phase-1a-shared-contracts](specs/archive/261101-phase-1a-shared-contracts/spec.md)
 **Related:** [AGENTS.md](./AGENTS.md), [INTENT.md](./INTENT.md), draft PR #5
 
 ---
@@ -253,7 +253,7 @@ Each group runs in its own git worktree (`git worktree add ../pafm-<group> <bran
 
 - **Reviewer severity:** Warning  ·  **Verification:** REPRODUCED (mutation survives). Removed all three guards in RunViewerStateHolder.kt (`connectivity.isOnline.value &&` in canCancelNow, `online &&` in renderRun mayCancel, `!online -> Offline` reason). `jvmTest` for the whole presentation and umbrella modules (including RunViewerCancelTest, RunViewerLoadTest, 12 Run viewer tests) stayed GREEN. File restored with `git checkout`.
 - **Corrected severity (verification):** Warning stands (destructive action, acceptance 11 overclaimed)
-- **Where:** shared/presentation/src/commonMain/kotlin/com/stainedhead/paperclipmobile/presentation/RunViewerStateHolder.kt:140,165,187; shared/presentation/src/commonTest/kotlin/com/stainedhead/paperclipmobile/presentation/RunViewerStateHolderTest.kt:119-134; specs/261101-phase-1a-shared-contracts/status.md (criterion 11)
+- **Where:** shared/presentation/src/commonMain/kotlin/com/stainedhead/paperclipmobile/presentation/RunViewerStateHolder.kt:140,165,187; shared/presentation/src/commonTest/kotlin/com/stainedhead/paperclipmobile/presentation/RunViewerStateHolderTest.kt:119-134; specs/archive/261101-phase-1a-shared-contracts/status.md (criterion 11)
 - **Issue:** The only offline Run viewer test starts the holder already offline with nothing loaded (phase Failed, `get` count 0). No test loads a live run and then calls `connectivity.setOnline(false)`. The three guards `connectivity.isOnline.value && ...` (line 140, the cancel intent guard), `online && ...` (line 165, `mayCancel`) and `!online -> ActionsDisabledReason.Offline` (line 187) can each be deleted with every test still green, so Cancel run would be sent while offline. Status criterion 11 lists the Run viewer as covered and says "Met".
 - **Why it matters:** Cancel run is a destructive action. Criterion 11 requires every mutation intent to be disabled offline with a reason key, and this screen has no evidence for it.
 - **Fix:** Add the test below and correct the criterion 11 evidence. Audit the other holders in the same way: Inbox, Decision, Approval, Budget, Agents, Agent detail, Work list and Issue do have offline-after-load cases.
@@ -337,7 +337,7 @@ Each group runs in its own git worktree (`git worktree add ../pafm-<group> <bran
 
 - **Reviewer severity:** Warning  ·  **Verification:** REPRODUCED. `forbiddenMutationReResolvesTheRole` (ApprovalStateHolder): load as Operator, server role becomes Viewer, approve returns Forbidden. After the tap `role=Operator`, `actions=[Approve, Reject, RequestRevision, Comment]`, `auth.me calls=1` (never re-resolved).
 - **Corrected severity (verification):** Warning stands (fails safe, contradicts spec 5a)
-- **Where:** specs/261101-phase-1a-shared-contracts/spec.md section 5a "Permission boundaries"; shared/presentation/.../ApprovalStateHolder.kt:129-139 (`ensureContext`: `model.value.context ?: resolveContext(...)`); same pattern in the other mutating holders; shared/presentation/.../Common.kt:64 (Forbidden -> `ErrorKey.NoPermission` only)
+- **Where:** specs/archive/261101-phase-1a-shared-contracts/spec.md section 5a "Permission boundaries"; shared/presentation/.../ApprovalStateHolder.kt:129-139 (`ensureContext`: `model.value.context ?: resolveContext(...)`); same pattern in the other mutating holders; shared/presentation/.../Common.kt:64 (Forbidden -> `ErrorKey.NoPermission` only)
 - **Issue:** The spec says a 403 mid-session "returns `Forbidden`, refreshes the role and does not retry". The code resolves the `CompanyContext` once and never clears it (no `context = null` anywhere in presentation). A mutation that returns `Forbidden` shows `NoPermission` and keeps the stale role: an operator demoted to viewer still sees enabled actions on that screen, each tap hits the server and fails again, until the screen is reopened. No test asserts the refresh (the Forbidden cases in the holder tests only check the error key). Status.md marks the edge-case work as done without listing this.
 - **Why it matters:** UI rules are meant to live in shared Kotlin (INTENT principle 5). It fails safe (server is the backstop) but contradicts a stated requirement, and the wasted taps on a viewer are the "guess what an action will do" case.
 - **Fix:** On `MutationResult.Failed(Forbidden)` (and read `Forbidden`) clear the cached context in the shared `act` path and re-run `resolveContext`; or amend the spec to say "shown as no permission; role re-resolved when the screen is reopened" and record it in implementation-notes.

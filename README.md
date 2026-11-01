@@ -2,7 +2,7 @@
 
 Native iPhone and Android apps for deciding, monitoring and intervening in one or more [Paperclip](https://docs.paperclip.ing) AI-agent instances from anywhere, through the Paperclip REST API. All non-UI code is one shared Kotlin Multiplatform core; the iPhone UI is SwiftUI and the Android UI will be Jetpack Compose.
 
-**Status:** Phase 1a (shared contracts) is built on the branch `feat/phase-1a-shared-contracts`, awaiting pull requests. The shared Kotlin core is complete for 15 screens and runs entirely on fakes (demo mode): domain, 71 `operator fun invoke` entry points (use cases and policies), 16 state holders, a fake and a contract suite for each of the 23 ports, the refresh policy and 23 architecture rules. The iPhone app has **one screen**, the first-run address check; the other screens, the Android app and the real adapters (HTTP client, SQLDelight, Keychain and Keystore) are not built. No Paperclip server is contacted yet. Details: [docs/technical-details.md](./docs/technical-details.md) and [specs/261101-phase-1a-shared-contracts/status.md](./specs/261101-phase-1a-shared-contracts/status.md).
+**Status:** Phase 1a (shared contracts) is built on the branch `feat/phase-1a-shared-contracts`, awaiting pull requests. The shared Kotlin core is complete for 15 screens and runs entirely on fakes (demo mode): domain, 71 `operator fun invoke` entry points (use cases and policies), 16 state holders, a fake and a contract suite for each of the 23 ports, the refresh policy and 23 architecture rules. The iPhone app has **one screen**, the first-run address check; the other screens, the Android app and the real adapters (HTTP client, SQLDelight, Keychain and Keystore) are not built. No Paperclip server is contacted yet. Details: [docs/technical-details.md](./docs/technical-details.md) and [specs/archive/261101-phase-1a-shared-contracts/status.md](./specs/archive/261101-phase-1a-shared-contracts/status.md).
 
 | | Built (iPhone, running) | Design mock (target) |
 |---|---|---|
@@ -25,7 +25,7 @@ Native iPhone and Android apps for deciding, monitoring and intervening in one o
 | [user-docs/usage-examples.md](./user-docs/usage-examples.md) | Verified Kotlin and Swift snippets |
 | [user-docs/testing-guide.md](./user-docs/testing-guide.md) | TDD, fakes, contract suites, Konsist, Kover; adding a use case or a screen |
 | [user-docs/first-factory.md](./user-docs/first-factory.md) | The address step, the only built screen |
-| [specs/261101-phase-1a-shared-contracts/](./specs/261101-phase-1a-shared-contracts/status.md) | The Phase 1a specification, research, notes and status |
+| [specs/archive/261101-phase-1a-shared-contracts/](./specs/archive/261101-phase-1a-shared-contracts/status.md) | The Phase 1a specification, research, notes and status |
 | [specs/261101-iphone-app/plan.md](./specs/261101-iphone-app/plan.md) | The iPhone implementation plan |
 
 ## Build and run (macOS)

@@ -17,7 +17,7 @@ class RequirementsTraceabilityTest {
 
     /**
      * Requirements with no Phase 1a test, each with the reason. Keep it empty unless a requirement genuinely has none
-     * (its status is then also listed in `specs/261101-phase-1a-shared-contracts/status.md`).
+     * (its status is then also listed in `specs/archive/261101-phase-1a-shared-contracts/status.md`).
      */
     private val exempt: Map<Int, String> = emptyMap()
 
