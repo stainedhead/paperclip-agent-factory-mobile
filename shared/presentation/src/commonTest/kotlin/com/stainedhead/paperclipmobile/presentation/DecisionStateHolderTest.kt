@@ -36,12 +36,13 @@ private fun TestScope.decisionHolder(
     env: Env,
     agentHint: String? = null,
     decideByHint: String? = null,
+    dismissalKey: String? = null,
 ) = DecisionStateHolder(
     env.decision,
     env.connectivity,
     env.clock,
     CoroutineScope(StandardTestDispatcher(testScheduler)),
-    DecisionTarget(CompanyTarget("inst-1", TestData.acme.value), "dec-1", agentHint, decideByHint),
+    DecisionTarget(CompanyTarget("inst-1", TestData.acme.value), "dec-1", agentHint, decideByHint, dismissalKey),
 )
 
 class DecisionLoadingTest {

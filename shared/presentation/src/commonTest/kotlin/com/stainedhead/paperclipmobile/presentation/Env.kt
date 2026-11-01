@@ -187,6 +187,8 @@ class Env(
             DecideDecision(decisions, deviceAuth, ids),
             DismissDecision(decisions),
             PollDecisionExecution(decisions),
+            SnoozeItem(attention, clock, timeZone),
+            AvailableSnoozePresets(clock, timeZone),
         )
 
     val approval =

@@ -105,6 +105,7 @@ internal class InboxRenderer(
             webUrl = webUrl(model.baseUrl, item.subject),
             isReadOnly = role == null || InlineActionPolicy.isReadOnly(item, role, userId),
             audience = item.resolverAudience?.toUi(userId),
+            dismissalKey = item.dismissalKey,
         )
     }
 }

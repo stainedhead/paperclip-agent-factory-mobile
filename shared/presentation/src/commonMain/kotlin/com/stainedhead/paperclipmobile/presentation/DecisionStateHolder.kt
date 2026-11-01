@@ -21,13 +21,15 @@ import kotlinx.coroutines.launch
 
 /**
  * The decision to show. [originAgentNameHint] and [decideByHint] are what the Inbox card knew when the person tapped
- * it: the decision endpoint has neither (ADR-018). Pass null for no hint.
+ * it: the decision endpoint has neither (ADR-018). Pass null for no hint. [dismissalKey] is the card's snooze key.
  */
 data class DecisionTarget(
     val company: CompanyTarget,
     val decisionId: String,
     val originAgentNameHint: String?,
     val decideByHint: String?,
+    /** The `dismissalKey` of the Inbox card the screen was opened from; null hides Snooze (ADR-025). */
+    val dismissalKey: String?,
 )
 
 /** State holder for Decision detail (screen 2). */
@@ -41,14 +43,15 @@ class DecisionStateHolder(
     private val scope = childScope(scope)
     private val companyScope = CompanyScope(InstanceId(target.company.instanceId), CompanyId(target.company.companyId))
     private val id = DecisionId(target.decisionId)
-    private val model = MutableStateFlow(DecisionModel())
+    private val model = MutableStateFlow(DecisionModel(snoozeKey = target.dismissalKey))
     private val mutableState = MutableStateFlow(DecisionState())
     val state: StateFlow<DecisionState> = mutableState.asStateFlow()
 
     init {
         this.scope.launch {
-            combine(model, connectivity.isOnline) { model, online -> DecisionRenderer.render(model, online) }
-                .collect { mutableState.value = it }
+            combine(model, connectivity.isOnline) { model, online ->
+                DecisionRenderer.render(model, online, useCases.snoozePresets().map { it.toUi() })
+            }.collect { mutableState.value = it }
         }
         load()
     }
@@ -74,6 +77,10 @@ class DecisionStateHolder(
 
             DecisionIntent.DismissTapped -> {
                 dismiss()
+            }
+
+            is DecisionIntent.SnoozeRequested -> {
+                snooze(intent.preset)
             }
 
             DecisionIntent.Refresh -> {
@@ -129,6 +136,25 @@ class DecisionStateHolder(
         val decision = model.value.decision ?: return
         if (!model.value.mayAct(Action.DismissDecision, connectivity.isOnline.value) || !decision.isOpen) return
         act { context -> useCases.dismiss(context, decision, null) }
+    }
+
+    private fun snooze(preset: SnoozePresetUi) {
+        val key = target.dismissalKey ?: return
+        val current = model.value
+        if (!current.mayAct(Action.SnoozeItem, connectivity.isOnline.value)) return
+        if (current.decision?.isOpen != true || current.snoozed) return
+        model.update { it.copy(submitting = true, feedback = null) }
+        scope.launch {
+            val context = ensureContext()
+            val result = context?.let { useCases.snooze(it, key, preset.toDomain()) }
+            model.update {
+                it.copy(
+                    submitting = false,
+                    snoozed = result is MutationResult.Done,
+                    feedback = result?.toFeedback(),
+                )
+            }
+        }
     }
 
     private fun act(

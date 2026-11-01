@@ -64,6 +64,12 @@ class PaperclipGraph internal constructor(
 internal fun newScreenScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
 object PaperclipCore {
+    /** The graph on fakes seeded with the demo data set that matches the design mocks (demo mode, PRD FR-097). */
+    fun createDemoGraph(): PaperclipGraph =
+        PaperclipGraph(
+            koinApplication { modules(demoPortsModule(), useCaseModule(false), presentationModule()) }.koin,
+        )
+
     /**
      * @param allowInsecureLocal true only in debug builds; lets `http://localhost` and `http://10.0.2.2` be added.
      */

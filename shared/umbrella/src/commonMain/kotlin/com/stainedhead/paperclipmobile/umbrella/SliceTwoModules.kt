@@ -173,7 +173,7 @@ internal fun org.koin.core.module.Module.sliceTwoHolders() {
     }
     factory { params ->
         DecisionStateHolder(
-            DecisionUseCases(get(), get(), get(), get(), get()),
+            DecisionUseCases(get(), get(), get(), get(), get(), get(), get()),
             get(),
             get(),
             params.get(),

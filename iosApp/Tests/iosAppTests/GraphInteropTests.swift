@@ -46,7 +46,8 @@ struct GraphInteropTests {
 
     @Test func detailHoldersStartLoadingAndAcceptTypedIntents() {
         let decision = graph.attention.createDecisionStateHolder(
-            instanceId: "inst-1", companyId: "company-acme", decisionId: "dec-1", originAgentName: nil, decideBy: nil)
+            instanceId: "inst-1", companyId: "company-acme", decisionId: "dec-1",
+            hints: DecisionHints(originAgentName: nil, decideBy: nil, dismissalKey: nil))
         #expect(decision.state.value.phase == .loading)
         decision.onIntent(intent: DecisionIntentOptionSelected(optionId: "ship"))
         decision.close()

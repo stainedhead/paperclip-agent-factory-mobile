@@ -22,6 +22,9 @@ internal data class DecisionModel(
     val inputValues: Map<String, String> = emptyMap(),
     val loadedAt: Instant? = null,
     val loading: Boolean = false,
+    /** The key to snooze the Inbox card this screen was opened from, or null when it was opened another way. */
+    val snoozeKey: String? = null,
+    val snoozed: Boolean = false,
     val polling: Boolean = false,
     val submitting: Boolean = false,
     val error: ErrorUi? = null,
@@ -69,6 +72,7 @@ internal object DecisionRenderer {
     fun render(
         model: DecisionModel,
         online: Boolean,
+        snoozeOptions: List<SnoozePresetUi>,
     ): DecisionState {
         val decision = model.decision
         val role = model.context?.role
@@ -88,6 +92,9 @@ internal object DecisionRenderer {
             canConfirm = selected != null && allowed && Permissions.allows(role, Action.DecideOption),
             confirmNeedsDeviceAuth = selected?.isDestructive == true,
             canDismiss = open != null && allowed,
+            canSnooze = open != null && allowed && canSnooze(model, role),
+            snoozeOptions = snoozeOptions,
+            isSnoozed = model.snoozed,
             finalState = decision?.takeIf { it.isFinal }?.let(::finalState),
             execution = decision?.outcome?.let { execution(it, model.polling) },
             isSubmitting = model.submitting,
@@ -99,6 +106,11 @@ internal object DecisionRenderer {
             feedback = model.feedback,
         )
     }
+
+    private fun canSnooze(
+        model: DecisionModel,
+        role: Role?,
+    ) = model.snoozeKey != null && !model.snoozed && role != null && Permissions.allows(role, Action.SnoozeItem)
 
     private fun phase(
         hasContent: Boolean,

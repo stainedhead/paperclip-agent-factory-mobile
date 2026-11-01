@@ -48,6 +48,8 @@ data class InboxItemUi(
     val webUrl: String?,
     val isReadOnly: Boolean,
     val audience: AudienceUi?,
+    /** Pass to the Decision screen so it can offer Snooze for this card (ADR-025). */
+    val dismissalKey: String,
 )
 
 data class InboxSectionUi(

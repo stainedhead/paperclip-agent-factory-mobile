@@ -25,8 +25,12 @@ import com.stainedhead.paperclipmobile.testing.WorkFixtures
  */
 class FakeInteractionGateway(
     interactions: List<Interaction> = WorkFixtures.interactions(),
+    otherIssues: Map<IssueId, List<Interaction>> = emptyMap(),
 ) : InteractionGateway {
-    val store = mutableMapOf(WorkFixtures.pap1182 to interactions.toMutableList())
+    val store =
+        (mapOf(WorkFixtures.pap1182 to interactions) + otherIssues)
+            .mapValues { it.value.toMutableList() }
+            .toMutableMap()
     val calls = mutableMapOf<String, Int>()
     val failures = mutableMapOf<String, DomainError>()
     val answers = mutableListOf<InteractionAnswer>()

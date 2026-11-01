@@ -20,10 +20,12 @@ import com.stainedhead.paperclipmobile.testing.AgentFixtures
 class FakeRunGateway(
     runs: List<HeartbeatRun> = AgentFixtures.runs(),
     private val chunkSize: Int = DEFAULT_CHUNK,
+    events: List<RunEvent> = AgentFixtures.events(),
+    log: String = AgentFixtures.LOG,
 ) : RunGateway {
     val store = runs.associateBy { it.id }.toMutableMap()
-    val eventStore = mutableListOf<RunEvent>().apply { addAll(AgentFixtures.events()) }
-    private var logText = AgentFixtures.LOG
+    val eventStore = events.toMutableList()
+    private var logText = log
     val calls = mutableMapOf<String, Int>()
     val failures = mutableMapOf<String, DomainError>()
 

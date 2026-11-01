@@ -9,6 +9,13 @@ import com.stainedhead.paperclipmobile.presentation.InboxStateHolder
 import org.koin.core.Koin
 import org.koin.core.parameter.parametersOf
 
+/** What the Inbox card knew when it was tapped; pass `DecisionHints(null, null, null)` when opened another way. */
+data class DecisionHints(
+    val originAgentName: String?,
+    val decideBy: String?,
+    val dismissalKey: String?,
+)
+
 /** Creates the screens of slice 1a-2. Each call returns a holder the screen owns; call `close()` when it goes away. */
 class AttentionScreens internal constructor(
     private val koin: Koin,
@@ -20,20 +27,25 @@ class AttentionScreens internal constructor(
     ): InboxStateHolder = koin.get { parametersOf(newScreenScope(), CompanyTarget(instanceId, companyId)) }
 
     /**
-     * Decision detail (screen 2). [originAgentName] and [decideBy] are what the Inbox card knew (the decision endpoint
-     * has neither); pass null for no hint.
+     * Decision detail (screen 2). [hints] is what the Inbox card knew (the decision endpoint has neither the agent name
+     * nor the decide-by); with `dismissalKey` the screen offers Snooze, without it Snooze is hidden (ADR-025).
      */
     fun createDecisionStateHolder(
         instanceId: String,
         companyId: String,
         decisionId: String,
-        originAgentName: String?,
-        decideBy: String?,
+        hints: DecisionHints,
     ): DecisionStateHolder =
         koin.get {
             parametersOf(
                 newScreenScope(),
-                DecisionTarget(CompanyTarget(instanceId, companyId), decisionId, originAgentName, decideBy),
+                DecisionTarget(
+                    CompanyTarget(instanceId, companyId),
+                    decisionId,
+                    hints.originAgentName,
+                    hints.decideBy,
+                    hints.dismissalKey,
+                ),
             )
         }
 

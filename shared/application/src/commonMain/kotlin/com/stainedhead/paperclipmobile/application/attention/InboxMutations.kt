@@ -17,7 +17,10 @@ import com.stainedhead.paperclipmobile.domain.port.DeviceTimeZone
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-/** Hides an item until a time chosen from the presets (PRD FR-034, ADR-020). */
+/**
+ * Hides an item until a time chosen from the presets (PRD FR-034, ADR-020). Takes the item's `dismissalKey`, so the
+ * Decision screen can snooze the card it was opened from without holding the whole item (ADR-025).
+ */
 class SnoozeItem(
     private val gateway: AttentionGateway,
     private val clock: Clock,
@@ -25,14 +28,14 @@ class SnoozeItem(
 ) {
     suspend operator fun invoke(
         context: CompanyContext,
-        item: AttentionItem,
+        dismissalKey: String,
         preset: SnoozePreset,
     ): MutationResult<Dismissal> {
         if (!Permissions.allows(context.role, Action.SnoozeItem)) return MutationResult.Denied
         val now = clock.now()
         val zone = timeZone.current()
         if (!SnoozeTimes.isAvailable(preset, now, zone)) return MutationResult.Invalid(InvalidInput.SnoozeNotInFuture)
-        return gateway.snooze(context.scope, item.dismissalKey, SnoozeTimes.resolve(preset, now, zone)).toMutation()
+        return gateway.snooze(context.scope, dismissalKey, SnoozeTimes.resolve(preset, now, zone)).toMutation()
     }
 }
 

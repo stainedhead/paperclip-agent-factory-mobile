@@ -98,7 +98,13 @@ class PaperclipGraphSliceTwoWiringTest {
     @Test
     fun `demo mode opens the decision the approval and the budget incident from the Inbox`() =
         runTest {
-            val decision = graph.attention.createDecisionStateHolder(factory, company, "dec-1", "Engineer 1", "today")
+            val decision =
+                graph.attention.createDecisionStateHolder(
+                    factory,
+                    company,
+                    "dec-1",
+                    DecisionHints("Engineer 1", "today", null),
+                )
             val approval = graph.attention.createApprovalStateHolder(factory, company, "ap-1")
             val budget = graph.attention.createBudgetIncidentStateHolder(factory, company, "inc-1")
 

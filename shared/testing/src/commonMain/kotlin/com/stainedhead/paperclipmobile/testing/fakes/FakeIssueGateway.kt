@@ -15,6 +15,7 @@ import com.stainedhead.paperclipmobile.domain.IssueQuery
 import com.stainedhead.paperclipmobile.domain.IssueRef
 import com.stainedhead.paperclipmobile.domain.IssueStatus
 import com.stainedhead.paperclipmobile.domain.NewIssue
+import com.stainedhead.paperclipmobile.domain.PlanDocument
 import com.stainedhead.paperclipmobile.domain.port.IssueGateway
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.WorkFixtures
@@ -27,11 +28,16 @@ import com.stainedhead.paperclipmobile.testing.WorkFixtures
 class FakeIssueGateway(
     issues: List<Issue> = WorkFixtures.issues(),
     private val currentUserId: String = WorkFixtures.ME,
+    comments: Map<IssueId, List<Comment>> = mapOf(WorkFixtures.pap1182 to WorkFixtures.comments()),
+    plans: Map<IssueId, PlanDocument> = mapOf(WorkFixtures.pap1182 to WorkFixtures.plan()),
+    attachments: Map<IssueId, List<Attachment>>? = null,
+    private val projectName: String = "Billing",
 ) : IssueGateway {
     val store = issues.associateBy { it.id }.toMutableMap()
-    val commentStore = mutableMapOf(WorkFixtures.pap1182 to WorkFixtures.comments().toMutableList())
+    val commentStore = comments.mapValues { it.value.toMutableList() }.toMutableMap()
+    private val attachmentStore: Map<IssueId, List<Attachment>>? = attachments
     var attachmentList: List<Attachment> = WorkFixtures.attachments()
-    var plan = WorkFixtures.plan()
+    val plans = plans.toMutableMap()
     val calls = mutableMapOf<String, Int>()
     val failures = mutableMapOf<String, DomainError>()
     val commentOptions = mutableListOf<CommentOptions>()
@@ -72,14 +78,11 @@ class FakeIssueGateway(
         return DomainResult.Success(
             IssueDetail(
                 issue,
-                "Billing",
+                projectName,
                 parent,
                 emptyList(),
                 subtasks,
-                plan.takeIf {
-                    id ==
-                        WorkFixtures.pap1182
-                },
+                plans[id],
             ),
         )
     }
@@ -166,7 +169,7 @@ class FakeIssueGateway(
         id: IssueId,
     ): DomainResult<List<Attachment>> {
         record("attachments")?.let { return DomainResult.Failure(it) }
-        return DomainResult.Success(attachmentList)
+        return DomainResult.Success(attachmentStore?.let { it[id].orEmpty() } ?: attachmentList)
     }
 
     private companion object {

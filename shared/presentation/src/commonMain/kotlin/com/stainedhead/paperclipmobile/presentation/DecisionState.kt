@@ -1,6 +1,8 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.ResolveCompanyContext
+import com.stainedhead.paperclipmobile.application.attention.AvailableSnoozePresets
+import com.stainedhead.paperclipmobile.application.attention.SnoozeItem
 import com.stainedhead.paperclipmobile.application.decision.DecideDecision
 import com.stainedhead.paperclipmobile.application.decision.DismissDecision
 import com.stainedhead.paperclipmobile.application.decision.LoadDecision
@@ -109,6 +111,11 @@ data class DecisionState(
     val canConfirm: Boolean = false,
     val confirmNeedsDeviceAuth: Boolean = false,
     val canDismiss: Boolean = false,
+    /** Snooze in the top bar: only when opened from an Inbox card (ADR-025), by someone who may act. */
+    val canSnooze: Boolean = false,
+    val snoozeOptions: List<SnoozePresetUi> = emptyList(),
+    /** The card was snoozed; the screen should close. */
+    val isSnoozed: Boolean = false,
     val finalState: DecisionFinalUi? = null,
     val execution: ExecutionUi? = null,
     val isSubmitting: Boolean = false,
@@ -134,6 +141,10 @@ sealed interface DecisionIntent {
 
     data object DismissTapped : DecisionIntent
 
+    data class SnoozeRequested(
+        val preset: SnoozePresetUi,
+    ) : DecisionIntent
+
     data object Refresh : DecisionIntent
 
     data object MessageDismissed : DecisionIntent
@@ -145,4 +156,6 @@ data class DecisionUseCases(
     val decide: DecideDecision,
     val dismiss: DismissDecision,
     val poll: PollDecisionExecution,
+    val snooze: SnoozeItem,
+    val snoozePresets: AvailableSnoozePresets,
 )

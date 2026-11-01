@@ -77,7 +77,7 @@ internal class InboxTriageActions(
     ) {
         val item = session.model.value.find(itemId) ?: return
         session.mutate(
-            { context -> session.useCases.snooze(context, item, preset.toDomain()) },
+            { context -> session.useCases.snooze(context, item.dismissalKey, preset.toDomain()) },
         ) { removedIfDone(it, item) }
     }
 

@@ -27,6 +27,14 @@ class FakeSecretStore : SecretStore {
     /** The namespaced paths currently stored, for example `instance/id-1/boardToken`. */
     val paths: Set<String> get() = values.keys.toSet()
 
+    /** Stores [value] without going through the port, so demo mode can start with a paired factory. */
+    fun seed(
+        key: SecretKey,
+        value: String,
+    ) {
+        values[key.path] = value
+    }
+
     fun pathsFor(instanceId: InstanceId): Set<String> =
         paths.filter { it.startsWith(SecretKey.namespacePrefix(instanceId)) }.toSet()
 

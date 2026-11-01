@@ -31,7 +31,7 @@ class SnoozeItemTest {
                     env.attention,
                     env.clock,
                     env.timeZone,
-                )(env.context(Role.Operator), item, SnoozePreset.OneHour)
+                )(env.context(Role.Operator), item.dismissalKey, SnoozePreset.OneHour)
 
             result.shouldBeInstanceOf<MutationResult.Done<*>>()
             env.attention.snoozes shouldBe listOf(item.dismissalKey to env.clock.now() + 1.hours)
@@ -44,7 +44,7 @@ class SnoozeItemTest {
             val env = Env()
             env.timeZone.zone = TimeZone.of("Europe/Berlin")
 
-            SnoozeItem(env.attention, env.clock, env.timeZone)(env.context(), item, SnoozePreset.Tonight)
+            SnoozeItem(env.attention, env.clock, env.timeZone)(env.context(), item.dismissalKey, SnoozePreset.Tonight)
 
             // the fake clock starts at 2026-11-01T12:00Z, which is 13:00 in Berlin; tonight = 20:00 CET = 19:00Z
             env.attention.snoozes
@@ -59,7 +59,12 @@ class SnoozeItemTest {
             env.timeZone.zone = TimeZone.of("Europe/Berlin")
             env.clock.advance(7.hours + 30.seconds) // 19:30Z = 20:30 in Berlin
 
-            val result = SnoozeItem(env.attention, env.clock, env.timeZone)(env.context(), item, SnoozePreset.Tonight)
+            val result =
+                SnoozeItem(
+                    env.attention,
+                    env.clock,
+                    env.timeZone,
+                )(env.context(), item.dismissalKey, SnoozePreset.Tonight)
 
             result shouldBe MutationResult.Invalid(InvalidInput.SnoozeNotInFuture)
             env.attention.count("snooze") shouldBe 0
@@ -71,7 +76,11 @@ class SnoozeItemTest {
             val env = Env()
 
             val result =
-                SnoozeItem(env.attention, env.clock, env.timeZone)(env.context(Role.Viewer), item, SnoozePreset.OneHour)
+                SnoozeItem(
+                    env.attention,
+                    env.clock,
+                    env.timeZone,
+                )(env.context(Role.Viewer), item.dismissalKey, SnoozePreset.OneHour)
 
             result shouldBe MutationResult.Denied
             env.attention.count("snooze") shouldBe 0
@@ -83,7 +92,12 @@ class SnoozeItemTest {
             val env = Env()
             env.attention.failures["snooze"] = DomainError.Timeout
 
-            val result = SnoozeItem(env.attention, env.clock, env.timeZone)(env.context(), item, SnoozePreset.OneHour)
+            val result =
+                SnoozeItem(
+                    env.attention,
+                    env.clock,
+                    env.timeZone,
+                )(env.context(), item.dismissalKey, SnoozePreset.OneHour)
 
             result shouldBe MutationResult.Failed(DomainError.Timeout)
             env.attention.count("snooze") shouldBe 1
