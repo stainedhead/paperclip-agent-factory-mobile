@@ -1,0 +1,35 @@
+package com.stainedhead.paperclipmobile.testing
+
+import com.stainedhead.paperclipmobile.domain.AppSettings
+import com.stainedhead.paperclipmobile.domain.port.AppSettingsStore
+import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
+import com.stainedhead.paperclipmobile.domain.port.SecretStore
+import com.stainedhead.paperclipmobile.testing.contract.AppSettingsStoreContract
+import com.stainedhead.paperclipmobile.testing.contract.InstanceRepositoryContract
+import com.stainedhead.paperclipmobile.testing.contract.SecretStoreContract
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAppSettingsStore
+import com.stainedhead.paperclipmobile.testing.fakes.FakeInstanceRepository
+import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+
+class FakeInstanceRepositoryContractTest : InstanceRepositoryContract() {
+    override fun create(): InstanceRepository = FakeInstanceRepository()
+
+    @Test
+    fun `the fake passes the instance repository contract`() = runTest { runAll() }
+}
+
+class FakeSecretStoreContractTest : SecretStoreContract() {
+    override fun create(): SecretStore = FakeSecretStore()
+
+    @Test
+    fun `the fake passes the secret store contract`() = runTest { runAll() }
+}
+
+class FakeAppSettingsStoreContractTest : AppSettingsStoreContract() {
+    override fun create(): AppSettingsStore = FakeAppSettingsStore(AppSettings("Initial"))
+
+    @Test
+    fun `the fake passes the app settings store contract`() = runTest { runAll() }
+}
