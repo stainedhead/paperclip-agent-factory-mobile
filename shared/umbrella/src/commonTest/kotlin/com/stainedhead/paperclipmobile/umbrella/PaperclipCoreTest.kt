@@ -7,7 +7,7 @@ import kotlin.test.Test
 class PaperclipCoreTest {
     @Test
     fun `the graph builds a first-run state holder that validates addresses`() {
-        val firstRun = PaperclipCore.createGraph(allowInsecureLocal = false).newFirstRunStateHolder()
+        val firstRun = PaperclipCore.createGraph(allowInsecureLocal = false).createFirstRunStateHolder()
 
         firstRun.onIntent(FirstRunIntent.AddressChanged("https://paperclip.example.com"))
 
@@ -16,8 +16,8 @@ class PaperclipCoreTest {
 
     @Test
     fun `a debug graph accepts local http and a release graph refuses it`() {
-        val debug = PaperclipCore.createGraph(allowInsecureLocal = true).newFirstRunStateHolder()
-        val release = PaperclipCore.createGraph(allowInsecureLocal = false).newFirstRunStateHolder()
+        val debug = PaperclipCore.createGraph(allowInsecureLocal = true).createFirstRunStateHolder()
+        val release = PaperclipCore.createGraph(allowInsecureLocal = false).createFirstRunStateHolder()
 
         debug.onIntent(FirstRunIntent.AddressChanged("http://localhost:3100"))
         release.onIntent(FirstRunIntent.AddressChanged("http://localhost:3100"))
@@ -29,8 +29,8 @@ class PaperclipCoreTest {
     @Test
     fun `each call creates an independent state holder`() {
         val graph = PaperclipCore.createGraph(allowInsecureLocal = false)
-        val first = graph.newFirstRunStateHolder()
-        val second = graph.newFirstRunStateHolder()
+        val first = graph.createFirstRunStateHolder()
+        val second = graph.createFirstRunStateHolder()
 
         first.onIntent(FirstRunIntent.AddressChanged("https://example.com"))
 

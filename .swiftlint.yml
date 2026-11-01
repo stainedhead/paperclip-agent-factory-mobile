@@ -1,0 +1,21 @@
+# Swift code only renders shared Kotlin state, so the rules stay close to defaults.
+included:
+  - iosApp
+excluded:
+  - iosApp/Packages
+  - iosApp/Frameworks
+  - iosApp/iosApp.xcodeproj
+  - iosApp/build
+
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - first_where
+  - sorted_imports
+
+line_length:
+  warning: 120
+  error: 140
+
+disabled_rules:
+  - todo

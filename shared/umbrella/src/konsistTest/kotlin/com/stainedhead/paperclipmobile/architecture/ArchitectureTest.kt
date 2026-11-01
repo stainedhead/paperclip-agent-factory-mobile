@@ -80,6 +80,18 @@ class ArchitectureTest {
     }
 
     @Test
+    fun `swift-facing modules avoid names Objective-C reserves`() {
+        // Kotlin/Native renames functions starting with these prefixes (for example newFoo becomes doNewFoo in Swift).
+        val reserved = Regex("^(new|alloc|copy|mutableCopy|init)([A-Z].*)?$")
+        listOf("presentation", "umbrella").forEach { module ->
+            val functions = Konsist.scopeFromDirectory("shared/$module/src/commonMain").functions()
+            functions.assertTrue(additionalMessage = "$module must not declare functions that Objective-C reserves") {
+                !it.hasPublicOrDefaultModifier || !reserved.matches(it.name)
+            }
+        }
+    }
+
+    @Test
     fun `the architecture rules can see the code they guard`() {
         Assertions.assertTrue(scope("domain").classes().any { it.name == "BaseUri" })
         Assertions.assertTrue(scope("presentation").properties().isNotEmpty())
