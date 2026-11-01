@@ -1,6 +1,6 @@
 # Architectural decision record
 
-One entry per significant decision, newest last. Format: context, decision, consequences.
+One entry per significant decision, numbered in order, newest last. Every entry has the three parts **Context**, **Decision** and **Consequences**. A decision is not rewritten after the fact; a later change is a new entry, and a correction of a name or a reference is added as a **Note** under the entry it concerns.
 
 ## ADR-001: iPhone first in the UI, shared core first in the build
 
@@ -24,7 +24,7 @@ One entry per significant decision, newest last. Format: context, decision, cons
 
 **Context.** Paperclip 2026.1023.0 does not accept board API keys on its live-events WebSocket.
 **Decision.** A shared use case refreshes the visible screen on a timer; a WebSocket adapter is built later and enabled only if the server accepts board keys.
-**Consequences.** Slightly slower updates; an upstream fix changes one adapter.
+**Consequences.** Slightly slower updates; an upstream fix changes one adapter. The policy itself is ADR-027.
 
 ## ADR-005: Targets are jvm, android (AGP KMP library plugin) and iOS
 
@@ -109,6 +109,7 @@ One entry per significant decision, newest last. Format: context, decision, cons
 **Context.** The PRD attached `inputs[]` to options; the server attaches them to the decision and validates them whichever option is chosen. `GET /decisions/{id}` has neither `decideBy` (triage data) nor the agent name (research Q4, Q8).
 **Decision.** `Decision.inputs` lives on the decision. `Decision.decideBy` and `originAgentName` are optional; the Decision screen is opened with the feed item's values as hints and the Phase 1b adapter may fill them. `DecideDecision` sends an `idempotencyKey` made with the `IdGenerator` so a manual re-tap after a timeout replays instead of running the effects twice; the use case itself never retries. Polling (`PollDecisionExecution`) re-reads until `executionStatus` is `succeeded`, `partial` or `failed` (or the decision is `expired`/`cancelled`), on the `Clock`, with a capped number of attempts.
 **Consequences.** A timeout after decide re-reads the decision (FR-096) and shows what really happened. A 409 re-reads and shows the final state with no options.
+**Note.** `PollDecisionExecution` waits with coroutine `delay` (up to 10 reads, 1 s apart), not with the `Clock` port, as ADR-027 later fixed for all timers.
 
 ## ADR-019: Inline actions are server flag AND app support AND role; mutations run in a fixed order
 
@@ -125,7 +126,7 @@ One entry per significant decision, newest last. Format: context, decision, cons
 ## ADR-021: A request that the server refuses to a viewer is still blocked in the app, and owner-only budget stays client-side
 
 **Context.** Research A2/W4: the server rejects every non-GET for a `viewer` membership, but it lets an operator set an agent budget (no permission key) and never asks for device authentication.
-**Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD) and has no device authentication (FR-014 lists "raising a budget" for incidents only; ADR in slice 1a-1).
+**Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD) and has no device authentication (FR-014 lists "raising a budget" for incidents only; see ADR-013).
 **Consequences.** A viewer or an operator never reaches the gateway for a budget; a role change mid-session is handled by the server's 403 (`Forbidden`).
 
 ## ADR-022: Saved filters map to server params, except priority which is filtered on the client
@@ -133,18 +134,21 @@ One entry per significant decision, newest last. Format: context, decision, cons
 **Context.** Research W1: the server has no `priority` filter and the web has none of the PRD's five saved views by those names.
 **Decision.** `SavedFilter` = `AllOpen` (`status=backlog,todo,in_progress,in_review,blocked`), `Blocked` (`attention=blocked`), `InReview` (`status=in_review`), `AssignedToMe` (`assigneeUserId=me`, restricted to open statuses) and `CriticalAndHigh` (all open statuses from the server, then `priority in {critical, high}` on the device by `SavedFilter.matches`). Search sends `q` and keeps the saved filter. The list uses `view=compact` and pages by `limit`/`offset`; the gateway takes an `IssueQuery` so Phase 1b builds the URL.
 **Consequences.** `CriticalAndHigh` can show fewer than a page; the holder keeps loading while a page was full. The fake applies the same rules as the server.
+**Note.** In code the type is `IssueFilter` (not `SavedFilter`) and the on-device rule is `IssueFilter.matches`.
 
 ## ADR-023: Interactions are a sealed domain type with five supported kinds; anything else is `Unsupported` and is never sent
 
 **Context.** Research W7/W8: six server kinds with large payloads; `connection_intent` has other endpoints; the resolver rule for a board user is addressee plus creator plus viewer role.
 **Decision.** `Interaction` is a sealed interface: `SuggestTasks`, `AskUserQuestions`, `RequestConfirmation`, `RequestCheckboxConfirmation`, `RequestItemVerdicts` (only the fields a form renders) and `Unsupported(kind)` (also for `connection_intent`). `Interaction.answerFor` builds a typed `InteractionAnswer` that validates required answers, reasons and selection counts on the device; `RespondToInteraction` maps an answer to exactly one gateway call and never takes an `Unsupported`. `resolverAudience` reuses `ResolverAudience.allowsUser`; an interaction that is not for the user, not pending, or has an `acceptanceBlocker` is read only.
 **Consequences.** The mobile app cannot send an invalid payload; the server's 422 remains the backstop.
+**Note.** In code the unsupported case is the class `UnsupportedInteraction`, and the device-side answer check is the extension `Interaction.validate(answer)`, which returns an `AnswerIssue` or null; there is no `Interaction.answerFor`.
 
 ## ADR-024: Names are joined on the device, "current issue" comes from live runs, and the tail is by byte offset and sequence
 
 **Context.** Research W2/A1/R1: the issue, comment and agent rows carry ids, not names; there is no current-issue field; logs are read by byte offset and events by sequence number.
 **Decision.** Gateways return domain objects with the ids; `LoadIssue` and `LoadAgent` join assignee and author names from `AgentGateway.list`. An agent's current issue is the `issueId` of its active live run. `TailRunLog` takes a `LogCursor(offset)` and returns the new text and the next cursor; `RunGateway.events(afterSeq)` the same by sequence. The Run viewer keeps `autoScroll = true` until the user scrolls up (`UserScrolled` intent) and turns it back on at `JumpToLatest`.
 **Consequences.** The polling policy of slice 1a-4 only has to call the holders' `Refresh` intent at the right interval.
+**Note.** In code there is no `LogCursor`: `RunGateway.log(scope, id, offset)` returns a `LogChunk(content, nextOffset)`, `TailRunLog` takes and returns a bounded `LogTail`, and `RunGateway.events(scope, id, afterSeq)` reads events by sequence number.
 
 ## ADR-025: Decision detail offers Snooze only when it was opened from an Inbox card
 

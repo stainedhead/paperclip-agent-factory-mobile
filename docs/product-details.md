@@ -1,52 +1,91 @@
 # Product details
 
-Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent-factory-mobile-PRD.md); the design images below come from the [design mocks](../Paperclip-Remote-mobile-UI-design.html) and show demo data only. Real screenshots replace them as screens are built.
+Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent-factory-mobile-PRD.md). The numbered screen inventory is the PRD's; the order below follows it.
 
-## Built so far
+**What exists today.** All 15 Phase 1a screens have a tested state holder in the shared Kotlin core, so the behaviour below is built and verified by tests on the demo data. Only one screen has a UI: the first step of First-run setup on iPhone. Every other screen has no SwiftUI or Compose view yet (Phase 2). Screen 14 (Notification settings) belongs to Phase 3 and has no state holder.
 
-### First-run address check (screen 15, step 1)
+**About the images.** The images in `docs/images/design-*.png` are **design mocks** rendered from [Paperclip-Remote-mobile-UI-design.html](../Paperclip-Remote-mobile-UI-design.html); they show demo data and are a target, not the product. `docs/images/ios-first-run.png` is the only **built** screenshot (the running iPhone app). Mocks exist for seven screens; the other screens have none. Real screenshots replace mocks as the screens are built.
 
-FR-003 and FR-009. The address of the Paperclip server is checked as you type, by the shared Kotlin core:
+## Roles, device authentication, offline: rules that apply everywhere
+
+| Rule | Behaviour |
+|---|---|
+| Roles | Per company: Owner, Operator, Viewer, mapped fail-closed from the server's membership role (ADR-011). A Viewer sees everything and can change nothing. Owner and Operator differ only on raising a budget and setting an agent's monthly budget, both Owner only. Local actions (add, edit, remove, sign out a factory, settings) are open to every role. |
+| Device authentication | Face ID, fingerprint or device PIN, asked inside the use case before the server call, for: reject an approval, pause an agent, cancel a run, a destructive decision option, raise and resume a budget, remove a factory. Cannot be turned off. If it is cancelled, fails, is locked out or is unavailable, nothing is sent. |
+| Mutations | Sent once, never retried. A second tap while an action runs is ignored. After a timeout or a conflict the screen reads the item again and shows what really happened. |
+| Offline | A screen keeps what it last showed with its "Updated" time and every action is disabled with a reason (`ActionsDisabledReason.Offline`). Nothing refreshes in the background or offline. The Inbox shows its cached first page, or an explanation when there is no cache. |
+| Text | State holders emit keys (enums), not sentences; the UI owns wording and localisation. |
+| Refresh | 15 s while visible, 5 s for a live run, none when the item is final (see [technical-details.md](./technical-details.md#refresh-policy)). |
+
+## Built UI
+
+### Screen 15: First-run setup, step 1 (address check)
+
+State holder `FirstRunStateHolder`. FR-003 and FR-009. The address of the Paperclip server is checked as you type, by the shared core:
 
 - it must start with `https://`; `http://` is accepted only for `localhost` and `10.0.2.2` in debug builds;
 - scheme and host are lower-cased and a trailing `/` is removed; a path prefix such as `/paperclip` and an explicit port are kept;
 - user names and passwords, query strings and fragments are refused, with a message saying what to remove.
 
-| Today (iPhone, running) | Planned (design mock) |
+"Continue to pairing" is enabled for a valid address and does nothing yet. The rest of the flow (name, server check, pairing, company, app lock) is in the state holder and tested, with no view.
+
+| Built (iPhone, running) | Design mock (target) |
 |---|---|
-| <img src="images/ios-first-run.png" alt="The first-run screen as built today" width="240"> | <img src="images/design-first-run.png" alt="The first-run screen as designed" width="240"> |
+| <img src="images/ios-first-run.png" alt="Built: the first-run screen with an address field and a disabled Continue button" width="240"> | <img src="images/design-first-run.png" alt="Design mock of the first-run setup screen" width="240"> |
 
-### Inbox, Decision, Approval and Budget incident behaviour (shared core, slice 1a-2)
+## State holders only (no UI yet)
 
-The shared Kotlin core now holds the rules for screens 1, 2, 3 and 12; the iPhone and Android screens that draw them come in Phase 2. Behaviour a screen can rely on:
+Each screen below is a `StateFlow<State>` plus `onIntent(Intent)` in `shared/presentation`, reached through `PaperclipGraph`. "Mock" means a design image exists; the rest have no image.
 
-- **Inbox (FR-030 to FR-035).** Cards are grouped Decide now (decide-by due today or overdue, UTC days), This week and Whenever; severity only orders cards inside a group. The badge is the server's `deskBadgeCount`. Filter chips come from the server's counts per source kind. Inline Approve and Reject (Reject asks for a note) appear on approvals the server marks resolvable; Keep paused and Raise and resume appear on hard-stop budget alerts, and a raise opens the Budget incident sheet. Anything else opens its detail screen or the web app. Snooze offers an hour, tonight (until 20:00), tomorrow 08:00 and next Monday 08:00 in the phone's time zone; Dismiss and Snooze can be undone for five seconds. Decision detail offers the same Snooze in its top bar when it was opened from an Inbox card, and hides it otherwise. The list shows the cached feed first with "Updated <time>", and offline every action is disabled with a reason.
-- **Decision (FR-040 to FR-044).** Every option shows what it will do before you choose. Destructive options, and any option that cancels an issue tree, are marked and ask for Face ID or your device PIN. Required inputs are checked before anything is sent. After deciding, each effect shows executed, skipped or failed. A decision that was decided, expired or cancelled elsewhere shows that final state and no options.
-- **Approval (FR-050, FR-051).** The payload is shown per type. Approve and Reject work from pending and from revision requested; Request revision only from pending and needs a note; Reject needs a note and device authentication.
-- **Budget incident (FR-052).** Keep paused is open to operators and owners. Raise and resume is owner only, needs an amount above the observed spend, device authentication, and shows the server's reason if it refuses.
-- **Viewers** see everything and can change nothing. A tap while an action is already running is ignored, and a timed-out action is never sent twice: the screen reads the item again and shows what really happened.
+### Setup and settings
 
-### Work, Issue, Agents, Run and Factory home behaviour (shared core, slice 1a-3)
+| # | Screen | State holder | What it shows and lets you do | Auth, roles, offline |
+|---|---|---|---|---|
+| 15 | First-run setup | `FirstRunStateHolder` | Steps Address, Pair, Secure, Done. Address check; server check (`GET /api/health`) that refuses `local_trusted`, unknown modes, a server awaiting bootstrap, and one that is not ready; name; pairing by approving in the browser, or a pasted board key; default company; app lock; an option to run on the demo data. | Roles do not apply (local). Pairing cancel or expiry leaves nothing stored. |
+| 8 | Factories | `FactoriesStateHolder` | Your factories in order with status (signed in, signed out, needs re-pairing), key expiry (valid, expiring soon, expired, none), reachable companies with your role; select a factory and company. | `isOffline`, `canRefresh`. No device authentication. |
+| 16 | Manage factories | `ManageFactoriesStateHolder` | Reorder; remove a factory after a confirmation that lists what goes (configuration, cached data, stored key, server key). | Remove needs device authentication. |
+| 9 | Add / edit factory | `EditInstanceStateHolder` | Name, address, server check, default company, your roles, certificate pins (SHA-256 SPKI, base64), re-pair, sign out, remove. Changing the address drops the stored key and leaves the factory signed out (ADR-012). | Remove needs device authentication; sign out always deletes local secrets and reports whether the server revoke was confirmed. |
+| 13 | Settings and profile | `SettingsStateHolder` | Device name (1 to 60 characters), app lock on or off, idle period (immediately, 1, 5, 15, 30 minutes or 1 hour), the factories with status, the signed-in person, paired devices and board keys with revoke, sign out of one factory or everywhere. "Destructive actions always ask" is always on. | Revoke and sign out need no authentication. |
+| - | App shell | `AppStateHolder` | Lock state (locked on a cold launch when app lock is on; relocks after the idle period), whether to show setup or the tabs, the selected factory and company. | Unlock asks the device owner. |
 
-The shared core holds the rules for screens 4, 5, 6, 7, 10 and 11. Behaviour a screen can rely on:
+### Decide and intervene
 
-- **Work list (FR-060, FR-062).** Saved filters All open, Blocked, Critical and high, In review and Assigned to me, plus search that finds an issue by its identifier in any spelling (`PAP-1182`, `pap1182`). The list loads in pages. Critical and high is filtered on the phone because the server cannot filter by priority. An operator or owner can create an issue; a viewer cannot.
-- **Issue (FR-061 to FR-063).** Header with status, priority, assignee, project, parent and subtasks; tabs Thread (comments and interactions in time order), Plan (read only), Runs and Files. Comments can ask to reopen a closed issue or interrupt the running agent. Status and assignee can be changed and a subtask added. Interactions are forms: suggested tasks (all selected to start), questions, a confirmation, a checkbox confirmation with its range, and per-item verdicts with a reason for reject. A form says what is missing before anything is sent. A card addressed to someone else, already resolved, or of a kind the app does not know shows why it is read only; unknown kinds say "open in the web app".
-- **Agents (FR-070, FR-071).** Needs attention (error, budget-paused, waiting for approval), Running, Paused and Idle, with the lifecycle state shown when it is not ready. Pause asks you to confirm and then to authenticate; Resume is not offered for a budget pause (the budget incident lifts it); Run now needs no prompt. Setting an agent's monthly budget is owner only.
-- **Agent detail (FR-072).** Role, who it reports to, its current issue (from its run in progress), recent runs and month spend against budget.
-- **Run viewer (FR-075).** Events and a log tail that follows the end until you scroll up. Cancel asks you to confirm and to authenticate; a viewer cannot cancel; a run that finished meanwhile shows its final state.
-- **Factory home (FR-078).** Tiles for agents, tasks, month spend against budget, pending approvals and budget incidents; the runs in progress; rolling spend for 5 hours, 24 hours and 7 days.
-- **Everywhere.** Offline, screens keep what they showed and every action is disabled with the reason; a second tap while an action runs is ignored; a timed-out action is sent once and the screen reads the item again.
+| # | Screen | State holder | What it shows and lets you do | Auth, roles, offline |
+|---|---|---|---|---|
+| 1 | Inbox | `InboxStateHolder` | Cards grouped Decide now, This week, Whenever; filter chips by source kind with server counts; "<n> new or due today" badge (the server's `deskBadgeCount`); "Updated" time; load more. Inline Approve and Reject on resolvable approvals, Keep paused and Raise and resume on hard-stop budget alerts; Snooze (an hour, tonight 20:00, tomorrow 08:00, next Monday 08:00 in the phone's time zone), Dismiss and set decide-by, with a five-second undo. | Reject asks for a note and device authentication. Viewers and offline: actions disabled with a reason. Cached first page shown first. |
+| 2 | Decision detail | `DecisionStateHolder` | Title, body, agent, decide-by, expiry, each option with the effects it will run (comment, create or update issue, assign, cancel issue tree, resolve blocker), required inputs, then the result of each effect (executed, skipped, failed). Snooze in the top bar only when opened from an Inbox card. A decision decided, expired or cancelled elsewhere shows its final state and no options. | Destructive options, and any that cancel an issue tree, need device authentication. A viewer cannot decide. Offline: disabled. |
+| 3 | Approval detail | `ApprovalStateHolder` | Payload per approval type, linked issues, comments. Approve (from pending or revision requested), Reject (note required), Request revision (pending only, note required), Comment. | Reject needs device authentication. Viewer: read only. |
+| 12 | Budget incident sheet | `BudgetIncidentStateHolder` | The incident with observed spend and limit; Keep paused, or Raise and resume with an amount that must exceed the observed spend. Shows `KeptPaused`, `Raised` or `NoLongerActive`; it cannot tell resolved from dismissed (ADR-029). | Keep paused: Operator and Owner. Raise: Owner only and needs device authentication. |
+| 4 | Issue detail | `IssueStateHolder` | Header (status, priority, assignee, project, parent, subtasks); tabs Thread, Plan (read only), Runs, Files; comment (optionally reopen or interrupt); change status or assignee; add subtask; interaction forms (suggested tasks, questions, confirmation, checkbox confirmation, per-item verdicts). Forms say what is missing before sending; a card for someone else, already resolved or of an unknown kind is read only. | Viewer cannot comment or respond. No device authentication. |
+| 7 | Run viewer | `RunViewerStateHolder` | Run events and a log tail that follows the end until you scroll up (`UserScrolled`), then `JumpToLatest`. | Cancel run: confirm, then device authentication; Operator and Owner. A run that finished shows its final state. |
 
-## Designed, not built yet
+### Know
 
-| Screen | Image |
+| # | Screen | State holder | What it shows and lets you do | Auth, roles, offline |
+|---|---|---|---|---|
+| 5 | Factory home | `FactoryHomeStateHolder` | Tiles for agents, tasks, month spend against budget, pending approvals and budget incidents; runs in progress; rolling spend for 5 hours, 24 hours and 7 days. | Read only. Keeps last data offline. |
+| 6 | Agents | `AgentsStateHolder` | Needs attention (error, budget-paused, waiting for approval), Running, Paused, Idle. Pause, Resume, Run now. | Pause: confirm, then device authentication. Resume is not offered for a budget pause. Run now needs no prompt. Operator and Owner. |
+| 11 | Agent detail | `AgentDetailStateHolder` | Role, reports to, current issue (from its live run), recent runs, month spend against budget. Pause, Resume, Run now, set monthly budget. | Same as Agents; the budget is Owner only, no authentication. |
+| 10 | Work list | `WorkListStateHolder` | Saved filters All open, Blocked, Critical and high, In review, Assigned to me; search by identifier in any spelling (`PAP-1182`, `pap1182`); paged. Create an issue. | Operator and Owner create; Viewer cannot. "Critical and high" is filtered on the phone. |
+
+### Not started
+
+| # | Screen | Note |
+|---|---|---|
+| 14 | Notification settings | Phase 3 (FR-083, FR-086). No state holder. Content-free notifications by default. |
+
+## Design mocks
+
+Mocks of seven screens from the design file. These are **targets**, not built UI.
+
+| Screen | Mock |
 |---|---|
-| Inbox: what needs a decision now (FR-030 to FR-035) | <img src="images/design-inbox.png" alt="Inbox design mock" width="200"> |
-| Decision: every option's effects shown before you choose (FR-040 to FR-044) | <img src="images/design-decision.png" alt="Decision design mock" width="200"> |
-| Factories: your Paperclip instances and their key status (FR-001 to FR-008) | <img src="images/design-factories.png" alt="Factories design mock" width="200"> |
-| Manage factories: reorder and remove, with a confirmation that needs Face ID (FR-006) | <img src="images/design-manage-factories.png" alt="Manage factories design mock" width="200"> |
-| Edit factory: name, address, default company, your roles, certificate pin (FR-001, FR-016, FR-017) | <img src="images/design-edit-factory.png" alt="Edit factory design mock" width="200"> |
-| Settings and profile: device name, app lock, per-factory entries (FR-014, FR-017) | <img src="images/design-settings.png" alt="Settings design mock" width="200"> |
+| Inbox (screen 1, FR-030 to FR-035) | <img src="images/design-inbox.png" alt="Design mock: Inbox" width="200"> |
+| Decision (screen 2, FR-040 to FR-044) | <img src="images/design-decision.png" alt="Design mock: Decision detail" width="200"> |
+| Factories (screen 8, FR-001 to FR-008) | <img src="images/design-factories.png" alt="Design mock: Factories" width="200"> |
+| Manage factories (screen 16, FR-006) | <img src="images/design-manage-factories.png" alt="Design mock: Manage factories" width="200"> |
+| Edit factory (screen 9, FR-001, FR-016, FR-017) | <img src="images/design-edit-factory.png" alt="Design mock: Edit factory" width="200"> |
+| Settings and profile (screen 13, FR-014, FR-017) | <img src="images/design-settings.png" alt="Design mock: Settings and profile" width="200"> |
+| First-run setup (screen 15, FR-003, FR-009) | see the table above |
 
-The rest of the screens (Approval, Issue, Factory home, Agents, Run viewer, Work list, notifications) are in the PRD's screen inventory.
+The mocks show a few things the core does not model, so the demo data omits them: an agent's next heartbeat, the "Tailscale" network label, the default company name per factory in Settings, a company count in Manage factories, and the key tail in Edit factory. The mock lists the Inbox approval second in "Decide now"; the core sorts a group by severity (FR-030), so the critical budget stop comes second.
