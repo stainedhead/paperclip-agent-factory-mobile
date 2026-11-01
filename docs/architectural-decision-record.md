@@ -121,3 +121,27 @@ One entry per significant decision, newest last. Format: context, decision, cons
 **Context.** "Tonight", "tomorrow" and "next week" depend on the person's local time; `Clock` is UTC only. The server rejects a `snoozedUntil` that is not in the future.
 **Decision.** A `DeviceTimeZone` port (with `FakeDeviceTimeZone`) supplies the zone. Presets: one hour = now + 1 h; tonight = 20:00 local today; tomorrow = 08:00 local tomorrow; next week = 08:00 local on the next Monday (a Monday means seven days ahead). `SnoozeItem` refuses a time that is not after now (for example "tonight" after 20:00, which the holder does not offer). Grouping stays UTC.
 **Consequences.** Daylight-saving changes are handled by kotlinx-datetime; tests fix the zone.
+
+## ADR-021: A request that the server refuses to a viewer is still blocked in the app, and owner-only budget stays client-side
+
+**Context.** Research A2/W4: the server rejects every non-GET for a `viewer` membership, but it lets an operator set an agent budget (no permission key) and never asks for device authentication.
+**Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD) and has no device authentication (FR-014 lists "raising a budget" for incidents only; ADR in slice 1a-1).
+**Consequences.** A viewer or an operator never reaches the gateway for a budget; a role change mid-session is handled by the server's 403 (`Forbidden`).
+
+## ADR-022: Saved filters map to server params, except priority which is filtered on the client
+
+**Context.** Research W1: the server has no `priority` filter and the web has none of the PRD's five saved views by those names.
+**Decision.** `SavedFilter` = `AllOpen` (`status=backlog,todo,in_progress,in_review,blocked`), `Blocked` (`attention=blocked`), `InReview` (`status=in_review`), `AssignedToMe` (`assigneeUserId=me`, restricted to open statuses) and `CriticalAndHigh` (all open statuses from the server, then `priority in {critical, high}` on the device by `SavedFilter.matches`). Search sends `q` and keeps the saved filter. The list uses `view=compact` and pages by `limit`/`offset`; the gateway takes an `IssueQuery` so Phase 1b builds the URL.
+**Consequences.** `CriticalAndHigh` can show fewer than a page; the holder keeps loading while a page was full. The fake applies the same rules as the server.
+
+## ADR-023: Interactions are a sealed domain type with five supported kinds; anything else is `Unsupported` and is never sent
+
+**Context.** Research W7/W8: six server kinds with large payloads; `connection_intent` has other endpoints; the resolver rule for a board user is addressee plus creator plus viewer role.
+**Decision.** `Interaction` is a sealed interface: `SuggestTasks`, `AskUserQuestions`, `RequestConfirmation`, `RequestCheckboxConfirmation`, `RequestItemVerdicts` (only the fields a form renders) and `Unsupported(kind)` (also for `connection_intent`). `Interaction.answerFor` builds a typed `InteractionAnswer` that validates required answers, reasons and selection counts on the device; `RespondToInteraction` maps an answer to exactly one gateway call and never takes an `Unsupported`. `resolverAudience` reuses `ResolverAudience.allowsUser`; an interaction that is not for the user, not pending, or has an `acceptanceBlocker` is read only.
+**Consequences.** The mobile app cannot send an invalid payload; the server's 422 remains the backstop.
+
+## ADR-024: Names are joined on the device, "current issue" comes from live runs, and the tail is by byte offset and sequence
+
+**Context.** Research W2/A1/R1: the issue, comment and agent rows carry ids, not names; there is no current-issue field; logs are read by byte offset and events by sequence number.
+**Decision.** Gateways return domain objects with the ids; `LoadIssue` and `LoadAgent` join assignee and author names from `AgentGateway.list`. An agent's current issue is the `issueId` of its active live run. `TailRunLog` takes a `LogCursor(offset)` and returns the new text and the next cursor; `RunGateway.events(afterSeq)` the same by sequence. The Run viewer keeps `autoScroll = true` until the user scrolls up (`UserScrolled` intent) and turns it back on at `JumpToLatest`.
+**Consequences.** The polling policy of slice 1a-4 only has to call the holders' `Refresh` intent at the right interval.
