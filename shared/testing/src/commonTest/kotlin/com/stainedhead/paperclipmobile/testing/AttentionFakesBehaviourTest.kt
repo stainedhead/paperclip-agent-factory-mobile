@@ -124,6 +124,32 @@ class AttentionFakesBehaviourTest {
         }
 
     @Test
+    fun `a decision whose effects are still running reports running until the configured reads have passed`() =
+        runTest {
+            val gateway = FakeDecisionGateway()
+            val id = DecisionId("dec-1")
+            gateway.runningReads = 2
+
+            val decided = gateway.decide(scope, id, "ship", emptyMap(), "k").value()
+            decided.outcome?.executionStatus shouldBe ExecutionStatus.Running
+            gateway
+                .get(scope, id)
+                .value()
+                .outcome
+                ?.executionStatus shouldBe ExecutionStatus.Running
+            gateway
+                .get(scope, id)
+                .value()
+                .outcome
+                ?.executionStatus shouldBe ExecutionStatus.Running
+            gateway
+                .get(scope, id)
+                .value()
+                .outcome
+                ?.executionStatus shouldBe ExecutionStatus.Succeeded
+        }
+
+    @Test
     fun `dismissing a decision marks it dismissed`() =
         runTest {
             val gateway = FakeDecisionGateway()

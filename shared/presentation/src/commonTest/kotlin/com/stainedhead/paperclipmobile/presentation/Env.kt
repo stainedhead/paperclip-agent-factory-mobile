@@ -4,7 +4,10 @@ import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
 import com.stainedhead.paperclipmobile.application.ResolveCompanyContext
 import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
 import com.stainedhead.paperclipmobile.application.approval.ApproveApproval
+import com.stainedhead.paperclipmobile.application.approval.CommentOnApproval
+import com.stainedhead.paperclipmobile.application.approval.LoadApproval
 import com.stainedhead.paperclipmobile.application.approval.RejectApproval
+import com.stainedhead.paperclipmobile.application.approval.RequestRevision
 import com.stainedhead.paperclipmobile.application.attention.AvailableSnoozePresets
 import com.stainedhead.paperclipmobile.application.attention.DismissItem
 import com.stainedhead.paperclipmobile.application.attention.LoadInbox
@@ -26,7 +29,12 @@ import com.stainedhead.paperclipmobile.application.auth.SaveManualBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SignOutEverywhere
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
 import com.stainedhead.paperclipmobile.application.auth.SignedOutMarker
+import com.stainedhead.paperclipmobile.application.budget.LoadBudgetIncident
 import com.stainedhead.paperclipmobile.application.budget.ResolveBudgetIncident
+import com.stainedhead.paperclipmobile.application.decision.DecideDecision
+import com.stainedhead.paperclipmobile.application.decision.DismissDecision
+import com.stainedhead.paperclipmobile.application.decision.LoadDecision
+import com.stainedhead.paperclipmobile.application.decision.PollDecisionExecution
 import com.stainedhead.paperclipmobile.application.instance.AddInstance
 import com.stainedhead.paperclipmobile.application.instance.GetInstance
 import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
@@ -137,6 +145,32 @@ class Env(
             RejectApproval(approvals, deviceAuth),
             ResolveBudgetIncident(budgets, deviceAuth),
             AvailableSnoozePresets(clock, timeZone),
+        )
+
+    val decision =
+        DecisionUseCases(
+            resolveContext,
+            LoadDecision(decisions),
+            DecideDecision(decisions, deviceAuth, ids),
+            DismissDecision(decisions),
+            PollDecisionExecution(decisions),
+        )
+
+    val approval =
+        ApprovalUseCases(
+            resolveContext,
+            LoadApproval(approvals),
+            ApproveApproval(approvals),
+            RejectApproval(approvals, deviceAuth),
+            RequestRevision(approvals),
+            CommentOnApproval(approvals),
+        )
+
+    val budget =
+        BudgetUseCases(
+            resolveContext,
+            LoadBudgetIncident(budgets),
+            ResolveBudgetIncident(budgets, deviceAuth),
         )
 
     val firstRun =

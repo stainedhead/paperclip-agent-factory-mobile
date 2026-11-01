@@ -29,6 +29,7 @@ class FakeDecisionGateway(
     val decidedWith = mutableListOf<DecideCall>()
     var effectStatuses: List<EffectStatus>? = null
     var runningReads = 0
+    private val settling = mutableMapOf<DecisionId, DecisionOutcome>()
     var serverChangesOnFailure: ((Decision) -> Decision)? = null
 
     data class DecideCall(
@@ -55,11 +56,36 @@ class FakeDecisionGateway(
     ): DomainResult<Decision> {
         record("get")?.let { return DomainResult.Failure(it) }
         val decision = store[id] ?: return DomainResult.Failure(DomainError.NotFound)
-        if (decision.status == DecisionStatus.Decided && runningReads > 0 && decision.outcome?.isTerminal == true) {
-            runningReads -= 1
-            return DomainResult.Success(decision.copy(outcome = DecisionOutcome(ExecutionStatus.Running, emptyList())))
+        return DomainResult.Success(readWithSettling(id, decision))
+    }
+
+    /** What a read sees while the effects are still running, and the settled decision afterwards. */
+    private fun readWithSettling(
+        id: DecisionId,
+        decision: Decision,
+    ): Decision {
+        val final = settling[id]
+        val running = DecisionOutcome(ExecutionStatus.Running, emptyList())
+        return when {
+            final != null && runningReads > 0 -> {
+                decision.also { runningReads -= 1 }
+            }
+
+            final != null -> {
+                decision.copy(outcome = final).also {
+                    settling.remove(id)
+                    store[id] = it
+                }
+            }
+
+            decision.status == DecisionStatus.Decided && runningReads > 0 && decision.outcome?.isTerminal == true -> {
+                decision.copy(outcome = running).also { runningReads -= 1 }
+            }
+
+            else -> {
+                decision
+            }
         }
-        return DomainResult.Success(decision)
     }
 
     override suspend fun decide(
@@ -86,8 +112,15 @@ class FakeDecisionGateway(
                 inputValues = inputValues,
                 outcome = outcomeFor(option),
             )
-        store[id] = decided
-        return DomainResult.Success(decided)
+        val stored =
+            if (runningReads > 0) {
+                settling[id] = decided.outcome ?: DecisionOutcome(ExecutionStatus.Succeeded, emptyList())
+                decided.copy(outcome = DecisionOutcome(ExecutionStatus.Running, emptyList()))
+            } else {
+                decided
+            }
+        store[id] = stored
+        return DomainResult.Success(stored)
     }
 
     private fun problem(

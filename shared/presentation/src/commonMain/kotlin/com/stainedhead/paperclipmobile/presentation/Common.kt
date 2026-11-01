@@ -169,3 +169,9 @@ internal fun RevokeOutcome.toUi() =
         RevokeOutcome.Unconfirmed -> ServerKeyOutcome.Unconfirmed
         RevokeOutcome.NotAttempted -> ServerKeyOutcome.NotAttempted
     }
+
+/** Which factory and company a screen is for. Strings, because Swift passes ids it got from the screen before. */
+data class CompanyTarget(
+    val instanceId: String,
+    val companyId: String,
+)
