@@ -1,0 +1,7 @@
+# Extends gitleaks' default rules. Test fixtures use obviously fake values prefixed TESTONLY (AGENTS.md).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Obviously fake test-only values"
+regexes = ['''TESTONLY''', '''pcp_board_TESTONLY''']

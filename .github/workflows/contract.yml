@@ -1,0 +1,52 @@
+name: contract
+
+# Starts the pinned Paperclip server (authenticated mode) in Docker and checks it. Phase 1b adds the Kotlin contract
+# tests to this job. Nightly it also checks the newest published image so API drift shows up early.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * *"
+  pull_request:
+    paths:
+      - "docker/paperclip-test/**"
+      - "scripts/paperclip-test-server.sh"
+      - "gradle/libs.versions.toml"
+      - "shared/infrastructure/api/**"
+      - ".github/workflows/contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  pinned:
+    name: pinned server
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start the pinned Paperclip server
+        run: ./scripts/paperclip-test-server.sh up
+      - name: Contract tests
+        run: echo "No contract tests yet; Phase 1b adds ./gradlew contractTest here."
+      - name: Server logs
+        if: failure()
+        run: ./scripts/paperclip-test-server.sh dump
+      - name: Stop the server
+        if: always()
+        run: ./scripts/paperclip-test-server.sh down
+
+  latest:
+    name: latest server (drift check)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    env:
+      PAPERCLIP_SERVER_VERSION: latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start the latest Paperclip server
+        run: ./scripts/paperclip-test-server.sh up
+      - name: Stop the server
+        if: always()
+        run: ./scripts/paperclip-test-server.sh down
