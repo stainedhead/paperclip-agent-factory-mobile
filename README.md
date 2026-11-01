@@ -35,7 +35,7 @@ Needs a current Xcode (developed with 27.2), JDK 21 (Gradle finds or downloads i
 open iosApp/iosApp.xcodeproj         # after ./scripts/ios-test.sh, run the "iosApp" scheme on a simulator
 ```
 
-Demo mode (the whole app on fakes, no server) arrives with Phase 1a; today the app contains only the first-run address check.
+Demo mode (the whole app on fakes, no server) is being built in Phase 1a. `PaperclipCore.createGraph` already runs every slice 1a-1 state holder (first run, factories, manage, add/edit, settings, app shell) on the shared fakes; the iOS app still renders only the first-run address step until the Phase 2i screens land.
 
 ### A Paperclip server for contract tests
 

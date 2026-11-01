@@ -34,6 +34,14 @@ Package root: `com.stainedhead.paperclipmobile`. Every dependency version is in 
 
 Kotlin/Native renames functions that start with `new`, `alloc`, `copy`, `mutableCopy` or `init` (for example `newFoo` becomes `doNewFoo` in Swift). A Konsist rule keeps the Swift-facing modules free of those names.
 
+## Slice 1a-1: factories, secrets, settings, auth, roles
+
+- **Domain** (`shared/domain`): `Instance`, `Company`, `AppSettings`, `PairingChallenge`, `BoardKey`, `UserProfile`; value objects `InstanceId`, `CompanyId`, `Secret` (redacts `toString()`, can be wiped, `reveal()` hidden from Objective-C), `SpkiPin`, `SecretKey` (`instance/{id}/{name}`); `DomainError` (nine variants) and `DomainResult`; `Role`, `Action`, `Permissions` (one Role x Action table), `DeviceAuthPolicy` (which actions need device authentication), `AppLockPolicy`. Ports live in `domain.port`: `InstanceRepository`, `SecretStore`, `AppSettingsStore`, `Clock`, `IdGenerator`, `Biometrics`, `Connectivity`, `PairingBrowser`, `HealthGateway`, `AuthGateway`.
+- **Application**: one use case per action under `application.instance`, `application.auth` and `application.settings`. Destructive use cases call `DeviceAuthGuard` first; no gateway or repository call happens unless it returns Approved. Reads go through `retryingRead` (500 ms, 1 s, 2 s backoff, up to 3 retries); mutations are never retried. `PairInstance` polls with `delay()` and the `Clock` port, writes the token to the `SecretStore` only after approval and wipes every in-memory secret on every exit (ADR-012).
+- **Presentation**: `FirstRunStateHolder` (screen 15), `FactoriesStateHolder` (8), `ManageFactoriesStateHolder` (16), `EditInstanceStateHolder` (9, add and edit), `SettingsStateHolder` (13) and `AppStateHolder` (app lock, selected factory and company). Each takes a use-case bundle, an injected `CoroutineScope` and exposes `state` and `onIntent`; `close()` cancels its work. Errors and notices are enum keys (`ErrorKey`, `DeviceAuthIssue`, ...).
+- **Testing**: a fake per port with call counters (`FakeAuthGateway.count("revokeCurrentKey")`), `TestData` fixtures, and contract suites for `InstanceRepository`, `SecretStore` and `AppSettingsStore` (ADR-014).
+- **Umbrella**: `PaperclipCore.createGraph(allowInsecureLocal)` builds a Koin graph on the fakes (demo mode) and offers `create...StateHolder()` for each screen.
+
 ## Quality gates
 
 `./gradlew check lint` runs all of these; `shared.yml` runs it on every pull request.
@@ -68,5 +76,6 @@ Dependabot (`.github/dependabot.yml`) proposes weekly grouped updates for Gradle
 ## Known server facts (Paperclip 2026.1023.0)
 
 - Board keys are rejected on the live-events WebSocket (`/api/companies/{id}/events/ws` accepts agent keys and browser sessions), so the app polls.
-- `/api/health` returns `deploymentMode` and `deploymentExposure` to anyone; the server `version` is only in the response to signed-in callers.
+- `/api/health` returns `deploymentMode` and `deploymentExposure` to anyone; the server `version` is only in the response to signed-in callers. The `!db` branch omits the exposure and the 503 branch omits the mode, so the probe fails closed.
+- The board API token is returned when a pairing challenge is created, before the person approves; the app holds it in memory and stores it only on approval. The company role comes from `GET /api/cli-auth/me` `memberships[].membershipRole`; `viewer` is enforced by the server (ADR-011).
 - A fresh authenticated server reports `bootstrapStatus: bootstrap_pending` (no users yet). Phase 1b contract tests must complete the bootstrap invite to create the first board user before they can pair.
