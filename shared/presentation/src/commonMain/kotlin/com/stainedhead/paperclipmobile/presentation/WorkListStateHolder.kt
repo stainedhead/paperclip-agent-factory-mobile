@@ -1,8 +1,10 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.Issue
 import com.stainedhead.paperclipmobile.domain.IssueFilter
 import com.stainedhead.paperclipmobile.domain.IssueQuery
@@ -56,6 +58,17 @@ class WorkListStateHolder(
     private val mutableState = MutableStateFlow(WorkListState())
     private var loadJob: Job? = null
     val state: StateFlow<WorkListState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(WorkListIntent.Refresh) },
+            {
+                it is Invalidation.Issue
+            },
+        )
 
     init {
         this.scope.launch {

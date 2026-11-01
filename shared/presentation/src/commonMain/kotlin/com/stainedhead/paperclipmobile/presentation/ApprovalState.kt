@@ -112,6 +112,8 @@ data class ApprovalState(
     val actionsDisabledReason: ActionsDisabledReason? = null,
     val role: RoleUi? = null,
     val updatedAtEpochMillis: Long? = null,
+    /** 15 seconds while the approval can still change, 0 once it is resolved (PRD FR-090). */
+    val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
 )

@@ -1,7 +1,9 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.DashboardSummary
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +29,17 @@ class FactoryHomeStateHolder(
     private val model = MutableStateFlow(FactoryHomeState())
     private val mutableState = MutableStateFlow(FactoryHomeState())
     val state: StateFlow<FactoryHomeState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(FactoryHomeIntent.Refresh) },
+            {
+                true
+            },
+        )
 
     init {
         this.scope.launch {

@@ -85,6 +85,14 @@ internal object ApprovalRenderer {
             actionsDisabledReason = disabledReason(online, role),
             role = role?.toUi(),
             updatedAtEpochMillis = model.loadedAt?.toEpochMilliseconds(),
+            refreshIntervalSeconds =
+                if (approval != null &&
+                    !approval.status.isResolvable
+                ) {
+                    0
+                } else {
+                    SCREEN_REFRESH_SECONDS
+                },
             error = model.error,
             feedback = model.feedback,
         )

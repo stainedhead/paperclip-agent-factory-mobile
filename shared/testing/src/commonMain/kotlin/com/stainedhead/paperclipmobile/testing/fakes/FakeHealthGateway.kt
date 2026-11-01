@@ -8,9 +8,15 @@ import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.ServerStatus
 import com.stainedhead.paperclipmobile.domain.port.HealthGateway
 
+/**
+ * A scripted health endpoint: [response] answers every address, and [responses] answers a specific address (the
+ * contract suite needs several situations from one fake).
+ */
 class FakeHealthGateway(
     var response: DomainResult<HealthReport> = DomainResult.Success(healthy()),
 ) : HealthGateway {
+    val responses = mutableMapOf<BaseUri, DomainResult<HealthReport>>()
+
     var probeCalls = 0
         private set
 
@@ -20,7 +26,7 @@ class FakeHealthGateway(
     override suspend fun probe(baseUri: BaseUri): DomainResult<HealthReport> {
         probeCalls += 1
         lastProbed = baseUri
-        return response
+        return responses[baseUri] ?: response
     }
 
     companion object {

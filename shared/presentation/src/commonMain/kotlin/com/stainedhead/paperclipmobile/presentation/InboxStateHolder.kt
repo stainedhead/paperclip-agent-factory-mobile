@@ -1,8 +1,10 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +43,17 @@ class InboxStateHolder(
     private val renderer = InboxRenderer(useCases.snoozePresets, clock)
     private val mutableState = MutableStateFlow(InboxState())
     val state: StateFlow<InboxState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(InboxIntent.Refresh) },
+            {
+                it == Invalidation.AttentionFeed
+            },
+        )
 
     init {
         this.scope.launch {

@@ -1,5 +1,7 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.IssueId
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
@@ -40,6 +42,18 @@ class IssueStateHolder(
     private val edits = IssueEdits(session, loader)
     private val interactions = IssueInteractions(session)
     val state: StateFlow<IssueState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(IssueIntent.Refresh) },
+            {
+                (it is Invalidation.Issue && it.issueId == issueId) ||
+                    (it is Invalidation.Run && it.issueId == issueId)
+            },
+        )
 
     init {
         this.scope.launch {

@@ -61,6 +61,7 @@ internal object BudgetIncidentRenderer {
             actionsDisabledReason = disabledReason(online, role),
             role = role?.toUi(),
             updatedAtEpochMillis = model.loadedAt?.toEpochMilliseconds(),
+            refreshIntervalSeconds = if (incident != null && !open) 0 else SCREEN_REFRESH_SECONDS,
             error = model.error,
             feedback = model.feedback,
         )

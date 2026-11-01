@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.MutationResult
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.CompanyScope
@@ -8,6 +9,7 @@ import com.stainedhead.paperclipmobile.domain.Decision
 import com.stainedhead.paperclipmobile.domain.DecisionId
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +48,17 @@ class DecisionStateHolder(
     private val model = MutableStateFlow(DecisionModel(snoozeKey = target.dismissalKey))
     private val mutableState = MutableStateFlow(DecisionState())
     val state: StateFlow<DecisionState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(DecisionIntent.Refresh) },
+            {
+                it == Invalidation.AttentionFeed
+            },
+        )
 
     init {
         this.scope.launch {

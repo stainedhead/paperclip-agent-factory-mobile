@@ -123,6 +123,8 @@ data class DecisionState(
     val actionsDisabledReason: ActionsDisabledReason? = null,
     val role: RoleUi? = null,
     val updatedAtEpochMillis: Long? = null,
+    /** 15 seconds while the decision is open, 0 once it is final (PRD FR-090). */
+    val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
 )

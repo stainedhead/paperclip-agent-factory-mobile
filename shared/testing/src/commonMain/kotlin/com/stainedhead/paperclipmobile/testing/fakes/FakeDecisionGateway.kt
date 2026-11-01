@@ -18,7 +18,8 @@ import com.stainedhead.paperclipmobile.testing.AttentionFixtures
  * A decision endpoint with the server's rules (research Q4/Q8): deciding a non-open decision is a Conflict, unknown
  * options and bad inputs are Rejected, and the response carries per-effect results. [runningReads] makes the first
  * N reads of a decided decision report `running`, so polling can be tested. [failures] and [afterFailureHook] script
- * errors; a `decide` failure can still change the server state through [serverChangesOnFailure].
+ * errors. A replay of `decide` with the key that decided it returns the decision (`svc/decisions.ts:690-696`). A
+ * `decide` failure can still change the server state through [serverChangesOnFailure].
  */
 class FakeDecisionGateway(
     decisions: List<Decision> = listOf(AttentionFixtures.decision()),
@@ -30,6 +31,7 @@ class FakeDecisionGateway(
     var effectStatuses: List<EffectStatus>? = null
     var runningReads = 0
     private val settling = mutableMapOf<DecisionId, DecisionOutcome>()
+    private val decidedKeys = mutableMapOf<DecisionId, String>()
     var serverChangesOnFailure: ((Decision) -> Decision)? = null
 
     data class DecideCall(
@@ -102,6 +104,17 @@ class FakeDecisionGateway(
             serverChangesOnFailure?.let { store[id] = it(current) }
             return DomainResult.Failure(scripted)
         }
+        if (!current.isOpen && decidedKeys[id] == idempotencyKey) return DomainResult.Success(current)
+        return applyDecision(current, optionId, inputValues, idempotencyKey)
+    }
+
+    private fun applyDecision(
+        current: Decision,
+        optionId: String,
+        inputValues: Map<String, String>,
+        idempotencyKey: String,
+    ): DomainResult<Decision> {
+        val id = current.id
         val option = current.options.firstOrNull { it.id == optionId }
         val problem = problem(current, option, inputValues)
         if (problem != null || option == null) return DomainResult.Failure(problem ?: DomainError.NotFound)
@@ -120,6 +133,7 @@ class FakeDecisionGateway(
                 decided
             }
         store[id] = stored
+        decidedKeys[id] = idempotencyKey
         return DomainResult.Success(stored)
     }
 

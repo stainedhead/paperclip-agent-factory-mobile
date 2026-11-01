@@ -1,7 +1,9 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.HeartbeatRun
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.LogTail
 import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.RunEvent
@@ -48,6 +50,17 @@ class RunViewerStateHolder(
     private val model = MutableStateFlow(RunModel())
     private val mutableState = MutableStateFlow(RunViewerState())
     val state: StateFlow<RunViewerState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(RunViewerIntent.Refresh) },
+            {
+                it is Invalidation.Run && it.runId == runId
+            },
+        )
 
     init {
         this.scope.launch {

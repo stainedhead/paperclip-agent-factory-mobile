@@ -1,9 +1,11 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGrouping
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
@@ -42,6 +44,17 @@ class AgentsStateHolder(
     private val model = MutableStateFlow(AgentsModel())
     private val mutableState = MutableStateFlow(AgentsState())
     val state: StateFlow<AgentsState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(AgentsIntent.Refresh) },
+            {
+                it is Invalidation.Agent || it is Invalidation.Run
+            },
+        )
 
     init {
         this.scope.launch {

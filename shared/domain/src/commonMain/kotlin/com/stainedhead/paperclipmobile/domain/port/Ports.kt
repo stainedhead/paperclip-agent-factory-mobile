@@ -11,6 +11,7 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.LiveEvent
 import com.stainedhead.paperclipmobile.domain.PairingChallenge
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -90,6 +91,19 @@ enum class BiometricResult {
     Failed,
     LockedOut,
     Unavailable,
+}
+
+/**
+ * The server's live events (PRD FR-090, FR-091). Board keys are rejected on the WebSocket of the pinned server, so
+ * Phase 1b ships no real adapter and screens poll; the port and its rules are ready for the day it is fixed upstream.
+ */
+interface LiveEvents {
+    val events: Flow<LiveEvent>
+}
+
+/** Whether the app is in the foreground. Screens do not refresh in the background (PRD FR-090). */
+interface AppLifecycle {
+    val isForeground: StateFlow<Boolean>
 }
 
 /** Whether the phone can reach the network at all. */

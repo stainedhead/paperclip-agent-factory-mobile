@@ -19,14 +19,17 @@ import com.stainedhead.paperclipmobile.application.issue.ListIssues
 import com.stainedhead.paperclipmobile.application.issue.LoadIssue
 import com.stainedhead.paperclipmobile.application.issue.LoadIssuePlan
 import com.stainedhead.paperclipmobile.application.issue.SearchIssues
+import com.stainedhead.paperclipmobile.application.refresh.RefreshVisibleScreen
 import com.stainedhead.paperclipmobile.application.run.CancelRun
 import com.stainedhead.paperclipmobile.application.run.ListIssueRuns
 import com.stainedhead.paperclipmobile.application.run.LoadRun
 import com.stainedhead.paperclipmobile.application.run.TailRunLog
 import com.stainedhead.paperclipmobile.domain.port.AgentGateway
+import com.stainedhead.paperclipmobile.domain.port.AppLifecycle
 import com.stainedhead.paperclipmobile.domain.port.DashboardGateway
 import com.stainedhead.paperclipmobile.domain.port.InteractionGateway
 import com.stainedhead.paperclipmobile.domain.port.IssueGateway
+import com.stainedhead.paperclipmobile.domain.port.LiveEvents
 import com.stainedhead.paperclipmobile.domain.port.RunGateway
 import com.stainedhead.paperclipmobile.presentation.AgentDetailStateHolder
 import com.stainedhead.paperclipmobile.presentation.AgentDetailUseCases
@@ -47,6 +50,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInteractionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
+import com.stainedhead.paperclipmobile.testing.fakes.FakeLiveEvents
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
 import org.koin.core.module.Module
 
@@ -57,6 +61,14 @@ internal fun Module.sliceThreePorts() {
     single<AgentGateway> { FakeAgentGateway() }
     single<RunGateway> { FakeRunGateway() }
     single<DashboardGateway> { FakeDashboardGateway() }
+}
+
+/** Live events and the app lifecycle (slice 1a-4). The WebSocket has no real adapter: board keys fail on it. */
+internal fun Module.signalPorts() {
+    single<LiveEvents> { FakeLiveEvents() }
+    single { AppLifecycleBridge() }
+    single<AppLifecycle> { get<AppLifecycleBridge>() }
+    single { RefreshVisibleScreen(get(), get(), get()) }
 }
 
 internal fun Module.sliceThreeUseCases() {

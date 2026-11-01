@@ -85,6 +85,8 @@ data class InboxState(
     val updatedAtEpochMillis: Long? = null,
     val isFromCache: Boolean = false,
     val isRefreshing: Boolean = false,
+    /** How often a visible Inbox should refresh (PRD FR-090). */
+    val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val isLoadingMore: Boolean = false,
     val canLoadMore: Boolean = false,
     val isOffline: Boolean = false,

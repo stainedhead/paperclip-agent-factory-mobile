@@ -88,6 +88,7 @@ internal fun demoPortsModule() =
         }
         demoAttentionPorts()
         demoWorkPorts()
+        signalPorts()
     }
 
 private fun org.koin.core.module.Module.demoAttentionPorts() {

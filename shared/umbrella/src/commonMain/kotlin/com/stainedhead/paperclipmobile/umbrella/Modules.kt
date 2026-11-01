@@ -126,6 +126,7 @@ internal fun portsModule() =
         single<BudgetGateway> { FakeBudgetGateway() }
         single<DeviceTimeZone> { FakeDeviceTimeZone() }
         sliceThreePorts()
+        signalPorts()
     }
 
 internal fun useCaseModule(allowInsecureLocal: Boolean) =

@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.MutationResult
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.BudgetIncident
 import com.stainedhead.paperclipmobile.domain.BudgetIncidentId
 import com.stainedhead.paperclipmobile.domain.BudgetResolution
@@ -10,6 +11,7 @@ import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
@@ -37,6 +39,17 @@ class BudgetIncidentStateHolder(
     private val model = MutableStateFlow(BudgetModel())
     private val mutableState = MutableStateFlow(BudgetIncidentState())
     val state: StateFlow<BudgetIncidentState> = mutableState.asStateFlow()
+
+    /** What the refresh policy needs from this screen (PRD FR-090, FR-091). */
+    val refreshTarget: RefreshTarget =
+        ScreenRefreshTarget(
+            state,
+            { it.refreshIntervalSeconds },
+            { onIntent(BudgetIntent.Refresh) },
+            {
+                it == Invalidation.AttentionFeed
+            },
+        )
 
     init {
         this.scope.launch {
