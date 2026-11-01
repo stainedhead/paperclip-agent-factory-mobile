@@ -42,9 +42,30 @@ class UseCaseBoundaryRulesTest {
             scope("application").classes().filter { cls ->
                 cls.functions().any { it.name == "invoke" && it.hasOperatorModifier } &&
                     cls.packagee?.name?.let { name ->
-                        listOf("attention", "decision", "approval", "budget").any { name.endsWith(".$it") }
+                        listOf(
+                            "attention",
+                            "decision",
+                            "approval",
+                            "budget",
+                            "issue",
+                            "interaction",
+                            "agent",
+                            "run",
+                            "dashboard",
+                        ).any {
+                            name.endsWith(".$it")
+                        }
                     } == true &&
-                    listOf("Load", "Refresh", "Poll", "Read", "Available").none { cls.name.startsWith(it) }
+                    listOf(
+                        "Load",
+                        "Refresh",
+                        "Poll",
+                        "Read",
+                        "Available",
+                        "List",
+                        "Search",
+                        "Tail",
+                    ).none { cls.name.startsWith(it) }
             }
         Assertions.assertTrue(mutating.isNotEmpty(), "Expected mutation use cases")
         mutating.assertTrue(

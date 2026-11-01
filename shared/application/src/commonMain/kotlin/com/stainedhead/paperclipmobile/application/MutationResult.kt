@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application
 
+import com.stainedhead.paperclipmobile.domain.AnswerIssue
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InputIssue
@@ -20,6 +21,15 @@ sealed interface InvalidInput {
     data object SnoozeNotInFuture : InvalidInput
 
     data object UndoWindowClosed : InvalidInput
+
+    data object TitleRequired : InvalidInput
+
+    /** The interaction is addressed to someone else (`resolverAudience`). */
+    data object NotAddressedToYou : InvalidInput
+
+    data class Answer(
+        val issue: AnswerIssue,
+    ) : InvalidInput
 
     data class Input(
         val issue: InputIssue,

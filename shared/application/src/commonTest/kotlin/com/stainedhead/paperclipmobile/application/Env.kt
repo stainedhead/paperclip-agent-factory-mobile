@@ -14,6 +14,7 @@ import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.testing.TestData
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAppSettingsStore
 import com.stainedhead.paperclipmobile.testing.fakes.FakeApprovalGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAttentionCache
@@ -22,12 +23,16 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeAuthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBudgetGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
+import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDecisionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDeviceTimeZone
 import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIdGenerator
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInstanceRepository
+import com.stainedhead.paperclipmobile.testing.fakes.FakeInteractionGateway
+import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakePairingBrowser
+import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
 
 /** Every fake and the shared collaborators, so each test builds only the use case it checks. */
@@ -50,6 +55,11 @@ class Env(
     val approvals = FakeApprovalGateway()
     val budgets = FakeBudgetGateway()
     val timeZone = FakeDeviceTimeZone()
+    val issues = FakeIssueGateway()
+    val interactions = FakeInteractionGateway()
+    val agents = FakeAgentGateway()
+    val runs = FakeRunGateway()
+    val dashboard = FakeDashboardGateway()
     val scope = CompanyScope(InstanceId("inst-1"), TestData.acme)
     val validate = ValidateInstanceAddress(allowInsecureLocal = false)
     val deviceAuth = DeviceAuthGuard(biometrics)

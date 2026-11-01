@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.InvalidInput
 import com.stainedhead.paperclipmobile.application.MutationResult
+import com.stainedhead.paperclipmobile.domain.AnswerIssue
 import com.stainedhead.paperclipmobile.domain.InputIssue
 import com.stainedhead.paperclipmobile.domain.ResolutionIssue
 
@@ -29,6 +30,18 @@ enum class InvalidKey {
     InputTooLong,
     AmountMustExceedObserved,
     WrongCurrency,
+    TitleRequired,
+    NotAddressedToYou,
+    AnswerUnsupported,
+    AnswerBlocked,
+    AnswerWrongKind,
+    AnswerNothingSelected,
+    AnswerUnknownChoice,
+    AnswerTooFewSelected,
+    AnswerTooManySelected,
+    AnswerQuestionRequired,
+    AnswerVerdictNotEnabled,
+    AnswerReasonRequired,
 }
 
 /** What happened to the last action, as keys. [inputId] names the decision input that was wrong. */
@@ -42,43 +55,29 @@ data class FeedbackUi(
 
 internal fun InvalidInput.toKey(): InvalidKey =
     when (this) {
-        InvalidInput.NoteRequired -> {
-            InvalidKey.NoteRequired
-        }
+        InvalidInput.NoteRequired -> InvalidKey.NoteRequired
+        InvalidInput.BodyRequired -> InvalidKey.BodyRequired
+        InvalidInput.WrongStatus -> InvalidKey.WrongStatus
+        InvalidInput.UnknownOption -> InvalidKey.UnknownOption
+        InvalidInput.SnoozeNotInFuture -> InvalidKey.SnoozeNotInFuture
+        InvalidInput.UndoWindowClosed -> InvalidKey.UndoWindowClosed
+        InvalidInput.TitleRequired -> InvalidKey.TitleRequired
+        InvalidInput.NotAddressedToYou -> InvalidKey.NotAddressedToYou
+        is InvalidInput.Answer -> issue.toKey()
+        is InvalidInput.Input -> issue.toKey()
+        is InvalidInput.Amount -> issue.toKey()
+    }
 
-        InvalidInput.BodyRequired -> {
-            InvalidKey.BodyRequired
-        }
+private fun InputIssue.toKey() =
+    when (this) {
+        is InputIssue.Required -> InvalidKey.InputRequired
+        is InputIssue.TooLong -> InvalidKey.InputTooLong
+    }
 
-        InvalidInput.WrongStatus -> {
-            InvalidKey.WrongStatus
-        }
-
-        InvalidInput.UnknownOption -> {
-            InvalidKey.UnknownOption
-        }
-
-        InvalidInput.SnoozeNotInFuture -> {
-            InvalidKey.SnoozeNotInFuture
-        }
-
-        InvalidInput.UndoWindowClosed -> {
-            InvalidKey.UndoWindowClosed
-        }
-
-        is InvalidInput.Input -> {
-            when (issue) {
-                is InputIssue.Required -> InvalidKey.InputRequired
-                is InputIssue.TooLong -> InvalidKey.InputTooLong
-            }
-        }
-
-        is InvalidInput.Amount -> {
-            when (issue) {
-                ResolutionIssue.MustExceedObserved -> InvalidKey.AmountMustExceedObserved
-                ResolutionIssue.WrongCurrency -> InvalidKey.WrongCurrency
-            }
-        }
+private fun ResolutionIssue.toKey() =
+    when (this) {
+        ResolutionIssue.MustExceedObserved -> InvalidKey.AmountMustExceedObserved
+        ResolutionIssue.WrongCurrency -> InvalidKey.WrongCurrency
     }
 
 /** The feedback for a mutation, or null when it succeeded. */
@@ -96,7 +95,7 @@ internal fun MutationResult<*>.toFeedback(): FeedbackUi? =
             FeedbackUi(
                 FeedbackKind.Invalid,
                 invalid = reason.toKey(),
-                inputId = (reason as? InvalidInput.Input)?.issue?.inputId,
+                inputId = reason.inputId(),
             )
         }
 
@@ -111,4 +110,35 @@ internal fun MutationResult<*>.toFeedback(): FeedbackUi? =
         is MutationResult.Reconciled -> {
             FeedbackUi(FeedbackKind.Reconciled, error = error.toErrorUi())
         }
+    }
+
+private fun InvalidInput.inputId(): String? =
+    when (this) {
+        is InvalidInput.Input -> issue.inputId
+        is InvalidInput.Answer -> issue.targetId()
+        else -> null
+    }
+
+private fun AnswerIssue.targetId(): String? =
+    when (this) {
+        is AnswerIssue.UnknownChoice -> id
+        is AnswerIssue.QuestionRequired -> questionId
+        is AnswerIssue.VerdictNotEnabled -> itemId
+        is AnswerIssue.ReasonRequired -> id
+        else -> null
+    }
+
+private fun AnswerIssue.toKey(): InvalidKey =
+    when (this) {
+        AnswerIssue.NotPending -> InvalidKey.WrongStatus
+        AnswerIssue.Unsupported -> InvalidKey.AnswerUnsupported
+        AnswerIssue.Blocked -> InvalidKey.AnswerBlocked
+        AnswerIssue.WrongKind -> InvalidKey.AnswerWrongKind
+        AnswerIssue.NothingSelected -> InvalidKey.AnswerNothingSelected
+        is AnswerIssue.UnknownChoice -> InvalidKey.AnswerUnknownChoice
+        is AnswerIssue.TooFewSelected -> InvalidKey.AnswerTooFewSelected
+        is AnswerIssue.TooManySelected -> InvalidKey.AnswerTooManySelected
+        is AnswerIssue.QuestionRequired -> InvalidKey.AnswerQuestionRequired
+        is AnswerIssue.VerdictNotEnabled -> InvalidKey.AnswerVerdictNotEnabled
+        is AnswerIssue.ReasonRequired -> InvalidKey.AnswerReasonRequired
     }
