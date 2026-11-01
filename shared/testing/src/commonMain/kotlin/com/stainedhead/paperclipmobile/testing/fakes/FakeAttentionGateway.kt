@@ -14,6 +14,7 @@ import com.stainedhead.paperclipmobile.domain.port.AttentionGateway
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.FeedQuery
 import com.stainedhead.paperclipmobile.testing.AttentionFixtures
+import kotlinx.coroutines.delay
 import kotlin.time.Instant
 
 /**
@@ -26,6 +27,12 @@ class FakeAttentionGateway(
     var items: List<AttentionItem> = AttentionFixtures.feed().items,
 ) : AttentionGateway {
     val calls = mutableMapOf<String, Int>()
+
+    /** Makes every feed read take this long, so screens can be observed while loading. */
+    var feedLatencyMillis = 0L
+
+    /** When true the feed ignores dismissals, like a read that was computed before the dismissal. */
+    var servesStaleFeed = false
     val failures = mutableMapOf<String, DomainError>()
     val queries = mutableListOf<FeedQuery>()
     val snoozes = mutableListOf<Pair<String, Instant>>()
@@ -44,9 +51,10 @@ class FakeAttentionGateway(
         query: FeedQuery,
     ): DomainResult<AttentionFeed> {
         queries += query
+        if (feedLatencyMillis > 0) delay(feedLatencyMillis)
         record("feed")?.let { return DomainResult.Failure(it) }
         val now = clock.now()
-        val visible = items.filter { it.dismissalKey !in hidden }
+        val visible = items.filter { servesStaleFeed || it.dismissalKey !in hidden }
         val start =
             query.cursor?.let { cursor ->
                 val index = visible.indexOfFirst { it.id == cursor }

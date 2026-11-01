@@ -1,7 +1,19 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
+import com.stainedhead.paperclipmobile.application.ResolveCompanyContext
 import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
+import com.stainedhead.paperclipmobile.application.approval.ApproveApproval
+import com.stainedhead.paperclipmobile.application.approval.RejectApproval
+import com.stainedhead.paperclipmobile.application.attention.AvailableSnoozePresets
+import com.stainedhead.paperclipmobile.application.attention.DismissItem
+import com.stainedhead.paperclipmobile.application.attention.LoadInbox
+import com.stainedhead.paperclipmobile.application.attention.LoadMoreInbox
+import com.stainedhead.paperclipmobile.application.attention.ReadCachedInbox
+import com.stainedhead.paperclipmobile.application.attention.RefreshInbox
+import com.stainedhead.paperclipmobile.application.attention.SetDecideBy
+import com.stainedhead.paperclipmobile.application.attention.SnoozeItem
+import com.stainedhead.paperclipmobile.application.attention.UndoDismiss
 import com.stainedhead.paperclipmobile.application.auth.CheckCredentials
 import com.stainedhead.paperclipmobile.application.auth.KeyEnrollment
 import com.stainedhead.paperclipmobile.application.auth.KeyExpiryStatus
@@ -14,6 +26,7 @@ import com.stainedhead.paperclipmobile.application.auth.SaveManualBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SignOutEverywhere
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
 import com.stainedhead.paperclipmobile.application.auth.SignedOutMarker
+import com.stainedhead.paperclipmobile.application.budget.ResolveBudgetIncident
 import com.stainedhead.paperclipmobile.application.instance.AddInstance
 import com.stainedhead.paperclipmobile.application.instance.GetInstance
 import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
@@ -28,17 +41,25 @@ import com.stainedhead.paperclipmobile.application.settings.ShouldLockApp
 import com.stainedhead.paperclipmobile.application.settings.UnlockApp
 import com.stainedhead.paperclipmobile.application.settings.UpdateAppSettings
 import com.stainedhead.paperclipmobile.domain.AppSettings
+import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.Instance
+import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAppSettingsStore
+import com.stainedhead.paperclipmobile.testing.fakes.FakeApprovalGateway
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAttentionCache
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAttentionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAuthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
+import com.stainedhead.paperclipmobile.testing.fakes.FakeBudgetGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
 import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
+import com.stainedhead.paperclipmobile.testing.fakes.FakeDecisionGateway
+import com.stainedhead.paperclipmobile.testing.fakes.FakeDeviceTimeZone
 import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIdGenerator
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInstanceRepository
@@ -59,6 +80,13 @@ class Env(
     val biometrics = FakeBiometrics()
     val browser = FakePairingBrowser()
     val connectivity = FakeConnectivity()
+    val attention = FakeAttentionGateway(clock)
+    val attentionCache = FakeAttentionCache()
+    val decisions = FakeDecisionGateway()
+    val approvals = FakeApprovalGateway()
+    val budgets = FakeBudgetGateway()
+    val timeZone = FakeDeviceTimeZone()
+    val scope = CompanyScope(InstanceId("inst-1"), TestData.acme)
     private val ids = FakeIdGenerator("inst-")
     private val validate = ValidateInstanceAddress(allowInsecureLocal = false)
     private val deviceAuth = DeviceAuthGuard(biometrics)
@@ -89,6 +117,27 @@ class Env(
     val unlock = UnlockApp(biometrics)
     val shouldLock = ShouldLockApp(clock)
     val validateAddress = validate
+
+    private val resolveContext = ResolveCompanyContext(loadAccess)
+    private val refreshInbox = RefreshInbox(attention, attentionCache)
+
+    val inbox =
+        InboxUseCases(
+            resolveContext,
+            get,
+            refreshInbox,
+            LoadInbox(attentionCache, refreshInbox),
+            ReadCachedInbox(attentionCache),
+            LoadMoreInbox(attention),
+            SnoozeItem(attention, clock, timeZone),
+            DismissItem(attention),
+            UndoDismiss(attention, clock),
+            SetDecideBy(attention),
+            ApproveApproval(approvals),
+            RejectApproval(approvals, deviceAuth),
+            ResolveBudgetIncident(budgets, deviceAuth),
+            AvailableSnoozePresets(clock, timeZone),
+        )
 
     val firstRun =
         FirstRunUseCases(validate, probe, add, update, get, pair, saveKey, loadAccess, updateSettings, switchInstance)

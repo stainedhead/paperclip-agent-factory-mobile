@@ -64,3 +64,10 @@ class LoadMoreInbox(
         cursor: String,
     ): DomainResult<AttentionFeed> = retryingRead { gateway.feed(scope, FeedQuery(cursor = cursor)) }
 }
+
+/** The cached first page only, for when the phone is offline (PRD FR-095). */
+class ReadCachedInbox(
+    private val cache: AttentionCache,
+) {
+    suspend operator fun invoke(scope: CompanyScope): AttentionFeed? = cache.read(scope)
+}

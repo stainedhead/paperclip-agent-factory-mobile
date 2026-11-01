@@ -143,3 +143,21 @@ class LoadMoreInboxTest {
                 DomainError.Rejected("Attention cursor no longer matches the filtered feed")
         }
 }
+
+class ReadCachedInboxTest {
+    @Test
+    fun `FR-095 offline the cached first page is read without any network call`() =
+        runTest {
+            val env = Env()
+            env.attentionCache.write(env.scope, AttentionFixtures.feed(badge = 9))
+
+            ReadCachedInbox(env.attentionCache)(env.scope)?.deskBadgeCount shouldBe 9
+            env.attention.count("feed") shouldBe 0
+        }
+
+    @Test
+    fun `an empty cache reads as nothing`() =
+        runTest {
+            ReadCachedInbox(Env().attentionCache)(Env().scope) shouldBe null
+        }
+}
