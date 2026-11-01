@@ -1,0 +1,40 @@
+# Gradle / Kotlin
+.gradle/
+build/
+*.hprof
+local.properties
+.kotlin/
+
+# Android
+*.apk
+*.aab
+*.jks
+*.keystore
+google-services.json
+
+# Xcode / Swift
+xcuserdata/
+DerivedData/
+*.xcuserstate
+.build/
+*.xcframework
+Pods/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Secrets and local config (never commit)
+.env
+.env.*
+*.pem
+*.p12
+*.mobileprovision
+secrets/
+
+# Claude Code local state
+.claude/
