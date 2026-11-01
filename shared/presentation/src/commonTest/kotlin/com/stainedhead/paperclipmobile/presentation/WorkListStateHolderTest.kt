@@ -196,6 +196,7 @@ class WorkListLoadTest {
             holder.onIntent(WorkListIntent.FilterSelected(IssueFilterUi.Blocked))
             advanceUntilIdle()
 
+            holder.state.value.filter shouldBe IssueFilterUi.AllOpen
             holder.state.value.rows.size shouldBe 5
             holder.state.value.isOffline shouldBe true
             holder.state.value.canCreate shouldBe false

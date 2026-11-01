@@ -81,7 +81,9 @@ class WorkListStateHolder(
         scope.cancel()
     }
 
+    /** Offline a new filter or search is ignored, so the chip never labels rows from another query. */
     private fun change(update: (WorkModel) -> WorkModel) {
+        if (!connectivity.isOnline.value) return
         model.update(update)
         loadJob?.cancel()
         model.update { it.copy(loading = false) }
