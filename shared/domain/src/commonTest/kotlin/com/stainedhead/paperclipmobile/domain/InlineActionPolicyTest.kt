@@ -211,3 +211,60 @@ class InlineActionPolicyTest {
         InlineActionPolicy.isReadOnly(interaction.copy(resolverAudience = null), Role.Owner, "user-1") shouldBe false
     }
 }
+
+class BudgetIncidentFromItemTest {
+    private val at = Instant.parse("2026-11-04T12:00:00Z")
+
+    private fun item(
+        kind: AttentionSourceKind,
+        subject: AttentionSubject,
+    ) = AttentionItem("x", kind, subject, "why", Severity.High, "attention:x", at, at)
+
+    @Test
+    fun `a budget alert card carries enough to build its incident`() {
+        val subject =
+            AttentionSubject(
+                SubjectKind.BudgetIncident,
+                "inc-1",
+                title = "Engineer 2 budget hard stop",
+                status = "open",
+                budget = BudgetAlertInfo(BudgetThreshold.Hard, Money.usdCents(9_000), Money.usdCents(10_000), "agent"),
+            )
+
+        item(AttentionSourceKind.BudgetAlert, subject).budgetIncident() shouldBe
+            BudgetIncident(
+                id = BudgetIncidentId("inc-1"),
+                scopeName = "Engineer 2 budget hard stop",
+                scopeType = "agent",
+                threshold = BudgetThreshold.Hard,
+                observed = Money.usdCents(9_000),
+                limit = Money.usdCents(10_000),
+                status = IncidentStatus.Open,
+            )
+    }
+
+    @Test
+    fun `other cards and budget cards without metadata have no incident`() {
+        item(AttentionSourceKind.Approval, AttentionSubject(SubjectKind.Approval, "a")).budgetIncident() shouldBe null
+        item(
+            AttentionSourceKind.BudgetAlert,
+            AttentionSubject(SubjectKind.BudgetIncident, "b"),
+        ).budgetIncident() shouldBe
+            null
+    }
+
+    @Test
+    fun `a missing title and scope type fall back to empty text`() {
+        val subject =
+            AttentionSubject(
+                SubjectKind.BudgetIncident,
+                "inc-2",
+                budget = BudgetAlertInfo(BudgetThreshold.Soft, Money.usdCents(1), Money.usdCents(2)),
+            )
+
+        val incident = item(AttentionSourceKind.BudgetAlert, subject).budgetIncident()
+
+        incident?.scopeName shouldBe ""
+        incident?.scopeType shouldBe ""
+    }
+}

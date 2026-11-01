@@ -142,7 +142,22 @@ data class AttentionItem(
     val relatedIssue: AttentionSubject? = null,
     val detail: AttentionDetail? = null,
     val resolverAudience: ResolverAudience? = null,
-)
+) {
+    /** The budget incident a `budget_alert` card stands for, or null for any other card. */
+    fun budgetIncident(): BudgetIncident? {
+        val budget = subject.budget
+        if (sourceKind != AttentionSourceKind.BudgetAlert || budget == null) return null
+        return BudgetIncident(
+            id = BudgetIncidentId(subject.id),
+            scopeName = subject.title.orEmpty(),
+            scopeType = budget.scopeType.orEmpty(),
+            threshold = budget.threshold,
+            observed = budget.observed,
+            limit = budget.limit,
+            status = IncidentStatus.Open,
+        )
+    }
+}
 
 /** A page of the feed. The counts are company-wide and computed before paging (research, feed request). */
 data class AttentionFeed(

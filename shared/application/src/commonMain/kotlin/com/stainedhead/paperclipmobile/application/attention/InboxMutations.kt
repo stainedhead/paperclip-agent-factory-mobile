@@ -82,3 +82,12 @@ class SetDecideBy(
         return gateway.setDecideBy(context.scope, item.sourceKind, item.subject.id, decideBy).toMutation()
     }
 }
+
+/** The snooze presets that still make sense now, for example no "tonight" after 20:00 (ADR-020). */
+class AvailableSnoozePresets(
+    private val clock: Clock,
+    private val timeZone: DeviceTimeZone,
+) {
+    operator fun invoke(): List<SnoozePreset> =
+        SnoozePreset.entries.filter { SnoozeTimes.isAvailable(it, clock.now(), timeZone.current()) }
+}

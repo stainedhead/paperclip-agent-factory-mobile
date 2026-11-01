@@ -52,12 +52,13 @@ class ApproveApproval(
 ) {
     suspend operator fun invoke(
         context: CompanyContext,
-        approval: Approval,
+        id: ApprovalId,
+        status: ApprovalStatus,
         note: String?,
     ): MutationResult<Approval> {
         if (!Permissions.allows(context.role, Action.ApproveApproval)) return MutationResult.Denied
-        if (!approval.status.isResolvable) return MutationResult.Invalid(InvalidInput.WrongStatus)
-        return reconcileApproval(context, approval.id, gateway.approve(context.scope, approval.id, note), gateway)
+        if (!status.isResolvable) return MutationResult.Invalid(InvalidInput.WrongStatus)
+        return reconcileApproval(context, id, gateway.approve(context.scope, id, note), gateway)
     }
 }
 
@@ -68,15 +69,16 @@ class RejectApproval(
 ) {
     suspend operator fun invoke(
         context: CompanyContext,
-        approval: Approval,
+        id: ApprovalId,
+        status: ApprovalStatus,
         note: String?,
     ): MutationResult<Approval> {
         if (!Permissions.allows(context.role, Action.RejectApproval)) return MutationResult.Denied
-        if (!approval.status.isResolvable) return MutationResult.Invalid(InvalidInput.WrongStatus)
+        if (!status.isResolvable) return MutationResult.Invalid(InvalidInput.WrongStatus)
         if (note.isNullOrBlank()) return MutationResult.Invalid(InvalidInput.NoteRequired)
         val auth = deviceAuth(Action.RejectApproval)
         if (auth != BiometricResult.Approved) return MutationResult.NotAuthorized(auth)
-        return reconcileApproval(context, approval.id, gateway.reject(context.scope, approval.id, note), gateway)
+        return reconcileApproval(context, id, gateway.reject(context.scope, id, note), gateway)
     }
 }
 
@@ -86,16 +88,17 @@ class RequestRevision(
 ) {
     suspend operator fun invoke(
         context: CompanyContext,
-        approval: Approval,
+        id: ApprovalId,
+        status: ApprovalStatus,
         note: String?,
     ): MutationResult<Approval> {
         if (!Permissions.allows(context.role, Action.RequestApprovalRevision)) return MutationResult.Denied
-        if (approval.status != ApprovalStatus.Pending) return MutationResult.Invalid(InvalidInput.WrongStatus)
+        if (status != ApprovalStatus.Pending) return MutationResult.Invalid(InvalidInput.WrongStatus)
         if (note.isNullOrBlank()) return MutationResult.Invalid(InvalidInput.NoteRequired)
         return reconcileApproval(
             context,
-            approval.id,
-            gateway.requestRevision(context.scope, approval.id, note),
+            id,
+            gateway.requestRevision(context.scope, id, note),
             gateway,
         )
     }

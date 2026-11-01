@@ -73,7 +73,7 @@ class ApproveApprovalTest {
         runTest {
             val env = Env()
 
-            val result = ApproveApproval(env.approvals)(env.context(Role.Operator), pending, null)
+            val result = ApproveApproval(env.approvals)(env.context(Role.Operator), pending.id, pending.status, null)
 
             (result as MutationResult.Done).value.status shouldBe ApprovalStatus.Approved
             env.biometrics.calls shouldBe 0
@@ -87,7 +87,7 @@ class ApproveApprovalTest {
             val revising = pending.copy(status = ApprovalStatus.RevisionRequested)
             env.approvals.store[id] = revising
 
-            ApproveApproval(env.approvals)(env.context(), revising, "ok now")
+            ApproveApproval(env.approvals)(env.context(), revising.id, revising.status, "ok now")
 
             env.approvals.notes shouldBe listOf("ok now")
         }
@@ -97,7 +97,8 @@ class ApproveApprovalTest {
         runTest {
             val env = Env()
 
-            ApproveApproval(env.approvals)(env.context(Role.Viewer), pending, null) shouldBe MutationResult.Denied
+            ApproveApproval(env.approvals)(env.context(Role.Viewer), pending.id, pending.status, null) shouldBe
+                MutationResult.Denied
             env.approvals.count("approve") shouldBe 0
         }
 
@@ -107,7 +108,14 @@ class ApproveApprovalTest {
             val env = Env()
 
             val result =
-                ApproveApproval(env.approvals)(env.context(), pending.copy(status = ApprovalStatus.Approved), null)
+                ApproveApproval(
+                    env.approvals,
+                )(
+                    env.context(),
+                    pending.copy(status = ApprovalStatus.Approved).id,
+                    pending.copy(status = ApprovalStatus.Approved).status,
+                    null,
+                )
 
             result shouldBe MutationResult.Invalid(InvalidInput.WrongStatus)
             env.approvals.count("approve") shouldBe 0
@@ -120,7 +128,7 @@ class ApproveApprovalTest {
             env.approvals.failures["approve"] = DomainError.Timeout
             env.approvals.serverChangesOnFailure = { it.copy(status = ApprovalStatus.Approved) }
 
-            val result = ApproveApproval(env.approvals)(env.context(), pending, null)
+            val result = ApproveApproval(env.approvals)(env.context(), pending.id, pending.status, null)
 
             val reconciled = result as MutationResult.Reconciled<Approval>
             reconciled.current.status shouldBe ApprovalStatus.Approved
@@ -134,7 +142,7 @@ class ApproveApprovalTest {
             val env = Env()
             env.approvals.store[id] = pending.copy(status = ApprovalStatus.Rejected)
 
-            val result = ApproveApproval(env.approvals)(env.context(), pending, null)
+            val result = ApproveApproval(env.approvals)(env.context(), pending.id, pending.status, null)
 
             val reconciled = result as MutationResult.Reconciled<Approval>
             reconciled.current.status shouldBe ApprovalStatus.Rejected
@@ -147,7 +155,7 @@ class ApproveApprovalTest {
             val env = Env()
             env.approvals.failures["approve"] = DomainError.Forbidden
 
-            ApproveApproval(env.approvals)(env.context(), pending, null) shouldBe
+            ApproveApproval(env.approvals)(env.context(), pending.id, pending.status, null) shouldBe
                 MutationResult.Failed(DomainError.Forbidden)
             env.approvals.count("get") shouldBe 0
         }
@@ -161,7 +169,7 @@ class RejectApprovalTest {
         runTest {
             val env = Env()
 
-            val result = env.reject()(env.context(), pending, "too expensive")
+            val result = env.reject()(env.context(), pending.id, pending.status, "too expensive")
 
             (result as MutationResult.Done).value.status shouldBe ApprovalStatus.Rejected
             env.biometrics.calls shouldBe 1
@@ -173,8 +181,10 @@ class RejectApprovalTest {
         runTest {
             val env = Env()
 
-            env.reject()(env.context(), pending, "   ") shouldBe MutationResult.Invalid(InvalidInput.NoteRequired)
-            env.reject()(env.context(), pending, null) shouldBe MutationResult.Invalid(InvalidInput.NoteRequired)
+            env.reject()(env.context(), pending.id, pending.status, "   ") shouldBe
+                MutationResult.Invalid(InvalidInput.NoteRequired)
+            env.reject()(env.context(), pending.id, pending.status, null) shouldBe
+                MutationResult.Invalid(InvalidInput.NoteRequired)
 
             env.biometrics.calls shouldBe 0
             env.approvals.count("reject") shouldBe 0
@@ -192,7 +202,8 @@ class RejectApprovalTest {
                 val env = Env()
                 env.biometrics.result = denied
 
-                env.reject()(env.context(), pending, "no") shouldBe MutationResult.NotAuthorized(denied)
+                env.reject()(env.context(), pending.id, pending.status, "no") shouldBe
+                    MutationResult.NotAuthorized(denied)
 
                 env.approvals.count("reject") shouldBe 0
             }
@@ -203,7 +214,7 @@ class RejectApprovalTest {
         runTest {
             val env = Env()
 
-            env.reject()(env.context(Role.Viewer), pending, "no") shouldBe MutationResult.Denied
+            env.reject()(env.context(Role.Viewer), pending.id, pending.status, "no") shouldBe MutationResult.Denied
 
             env.biometrics.calls shouldBe 0
             env.approvals.count("reject") shouldBe 0
@@ -214,7 +225,13 @@ class RejectApprovalTest {
         runTest {
             val env = Env()
 
-            val result = env.reject()(env.context(), pending.copy(status = ApprovalStatus.Cancelled), "no")
+            val result =
+                env.reject()(
+                    env.context(),
+                    pending.copy(status = ApprovalStatus.Cancelled).id,
+                    pending.copy(status = ApprovalStatus.Cancelled).status,
+                    "no",
+                )
 
             result shouldBe MutationResult.Invalid(InvalidInput.WrongStatus)
             env.biometrics.calls shouldBe 0
@@ -226,7 +243,7 @@ class RejectApprovalTest {
             val env = Env()
             env.approvals.failures["reject"] = DomainError.Timeout
 
-            val result = env.reject()(env.context(), pending, "no")
+            val result = env.reject()(env.context(), pending.id, pending.status, "no")
 
             (result as MutationResult.Reconciled<Approval>).current.status shouldBe ApprovalStatus.Pending
             env.approvals.count("reject") shouldBe 1
@@ -240,7 +257,8 @@ class RequestRevisionTest {
         runTest {
             val env = Env()
 
-            val result = RequestRevision(env.approvals)(env.context(Role.Operator), pending, "add a budget")
+            val result =
+                RequestRevision(env.approvals)(env.context(Role.Operator), pending.id, pending.status, "add a budget")
 
             (result as MutationResult.Done).value.status shouldBe ApprovalStatus.RevisionRequested
             env.biometrics.calls shouldBe 0
@@ -251,7 +269,7 @@ class RequestRevisionTest {
         runTest {
             val env = Env()
 
-            RequestRevision(env.approvals)(env.context(), pending, " ") shouldBe
+            RequestRevision(env.approvals)(env.context(), pending.id, pending.status, " ") shouldBe
                 MutationResult.Invalid(InvalidInput.NoteRequired)
             env.approvals.count("requestRevision") shouldBe 0
         }
@@ -262,7 +280,9 @@ class RequestRevisionTest {
             val env = Env()
 
             ApprovalStatus.entries.filter { it != ApprovalStatus.Pending }.forEach {
-                RequestRevision(env.approvals)(env.context(), pending.copy(status = it), "note") shouldBe
+                RequestRevision(
+                    env.approvals,
+                )(env.context(), pending.copy(status = it).id, pending.copy(status = it).status, "note") shouldBe
                     MutationResult.Invalid(InvalidInput.WrongStatus)
             }
             env.approvals.count("requestRevision") shouldBe 0
@@ -273,7 +293,8 @@ class RequestRevisionTest {
         runTest {
             val env = Env()
 
-            RequestRevision(env.approvals)(env.context(Role.Viewer), pending, "note") shouldBe MutationResult.Denied
+            RequestRevision(env.approvals)(env.context(Role.Viewer), pending.id, pending.status, "note") shouldBe
+                MutationResult.Denied
             env.approvals.count("requestRevision") shouldBe 0
         }
 
@@ -283,7 +304,7 @@ class RequestRevisionTest {
             val env = Env()
             env.approvals.store[id] = pending.copy(status = ApprovalStatus.Approved)
 
-            val result = RequestRevision(env.approvals)(env.context(), pending, "note")
+            val result = RequestRevision(env.approvals)(env.context(), pending.id, pending.status, "note")
 
             (result as MutationResult.Reconciled<Approval>).current.status shouldBe ApprovalStatus.Approved
         }

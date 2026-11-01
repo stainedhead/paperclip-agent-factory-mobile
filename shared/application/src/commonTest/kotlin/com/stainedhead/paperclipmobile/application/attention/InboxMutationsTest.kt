@@ -213,3 +213,23 @@ class SetDecideByTest {
             env.attention.count("setDecideBy") shouldBe 1
         }
 }
+
+class AvailableSnoozePresetsTest {
+    @Test
+    fun `FR-034 all four presets are offered in the morning`() {
+        val env = Env()
+        env.timeZone.zone = TimeZone.of("Europe/Berlin")
+
+        AvailableSnoozePresets(env.clock, env.timeZone)() shouldBe SnoozePreset.entries
+    }
+
+    @Test
+    fun `tonight is left out after 20 00 local`() {
+        val env = Env()
+        env.timeZone.zone = TimeZone.of("Europe/Berlin")
+        env.clock.advance(7.hours + 30.seconds) // 19:30Z = 20:30 in Berlin
+
+        AvailableSnoozePresets(env.clock, env.timeZone)() shouldBe
+            listOf(SnoozePreset.OneHour, SnoozePreset.Tomorrow, SnoozePreset.NextWeek)
+    }
+}
