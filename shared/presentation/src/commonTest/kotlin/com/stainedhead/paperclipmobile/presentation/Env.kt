@@ -236,6 +236,23 @@ class Env(
             listAgents,
         )
 
+    val issue =
+        IssueUseCases(
+            resolveContext,
+            get,
+            LoadIssue(issues, agents),
+            LoadIssuePlan(issues),
+            ListIssueRuns(runs),
+            ListIssueAttachments(issues),
+            IssueEditUseCases(
+                CommentOnIssue(issues),
+                ChangeIssueStatus(issues),
+                AssignIssue(issues),
+                CreateIssue(issues),
+            ),
+            InteractionUseCases(LoadInteractions(interactions), RespondToInteraction(interactions)),
+        )
+
     val firstRun =
         FirstRunUseCases(validate, probe, add, update, get, pair, saveKey, loadAccess, updateSettings, switchInstance)
 

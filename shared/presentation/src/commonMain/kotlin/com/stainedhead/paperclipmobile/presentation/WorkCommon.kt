@@ -24,7 +24,7 @@ internal fun CompanyTarget.toScope() = CompanyScope(InstanceId(instanceId), Comp
 /** Resolves who the person is in one company once and remembers it for the life of a screen (ADR-011). */
 internal class ContextSource(
     private val resolve: ResolveCompanyContext,
-    private val scope: CompanyScope,
+    val scope: CompanyScope,
 ) {
     private var cached: CompanyContext? = null
 

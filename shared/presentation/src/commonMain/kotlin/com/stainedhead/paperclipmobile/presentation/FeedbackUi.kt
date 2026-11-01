@@ -119,7 +119,7 @@ private fun InvalidInput.inputId(): String? =
         else -> null
     }
 
-private fun AnswerIssue.targetId(): String? =
+internal fun AnswerIssue.targetId(): String? =
     when (this) {
         is AnswerIssue.UnknownChoice -> id
         is AnswerIssue.QuestionRequired -> questionId
@@ -128,7 +128,7 @@ private fun AnswerIssue.targetId(): String? =
         else -> null
     }
 
-private fun AnswerIssue.toKey(): InvalidKey =
+internal fun AnswerIssue.toKey(): InvalidKey =
     when (this) {
         AnswerIssue.NotPending -> InvalidKey.WrongStatus
         AnswerIssue.Unsupported -> InvalidKey.AnswerUnsupported
