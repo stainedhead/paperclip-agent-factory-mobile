@@ -32,6 +32,18 @@ class PaperclipGraph internal constructor(
     /** The Inbox, Decision, Approval and Budget incident screens (slice 1a-2). */
     val attention: AttentionScreens = AttentionScreens(koin)
 
+    /** The Work list and Issue screens (slice 1a-3). */
+    val work: WorkScreens = WorkScreens(koin)
+
+    /** The Agents tab and Agent detail (slice 1a-3). */
+    val agents: AgentScreens = AgentScreens(koin)
+
+    /** The Run viewer (slice 1a-3). */
+    val runs: RunScreens = RunScreens(koin)
+
+    /** Factory home (slice 1a-3). */
+    val factory: FactoryScreens = FactoryScreens(koin)
+
     fun createFirstRunStateHolder(): FirstRunStateHolder = koin.get { parametersOf(newScope()) }
 
     fun createAppStateHolder(): AppStateHolder = koin.get { parametersOf(newScope()) }

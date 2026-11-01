@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Not Started |
 | Phase 2 Architecture and plan | Not Started |
 | Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation (slices 1a-1 to 1a-4) | In Progress (1a-1 built, awaiting PR) |
+| Phase 4 Implementation (slices 1a-1 to 1a-4) | In Progress (1a-1 to 1a-3 built, awaiting PRs) |
 | Phase 5 Completion and archive | Not Started |
 
 ## Phase 0 checklist
@@ -42,6 +42,7 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Recent activity
 
+- 2026-11-01: slice 1a-3 implemented test first (see the TDD log in implementation-notes.md): research W1 to D1 answered with file and line, ADR-021 to ADR-024, domain for issues, interactions, agents, runs and dashboard, five ports with fakes, 21 use cases, six state holders, `graph.work`, `graph.agents`, `graph.runs`, `graph.factory`, iOS interop tests.
 - 2026-11-01: slice 1a-2 implemented test first (see the TDD log in implementation-notes.md): 24 use cases, four state holders, five fakes, six ports, ADR-015 to ADR-020, Konsist use-case boundary rules.
 - 2026-11-01: slice 1a-1 implemented on `feat/phase-1a-shared-contracts` (domain, fakes, 30 use cases, six state holders, Koin wiring, Konsist rules, iOS interop test).
 - 2026-11-01: spec created from the PRD, the iPhone plan and the pinned server's shared types.
@@ -57,3 +58,15 @@ Update this file after every task and phase. It is the single source of progress
 - [x] `./gradlew spotlessApply && ./gradlew check lint -q` green; Kover (reportCore.xml, domain+application) 98.94% lines (744 of 752), (reportPresentation.xml) 96.45% (1115 of 1156)
 - [x] iOS: `build-kit.sh debug`, SwiftLint, swift-format and `ios-test.sh` green (`GraphInteropTests` extended; slice 1a-2 screens are reached through `graph.attention`)
 - [ ] Open the slice 1a-2 pull request (not opened by the implementing agent)
+
+## Slice 1a-3 (work, interactions, agents, runs, factory home; screens 4, 10, 5, 6, 11, 7)
+
+- [x] Research W1 to W8, A1, A2, R1, D1 answered with file and line in `research.md`; ADR-021 to ADR-024
+- [x] Domain: `Issue`, `IssueFilter`, `IssueQuery`, `Comment`, `PlanDocument`, `Attachment`, sealed `Interaction` with `InteractionAnswer` and `validate`, `Agent` (grouping and action rules), `HeartbeatRun`, `RunEvents`, `LogTail`, `DashboardSummary`, `SpendWindows`; ports `IssueGateway`, `InteractionGateway`, `AgentGateway`, `RunGateway`, `DashboardGateway` (strict TDD, red seen first)
+- [x] Testing: five gateway fakes with call counters and scripted failures, `WorkFixtures`, `AgentFixtures`, `WorkFakesBehaviourTest`
+- [x] Application: 21 use cases in `issue`, `interaction`, `agent`, `run`, `dashboard`; role x action matrix and single-attempt tests (acceptance 8 and 10); device authentication before the gateway for pause agent and cancel run (acceptance 9)
+- [x] Presentation: Work list, Issue (with interaction forms), Factory home, Agents, Agent detail and Run viewer state holders (offline acceptance 11 in each)
+- [x] Umbrella wiring as `graph.work`, `graph.agents`, `graph.runs`, `graph.factory`; Konsist: mutation rule covers the new packages, `DeviceAuthRulesTest`
+- [x] `./gradlew spotlessApply && ./gradlew check lint -q` green; Kover (fresh `reportCore.xml`, domain+application) 97.42% lines (2191 of 2249); (fresh `reportPresentation.xml`) 97.87% (3822 of 3905)
+- [x] iOS: `build-kit.sh debug`, SwiftLint, swift-format and `ios-test.sh` green (`GraphInteropTests` has a case per new group)
+- [ ] Open the slice 1a-3 pull request (not opened by the implementing agent)

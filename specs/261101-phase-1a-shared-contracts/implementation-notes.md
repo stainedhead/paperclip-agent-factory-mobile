@@ -91,3 +91,28 @@ Same convention as slice 1a-2: "compile red" is the first test of a new type fai
 - Presentation `AgentsStateHolder` (13 tests): compile red (61 errors), then 1 assertion failure (`expected 1 but was 0`): two row actions sent back to back, the second is correctly ignored while the first is in flight; the test was wrong and now waits between them.
 - Presentation `AgentDetailStateHolder` (12 tests), `RunViewerStateHolder` (11 tests), `WorkListStateHolder` (11 tests): compile red (17, 53 and 56 errors), then green on the first run.
 - Presentation `IssueStateHolder` (EditsTest 10, LoadTest 5, TabsTest 2, interaction rendering 4 and answers 10 tests): compile red (71 + 246 errors), then green on the first run after the production code was written (one name clash, `CommentUi` already existed for approvals, renamed `IssueCommentUi`). Interaction forms: drafts are `InteractionDraft` (picked options, free text, verdicts); every button builds exactly one `InteractionAnswer` and the domain `validate` gives the live `submitIssue` and `rejectIssue` keys.
+- Umbrella wiring (`PaperclipGraphSliceThreeWiringTest`, 2 tests, demo mode through the real graph) and Konsist `DeviceAuthRulesTest`: compile red (45 errors) for the wiring test, then green; the Konsist rule is an equality of two sets, so it cannot pass vacuously.
+- Mutation spot check: removing the `Permissions` line from `CancelRun` made 2 `WorkRoleMatrixTest` tests fail; reverted.
+
+## Slice 1a-3 decisions in code
+
+- 2026-11-01: unknown server enum values map to an `Unknown` entry on `IssueStatus`, `IssuePriority`, `AgentStatus`, `RunStatus`, `InteractionStatus` (same convention as `ApprovalStatus`); unknown interaction kinds become `UnsupportedInteraction` carrying the raw kind.
+- 2026-11-01: the thread re-read after a timed-out comment (`CommentOnIssue`) returns the newest comment as `Reconciled.current`; the holder reloads the whole thread, which is the truth. A create has no entity to read, so `CreateIssue` reports `Failed(Timeout)` and the Work list reloads (it is the re-read).
+- 2026-11-01: interactions have no device authentication step: FR-014's list has no interaction answer. The use case order is permission, addressee (`ResolverAudience.allowsUser`), the answer against the interaction, one call.
+- 2026-11-01: detail screens do not cache (ADR-017); "Updated" is the read time. Offline with nothing loaded is a `Failed` phase with `isOffline`; offline after loading keeps the content and disables actions.
+- 2026-11-01: `refreshIntervalSeconds` is exposed per state (15, 5 for a live run or an agent with a run, 0 for a finished run) for the slice 1a-4 polling policy.
+- 2026-11-01: only one change is in flight per screen (`busy`), so two different actions in quick succession on the same screen are serialised: the second is ignored, not queued.
+- 2026-11-01: `InvokeHeartbeat` re-reads the agent's runs after a timeout (a started run means the wake worked); `Reconciled.current` is `Started(run)` or `Skipped`.
+- 2026-11-01: the server rejects a viewer on every mutation (`assertCompanyAccess`, `routes/authz.ts:108-118`), contrary to the first research report's "gap" note for cancel run and budgets; the app still gates by role first. Only the operator-sets-budget difference is real (ADR-021).
+- 2026-11-01: detekt shaped the code: `IssueStateHolder` delegates to `IssueLoader`, `IssueEdits` and `IssueInteractions` over an `IssueSession`; `WorkEnumsUi.kt` and `InteractionUi.kt` split out UI enums; Koin wiring is in `SliceThreeModules.kt`.
+
+## Swift interop review (slice 1a-3)
+
+`GraphInteropTests` creates all six holders through `graph.work`, `graph.agents`, `graph.runs`, `graph.factory` and sends typed intents (filter, search, create, tab, comment, status, verdict, pause, budget, scroll, cancel) from Swift 6 with no warnings. Asserting on loaded state from Swift is racy (holders load on `Dispatchers.Default`), so the interop tests assert only on stable initial values.
+
+## Deviations (slice 1a-3)
+
+- `LoadIssuePlan` is a thin read of the issue's plan that the Plan tab uses to refresh; `LoadIssue` already returns the plan for the first render.
+- `Interaction` withdraw, dismiss and cancel endpoints are not modelled; only accept, reject, respond, verdicts and skip (the PRD lists the first four per kind).
+- "Updated" for the new screens uses the `Clock` at read time; there is no cache for these screens (ADR-017).
+- Names of assignees and comment authors come from the agent list; a person who is not an agent shows as "me" or without a name until the Phase 1b adapter can resolve board users.

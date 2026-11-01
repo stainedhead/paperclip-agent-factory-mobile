@@ -125,6 +125,7 @@ internal fun portsModule() =
         single<ApprovalGateway> { FakeApprovalGateway() }
         single<BudgetGateway> { FakeBudgetGateway() }
         single<DeviceTimeZone> { FakeDeviceTimeZone() }
+        sliceThreePorts()
     }
 
 internal fun useCaseModule(allowInsecureLocal: Boolean) =
@@ -138,6 +139,7 @@ internal fun useCaseModule(allowInsecureLocal: Boolean) =
         authUseCases()
         settingsUseCases()
         sliceTwoUseCases()
+        sliceThreeUseCases()
     }
 
 private fun org.koin.core.module.Module.instanceUseCases() {
@@ -210,4 +212,5 @@ internal fun presentationModule() =
             )
         }
         sliceTwoHolders()
+        sliceThreeHolders()
     }

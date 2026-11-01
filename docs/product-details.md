@@ -26,6 +26,18 @@ The shared Kotlin core now holds the rules for screens 1, 2, 3 and 12; the iPhon
 - **Budget incident (FR-052).** Keep paused is open to operators and owners. Raise and resume is owner only, needs an amount above the observed spend, device authentication, and shows the server's reason if it refuses.
 - **Viewers** see everything and can change nothing. A tap while an action is already running is ignored, and a timed-out action is never sent twice: the screen reads the item again and shows what really happened.
 
+### Work, Issue, Agents, Run and Factory home behaviour (shared core, slice 1a-3)
+
+The shared core holds the rules for screens 4, 5, 6, 7, 10 and 11. Behaviour a screen can rely on:
+
+- **Work list (FR-060, FR-062).** Saved filters All open, Blocked, Critical and high, In review and Assigned to me, plus search that finds an issue by its identifier in any spelling (`PAP-1182`, `pap1182`). The list loads in pages. Critical and high is filtered on the phone because the server cannot filter by priority. An operator or owner can create an issue; a viewer cannot.
+- **Issue (FR-061 to FR-063).** Header with status, priority, assignee, project, parent and subtasks; tabs Thread (comments and interactions in time order), Plan (read only), Runs and Files. Comments can ask to reopen a closed issue or interrupt the running agent. Status and assignee can be changed and a subtask added. Interactions are forms: suggested tasks (all selected to start), questions, a confirmation, a checkbox confirmation with its range, and per-item verdicts with a reason for reject. A form says what is missing before anything is sent. A card addressed to someone else, already resolved, or of a kind the app does not know shows why it is read only; unknown kinds say "open in the web app".
+- **Agents (FR-070, FR-071).** Needs attention (error, budget-paused, waiting for approval), Running, Paused and Idle, with the lifecycle state shown when it is not ready. Pause asks you to confirm and then to authenticate; Resume is not offered for a budget pause (the budget incident lifts it); Run now needs no prompt. Setting an agent's monthly budget is owner only.
+- **Agent detail (FR-072).** Role, who it reports to, its current issue (from its run in progress), recent runs and month spend against budget.
+- **Run viewer (FR-075).** Events and a log tail that follows the end until you scroll up. Cancel asks you to confirm and to authenticate; a viewer cannot cancel; a run that finished meanwhile shows its final state.
+- **Factory home (FR-078).** Tiles for agents, tasks, month spend against budget, pending approvals and budget incidents; the runs in progress; rolling spend for 5 hours, 24 hours and 7 days.
+- **Everywhere.** Offline, screens keep what they showed and every action is disabled with the reason; a second tap while an action runs is ignored; a timed-out action is sent once and the screen reads the item again.
+
 ## Designed, not built yet
 
 | Screen | Image |

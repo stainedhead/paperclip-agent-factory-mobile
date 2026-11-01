@@ -110,3 +110,44 @@ class PaperclipGraphSliceTwoWiringTest {
             listOf(decision::close, approval::close, budget::close).forEach { it() }
         }
 }
+
+class PaperclipGraphSliceThreeWiringTest {
+    private val graph = PaperclipCore.createGraph(allowInsecureLocal = false)
+    private val factory = "inst-1"
+    private val company = "company-acme"
+
+    private suspend fun <T> eventually(block: suspend () -> T): T =
+        withContext(Dispatchers.Default) {
+            withTimeout(10.seconds) { block() }
+        }
+
+    @Test
+    fun `demo mode shows the work list and the issue of the design mock`() =
+        runTest {
+            val list = graph.work.createWorkListStateHolder(factory, company)
+            val issue = graph.work.createIssueStateHolder(factory, company, "pap-1182")
+
+            eventually { list.state.first { it.phase == DetailPhase.Content } }
+                .rows
+                .map { it.identifier }
+                .contains("PAP-1182") shouldBe true
+            eventually { issue.state.first { it.phase == DetailPhase.Content } }.header?.title shouldBe
+                "Ship the billing migration"
+            listOf(list::close, issue::close).forEach { it() }
+        }
+
+    @Test
+    fun `demo mode shows the agents factory home and a running run`() =
+        runTest {
+            val agents = graph.agents.createAgentsStateHolder(factory, company)
+            val detail = graph.agents.createAgentDetailStateHolder(factory, company, "agent-eng-1")
+            val home = graph.factory.createFactoryHomeStateHolder(factory, company)
+            val run = graph.runs.createRunViewerStateHolder(factory, company, "run-live")
+
+            eventually { agents.state.first { it.phase == DetailPhase.Content } }.sections.size shouldBe 4
+            eventually { detail.state.first { it.phase == DetailPhase.Content } }.agent?.name shouldBe "Engineer 1"
+            eventually { home.state.first { it.phase == DetailPhase.Content } }.tiles?.pendingApprovals shouldBe 2
+            eventually { run.state.first { it.phase == DetailPhase.Content } }.isLive shouldBe true
+            listOf(agents::close, detail::close, home::close, run::close).forEach { it() }
+        }
+}

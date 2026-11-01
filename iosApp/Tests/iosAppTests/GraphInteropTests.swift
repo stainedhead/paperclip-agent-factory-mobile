@@ -1,7 +1,7 @@
 import PaperclipKit
 import Testing
 
-/// Checks that the shared state holders added in slices 1a-1 and 1a-2 are reachable and usable from Swift.
+/// Checks that the shared state holders added in slices 1a-1 to 1a-3 are reachable and usable from Swift.
 @MainActor
 struct GraphInteropTests {
     private let graph = PaperclipCore.shared.createGraph(allowInsecureLocal: false)
@@ -62,5 +62,55 @@ struct GraphInteropTests {
         #expect(budget.state.value.canSubmit == false)
         budget.onIntent(intent: BudgetIntentChoiceSelected(choice: .raiseAndResume))
         budget.close()
+    }
+
+    @Test func workScreensStartLoadingAndAcceptTypedIntents() {
+        let list = graph.work.createWorkListStateHolder(instanceId: "inst-1", companyId: "company-acme")
+        #expect(list.state.value.phase == .loading)
+        #expect(list.state.value.filter == .allOpen)
+        list.onIntent(intent: WorkListIntentFilterSelected(filter: .blocked))
+        list.onIntent(intent: WorkListIntentSearchChanged(text: "pap"))
+        list.onIntent(intent: WorkListIntentCreateSubmitted(title: "New", priority: .high))
+        list.close()
+
+        let issue = graph.work.createIssueStateHolder(
+            instanceId: "inst-1", companyId: "company-acme", issueId: "pap-1182")
+        #expect(issue.state.value.tab == .thread)
+        issue.onIntent(intent: IssueIntentTabSelected(tab: .runs))
+        issue.onIntent(intent: IssueIntentCommentSubmitted(body: "hi", reopen: false, interrupt: false))
+        issue.onIntent(intent: IssueIntentStatusSelected(status: .inReview))
+        issue.onIntent(
+            intent: IssueIntentInteractionVerdictChosen(interactionId: "i", itemId: "x", verdict: .reject))
+        issue.close()
+    }
+
+    @Test func agentScreensStartLoadingAndAcceptTypedIntents() {
+        let agents = graph.agents.createAgentsStateHolder(instanceId: "inst-1", companyId: "company-acme")
+        #expect(agents.state.value.phase == .loading)
+        #expect(agents.state.value.refreshIntervalSeconds == 15)
+        agents.onIntent(intent: AgentsIntentPauseTapped(agentId: "agent-eng-1"))
+        agents.onIntent(intent: AgentsIntentPauseCancelled.shared)
+        agents.close()
+
+        let detail = graph.agents.createAgentDetailStateHolder(
+            instanceId: "inst-1", companyId: "company-acme", agentId: "agent-eng-1")
+        #expect(detail.state.value.confirmPause == false)
+        detail.onIntent(intent: AgentDetailIntentBudgetSubmitted(minorUnits: 50_000))
+        detail.close()
+    }
+
+    @Test func runViewerAndFactoryHomeStartLoadingAndAcceptTypedIntents() {
+        let run = graph.runs.createRunViewerStateHolder(
+            instanceId: "inst-1", companyId: "company-acme", runId: "run-live")
+        #expect(run.state.value.autoScroll)
+        #expect(run.state.value.confirmCancel == false)
+        run.onIntent(intent: RunViewerIntentUserScrolled(atBottom: false))
+        run.onIntent(intent: RunViewerIntentCancelTapped.shared)
+        run.close()
+
+        let home = graph.factory.createFactoryHomeStateHolder(instanceId: "inst-1", companyId: "company-acme")
+        #expect(home.state.value.phase == .loading)
+        home.onIntent(intent: FactoryHomeIntentRefresh.shared)
+        home.close()
     }
 }
