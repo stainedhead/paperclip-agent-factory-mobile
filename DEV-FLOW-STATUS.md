@@ -30,7 +30,7 @@
 
 | Slice | Status |
 |-------|--------|
-| 1a-1 instances, secrets, settings, auth, roles | ⬜ Pending |
-| 1a-2 attention, decisions, approvals, budget incidents | ⬜ Pending |
+| 1a-1 instances, secrets, settings, auth, roles | ✅ Complete (verified by orchestrator: check lint green; core gate 98.94%, presentation 96.45%; 7 commits e8e2b49..2db6336). Note: application/presentation tests not written red-first; flagged for Step 4 review |
+| 1a-2 attention, decisions, approvals, budget incidents | 🔄 In Progress |
 | 1a-3 work, agents, runs, factory | ⬜ Pending |
 | 1a-4 demo data, contract suites, polling, interop review | ⬜ Pending |
