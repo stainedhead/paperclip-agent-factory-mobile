@@ -42,3 +42,20 @@ See the PRD's open questions; the ones that touch this phase are single-user ver
 
 - `types/attention.d.ts`, `types/decision.d.ts`, `constants.d.ts` in `@paperclipai/shared` 2026.1023.0
 - [spec.md](./spec.md) section 5
+
+## Answers recorded in slice 1a-1 (server source, Paperclip checkout at `~/Code/Test/paperclip`)
+
+Paths below are relative to that checkout.
+
+**Q6 / Q9 Role source (ANSWERED).** `GET /api/cli-auth/me` (`server/src/routes/access.ts:2885-2898`) returns `{user, userId, isInstanceAdmin, companyIds, memberships, source, keyId}`. `memberships` is a list of `{companyId, membershipRole, status}` built by `resolveBoardAccess` (`server/src/services/board-auth.ts:72-110`), active rows only (`board-auth.ts:93-99`). It carries no company names: names come from `GET /api/companies?scope=accessible` (`server/src/routes/companies.ts:380-400`).
+- Server membership roles are `owner`, `admin`, `operator`, `viewer`, `member` (`packages/shared/src/constants.ts:965-979`). `viewer` is real and enforced: a non-safe method by a non-instance-admin viewer fails with `403 "Viewer access is read-only"` (`server/src/routes/authz.ts:111-118`); instance admins skip the check (`authz.ts:111`).
+- The server does not distinguish owner from operator on budget routes (`server/src/routes/costs.ts:352-377` only calls `assertBoard` and `assertCompanyAccess`). "Owner only" for budget raise is therefore an app policy from the PRD, not a server rule; the server stays the authority (a 403 is shown).
+- Mapping (ADR-011): instance admin, `owner`, `admin` -> Owner; `operator` -> Operator; `viewer`, `member`, anything unknown -> Viewer (fail closed). Per-company role: `isInstanceAdmin` wins over the membership row.
+
+**Challenge create** (`access.ts:2786-2808`, request schema `packages/shared/src/validators/access.ts:73-78`): `POST /api/cli-auth/challenges` body `{command (1-240), clientName?, requestedAccess (default board), requestedCompanyId?}` returns 201 `{id, token, boardApiToken, approvalPath, approvalUrl (nullable), pollPath, expiresAt, suggestedPollIntervalMs: 1000}`. The board API token (`boardApiToken`) is returned at CREATE, not on approval; the challenge `token` and `approvalPath/approvalUrl` embed a secret. Challenge TTL is 10 minutes, board key TTL 30 days (`board-auth.ts:17-18`).
+**Poll** (`access.ts:2810-2838`): `GET /api/cli-auth/challenges/{id}?token=<challenge token>` returns the challenge (`id, status, command, clientName, requestedAccess, requestedCompanyId, requestedCompanyName, approvedAt, cancelledAt, expiresAt`) plus `requiresSignIn`, `canApprove`, `currentUserId`. It does not return the token or the key id. Status precedence `cancelled > expired > approved > pending` (`board-auth.ts:49-54`).
+**Approve / cancel** (`access.ts:2840-2882`) happen in the browser; the app only creates, polls and may cancel (`POST .../{id}/cancel {token}`).
+**Key metadata:** `me.keyId` is the current key id when `source == "board_key"` (`access.ts:2897`); its `expiresAt` (nullable, `board-auth.ts:254`) comes from `GET /api/board-api-keys` (`access.ts:2901-2910`, fields `id,name,createdAt,lastUsedAt,revokedAt,expiresAt`).
+**Revoke:** `DELETE /api/board-api-keys/{keyId}` -> `{ok, keyId}`; `POST /api/cli-auth/revoke-current` -> `{revoked, keyId}` (`access.ts:2954-2980`).
+
+**`GET /api/health`** (`server/src/routes/health.ts`): an unauthenticated caller of an `authenticated` server gets the redacted body `{status, deploymentMode, deploymentExposure, localAiLoginSupported, commit, bootstrapStatus, bootstrapInviteActive, ...}` with NO version (`health.ts:45-51, 394-418`). `local_trusted` servers return full details to anyone. The `!db` branch omits `deploymentExposure` (`health.ts:270-290`); the 503 branch omits `deploymentMode` (`health.ts:318-330`). Hence `serverVersion` and `exposure` are nullable before pairing, and the probe fails closed: only `deploymentMode == authenticated` with status `ok` and `bootstrapStatus == ready` is accepted.
