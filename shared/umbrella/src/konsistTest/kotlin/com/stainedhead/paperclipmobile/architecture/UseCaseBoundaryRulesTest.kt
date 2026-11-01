@@ -44,7 +44,7 @@ class UseCaseBoundaryRulesTest {
                     cls.packagee?.name?.let { name ->
                         listOf("attention", "decision", "approval", "budget").any { name.endsWith(".$it") }
                     } == true &&
-                    !cls.name.startsWith("Load") && !cls.name.startsWith("Refresh") && !cls.name.startsWith("Poll")
+                    listOf("Load", "Refresh", "Poll", "Read", "Available").none { cls.name.startsWith(it) }
             }
         Assertions.assertTrue(mutating.isNotEmpty(), "Expected mutation use cases")
         mutating.assertTrue(

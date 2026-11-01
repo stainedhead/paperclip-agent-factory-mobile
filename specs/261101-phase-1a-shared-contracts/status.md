@@ -42,5 +42,18 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Recent activity
 
+- 2026-11-01: slice 1a-2 implemented test first (see the TDD log in implementation-notes.md): 24 use cases, four state holders, five fakes, six ports, ADR-015 to ADR-020, Konsist use-case boundary rules.
 - 2026-11-01: slice 1a-1 implemented on `feat/phase-1a-shared-contracts` (domain, fakes, 30 use cases, six state holders, Koin wiring, Konsist rules, iOS interop test).
 - 2026-11-01: spec created from the PRD, the iPhone plan and the pinned server's shared types.
+
+## Slice 1a-2 (attention, decisions, approvals, budget incidents; screens 1, 2, 3, 12)
+
+- [x] Research Q2, Q3, Q4, Q5, Q7, Q8 answered with file and line in `research.md`; four sequence diagrams in `architecture.md`; ADR-015 to ADR-020
+- [x] Domain: Severity, Money, DecideBy, AttentionRules (UTC table tests), InboxGrouping, attention model, InlineActionPolicy, Decision, Approval, BudgetIncident, SnoozeTimes, ports (strict TDD, red seen first)
+- [x] Testing: five gateway/cache fakes + time zone fake, fixtures, AttentionCache contract suite
+- [x] Application: 24 use cases (attention, decision, approval, budget, company context)
+- [x] Presentation: Inbox, Decision, Approval and Budget incident state holders
+- [x] Umbrella wiring, Konsist use-case boundary rules
+- [x] `./gradlew spotlessApply && ./gradlew check lint -q` green; Kover (reportCore.xml, domain+application) 98.94% lines (744 of 752), (reportPresentation.xml) 96.45% (1115 of 1156)
+- [x] iOS: `build-kit.sh debug`, SwiftLint, swift-format and `ios-test.sh` green (`GraphInteropTests` extended; slice 1a-2 screens are reached through `graph.attention`)
+- [ ] Open the slice 1a-2 pull request (not opened by the implementing agent)

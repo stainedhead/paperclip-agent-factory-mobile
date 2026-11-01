@@ -6,7 +6,6 @@ import com.stainedhead.paperclipmobile.domain.CompanyContext
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
-import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,7 +110,7 @@ internal class InboxSession(
      * Runs one action. A second tap while one is in flight, or any tap while offline, is ignored. Whatever the outcome
      * says may have changed on the server (done, reconciled, or a timeout) triggers a re-read of the feed.
      */
-    fun <T> mutate(
+    internal fun <T> mutate(
         action: suspend (CompanyContext) -> MutationResult<T>,
         onResult: (MutationResult<T>) -> Unit = {},
     ) {
@@ -134,15 +133,4 @@ internal class InboxSession(
         this is MutationResult.Done ||
             this is MutationResult.Reconciled ||
             (this is MutationResult.Failed && error == DomainError.Timeout)
-
-    companion object {
-        fun scopeFor(
-            instanceId: String,
-            companyId: String,
-        ) = CompanyScope(
-            InstanceId(instanceId),
-            com.stainedhead.paperclipmobile.domain
-                .CompanyId(companyId),
-        )
-    }
 }

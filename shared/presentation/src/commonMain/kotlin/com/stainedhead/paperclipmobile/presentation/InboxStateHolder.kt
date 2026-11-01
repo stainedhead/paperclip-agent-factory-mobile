@@ -1,5 +1,8 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.domain.CompanyId
+import com.stainedhead.paperclipmobile.domain.CompanyScope
+import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import kotlinx.coroutines.CoroutineScope
@@ -21,13 +24,18 @@ class InboxStateHolder(
     private val connectivity: Connectivity,
     clock: Clock,
     scope: CoroutineScope,
-    instanceId: String,
-    companyId: String,
+    target: CompanyTarget,
 ) {
     private val scope = childScope(scope)
     private val model = MutableStateFlow(InboxModel())
     private val session =
-        InboxSession(useCases, connectivity, this.scope, InboxSession.scopeFor(instanceId, companyId), model)
+        InboxSession(
+            useCases,
+            connectivity,
+            this.scope,
+            CompanyScope(InstanceId(target.instanceId), CompanyId(target.companyId)),
+            model,
+        )
     private val approvals = InboxApprovalActions(session)
     private val triage = InboxTriageActions(session, clock)
     private val renderer = InboxRenderer(useCases.snoozePresets, clock)

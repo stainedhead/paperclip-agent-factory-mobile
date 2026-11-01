@@ -1,8 +1,18 @@
 package com.stainedhead.paperclipmobile.umbrella
 
+import com.stainedhead.paperclipmobile.presentation.ApprovalTypeUi
+import com.stainedhead.paperclipmobile.presentation.DetailPhase
 import com.stainedhead.paperclipmobile.presentation.FirstRunIntent
+import com.stainedhead.paperclipmobile.presentation.InboxPhase
+import com.stainedhead.paperclipmobile.presentation.SourceKindUi
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 class PaperclipCoreTest {
     @Test
@@ -58,4 +68,45 @@ class PaperclipGraphWiringTest {
         edit.state.value.instanceId shouldBe "missing"
         listOf(app::close, factories::close, manage::close, settings::close, add::close, edit::close).forEach { it() }
     }
+}
+
+class PaperclipGraphSliceTwoWiringTest {
+    private val graph = PaperclipCore.createGraph(allowInsecureLocal = false)
+    private val factory = "inst-1"
+    private val company = "company-acme"
+
+    private suspend fun <T> eventually(block: suspend () -> T): T =
+        withContext(Dispatchers.Default) {
+            withTimeout(10.seconds) { block() }
+        }
+
+    @Test
+    fun `demo mode shows the design mock's Inbox through the Inbox state holder`() =
+        runTest {
+            val inbox = graph.attention.createInboxStateHolder(factory, company)
+
+            val state = eventually { inbox.state.first { it.phase == InboxPhase.Content } }
+
+            state.sections
+                .flatMap { it.items }
+                .map { it.kind }
+                .toSet() shouldBe
+                setOf(SourceKindUi.Approval, SourceKindUi.Decision, SourceKindUi.BudgetAlert)
+            inbox.close()
+        }
+
+    @Test
+    fun `demo mode opens the decision the approval and the budget incident from the Inbox`() =
+        runTest {
+            val decision = graph.attention.createDecisionStateHolder(factory, company, "dec-1", "Engineer 1", "today")
+            val approval = graph.attention.createApprovalStateHolder(factory, company, "ap-1")
+            val budget = graph.attention.createBudgetIncidentStateHolder(factory, company, "inc-1")
+
+            eventually { decision.state.first { it.phase == DetailPhase.Content } }.title shouldBe
+                "Ship the billing migration?"
+            eventually { approval.state.first { it.phase == DetailPhase.Content } }.type shouldBe
+                ApprovalTypeUi.HireAgent
+            eventually { budget.state.first { it.phase == DetailPhase.Content } }.scopeName shouldBe "Engineer 2"
+            listOf(decision::close, approval::close, budget::close).forEach { it() }
+        }
 }

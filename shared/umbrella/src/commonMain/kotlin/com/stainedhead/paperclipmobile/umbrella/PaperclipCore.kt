@@ -1,9 +1,15 @@
 package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.presentation.AppStateHolder
+import com.stainedhead.paperclipmobile.presentation.ApprovalStateHolder
+import com.stainedhead.paperclipmobile.presentation.BudgetIncidentStateHolder
+import com.stainedhead.paperclipmobile.presentation.CompanyTarget
+import com.stainedhead.paperclipmobile.presentation.DecisionStateHolder
+import com.stainedhead.paperclipmobile.presentation.DecisionTarget
 import com.stainedhead.paperclipmobile.presentation.EditInstanceStateHolder
 import com.stainedhead.paperclipmobile.presentation.FactoriesStateHolder
 import com.stainedhead.paperclipmobile.presentation.FirstRunStateHolder
+import com.stainedhead.paperclipmobile.presentation.InboxStateHolder
 import com.stainedhead.paperclipmobile.presentation.ManageFactoriesStateHolder
 import com.stainedhead.paperclipmobile.presentation.SettingsStateHolder
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +29,9 @@ import org.koin.dsl.koinApplication
 class PaperclipGraph internal constructor(
     private val koin: Koin,
 ) {
+    /** The Inbox, Decision, Approval and Budget incident screens (slice 1a-2). */
+    val attention: AttentionScreens = AttentionScreens(koin)
+
     fun createFirstRunStateHolder(): FirstRunStateHolder = koin.get { parametersOf(newScope()) }
 
     fun createAppStateHolder(): AppStateHolder = koin.get { parametersOf(newScope()) }
@@ -37,8 +46,10 @@ class PaperclipGraph internal constructor(
     fun createEditInstanceStateHolder(instanceId: String?): EditInstanceStateHolder =
         koin.get { parametersOf(instanceId, newScope()) }
 
-    private fun newScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private fun newScope() = newScreenScope()
 }
+
+internal fun newScreenScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
 object PaperclipCore {
     /**

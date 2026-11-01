@@ -1,7 +1,7 @@
 import PaperclipKit
 import Testing
 
-/// Checks that the shared state holders added in slice 1a-1 are reachable and usable from Swift.
+/// Checks that the shared state holders added in slices 1a-1 and 1a-2 are reachable and usable from Swift.
 @MainActor
 struct GraphInteropTests {
     private let graph = PaperclipCore.shared.createGraph(allowInsecureLocal: false)
@@ -33,5 +33,34 @@ struct GraphInteropTests {
     @Test func factoriesAndManageStartEmpty() {
         #expect(graph.createFactoriesStateHolder().state.value.isEmpty)
         #expect(graph.createManageFactoriesStateHolder().state.value.rows.isEmpty)
+    }
+
+    @Test func inboxStartsLoadingWithNoBadge() {
+        let holder = graph.attention.createInboxStateHolder(instanceId: "inst-1", companyId: "company-acme")
+        #expect(holder.state.value.phase == .loading)
+        #expect(holder.state.value.badgeCount == 0)
+        holder.onIntent(intent: InboxIntentRefresh.shared)
+        holder.onIntent(intent: InboxIntentFilterSelected(kind: SourceKindUi.approval))
+        holder.close()
+    }
+
+    @Test func detailHoldersStartLoadingAndAcceptTypedIntents() {
+        let decision = graph.attention.createDecisionStateHolder(
+            instanceId: "inst-1", companyId: "company-acme", decisionId: "dec-1", originAgentName: nil, decideBy: nil)
+        #expect(decision.state.value.phase == .loading)
+        decision.onIntent(intent: DecisionIntentOptionSelected(optionId: "ship"))
+        decision.close()
+
+        let approval = graph.attention.createApprovalStateHolder(
+            instanceId: "inst-1", companyId: "company-acme", approvalId: "ap-1")
+        #expect(approval.state.value.phase == .loading)
+        approval.onIntent(intent: ApprovalIntentNoteConfirmed(note: "no"))
+        approval.close()
+
+        let budget = graph.attention.createBudgetIncidentStateHolder(
+            instanceId: "inst-1", companyId: "company-acme", incidentId: "inc-1")
+        #expect(budget.state.value.canSubmit == false)
+        budget.onIntent(intent: BudgetIntentChoiceSelected(choice: .raiseAndResume))
+        budget.close()
     }
 }

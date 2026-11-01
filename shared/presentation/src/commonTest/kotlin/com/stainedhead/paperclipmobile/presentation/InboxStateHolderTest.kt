@@ -46,7 +46,7 @@ private fun TestScope.env(role: Role = Role.Owner): Env {
 }
 
 private fun TestScope.holder(env: Env) =
-    InboxStateHolder(env.inbox, env.connectivity, env.clock, testScope(), "inst-1", TestData.acme.value)
+    InboxStateHolder(env.inbox, env.connectivity, env.clock, testScope(), CompanyTarget("inst-1", TestData.acme.value))
 
 private fun InboxState.items() = sections.flatMap { it.items }
 
