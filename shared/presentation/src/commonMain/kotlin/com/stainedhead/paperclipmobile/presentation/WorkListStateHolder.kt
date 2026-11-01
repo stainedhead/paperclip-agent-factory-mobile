@@ -32,6 +32,8 @@ private data class WorkModel(
     val loading: Boolean = false,
     val loadingMore: Boolean = false,
     val hasMore: Boolean = false,
+    /** Rows the server has sent so far: where the next page starts (the device may drop some). */
+    val serverRows: Int = 0,
     val creating: Boolean = false,
     val createdId: String? = null,
     val loadedAtMillis: Long? = null,
@@ -114,6 +116,7 @@ class WorkListStateHolder(
                             it.copy(
                                 issues = page.value.issues,
                                 hasMore = page.value.hasMore,
+                                serverRows = page.value.serverRowCount,
                                 names = names,
                                 role = context.role,
                                 userId = userId(),
@@ -140,7 +143,7 @@ class WorkListStateHolder(
         if (!connectivity.isOnline.value || !current.hasMore || !idle) return
         model.update { it.copy(loadingMore = true) }
         scope.launch {
-            val next = query(offset = current.issues.size)
+            val next = query(offset = current.serverRows)
             val page = useCases.list(companyScope, next, userId())
             model.update {
                 when (page) {
@@ -152,6 +155,7 @@ class WorkListStateHolder(
                         it.copy(
                             issues = it.issues + page.value.issues,
                             hasMore = page.value.hasMore,
+                            serverRows = it.serverRows + page.value.serverRowCount,
                             loadingMore = false,
                         )
                     }

@@ -20,6 +20,8 @@ import com.stainedhead.paperclipmobile.domain.valueOrNull
 data class IssuePage(
     val issues: List<Issue>,
     val hasMore: Boolean,
+    /** Rows the server sent, before the device dropped any; the next page starts that many rows later. */
+    val serverRowCount: Int,
 )
 
 /** Lists issues for a saved filter (PRD FR-060). The one rule the server lacks, priority, is applied here (ADR-022). */
@@ -40,7 +42,7 @@ class ListIssues(
                 val rows = result.value
                 val shown =
                     if (query.filter == IssueFilter.CriticalAndHigh) rows.filter { it.priority.isUrgent } else rows
-                DomainResult.Success(IssuePage(shown, hasMore = rows.size >= query.limit))
+                DomainResult.Success(IssuePage(shown, hasMore = rows.size >= query.limit, serverRowCount = rows.size))
             }
         }
 }

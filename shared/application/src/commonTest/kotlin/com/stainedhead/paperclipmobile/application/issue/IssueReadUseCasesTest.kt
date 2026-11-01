@@ -27,6 +27,7 @@ class ListIssuesTest {
 
             page.issues.map { it.identifier } shouldBe listOf("PAP-1160", "PAP-1182", "PAP-1190")
             page.hasMore shouldBe false
+            page.serverRowCount shouldBe 5
         }
 
     @Test

@@ -3,6 +3,8 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.domain.DomainError
+import com.stainedhead.paperclipmobile.domain.IssuePriority
+import com.stainedhead.paperclipmobile.domain.IssueStatus
 import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.WorkFixtures
@@ -124,6 +126,37 @@ class WorkListLoadTest {
             holder.onIntent(WorkListIntent.LoadMore)
             advanceUntilIdle()
             env.issues.count("list") shouldBe 3
+        }
+
+    @Test
+    fun `load more under critical and high pages by the server's rows so no urgent issue repeats or is skipped`() =
+        runTest {
+            val env = workEnv()
+            (1..110).forEach { n ->
+                val priority = if (n % 5 == 0) IssuePriority.High else IssuePriority.Medium
+                val issue = WorkFixtures.issue("pap-9$n", "bulk $n", IssueStatus.Todo, priority)
+                env.issues.store[issue.id] = issue
+            }
+            val holder = listHolder(env)
+            advanceUntilIdle()
+            holder.onIntent(WorkListIntent.FilterSelected(IssueFilterUi.CriticalAndHigh))
+            advanceUntilIdle()
+
+            var guard = 0
+            while (holder.state.value.hasMore && guard++ < 10) {
+                holder.onIntent(WorkListIntent.LoadMore)
+                advanceUntilIdle()
+            }
+
+            val shown =
+                holder.state.value.rows
+                    .map { it.id }
+            shown.size shouldBe shown.toSet().size
+            shown.toSet() shouldBe
+                env.issues.store.values
+                    .filter { it.status.isOpen && it.priority.isUrgent }
+                    .map { it.id.value }
+                    .toSet()
         }
 
     @Test
