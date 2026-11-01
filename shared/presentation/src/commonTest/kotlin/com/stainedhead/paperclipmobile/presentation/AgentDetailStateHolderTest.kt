@@ -1,0 +1,218 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
+package com.stainedhead.paperclipmobile.presentation
+
+import com.stainedhead.paperclipmobile.domain.DomainError
+import com.stainedhead.paperclipmobile.domain.Role
+import com.stainedhead.paperclipmobile.domain.port.BiometricResult
+import com.stainedhead.paperclipmobile.testing.TestData
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+
+private fun TestScope.detailHolder(
+    env: Env,
+    agentId: String = "agent-eng-1",
+) = AgentDetailStateHolder(
+    env.agentDetail,
+    env.connectivity,
+    env.clock,
+    CoroutineScope(StandardTestDispatcher(testScheduler)),
+    CompanyTarget("inst-1", TestData.acme.value),
+    agentId,
+)
+
+class AgentDetailLoadTest {
+    @Test
+    fun `FR-072 the detail shows role manager current issue recent runs and month spend`() =
+        runTest {
+            val env = workEnv()
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            val state = holder.state.value
+            state.phase shouldBe DetailPhase.Content
+            state.agent?.name shouldBe "Engineer 1"
+            state.agent?.role shouldBe "engineer"
+            state.reportsToName shouldBe "CTO"
+            state.currentRun?.runId shouldBe "run-live"
+            state.currentIssue?.identifier shouldBe "PAP-1182"
+            state.recentRuns.size shouldBe 2
+            state.monthSpend shouldBe MoneyUi(25_000, "USD")
+            state.monthlyBudget shouldBe MoneyUi(100_000, "USD")
+            state.budgetPercentUsed shouldBe 25
+            state.refreshIntervalSeconds shouldBe 5
+            state.updatedAtEpochMillis shouldBe env.clock.now().toEpochMilliseconds()
+        }
+
+    @Test
+    fun `an idle agent polls slowly and a missing agent is a failed screen`() =
+        runTest {
+            val env = workEnv()
+            val idle = detailHolder(env, "agent-cto")
+            val missing = detailHolder(env, "nope")
+            advanceUntilIdle()
+
+            idle.state.value.refreshIntervalSeconds shouldBe 15
+            missing.state.value.phase shouldBe DetailPhase.Failed
+            missing.state.value.error shouldBe ErrorUi(ErrorKey.NotFound)
+        }
+
+    @Test
+    fun `acceptance 11 offline with nothing loaded makes no call`() =
+        runTest {
+            val env = workEnv()
+            env.connectivity.setOnline(false)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.state.value.phase shouldBe DetailPhase.Failed
+            holder.state.value.isOffline shouldBe true
+            env.agents.count("get") shouldBe 0
+        }
+}
+
+class AgentDetailActionsTest {
+    @Test
+    fun `FR-071 an owner sets the monthly budget and the detail shows it`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            holder.state.value.canSetBudget shouldBe true
+
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            advanceUntilIdle()
+
+            env.agents.count("setBudget") shouldBe 1
+            env.biometrics.calls shouldBe 0
+            holder.state.value.monthlyBudget shouldBe MoneyUi(50_000, "USD")
+            holder.state.value.budgetPercentUsed shouldBe 50
+        }
+
+    @Test
+    fun `acceptance 8 an operator cannot set a budget and the intent is ignored`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            holder.state.value.canSetBudget shouldBe false
+
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            advanceUntilIdle()
+
+            env.agents.count("setBudget") shouldBe 0
+        }
+
+    @Test
+    fun `a negative budget is ignored`() =
+        runTest {
+            val env = workEnv()
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted(-1))
+            advanceUntilIdle()
+
+            env.agents.count("setBudget") shouldBe 0
+        }
+
+    @Test
+    fun `FR-071 pause confirms authenticates and then calls once`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            holder.state.value.actions shouldBe listOf(AgentActionUi.Pause, AgentActionUi.RunNow)
+
+            holder.onIntent(AgentDetailIntent.PauseTapped)
+            advanceUntilIdle()
+            holder.state.value.confirmPause shouldBe true
+            holder.onIntent(AgentDetailIntent.PauseConfirmed)
+            advanceUntilIdle()
+
+            env.biometrics.calls shouldBe 1
+            env.agents.count("pause") shouldBe 1
+            holder.state.value.agent
+                ?.status shouldBe AgentStatusUi.Paused
+            holder.state.value.actions shouldBe listOf(AgentActionUi.Resume)
+        }
+
+    @Test
+    fun `acceptance 9 a failed device authentication means no gateway call`() =
+        runTest {
+            val env = workEnv()
+            env.biometrics.result = BiometricResult.LockedOut
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AgentDetailIntent.PauseTapped)
+            holder.onIntent(AgentDetailIntent.PauseConfirmed)
+            advanceUntilIdle()
+
+            env.agents.count("pause") shouldBe 0
+            holder.state.value.feedback shouldBe
+                FeedbackUi(FeedbackKind.DeviceAuth, deviceAuth = DeviceAuthIssue.LockedOut)
+        }
+
+    @Test
+    fun `a viewer has no actions and a second confirm in flight is ignored`() =
+        runTest {
+            val viewer = workEnv(Role.Viewer)
+            val view = detailHolder(viewer)
+            advanceUntilIdle()
+            view.state.value.actions shouldBe emptyList()
+            view.state.value.actionsDisabledReason shouldBe ActionsDisabledReason.ViewerRole
+
+            val env = workEnv()
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            holder.onIntent(AgentDetailIntent.PauseTapped)
+            holder.onIntent(AgentDetailIntent.PauseConfirmed)
+            holder.onIntent(AgentDetailIntent.PauseConfirmed)
+            advanceUntilIdle()
+            env.agents.count("pause") shouldBe 1
+        }
+
+    @Test
+    fun `acceptance 10 a timeout on budget is sent once and the true value is shown`() =
+        runTest {
+            val env = workEnv()
+            env.agents.failures["setBudget"] = DomainError.Timeout
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            advanceUntilIdle()
+
+            env.agents.count("setBudget") shouldBe 1
+            holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Reconciled, error = ErrorUi(ErrorKey.Timeout))
+            holder.state.value.monthlyBudget shouldBe MoneyUi(100_000, "USD")
+        }
+
+    @Test
+    fun `resume run now refresh and dismiss work`() =
+        runTest {
+            val env = workEnv()
+            val holder = detailHolder(env, "agent-design")
+            advanceUntilIdle()
+            holder.onIntent(AgentDetailIntent.ResumeTapped)
+            advanceUntilIdle()
+            holder.state.value.agent
+                ?.status shouldBe AgentStatusUi.Idle
+
+            holder.onIntent(AgentDetailIntent.RunNowTapped)
+            advanceUntilIdle()
+            env.agents.count("invokeHeartbeat") shouldBe 1
+
+            holder.onIntent(AgentDetailIntent.Refresh)
+            holder.onIntent(AgentDetailIntent.MessageDismissed)
+            advanceUntilIdle()
+            env.agents.count("get") shouldBe 2
+        }
+}
