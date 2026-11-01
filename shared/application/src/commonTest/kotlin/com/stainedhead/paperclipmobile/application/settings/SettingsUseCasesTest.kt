@@ -13,7 +13,7 @@ import kotlin.time.Duration.Companion.minutes
 
 class SettingsUseCasesTest {
     @Test
-    fun `FR-017 device name, app lock and idle period can be changed`() =
+    fun `FR-017 device name app lock and idle period can be changed`() =
         runTest {
             val env = Env()
             val update = UpdateAppSettings(env.settings)

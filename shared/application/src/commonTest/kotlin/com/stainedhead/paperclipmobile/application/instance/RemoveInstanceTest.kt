@@ -7,10 +7,10 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.Secret
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretName
-import com.stainedhead.paperclipmobile.domain.port.SecretPolicy
 import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
@@ -30,7 +30,7 @@ class RemoveInstanceTest {
     }
 
     @Test
-    fun `FR-006 removal asks the device first, then revokes, then leaves no secret of that factory`() =
+    fun `FR-006 removal asks the device first then revokes then leaves no secret of that factory`() =
         runTest {
             val env = Env(listOf(instance, other))
             env.storeAllSecrets()
@@ -47,7 +47,7 @@ class RemoveInstanceTest {
         }
 
     @Test
-    fun `FR-014 cancel, failure, lockout and unavailable make zero gateway calls and change nothing`() =
+    fun `FR-014 cancel failure lockout and unavailable make zero gateway calls and change nothing`() =
         runTest {
             listOf(
                 BiometricResult.Cancelled,

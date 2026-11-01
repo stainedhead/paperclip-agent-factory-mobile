@@ -53,6 +53,7 @@ kotlin {
         api(project(":shared:presentation"))
         api(project(":shared:application"))
         api(project(":shared:domain"))
+        implementation(project(":shared:testing"))
         implementation(libs.koin.core)
     }
 }

@@ -29,7 +29,7 @@ class DeviceAuthGuardTest {
         }
 
     @Test
-    fun `cancel, failure and lockout are passed through`() =
+    fun `cancel failure and lockout are passed through`() =
         runTest {
             listOf(
                 BiometricResult.Cancelled,

@@ -157,7 +157,7 @@ class FirstRunStateHolderTest {
         }
 
     @Test
-    fun `FR-009 the whole flow walks address, pair and secure and lands on done`() =
+    fun `FR-009 the whole flow walks address pair and secure and lands on done`() =
         runTest {
             val (holder, env) = holderWithEnv()
             env.auth.pollResults.add(DomainResult.Success(ChallengeStatus.Approved))

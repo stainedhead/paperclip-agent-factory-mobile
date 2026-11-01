@@ -45,7 +45,7 @@ class SettingsStateHolderTest {
     }
 
     @Test
-    fun `FR-017 settings show the device name, app lock, idle period and every factory`() =
+    fun `FR-017 settings show the device name app lock idle period and every factory`() =
         runTest {
             val state = ready().state.value
 
@@ -58,7 +58,7 @@ class SettingsStateHolderTest {
         }
 
     @Test
-    fun `FR-017 changes are saved, a bad device name is flagged, and destructive auth stays on`() =
+    fun `FR-017 changes are saved a bad device name is flagged and destructive auth stays on`() =
         runTest {
             val env = Env(listOf(home))
             val holder = ready(env)
@@ -122,7 +122,7 @@ class SettingsStateHolderTest {
         }
 
     @Test
-    fun `FR-025 revoking another device asks first, calls the server once and reloads the list`() =
+    fun `FR-025 revoking another device asks first calls the server once and reloads the list`() =
         runTest {
             val env = Env(listOf(home))
             env.storeToken(home)
@@ -239,7 +239,7 @@ class AppStateHolderTest {
     }
 
     @Test
-    fun `the app starts locked and unloaded, then shows the first factory`() =
+    fun `the app starts locked and unloaded then shows the first factory`() =
         runTest {
             val env = Env(listOf(home, cloud))
             val holder = holder(env)

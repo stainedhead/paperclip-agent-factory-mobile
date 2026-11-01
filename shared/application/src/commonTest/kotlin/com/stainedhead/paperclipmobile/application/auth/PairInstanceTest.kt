@@ -36,7 +36,7 @@ class PairInstanceTest {
     }
 
     @Test
-    fun `FR-020 polls at the suggested interval until approved, then stores the token and wipes memory`() =
+    fun `FR-020 polls at the suggested interval until approved then stores the token and wipes memory`() =
         runTest {
             val env = env()
             env.script(ChallengeStatus.Pending, ChallengeStatus.Pending, ChallengeStatus.Approved)

@@ -2,10 +2,10 @@ package com.stainedhead.paperclipmobile.application.auth
 
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.SecretReadResult
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretName
-import com.stainedhead.paperclipmobile.domain.port.SecretReadResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
 
 enum class CredentialState {

@@ -24,7 +24,7 @@ class KeyUseCasesTest {
     private fun Env.manual() = SaveManualBoardKey(repository, auth, enrollment)
 
     @Test
-    fun `FR-021 a valid pasted key is validated with me, stored, and the caller's copy is wiped`() =
+    fun `FR-021 a valid pasted key is validated with me stored and the caller's copy is wiped`() =
         runTest {
             val env = Env(listOf(unpaired))
             val key = Secret.of(TestData.TOKEN)
@@ -76,7 +76,7 @@ class KeyUseCasesTest {
         }
 
     @Test
-    fun `FR-024 sign out revokes once, deletes the secrets and keeps the configuration`() =
+    fun `FR-024 sign out revokes once deletes the secrets and keeps the configuration`() =
         runTest {
             val env = Env(listOf(signedIn))
             env.storeToken()
@@ -155,7 +155,7 @@ class KeyUseCasesTest {
         }
 
     @Test
-    fun `FR-025 the key list is a read so it retries, and a 401 marks the factory signed out`() =
+    fun `FR-025 the key list is a read so it retries and a 401 marks the factory signed out`() =
         runTest {
             val env = Env(listOf(signedIn))
             env.auth.keysResult = DomainResult.Failure(DomainError.Timeout)

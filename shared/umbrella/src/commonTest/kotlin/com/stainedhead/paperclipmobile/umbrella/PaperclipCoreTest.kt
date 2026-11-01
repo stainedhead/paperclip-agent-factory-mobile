@@ -37,3 +37,25 @@ class PaperclipCoreTest {
         second.state.value.address shouldBe ""
     }
 }
+
+class PaperclipGraphWiringTest {
+    @Test
+    fun `the graph builds every slice 1a-1 state holder and they share one set of fakes`() {
+        val graph = PaperclipCore.createGraph(allowInsecureLocal = false)
+
+        val app = graph.createAppStateHolder()
+        val factories = graph.createFactoriesStateHolder()
+        val manage = graph.createManageFactoriesStateHolder()
+        val settings = graph.createSettingsStateHolder()
+        val add = graph.createEditInstanceStateHolder(null)
+        val edit = graph.createEditInstanceStateHolder("missing")
+
+        app.state.value.hasFactories shouldBe false
+        factories.state.value.isEmpty shouldBe true
+        manage.state.value.rows shouldBe emptyList()
+        settings.state.value.destructiveActionAuthAlwaysOn shouldBe true
+        add.state.value.canSave shouldBe false
+        edit.state.value.instanceId shouldBe "missing"
+        listOf(app::close, factories::close, manage::close, settings::close, add::close, edit::close).forEach { it() }
+    }
+}

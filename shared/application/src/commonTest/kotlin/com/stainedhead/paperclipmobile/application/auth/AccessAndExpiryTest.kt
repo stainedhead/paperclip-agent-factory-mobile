@@ -8,9 +8,9 @@ import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.Secret
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretName
-import com.stainedhead.paperclipmobile.domain.port.SecretPolicy
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest

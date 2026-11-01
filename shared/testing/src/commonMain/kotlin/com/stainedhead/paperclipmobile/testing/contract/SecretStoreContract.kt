@@ -2,12 +2,12 @@ package com.stainedhead.paperclipmobile.testing.contract
 
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretName
-import com.stainedhead.paperclipmobile.domain.port.SecretPolicy
-import com.stainedhead.paperclipmobile.domain.port.SecretReadResult
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.SecretPolicy
+import com.stainedhead.paperclipmobile.domain.SecretReadResult
+import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
-import com.stainedhead.paperclipmobile.domain.port.SecretWriteResult
 import com.stainedhead.paperclipmobile.testing.TestData
 
 /** Behaviour every [SecretStore] must have (PRD FR-010). Real adapters subclass this in Phase 1b. */

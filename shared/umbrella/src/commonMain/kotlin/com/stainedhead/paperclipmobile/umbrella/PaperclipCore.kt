@@ -1,17 +1,43 @@
 package com.stainedhead.paperclipmobile.umbrella
 
-import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
+import com.stainedhead.paperclipmobile.presentation.AppStateHolder
+import com.stainedhead.paperclipmobile.presentation.EditInstanceStateHolder
+import com.stainedhead.paperclipmobile.presentation.FactoriesStateHolder
 import com.stainedhead.paperclipmobile.presentation.FirstRunStateHolder
+import com.stainedhead.paperclipmobile.presentation.ManageFactoriesStateHolder
+import com.stainedhead.paperclipmobile.presentation.SettingsStateHolder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.core.Koin
+import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
-import org.koin.dsl.module
 
-/** The composition root. Platform apps create one graph and ask it for screen state holders. */
+/**
+ * The composition root. Platform apps create one graph and ask it for screen state holders.
+ *
+ * Until the Phase 1b adapters exist the graph runs on the shared fakes (demo mode), so every screen can be built
+ * without a server. Each `create...StateHolder` call returns a new holder that the screen owns; call `close()` on it
+ * when the screen goes away.
+ */
 class PaperclipGraph internal constructor(
     private val koin: Koin,
 ) {
-    /** Creates a new state holder. The screen that shows it owns it and keeps the same instance while it is visible. */
-    fun createFirstRunStateHolder(): FirstRunStateHolder = koin.get()
+    fun createFirstRunStateHolder(): FirstRunStateHolder = koin.get { parametersOf(newScope()) }
+
+    fun createAppStateHolder(): AppStateHolder = koin.get { parametersOf(newScope()) }
+
+    fun createFactoriesStateHolder(): FactoriesStateHolder = koin.get { parametersOf(newScope()) }
+
+    fun createManageFactoriesStateHolder(): ManageFactoriesStateHolder = koin.get { parametersOf(newScope()) }
+
+    fun createSettingsStateHolder(): SettingsStateHolder = koin.get { parametersOf(newScope()) }
+
+    /** Pass `null` to add a factory, or the id of the factory to edit. */
+    fun createEditInstanceStateHolder(instanceId: String?): EditInstanceStateHolder =
+        koin.get { parametersOf(instanceId, newScope()) }
+
+    private fun newScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }
 
 object PaperclipCore {
@@ -20,13 +46,10 @@ object PaperclipCore {
      */
     fun createGraph(allowInsecureLocal: Boolean): PaperclipGraph {
         // An isolated Koin application, not the global one, so graphs never share state (and tests stay independent).
-        val application = koinApplication { modules(coreModule(allowInsecureLocal)) }
+        val application =
+            koinApplication {
+                modules(portsModule(), useCaseModule(allowInsecureLocal), presentationModule())
+            }
         return PaperclipGraph(application.koin)
     }
-
-    private fun coreModule(allowInsecureLocal: Boolean) =
-        module {
-            single { ValidateInstanceAddress(allowInsecureLocal) }
-            factory { FirstRunStateHolder(get()) }
-        }
 }

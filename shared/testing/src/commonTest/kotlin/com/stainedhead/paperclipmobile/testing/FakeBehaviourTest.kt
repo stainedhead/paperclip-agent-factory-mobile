@@ -2,13 +2,13 @@ package com.stainedhead.paperclipmobile.testing
 
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Secret
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.SecretPolicy
+import com.stainedhead.paperclipmobile.domain.SecretReadResult
+import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 import com.stainedhead.paperclipmobile.domain.port.AuthReason
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretName
-import com.stainedhead.paperclipmobile.domain.port.SecretPolicy
-import com.stainedhead.paperclipmobile.domain.port.SecretReadResult
-import com.stainedhead.paperclipmobile.domain.port.SecretWriteResult
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAuthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
@@ -43,7 +43,7 @@ class FakeBehaviourTest {
     }
 
     @Test
-    fun `the secret store can simulate invalidation, denial and write failure`() =
+    fun `the secret store can simulate invalidation denial and write failure`() =
         runTest {
             val store = FakeSecretStore()
             val key =
@@ -66,7 +66,7 @@ class FakeBehaviourTest {
         }
 
     @Test
-    fun `biometrics, connectivity and the auth gateway record what happened`() =
+    fun `biometrics connectivity and the auth gateway record what happened`() =
         runTest {
             val biometrics = FakeBiometrics(BiometricResult.LockedOut)
             biometrics.authenticate(AuthReason.UnlockApp) shouldBe BiometricResult.LockedOut

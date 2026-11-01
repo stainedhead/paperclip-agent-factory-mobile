@@ -22,7 +22,7 @@ class HealthReportTest {
     }
 
     @Test
-    fun `the probe fails closed on an unknown mode, a pending bootstrap and a server that is not ready`() {
+    fun `the probe fails closed on an unknown mode a pending bootstrap and a server that is not ready`() {
         report(DeploymentMode.Unknown).refusal() shouldBe ProbeRefusal.UnknownDeploymentMode
         report(bootstrapPending = true).refusal() shouldBe ProbeRefusal.BootstrapPending
         report(status = ServerStatus.Starting).refusal() shouldBe ProbeRefusal.NotReady

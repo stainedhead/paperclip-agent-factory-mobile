@@ -9,9 +9,9 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.SpkiPin
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretName
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import io.kotest.matchers.shouldBe
@@ -145,7 +145,7 @@ class InstanceUseCasesTest {
         }
 
     @Test
-    fun `FR-006 editing validates the name, the address and the target`() =
+    fun `FR-006 editing validates the name the address and the target`() =
         runTest {
             val instance = TestData.instance("a", "Home")
             val env = Env(listOf(instance, TestData.instance("b", "Cloud", sortOrder = 1)))

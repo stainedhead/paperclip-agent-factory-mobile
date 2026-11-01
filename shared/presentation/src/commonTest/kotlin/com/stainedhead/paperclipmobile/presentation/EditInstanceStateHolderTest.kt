@@ -58,7 +58,7 @@ class EditInstanceStateHolderTest {
     }
 
     @Test
-    fun `FR-006 editing shows the factory, its access and the roles read-only`() =
+    fun `FR-006 editing shows the factory its access and the roles read-only`() =
         runTest {
             val env = Env(listOf(home))
             env.storeToken(home)
@@ -108,7 +108,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `FR-006 renaming saves, a taken name is flagged, and the same name is fine`() =
+    fun `FR-006 renaming saves a taken name is flagged and the same name is fine`() =
         runTest {
             val other = TestData.instance("other", "Cloud", sortOrder = 1)
             val env = Env(listOf(home, other))
@@ -130,7 +130,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `ADR-012 a new address needs a probe, warns the key will be dropped, and saving signs out`() =
+    fun `ADR-012 a new address needs a probe warns the key will be dropped and saving signs out`() =
         runTest {
             val env = Env(listOf(home))
             env.storeToken(home)
@@ -171,7 +171,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `FR-005 the probe result is shown, local trusted is refused and offline blocks the probe`() =
+    fun `FR-005 the probe result is shown local trusted is refused and offline blocks the probe`() =
         runTest {
             val (holder, env) = loaded()
             holder.onIntent(EditInstanceIntent.AddressChanged("https://other.example.com"))
@@ -201,7 +201,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `FR-001 add mode needs an accepted probe, then adds the factory and switches to edit`() =
+    fun `FR-001 add mode needs an accepted probe then adds the factory and switches to edit`() =
         runTest {
             val env = Env()
             val holder = holder(env, id = null)
@@ -249,7 +249,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `FR-016 pins can be added, rejected when invalid, removed and toggled`() =
+    fun `FR-016 pins can be added rejected when invalid removed and toggled`() =
         runTest {
             val (holder, env) = loaded()
 
@@ -294,7 +294,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `FR-020 re-pair walks to signed in, and cancel, failure and offline are handled`() =
+    fun `FR-020 re-pair walks to signed in and cancel failure and offline are handled`() =
         runTest {
             val signedOut = home.copy(status = InstanceStatus.SignedOut)
             val env = Env(listOf(signedOut))
@@ -356,7 +356,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `FR-024 sign out asks first, then revokes once and keeps the factory`() =
+    fun `FR-024 sign out asks first then revokes once and keeps the factory`() =
         runTest {
             val env = Env(listOf(home))
             env.storeToken(home)
@@ -378,7 +378,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `FR-006 remove asks first, needs the device, and every auth failure leaves it in place`() =
+    fun `FR-006 remove asks first needs the device and every auth failure leaves it in place`() =
         runTest {
             val env = Env(listOf(home))
             env.storeToken(home)
@@ -413,7 +413,7 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
-    fun `add mode has nothing to sign out or remove, and a vanished factory counts as removed`() =
+    fun `add mode has nothing to sign out or remove and a vanished factory counts as removed`() =
         runTest {
             val env = Env()
             val holder = holder(env, id = null)

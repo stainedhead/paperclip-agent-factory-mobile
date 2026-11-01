@@ -1,7 +1,4 @@
-package com.stainedhead.paperclipmobile.domain.port
-
-import com.stainedhead.paperclipmobile.domain.InstanceId
-import com.stainedhead.paperclipmobile.domain.Secret
+package com.stainedhead.paperclipmobile.domain
 
 /** The secrets stored per instance (PRD FR-013). */
 enum class SecretName(

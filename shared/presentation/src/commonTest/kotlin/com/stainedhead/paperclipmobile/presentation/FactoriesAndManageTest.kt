@@ -89,7 +89,7 @@ class FactoriesStateHolderTest {
         }
 
     @Test
-    fun `FR-095 offline shows the cached companies, disables refresh and makes no call`() =
+    fun `FR-095 offline shows the cached companies disables refresh and makes no call`() =
         runTest {
             val env = Env(listOf(home))
             env.storeToken(home)
@@ -240,7 +240,7 @@ class ManageFactoriesStateHolderTest {
         }
 
     @Test
-    fun `FR-006 removal states what is deleted, asks the device, and removes`() =
+    fun `FR-006 removal states what is deleted asks the device and removes`() =
         runTest {
             val env = Env(listOf(a, b))
             env.storeToken(a)

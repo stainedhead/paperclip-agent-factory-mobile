@@ -1,7 +1,7 @@
 package com.stainedhead.paperclipmobile.domain
 
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretName
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

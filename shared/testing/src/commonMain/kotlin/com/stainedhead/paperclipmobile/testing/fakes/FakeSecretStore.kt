@@ -2,11 +2,11 @@ package com.stainedhead.paperclipmobile.testing.fakes
 
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
-import com.stainedhead.paperclipmobile.domain.port.SecretKey
-import com.stainedhead.paperclipmobile.domain.port.SecretPolicy
-import com.stainedhead.paperclipmobile.domain.port.SecretReadResult
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretPolicy
+import com.stainedhead.paperclipmobile.domain.SecretReadResult
+import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
-import com.stainedhead.paperclipmobile.domain.port.SecretWriteResult
 
 /** An in-memory secret store. It keeps its own copy of each value, as a real store would. */
 class FakeSecretStore : SecretStore {

@@ -13,6 +13,10 @@ import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.PairingChallenge
 import com.stainedhead.paperclipmobile.domain.Secret
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretPolicy
+import com.stainedhead.paperclipmobile.domain.SecretReadResult
+import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.Instant
