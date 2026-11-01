@@ -36,4 +36,4 @@ Ports listed in the data dictionary. Phase 1b implements them; contract suites m
 
 ## Architectural decisions
 
-Recorded in `docs/architectural-decision-record.md` as they are made. Expected: sealed `Unsupported` branches for unknown server kinds; device auth enforced in the use case through the `Biometrics` port, not in the UI; state holders own their coroutine scope via an injected `CoroutineScope`.
+Recorded in `docs/architectural-decision-record.md` as they are made. Decided now: (1) sealed `Unsupported` branches for unknown server kinds; (2) device authentication is enforced inside the use case through the `Biometrics` port, never in the UI; (3) state holders take an injected `CoroutineScope` and a `Clock`, run use cases in that scope, and cancel it from a `close()` that the platform calls when the screen goes away; (4) `Secret.reveal()` is callable only from the API auth plugin, enforced by a Konsist rule. Still to draw: the sequence diagrams (decide a decision, resolve an approval with device auth, pause an agent, polling refresh), due before slice 1a-2.

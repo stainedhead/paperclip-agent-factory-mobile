@@ -23,7 +23,7 @@
 | `AttentionItem` | server shape: `id`, `sourceKind`, `subject`, `whyNow`, `decisionVerbs`, `inlineResolvable`, `severity`, `decideBy`, `snoozedUntil`, `dismissalKey`, `activityAt`, `originAgentName`, `detail`, `resolverAudience` |
 | `AttentionFeed` | `items`, `nextCursor`, `totalCount`, `deskBadgeCount`, `countsBySourceKind`, `generatedAt` |
 | `Decision` | question, origin agent, target issue, decide-by, `options`, state (`open` or final) |
-| `DecisionOption` | `id`, `label`, `description`, `style` (`default`, `primary`, `destructive`), `effects`, `inputs` |
+| `DecisionOption` | `id`, `label`, `description`, `style` (`default`, `primary`, `destructive`), `effects`. The PRD's `inputs[]` (FR-042) is not on the server's `DecisionOption` type; `DecisionInput` (`id`, `label`, `placeholder`, `required`, `maxLength`) exists but where it attaches is unverified (research Q8) |
 | `DecisionEffect` | sealed: `CommentOnIssue`, `CreateIssue`, `UpdateIssueStatus`, `AssignIssue`, `CancelIssueTree`, `ResolveBlocker` (each with `staleness`) |
 | `Approval` | `id`, `type`, `status`, `payload` by type, requester, linked issues, comments |
 | `BudgetIncident` | scope, observed spend, limit, status |

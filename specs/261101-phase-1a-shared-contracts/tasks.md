@@ -4,7 +4,7 @@
 
 ## Progress summary
 
-0 / 12 tasks complete.
+0 / 10 tasks complete.
 
 ## Task format
 

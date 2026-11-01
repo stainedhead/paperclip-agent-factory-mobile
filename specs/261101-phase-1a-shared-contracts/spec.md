@@ -59,6 +59,17 @@ Read from the server's shared type definitions. The PRD should be updated as par
 5. **Resolver audience.** Interaction attention items carry `resolverAudience` (who may resolve). It must be shown and respected.
 6. Confirmed matches: six decision effect types, option styles `default | primary | destructive`, approval types and statuses (`pending`, `revision_requested`, `approved`, `rejected`, `cancelled`), agent statuses, issue statuses and priorities, run statuses.
 
+## 5a. Edge cases and error handling
+
+Each item below becomes a named test in the slice that owns it.
+
+**External API failures (FR-095 to FR-097).** `DomainError` is a sealed taxonomy: `Unreachable`, `Timeout`, `Unauthorized` (401, instance shown as "Signed out", config kept), `Forbidden` (403, "no permission in <company>"), `NotFound`, `Conflict` (stale or already resolved), `Rejected(reason)` (422, with the server's reason, for example budget incidents), `ServerError`, and `Malformed` (unparseable body). Reads retry with exponential backoff, at most 3 times. A mutation is never retried; after a timeout the use case re-reads the entity and the screen shows its true state.
+**Empty and null.** Empty attention feed; null `decideBy`, `subject.title`, `detail`, `snoozedUntil`; a company with no agents or issues; an account with no companies; zero configured factories (first run); offline with an empty cache (explain, do not show a blank screen); unknown enum values from a newer server map to `Unsupported(kind)`, never a crash.
+**Races and concurrent changes.** A decision or approval resolved elsewhere between load and confirm shows its final state with no options (FR-044); a decision effect that is stale is reported per effect as `skipped` or `failed`, not as overall failure; a second tap on a confirming button is ignored while a mutation is in flight; a dismissal undo racing a refresh restores the item exactly once; two screens showing the same entity stay consistent through the cache.
+**Permission boundaries.** Viewer: no mutation use case calls the gateway. Operator: cannot raise a budget or set an agent budget (owner only). An interaction whose `resolverAudience` excludes the user is shown read-only. A 403 after a role change mid-session returns `Forbidden`, refreshes the role and does not retry.
+**Device authentication.** If `Biometrics` is cancelled, fails or is locked out, the action does not run and no gateway call is made. An invalidated key moves the instance to "needs re-pairing" and never falls back to unprotected storage.
+**Time.** Day boundaries use UTC to match the server (`isNewToday`, `isDecideNow`); the midnight edge is tested; "Updated <time>" uses the feed's `generatedAt` when present, otherwise the `Clock` port.
+
 ## 6. Non-functional requirements
 
 - Domain imports only the Kotlin standard library, kotlinx-coroutines and kotlinx-datetime. Application imports domain only. Presentation imports application and domain only. Enforced by Konsist.
@@ -99,6 +110,13 @@ None to users. `PaperclipCore.createGraph(allowInsecureLocal:)` gains a mode par
 5. The demo graph renders the data in the design mocks (Acme Labs, PAP-1182, Engineer 1) through the state holders.
 6. A Swift-interop review of the exported surface is recorded in `implementation-notes.md`, with no Swift 6 concurrency warnings from the existing app.
 7. `./gradlew check lint`, `ios.yml`, `contract.yml` and `security.yml` are green.
+8. A table-driven test covers every (role, action) pair: a viewer's mutation use cases never call the gateway fake; operator and owner differences match the PRD.
+9. For every destructive action (pause agent, cancel run, reject approval, destructive decision option, budget raise, remove factory), the gateway fake is not called unless the `Biometrics` fake succeeds; cancel, failure and lockout paths are tested.
+10. A mutation that times out is attempted exactly once (call count 1) and the entity is then re-read.
+11. With the `Connectivity` fake offline, reads show cached data with its timestamp and every mutation intent is disabled with an explanation key.
+12. A decision or approval that was resolved elsewhere shows its final state and no options.
+13. A table of `decideBy` cases (`today`, `this_week`, `whenever`, past date, today's date, null) and `createdAt` values, including the UTC midnight boundary, gives the same grouping and badge inputs as the server rules (research Q1).
+14. A Konsist rule restricts callers of `Secret.reveal()` to the API auth plugin.
 
 ## 11. Risks and mitigation
 

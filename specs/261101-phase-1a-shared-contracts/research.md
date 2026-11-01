@@ -12,6 +12,11 @@
 6. **Role discovery.** `GET /api/cli-auth/me` returns companies and an instance-admin flag; where does the per-company role (owner, operator, viewer) come from, and is `viewer` real at this server version?
 7. **Cache keys.** Which identifiers are stable across factories (company id, item `dismissalKey`, `dedupKey`) for the cache and for undoing a dismissal?
 
+8. **Where do decision inputs attach?** `DecisionInput` exists in the shared types but `DecisionOption` has no `inputs` field. Check the `GET /api/decisions/{id}` response and the decide request body (`server/src/routes/decisions.ts`). Owner: whoever starts slice 1a-2, before modelling `Decision`.
+9. **Role source.** Same as Q6; the answer fixes the `Role` mapping and the permissions table (acceptance criterion 8).
+
+Resolution path for all open questions: answer from the server source or a live authenticated instance (`./scripts/paperclip-test-server.sh up`), record the answer here with the file or response that proves it, then update the data dictionary. Questions 3 to 9 are due before the slice that needs them starts (2 to 5 before 1a-2; 6 and 9 before 1a-1; 7 before 1a-3).
+
 ## Industry standards
 
 [TBD] Material 3 and Human Interface Guidelines only apply in Phase 2. Relevant here: OWASP MASVS L2 for storage and auth (already in the PRD).

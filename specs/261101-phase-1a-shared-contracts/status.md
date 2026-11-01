@@ -20,7 +20,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] Spec directory created and `spec.md` populated from the PRD and the server types
 - [x] Research questions identified (`research.md`)
 - [x] Phase files initialized
-- [ ] `/dev-flow:review-spec` run and findings resolved
+- [x] `/dev-flow:review-spec` run 2026-11-01: verdict Needs revision; edge cases, acceptance criteria 8 to 14, task count, decision inputs and open-question paths fixed. Remaining warnings: use case list and sequence diagrams (due before slice 1a-2).
 - [x] PRD updated for the badge decision (FR-030, FR-032, FR-082, design conventions); [ ] other server differences in spec section 5 (source kinds, sixth interaction kind, `deploymentExposure`)
 
 ## Blockers
