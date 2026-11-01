@@ -127,3 +127,62 @@ Same convention as slice 1a-2: "compile red" is the first test of a new type fai
 ## Slice 1a-3 test counts (from the JUnit XML, jvmTest)
 
 New classes: domain 39, application 69, presentation 88, testing 9, umbrella 3 (wiring 2, Konsist 1): 208 tests.
+
+## Slice 1a-4 TDD log
+
+Order of work: Snooze carry-over, demo data, contract suites, live events and refresh policy, traceability, Swift interop. Each group's red step, as it was actually seen:
+
+- **Decision Snooze (carry-over a).** `SnoozeItemTest` changed first to pass `item.dismissalKey`: 5 compile errors (`String` where `AttentionItem` was expected). `DecisionSnoozeTest` (5 tests) written next: compile red (`canSnooze`, `snoozeOptions`, `SnoozeRequested` and the fifth `DecisionTarget` argument unresolved). Green after the holder, renderer and use case change.
+- **Demo data (acceptance 5).** `DemoIds` plus a stub `createDemoGraph()` that returned the unseeded graph, then `DemoGraphTest` (14 tests): all 14 failed on assertions or 10 s timeouts (`NoSuchElementException` for PAP-1204, `Element differ at index` for the Inbox titles, timeouts for ids the unseeded fakes do not hold). After seeding, 12 passed and 2 needed a decision: the Inbox order (the mock lists the approval second, FR-030 sorts a group by severity, so the test now asserts the production order and records the deviation) and a race in the test itself (it sent `Refresh` to the Factories holder before the holder had read the instances; it now waits for the rows first).
+- **Contract suites (acceptance 4).** The fakes already behaved, so there was no natural red. Four suites needed the fakes to be more honest and those fake changes were made with the suites (per-address health, key and revocation state in the auth fake, idempotency-key replay in the decision fake), not red first. Mutation check instead: I broke four fake rules and ran the suites. `FakeApprovalContractTest` failed with "rejecting an approved approval must be rejected with a reason but was Success", `FakeBudgetContractTest` with "a raise that does not exceed spend must be rejected", `FakeRunWriteContractTest` with "cancelling a run that already stopped must fail with Conflict" and `FakeAuthAccountContractTest` with "me after the key was revoked must fail with Unauthorized"; three older behaviour tests failed too. Reverted. After the final run all contract subclasses pass (one per port suite, 27 test classes).
+- **Live events and invalidation (FR-091).** `InvalidationRulesTest` (5): compile red (`LiveEvent`, `InvalidationRules` unresolved), then green.
+- **RefreshVisibleScreen (FR-090).** `RefreshVisibleScreenTest` and `RefreshOnLiveEventsTest` (12, virtual time): compile red (`RefreshTarget`, `RefreshVisibleScreen` unresolved); the first implementation used the experimental `flatMapConcat` (compiler error, replaced with `transform`), then green.
+- **Holders as refresh targets.** `ScreenRefreshTargetTest` (6): compile red (`refreshTarget` unresolved on ten holders), then green. `DemoRefreshWiringTest` (3, umbrella): compile red (`graph.refresh`, `graph.lifecycle`, `resolve`), then green; the Android host run showed one flake (the live event was sent before the session had subscribed, events are not replayed) and the test now sends until it is seen.
+- **Traceability and rules.** `RequirementsTraceabilityTest` red: FR-002, FR-013 and FR-097 had no tag (see below). The contract-per-port rule was red for `InteractionGateway`, `AgentGateway` and `DashboardGateway` (their suites did not name the port; docs fixed). The reserved-names rule extended to properties was red for `BudgetResolution.RaiseAndResume.newAmount` (renamed `amount`). The refresh-target rule was red for `FactoriesStateHolder`, which has a manual refresh but is not polled (explicit exemption).
+- **Swift.** The tests were written against the built header; they passed on the first run (they check behaviour that the Kotlin demo tests already cover), so there is no Swift red step. Their value is the interop proof: values, `for await` on a state flow, `refreshTarget` and `graph.refresh`.
+
+## Slice 1a-4 decisions in code
+
+- 2026-11-01: `SnoozeItem.invoke` takes the `dismissalKey` instead of the whole item so the Decision screen can snooze without holding the card (ADR-025). `DecisionHints` replaced three positional arguments of `createDecisionStateHolder` (detekt's six-parameter limit).
+- 2026-11-01: the demo clock is Wednesday 2026-11-04T12:00Z. On the fixture clock (Sunday 2026-11-01) the rule `isDecideNow(this_week)` is true, so "This week" would be empty (ADR-026).
+- 2026-11-01: `refreshTarget` is a property over the holder's own state, not an interface the holders implement: the Decision holder was already at ten functions and detekt allows eleven.
+- 2026-11-01: `RefreshVisibleScreen` refreshes on resume and on coming back online but not at start (the holder has just loaded); an interval of 0 means no timer; event-driven refreshes are at most one per second and newer events replace older ones (`conflate`).
+- 2026-11-01: `FakeIssueGateway`, `FakeRunGateway` and `FakeInteractionGateway` gained constructor parameters for seeded comments, plans, attachments, events, log text and other issues' interactions; the old defaults are unchanged. `FakeSecretStore.seed` stores a token without the port so the demo Home factory starts paired.
+- 2026-11-01: test names must not contain commas on Kotlin/Native (the iOS simulator compiler rejects them); the new tests avoid them.
+
+## Swift interop review (slice 1a-4, acceptance criterion 6)
+
+Built with `./scripts/build-kit.sh debug`; read `iosApp/Frameworks/PaperclipKit.xcframework/ios-arm64-simulator/PaperclipKit.framework/Headers/PaperclipKit.h` (15,108 lines) and the SKIE `swiftinterface`. All 16 state holders export exactly `state`, `onIntent(intent:)` and `close()`, and the ten polled ones add `refreshTarget`.
+
+| Check | Finding | Action |
+|---|---|---|
+| `state` flows | Exported as `SkieSwiftStateFlow<State>` (an `AsyncSequence`); `.value` works. `for await state in holder.state` is covered by `aStateFlowIsAnAsyncSequence`. `refreshIntervalSeconds` is a `Flow<Int>` and becomes `SkieSwiftFlow<KotlinInt>`. | none |
+| Generics | No state holder, state or intent type declares type parameters (Konsist `PresentationSurfaceRulesTest`). Generic Kotlin types appear only as SKIE flow wrappers and Objective-C lightweight generics (`NSArray<...>`) on collections. | none |
+| Default arguments | Kotlin defaults do not exist in the header, so Swift must pass every argument (state data classes have defaults that Swift never sees; they are only built in Kotlin). `DecisionHints` and the graph functions have none. | none |
+| `Result` | No `Result` or `DomainResult` in any presentation or umbrella signature (Konsist). The `DomainResult` in domain ports is exported but Swift never calls ports. | none |
+| Names Objective-C renames | One: the getter `BudgetResolution.RaiseAndResume.newAmount` was exported as `doNewAmount` (Swift name kept). | Fixed: renamed `amount`; the Konsist reserved-name rule now covers properties of domain, application, presentation and umbrella. Data class `copy` is exported as `doCopy` (322 times); harmless, Swift never copies a state. |
+| Sealed hierarchies | Every sealed type reaches Swift with an `onEnum(of:)` function (126 in the interface); intents are `data object` (`X.shared`) or `data class` (initialiser). No hierarchy is unexported: domain, application and presentation are all exported through the umbrella. | none |
+| `Sendable` and `@MainActor` | The header has no `Sendable` conformances and no actor annotations. Holders are plain reference types: the tests keep them on `@MainActor`, which builds with `SWIFT_STRICT_CONCURRENCY: complete` and no warnings. | Rule for the apps: create and use a holder on the main actor; never pass one to another actor. |
+| Flows that are not `AsyncSequence` | None on a holder. Domain ports expose `Flow` (`observeAll`, `isOnline`, `events`) which SKIE also wraps; the apps do not use them. | none |
+| Nullable numbers | 21 properties of state and UI types are `Long?` or `Int?` and arrive as `KotlinLong?` or `KotlinInt?` (for example `updatedAtEpochMillis`, `expiry.daysLeft`), read with `.int64Value` or `.intValue`. A `StateFlow<Boolean>` value is a `KotlinBoolean` (`.boolValue`). | Deferred: replacing them with sentinel values would touch most state classes and tests. |
+| Public initialisers of holders | Every holder exposes an initialiser that takes use cases and a `CoroutineScope`, so Swift could build one outside the graph. | Deferred: the graph is the only supported way; hiding the initialisers needs `internal` constructors and a test-only factory. |
+| Suspend functions | Use cases exported from the application layer have `suspend operator fun invoke` (`async throws` in Swift). The apps call holders, not use cases. | none |
+| Testing module | `shared/testing` is not exported (no `Fake*` in the header). `PaperclipCore.createDemoGraph()` is the only demo entry. | none |
+
+Swift tests: `DemoGraphInteropTests.swift` has one case per holder family (factories, attention, work, agents, run and factory home, flow and refresh), each reading real mock values after waiting for the settled state (`eventually`), 13 cases. The earlier `GraphInteropTests` no longer assert a loading phase (carry-over c): `appStateStartsLockedAndUnloaded` became `appStateIsLockedOnceItsSettingsHaveLoaded`, and the inbox, decision and approval cases wait for the settled phase or assert only values that never change. `./scripts/ios-test.sh` ran green with zero Swift warnings; `swiftlint --strict iosApp` and `swift-format lint --recursive --strict` report nothing.
+
+## Deviations and gaps (slice 1a-4)
+
+- The Inbox "Decide now" order is decision, budget stop, approval (severity, FR-030); the mock shows the approval second.
+- Not in the model, so not in the demo state: an agent's next heartbeat ("CEO idle, next heartbeat in 8m", the server does not return it in the agent list, research A1) and the network label ("Tailscale", derived by the UI from the `.ts.net` address). The Approval screen carries `reportsToAgentId`, not the name; the card's server text ("reports to CTO") is the `whyNow`. A name join for the Approval detail is deferred.
+- Runs 3 and Files 2 on the Issue tabs are available after the person opens those tabs (`runsLoaded`, `filesLoaded`), as designed in slice 1a-3.
+- The demo fakes ignore the company id: Side Project Co shows the Acme Labs data.
+- The events and the log of the demo Run viewer are the same for every run (the run fake holds one event list and one log).
+- The timer uses coroutine time, not the `Clock` port (ADR-027).
+- Carry-over (b): resolved versus dismissed cannot be read from the server (ADR-029, research B1); documented as a known limitation, no data invented.
+- CI workflows (`ios.yml`, `contract.yml`, `security.yml`, `shared.yml`) were not run: no pull request exists for the branch. The local equivalents are green.
+
+## Slice 1a-4 test counts
+
+New test functions: domain 5, application 12, presentation 14, testing 23, umbrella 23 (14 demo graph, 3 refresh wiring, 6 Konsist rules), Swift 13 new in `DemoGraphInteropTests` plus 10 existing cases kept (6 edited). JUnit XML totals on the JVM after the final run: domain 135, application 241, presentation 266, testing 49, umbrella 25 (716), plus 23 Konsist tests. Kover, fresh `reportCore.xml` and `reportPresentation.xml`: see the status file.
+

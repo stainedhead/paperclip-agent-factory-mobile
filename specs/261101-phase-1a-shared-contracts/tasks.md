@@ -21,7 +21,7 @@
 - **P1.1** Slice 1a-1: instances, secrets, settings, auth, roles; screens 15, 8, 16, 9, 13. · deps: Phase 0 pull requests merged · L · state-holder flow tests pass; coverage gates met.
 - **P1.2** Slice 1a-2: attention, decisions, approvals, budget incidents; screens 1, 2, 3, 12. · deps: P1.1 · L
 - **P1.3** Slice 1a-3: work, agents, runs, factory; screens 4, 10, 5, 6, 11, 7. · deps: P1.1 · L
-- **P1.4** Slice 1a-4: complete demo data, contract suites, polling policy. · deps: P1.2, P1.3 · M
+- **P1.4** Slice 1a-4: complete demo data, contract suites, polling policy. · deps: P1.2, P1.3 · M · done 2026-11-01
 - **P1.5** Swift-interop review of the exported surface, recorded in `implementation-notes.md`. · deps: P1.4 · S
 
 ## Phase 2: completion
