@@ -3,6 +3,9 @@ plugins {
 }
 
 kotlin {
+    sourceSets.commonTest.dependencies {
+        implementation(project(":shared:testing"))
+    }
     sourceSets.commonMain.dependencies {
         api(project(":shared:application"))
         api(project(":shared:domain"))
