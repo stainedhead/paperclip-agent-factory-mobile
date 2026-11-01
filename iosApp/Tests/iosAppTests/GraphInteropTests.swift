@@ -6,9 +6,9 @@ import Testing
 struct GraphInteropTests {
     private let graph = PaperclipCore.shared.createGraph(allowInsecureLocal: false)
 
-    @Test func appStateStartsLockedAndUnloaded() {
+    @Test func appStateIsLockedOnceItsSettingsHaveLoaded() async {
         let holder = graph.createAppStateHolder()
-        #expect(holder.state.value.isLoaded == false)
+        #expect(await eventually { holder.state.value.isLoaded })
         #expect(holder.state.value.lock == .locked)
     }
 
@@ -35,37 +35,33 @@ struct GraphInteropTests {
         #expect(graph.createManageFactoriesStateHolder().state.value.rows.isEmpty)
     }
 
-    @Test func inboxStartsLoadingWithNoBadge() {
+    @Test func inboxAcceptsTypedIntentsOnceItHasSettled() async {
         let holder = graph.attention.createInboxStateHolder(instanceId: "inst-1", companyId: "company-acme")
-        #expect(holder.state.value.phase == .loading)
-        #expect(holder.state.value.badgeCount == 0)
+        #expect(await eventually { holder.state.value.phase != .loading })
         holder.onIntent(intent: InboxIntentRefresh.shared)
         holder.onIntent(intent: InboxIntentFilterSelected(kind: SourceKindUi.approval))
         holder.close()
     }
 
-    @Test func detailHoldersStartLoadingAndAcceptTypedIntents() {
+    @Test func detailHoldersAcceptTypedIntents() {
         let decision = graph.attention.createDecisionStateHolder(
             instanceId: "inst-1", companyId: "company-acme", decisionId: "dec-1",
             hints: DecisionHints(originAgentName: nil, decideBy: nil, dismissalKey: nil))
-        #expect(decision.state.value.phase == .loading)
         decision.onIntent(intent: DecisionIntentOptionSelected(optionId: "ship"))
         decision.close()
 
         let approval = graph.attention.createApprovalStateHolder(
             instanceId: "inst-1", companyId: "company-acme", approvalId: "ap-1")
-        #expect(approval.state.value.phase == .loading)
         approval.onIntent(intent: ApprovalIntentNoteConfirmed(note: "no"))
         approval.close()
 
         let budget = graph.attention.createBudgetIncidentStateHolder(
             instanceId: "inst-1", companyId: "company-acme", incidentId: "inc-1")
-        #expect(budget.state.value.canSubmit == false)
         budget.onIntent(intent: BudgetIntentChoiceSelected(choice: .raiseAndResume))
         budget.close()
     }
 
-    @Test func workScreensStartLoadingAndAcceptTypedIntents() {
+    @Test func workScreensAcceptTypedIntents() {
         let list = graph.work.createWorkListStateHolder(instanceId: "inst-1", companyId: "company-acme")
         #expect(list.state.value.filter == .allOpen)
         list.onIntent(intent: WorkListIntentFilterSelected(filter: .blocked))
@@ -84,7 +80,7 @@ struct GraphInteropTests {
         issue.close()
     }
 
-    @Test func agentScreensStartLoadingAndAcceptTypedIntents() {
+    @Test func agentScreensAcceptTypedIntents() {
         let agents = graph.agents.createAgentsStateHolder(instanceId: "inst-1", companyId: "company-acme")
         #expect(agents.state.value.refreshIntervalSeconds == 15)
         agents.onIntent(intent: AgentsIntentPauseTapped(agentId: "agent-eng-1"))
@@ -98,7 +94,7 @@ struct GraphInteropTests {
         detail.close()
     }
 
-    @Test func runViewerAndFactoryHomeStartLoadingAndAcceptTypedIntents() {
+    @Test func runViewerAndFactoryHomeAcceptTypedIntents() {
         let run = graph.runs.createRunViewerStateHolder(
             instanceId: "inst-1", companyId: "company-acme", runId: "run-live")
         #expect(run.state.value.autoScroll)

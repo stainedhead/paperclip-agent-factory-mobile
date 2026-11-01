@@ -20,14 +20,14 @@ class FakeInstanceRepositoryContractTest : InstanceRepositoryContract() {
     override fun create(): InstanceRepository = FakeInstanceRepository()
 
     @Test
-    fun `the fake passes the instance repository contract`() = runTest { runAll() }
+    fun `FR-002 the fake passes the instance repository contract for non secret configuration`() = runTest { runAll() }
 }
 
 class FakeSecretStoreContractTest : SecretStoreContract() {
     override fun create(): SecretStore = FakeSecretStore()
 
     @Test
-    fun `the fake passes the secret store contract`() = runTest { runAll() }
+    fun `FR-013 the fake passes the secret store contract for the board token per instance`() = runTest { runAll() }
 }
 
 class FakeAppSettingsStoreContractTest : AppSettingsStoreContract() {

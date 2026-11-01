@@ -54,7 +54,7 @@ class FakeBudgetGateway(
         record("resolve")?.let { return DomainResult.Failure(it) }
         val current = store[id]?.takeIf { it.isOpen } ?: return DomainResult.Failure(DomainError.NotFound)
         val observed = serverObservedMinor ?: current.observed.minorUnits
-        if (resolution is BudgetResolution.RaiseAndResume && resolution.newAmount.minorUnits <= observed) {
+        if (resolution is BudgetResolution.RaiseAndResume && resolution.amount.minorUnits <= observed) {
             return DomainResult.Failure(DomainError.Rejected("New budget must exceed current observed spend"))
         }
         val raised = resolution is BudgetResolution.RaiseAndResume

@@ -23,7 +23,7 @@ sealed interface BudgetResolution {
     data object KeepPaused : BudgetResolution
 
     data class RaiseAndResume(
-        val newAmount: Money,
+        val amount: Money,
     ) : BudgetResolution
 }
 
@@ -49,8 +49,8 @@ data class BudgetIncident(
     fun validate(resolution: BudgetResolution): ResolutionIssue? =
         when {
             resolution !is BudgetResolution.RaiseAndResume -> null
-            resolution.newAmount.currency != observed.currency -> ResolutionIssue.WrongCurrency
-            resolution.newAmount <= observed -> ResolutionIssue.MustExceedObserved
+            resolution.amount.currency != observed.currency -> ResolutionIssue.WrongCurrency
+            resolution.amount <= observed -> ResolutionIssue.MustExceedObserved
             else -> null
         }
 }

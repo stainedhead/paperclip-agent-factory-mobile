@@ -42,8 +42,37 @@ class ConventionRulesTest {
     }
 
     @Test
+    fun `exported properties avoid names Objective-C reserves`() {
+        // A getter called newFoo is renamed doNewFoo in the header (swift-interop review, slice 1a-4).
+        val reserved = Regex("^(new|alloc|copy|mutableCopy|init)([A-Z].*)?$")
+        listOf("domain", "application", "presentation", "umbrella").forEach { module ->
+            scope(module).properties().assertTrue(
+                additionalMessage = "$module must not declare properties that Objective-C reserves",
+            ) { !it.hasPublicOrDefaultModifier || !reserved.matches(it.name) }
+        }
+    }
+
+    @Test
+    fun `state holders that refresh expose the target for the refresh policy`() {
+        val holders = scope("presentation").classes().filter { it.name.endsWith("StateHolder") }
+        // Factories has a manual Refresh (pull to refresh the company lists) but is not a polled data screen.
+        val refreshing =
+            holders.filter { holder ->
+                holder.name != "FactoriesStateHolder" && holder.containingFile.text.contains("Intent.Refresh")
+            }
+        Assertions.assertTrue(refreshing.size >= REFRESHING_HOLDERS, "Expected the polling holders: $refreshing")
+        refreshing.assertTrue(additionalMessage = "A holder with a Refresh intent exposes `refreshTarget`") { holder ->
+            holder.properties().any { it.name == "refreshTarget" }
+        }
+    }
+
+    @Test
     fun `the architecture rules can see the code they guard`() {
         Assertions.assertTrue(scope("domain").classes().any { it.name == "BaseUri" })
         Assertions.assertTrue(scope("presentation").properties().isNotEmpty())
+    }
+
+    private companion object {
+        const val REFRESHING_HOLDERS = 10
     }
 }

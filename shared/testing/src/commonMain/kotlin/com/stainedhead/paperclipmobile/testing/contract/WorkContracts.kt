@@ -18,8 +18,8 @@ import com.stainedhead.paperclipmobile.domain.port.DashboardGateway
 import com.stainedhead.paperclipmobile.domain.port.InteractionGateway
 
 /**
- * Issue-thread interaction rules (research W7: `issues.ts:17145-17789`). [issue] holds at least two pending
- * confirmations ([pendingConfirmations]) and one interaction that is already [answeredId].
+ * Issue-thread interaction rules of [InteractionGateway] (research W7: `issues.ts:17145-17789`). [issue] holds at
+ * least two pending confirmations ([pendingConfirmations]) and one interaction that is already [answeredId].
  */
 abstract class InteractionContract {
     abstract fun create(): InteractionGateway
@@ -103,8 +103,8 @@ abstract class InteractionContract {
 }
 
 /**
- * Agent control rules (research A1, A2: `routes/agents.ts:5776-6344`, `routes/costs.ts:407-427`). [runningAgent] can be
- * paused; [unknownAgent] does not exist.
+ * Agent control rules of [AgentGateway] (research A1, A2: `routes/agents.ts:5776-6344`, `routes/costs.ts:407-427`).
+ * [runningAgent] can be paused; [unknownAgent] does not exist.
  */
 abstract class AgentContract {
     abstract fun create(): AgentGateway
@@ -169,7 +169,7 @@ abstract class AgentContract {
     }
 }
 
-/** Factory home rules (research D1: `routes/dashboard.ts:27`, `routes/costs.ts:323`, `services/costs.ts:562-609`). */
+/** Factory home rules of [DashboardGateway] (research D1: `routes/dashboard.ts:27`, `routes/costs.ts:323`). */
 abstract class DashboardContract {
     abstract fun create(): DashboardGateway
 

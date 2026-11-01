@@ -26,7 +26,7 @@ class ValueObjectsTest {
     }
 
     @Test
-    fun `secret keys are namespaced per instance`() {
+    fun `FR-013 secret keys are namespaced per instance`() {
         SecretKey(InstanceId("abc"), SecretName.BoardToken).path shouldBe "instance/abc/boardToken"
         SecretKey.namespacePrefix(InstanceId("abc")) shouldBe "instance/abc/"
         SecretName.entries.map { it.wire } shouldBe

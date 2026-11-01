@@ -19,6 +19,20 @@ class PortAndSecretRulesTest {
     }
 
     @Test
+    fun `every port in the domain has a contract suite in shared testing that names it`() {
+        val ports = scope("domain").interfaces().filter { it.packagee?.name == portPackage }.map { it.name }
+        val contractDir = File(projectRoot, "shared/testing/src/commonMain/kotlin")
+        val contracts =
+            contractDir
+                .walkTopDown()
+                .filter { it.extension == "kt" && it.parentFile.name == "contract" }
+                .joinToString("\n") { it.readText() }
+        Assertions.assertTrue(contracts.isNotBlank(), "No contract suites found: the rule would pass vacuously")
+        val missing = ports.filter { "[$it]" !in contracts }
+        Assertions.assertTrue(missing.isEmpty(), "Ports without a contract suite in shared/testing/contract: $missing")
+    }
+
+    @Test
     fun `Secret reveal is called only from infrastructure, the testing fakes and Secret itself`() {
         val sources = File(projectRoot, "shared").walkTopDown().filter { isMainSource(it) }.toList()
         Assertions.assertTrue(sources.isNotEmpty(), "No source files found: the rule would pass vacuously")

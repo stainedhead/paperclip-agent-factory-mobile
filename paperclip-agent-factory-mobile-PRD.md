@@ -294,7 +294,7 @@ Screens 1–8 are mocked on the [UI canvas](https://claude.ai/artifact/9NMV8bCwZ
 - The Inbox header count and the tab badge both show `deskBadgeCount` (FR-032), worded "<n> new or due today". The "Decide now" group holds only items whose decide-by is due, so it can hold fewer cards than the badge.
 - Destructive actions (Reject, Pause, Cancel run, destructive decision options) use the destructive colour; actions gated by device authentication (FR-014) carry a lock glyph on the primary button.
 - "Watch on lock screen" (Live Activity) is not in v1; it is a v1.1 item and is not drawn on the Run viewer.
-- Decision detail offers Snooze in the top bar, using the same snooze options and endpoint as FR-034.
+- Decision detail offers Snooze in the top bar, using the same snooze options and endpoint as FR-034, when it was opened from an Inbox card (the card's `dismissalKey` is what the endpoint needs). Opened from anywhere else, the Snooze button is hidden (ADR-025).
 
 Navigation: five tabs (Inbox, Factory, Work, Agents, Factories). Details push on a stack; confirmations use sheets. iOS follows the Human Interface Guidelines (large titles, swipe actions, sheets); Android follows Material 3 (top app bar, bottom navigation bar, modal bottom sheets, predictive back).
 

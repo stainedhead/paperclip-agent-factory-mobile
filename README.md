@@ -35,7 +35,7 @@ Needs a current Xcode (developed with 27.2), JDK 21 (Gradle finds or downloads i
 open iosApp/iosApp.xcodeproj         # after ./scripts/ios-test.sh, run the "iosApp" scheme on a simulator
 ```
 
-Demo mode (the whole app on fakes, no server) is being built in Phase 1a. `PaperclipCore.createGraph` already runs every slice 1a-1 state holder (first run, factories, manage, add/edit, settings, app shell) every slice 1a-2 state holder (Inbox, Decision, Approval, Budget incident, with the Acme Labs demo data) and every slice 1a-3 state holder (Work list, Issue with interactions, Agents, Agent detail, Run viewer, Factory home, reached as `graph.work`, `graph.agents`, `graph.runs` and `graph.factory`) on the shared fakes; the iOS app still renders only the first-run address step until the Phase 2i screens land.
+Demo mode (the whole app on fakes, no server): `PaperclipCore.createDemoGraph()` builds the graph on fakes seeded with the design mocks' data (Home factory, Acme Labs, PAP-1182, Engineer 1; ADR-026), and every screen's state holder can be driven from it; the iOS tests do that in `DemoGraphInteropTests`. `PaperclipCore.createGraph` already runs every slice 1a-1 state holder (first run, factories, manage, add/edit, settings, app shell) every slice 1a-2 state holder (Inbox, Decision, Approval, Budget incident, with the Acme Labs demo data) and every slice 1a-3 state holder (Work list, Issue with interactions, Agents, Agent detail, Run viewer, Factory home, reached as `graph.work`, `graph.agents`, `graph.runs` and `graph.factory`) on the shared fakes; the iOS app still renders only the first-run address step until the Phase 2i screens land.
 
 ### A Paperclip server for contract tests
 
