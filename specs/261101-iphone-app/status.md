@@ -9,7 +9,7 @@
 | 2 Research and data model | Not started |
 | 3 Architecture and plan | `plan.md` drafted, awaiting owner review |
 | 4 Task breakdown (`tasks.md`) | Not started |
-| 5 Implementation (TDD) | Not started; ready to start Phase 0 once the initial import is agreed |
+| 5 Implementation (TDD) | Phase 0 in review: PRs #1 (shared skeleton and gates), #2 (iPhone shell), #3 (Docker test server, contract and security CI) |
 | 6 Completion and archive | — |
 
 ## Blockers and decisions needed

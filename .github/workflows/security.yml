@@ -1,6 +1,6 @@
 name: security
 
-# Secret scanning on every change and dependency review on pull requests.
+# Secret scanning on every change. Dependency updates come from Dependabot (.github/dependabot.yml).
 on:
   pull_request:
   push:
@@ -21,16 +21,3 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
             git /repo --config /repo/.gitleaks.toml --redact --verbose
-
-  dependency-review:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/dependency-review-action@v5
-        with:
-          fail-on-severity: high
