@@ -5,14 +5,13 @@ import kotlin.test.Test
 import kotlin.time.Instant
 
 internal fun testAgent(
-    id: String = "a1",
     name: String = "Engineer 1",
     status: AgentStatus = AgentStatus.Idle,
     pauseReason: PauseReason? = null,
     budgetCents: Long = 10_000,
     spentCents: Long = 2_500,
 ) = Agent(
-    id = AgentId(id),
+    id = AgentId("a1"),
     name = name,
     role = "engineer",
     title = null,
@@ -61,10 +60,10 @@ class AgentTest {
         val sections =
             AgentGrouping.group(
                 listOf(
-                    testAgent("1", "Zed", AgentStatus.Idle),
-                    testAgent("2", "Bob", AgentStatus.Running),
-                    testAgent("3", "Amy", AgentStatus.Idle),
-                    testAgent("4", "Gone", AgentStatus.Terminated),
+                    testAgent("Zed", AgentStatus.Idle),
+                    testAgent("Bob", AgentStatus.Running),
+                    testAgent("Amy", AgentStatus.Idle),
+                    testAgent("Gone", AgentStatus.Terminated),
                 ),
             )
         sections.map { it.group } shouldBe listOf(AgentGroup.Running, AgentGroup.Idle)

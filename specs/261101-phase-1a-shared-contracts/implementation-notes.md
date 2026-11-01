@@ -73,3 +73,13 @@ Process correction for this slice: every group below was written test first, run
 - 2026-11-01: Inbox "Raise and resume" is navigation, not a mutation: the card offers it and the platform UI opens the Budget incident sheet (`open` target `BudgetIncident`), where the amount is typed.
 - 2026-11-01 (interop): slice 1a-2 screens are created through `graph.attention` (`AttentionScreens`), not on `PaperclipGraph` itself, because detekt allows 10 functions per class. `GraphInteropTests` creates all four holders and sends typed intents from Swift 6 with no warnings.
 - 2026-11-01 (gate): the first full `check` failed on detekt (`TooManyFunctions` on the graph and module file) and two Konsist rules (a read-only use case without a `CompanyContext`, a public generic helper in presentation); fixed by splitting `AttentionScreens`/`SliceTwoModules`, narrowing the rule to mutations, and making the helper `internal`.
+
+## Slice 1a-3 TDD log (red seen first, per group)
+
+Same convention as slice 1a-2: "compile red" is the first test of a new type failing on a missing symbol, "assertion red" is a stub that returns a wrong value (never `TODO()`).
+- Domain ids, `IssueStatus`, `IssuePriority`, `AgentStatus`, `RunStatus`, `InteractionStatus` (`WorkEnumsTest`): compile red (121 errors), then stub enums with `fromServer = Unknown` and false flags gave 6 assertion failures, then green.
+- Domain `Agent`, `AgentGroup`, `AgentGrouping`, `PauseReason` (`AgentTest`): compile red (33 errors), then a stub model (`group = Idle`, flags false, grouping empty) gave 8 assertion failures, then green.
+- Domain `Issue`, `IssueFilter`, `IssueQuery` (`IssueFilterTest`): compile red (36 errors), then green.
+- Domain `Interaction`, `InteractionAnswer`, validation (`InteractionTest`, 14 tests): compile red (134 errors), then 1 assertion failure (`canBeResolvedBy` ignored `acceptanceBlocked`; code fixed), then green.
+- Domain `HeartbeatRun`, `LogTail`, `RunEvents`, `DashboardSummary`, `SpendWindows` (`RunAndDashboardTest`): compile red (43 errors). One test line (`needsAttention`) asserted a property the spec never asked for and was removed; then green.
+- Fakes for the five new ports (`WorkFakesBehaviourTest`, 9 tests): compile red (83 errors), then green on the first run.

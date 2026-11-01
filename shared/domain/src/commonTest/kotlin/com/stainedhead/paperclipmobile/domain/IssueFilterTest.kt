@@ -10,7 +10,6 @@ internal fun testIssue(
     priority: IssuePriority = IssuePriority.High,
     assigneeAgentId: String? = null,
     assigneeUserId: String? = null,
-    parentId: String? = null,
 ) = Issue(
     id = IssueId(id),
     identifier = "PAP-1182",
@@ -20,7 +19,7 @@ internal fun testIssue(
     assigneeAgentId = assigneeAgentId?.let(::AgentId),
     assigneeUserId = assigneeUserId,
     projectId = null,
-    parentId = parentId?.let(::IssueId),
+    parentId = null,
     createdAt = Instant.parse("2026-11-01T08:00:00Z"),
     updatedAt = Instant.parse("2026-11-01T09:00:00Z"),
 )

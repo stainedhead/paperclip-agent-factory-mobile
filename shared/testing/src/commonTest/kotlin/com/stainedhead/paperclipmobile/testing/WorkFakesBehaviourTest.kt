@@ -10,6 +10,7 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InteractionAnswer
 import com.stainedhead.paperclipmobile.domain.InteractionStatus
+import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.IssueFilter
 import com.stainedhead.paperclipmobile.domain.IssueId
 import com.stainedhead.paperclipmobile.domain.IssueQuery
@@ -19,7 +20,6 @@ import com.stainedhead.paperclipmobile.domain.NewIssue
 import com.stainedhead.paperclipmobile.domain.PauseReason
 import com.stainedhead.paperclipmobile.domain.RunId
 import com.stainedhead.paperclipmobile.domain.RunStatus
-import com.stainedhead.paperclipmobile.domain.port.InvokeOutcome
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInteractionGateway

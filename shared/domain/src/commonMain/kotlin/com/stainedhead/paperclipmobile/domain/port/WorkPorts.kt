@@ -13,6 +13,7 @@ import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.Interaction
 import com.stainedhead.paperclipmobile.domain.InteractionAnswer
 import com.stainedhead.paperclipmobile.domain.InteractionId
+import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.Issue
 import com.stainedhead.paperclipmobile.domain.IssueDetail
 import com.stainedhead.paperclipmobile.domain.IssueId
@@ -86,15 +87,6 @@ interface InteractionGateway {
         interactionId: InteractionId,
         answer: InteractionAnswer,
     ): DomainResult<Interaction>
-}
-
-/** What `heartbeat/invoke` did: it started a run, or the server skipped the wake. */
-sealed interface InvokeOutcome {
-    data class Started(
-        val run: HeartbeatRun,
-    ) : InvokeOutcome
-
-    data object Skipped : InvokeOutcome
 }
 
 /** Agents and their controls (PRD FR-070 to FR-072; research A1, A2). */

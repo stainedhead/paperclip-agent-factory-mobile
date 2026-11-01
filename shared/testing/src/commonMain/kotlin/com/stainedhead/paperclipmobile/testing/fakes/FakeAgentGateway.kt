@@ -6,11 +6,11 @@ import com.stainedhead.paperclipmobile.domain.AgentStatus
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.PauseReason
 import com.stainedhead.paperclipmobile.domain.RunStatus
 import com.stainedhead.paperclipmobile.domain.port.AgentGateway
-import com.stainedhead.paperclipmobile.domain.port.InvokeOutcome
 import com.stainedhead.paperclipmobile.testing.AgentFixtures
 
 /**

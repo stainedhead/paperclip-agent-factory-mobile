@@ -77,3 +77,12 @@ data class LogTail(
         val Empty = LogTail("", 0L, false)
     }
 }
+
+/** What `heartbeat/invoke` did: it started a run, or the server skipped the wake. */
+sealed interface InvokeOutcome {
+    data class Started(
+        val run: HeartbeatRun,
+    ) : InvokeOutcome
+
+    data object Skipped : InvokeOutcome
+}

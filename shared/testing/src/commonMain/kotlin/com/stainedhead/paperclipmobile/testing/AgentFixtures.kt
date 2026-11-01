@@ -21,18 +21,17 @@ import com.stainedhead.paperclipmobile.domain.TaskCounts
 object AgentFixtures {
     const val LOG = "Starting migration\nApplying 0042_add_invoices\n"
 
-    private val defaultBudget = 100_000L
-    private val defaultSpent = 25_000L
-    private val smallBudget = 10_000L
-    private val monthSpend = 312_000L
-    private val monthBudget = 500_000L
+    private const val DEFAULT_BUDGET = 100_000L
+    private const val DEFAULT_SPENT = 25_000L
+    private const val SMALL_BUDGET = 10_000L
+    private const val MONTH_SPEND = 312_000L
+    private const val MONTH_BUDGET = 500_000L
 
     fun agent(
         id: String,
         name: String,
         role: String,
         status: AgentStatus,
-        pauseReason: PauseReason? = null,
         reportsTo: String? = null,
     ) = Agent(
         id = AgentId(id),
@@ -42,9 +41,9 @@ object AgentFixtures {
         status = status,
         lifecycleState = null,
         reportsToId = reportsTo?.let(::AgentId),
-        pauseReason = pauseReason,
-        monthlyBudget = Money.usdCents(defaultBudget),
-        monthSpend = Money.usdCents(defaultSpent),
+        pauseReason = null,
+        monthlyBudget = Money.usdCents(DEFAULT_BUDGET),
+        monthSpend = Money.usdCents(DEFAULT_SPENT),
         lastHeartbeatAt = TestData.epoch,
     )
 
@@ -53,10 +52,15 @@ object AgentFixtures {
             agent("agent-ceo", "CEO", "ceo", AgentStatus.Idle),
             agent("agent-cto", "CTO", "cto", AgentStatus.Idle, reportsTo = "agent-ceo"),
             agent("agent-eng-1", "Engineer 1", "engineer", AgentStatus.Running, reportsTo = "agent-cto"),
-            agent("agent-eng-2", "Engineer 2", "engineer", AgentStatus.Paused, PauseReason.Budget, "agent-cto")
-                .copy(monthlyBudget = Money.usdCents(smallBudget), monthSpend = Money.usdCents(smallBudget)),
+            agent("agent-eng-2", "Engineer 2", "engineer", AgentStatus.Paused, "agent-cto")
+                .copy(
+                    pauseReason = PauseReason.Budget,
+                    monthlyBudget = Money.usdCents(SMALL_BUDGET),
+                    monthSpend = Money.usdCents(SMALL_BUDGET),
+                ),
             agent("agent-qa", "QA agent", "qa", AgentStatus.Error, reportsTo = "agent-cto"),
-            agent("agent-design", "Designer", "designer", AgentStatus.Paused, PauseReason.Manual, "agent-ceo"),
+            agent("agent-design", "Designer", "designer", AgentStatus.Paused, "agent-ceo")
+                .copy(pauseReason = PauseReason.Manual),
         )
 
     fun run(
@@ -89,8 +93,8 @@ object AgentFixtures {
         DashboardSummary(
             agents = AgentCounts(active = 4, running = 1, paused = 2, error = 1),
             tasks = TaskCounts(open = 5, inProgress = 1, blocked = 1, done = 1),
-            monthSpend = Money.usdCents(monthSpend),
-            monthBudget = Money.usdCents(monthBudget),
+            monthSpend = Money.usdCents(MONTH_SPEND),
+            monthBudget = Money.usdCents(MONTH_BUDGET),
             pendingApprovals = 2,
             activeBudgetIncidents = 1,
         )

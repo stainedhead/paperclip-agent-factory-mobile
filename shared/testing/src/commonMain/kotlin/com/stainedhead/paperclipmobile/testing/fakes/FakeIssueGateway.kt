@@ -153,11 +153,10 @@ class FakeIssueGateway(
             WorkFixtures
                 .issue(
                     "pap-$number",
-                    "PAP-$number",
                     issue.title,
                     IssueStatus.Backlog,
                     issue.priority,
-                    parentId = issue.parentId,
+                    issue.parentId,
                 )
         return DomainResult.Success(created.also { store[it.id] = it })
     }

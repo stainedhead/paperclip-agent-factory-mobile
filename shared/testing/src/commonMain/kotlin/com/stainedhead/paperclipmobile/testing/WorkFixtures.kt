@@ -44,14 +44,13 @@ object WorkFixtures {
 
     fun issue(
         id: String,
-        identifier: String,
         title: String,
         status: IssueStatus = IssueStatus.Todo,
         priority: IssuePriority = IssuePriority.Medium,
         parentId: IssueId? = null,
     ) = Issue(
         id = IssueId(id),
-        identifier = identifier,
+        identifier = id.uppercase(),
         title = title,
         status = status,
         priority = priority,
@@ -65,20 +64,20 @@ object WorkFixtures {
 
     fun issues(): List<Issue> =
         listOf(
-            issue("pap-1182", "PAP-1182", "Ship the billing migration", IssueStatus.InProgress, IssuePriority.High)
+            issue("pap-1182", "Ship the billing migration", IssueStatus.InProgress, IssuePriority.High)
                 .copy(assigneeAgentId = engineer1),
-            issue("pap-1190", "PAP-1190", "Backfill invoices", IssueStatus.Todo, IssuePriority.Critical, pap1182)
+            issue("pap-1190", "Backfill invoices", IssueStatus.Todo, IssuePriority.Critical, pap1182)
                 .copy(assigneeAgentId = engineer2),
-            issue("pap-1191", "PAP-1191", "Update the runbook", IssueStatus.Backlog, IssuePriority.Low, pap1182),
-            issue("pap-1150", "PAP-1150", "Review pricing page", IssueStatus.InReview, IssuePriority.Medium)
+            issue("pap-1191", "Update the runbook", IssueStatus.Backlog, IssuePriority.Low, pap1182),
+            issue("pap-1150", "Review pricing page", IssueStatus.InReview, IssuePriority.Medium)
                 .copy(assigneeUserId = ME),
-            issue("pap-1160", "PAP-1160", "Waiting for vendor keys", IssueStatus.Blocked, IssuePriority.High)
+            issue("pap-1160", "Waiting for vendor keys", IssueStatus.Blocked, IssuePriority.High)
                 .copy(assigneeAgentId = engineer2),
-            issue("pap-1100", "PAP-1100", "Old cleanup", IssueStatus.Done, IssuePriority.Low),
+            issue("pap-1100", "Old cleanup", IssueStatus.Done, IssuePriority.Low),
         )
 
-    private val smallFileBytes = 2_048L
-    private val imageBytes = 90_000L
+    private const val SMALL_FILE_BYTES = 2_048L
+    private const val IMAGE_BYTES = 90_000L
 
     fun plan() = PlanDocument("Plan", "1. Migrate the schema\n2. Backfill\n3. Switch traffic", TestData.epoch)
 
@@ -94,11 +93,11 @@ object WorkFixtures {
                 "att-1",
                 "migration.sql",
                 "text/plain",
-                smallFileBytes,
+                SMALL_FILE_BYTES,
                 TestData.epoch,
                 "/api/attachments/att-1/content",
             ),
-            Attachment("att-2", null, "image/png", imageBytes, TestData.epoch, "/api/attachments/att-2/content"),
+            Attachment("att-2", null, "image/png", IMAGE_BYTES, TestData.epoch, "/api/attachments/att-2/content"),
         )
 
     fun meta(
