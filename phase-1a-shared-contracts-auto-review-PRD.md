@@ -14,10 +14,10 @@ Four read-only reviewers audited the Phase 1a branch (domain and application, pr
 | Priority | Count | Meaning |
 |---|---|---|
 | P0 | 3 | Security defects that reproduce; must be fixed before merge |
-| P1 | 23 | Reproduced bugs and false assurance (tests, contracts, CI, docs) that should be fixed in this change |
-| P2 | 25 | Maintainability, hardening and observations; fix if cheap, otherwise schedule |
+| P1 | 24 | Reproduced bugs and false assurance (tests, contracts, CI, docs) that should be fixed in this change |
+| P2 | 24 | Maintainability, hardening and observations; fix if cheap, otherwise schedule |
 
-Rating corrections from verification: F-A-2's "one factory throws" half is a Warning (real adapters return `DomainResult`), though the cancellation half stays P0; F-B-5 did not reproduce as a wrong flag and is P2; F-B-7's comment-append half is Info, the stale-load half is P1; F-B-6's double-submit risk is low in production (one UI thread) but the load/refresh overlap and unguarded `AppStateHolder` fields are real.
+Rating corrections from verification: F-A-2's "one factory throws" half is a Warning (real adapters return `DomainResult`), though the cancellation half stays P0; F-B-5 did not reproduce as a wrong flag and is P2; F-A-7 (unbounded pairing wait) was raised to P1 in the PRD review; F-B-7's comment-append half is Info, the stale-load half is P1; F-B-6's double-submit risk is low in production (one UI thread) but the load/refresh overlap and unguarded `AppStateHolder` fields are real.
 
 ## Goals
 
@@ -40,6 +40,23 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Parallelism.** P0 and P1 groups touch mostly disjoint files (application security; presentation holders; tests/CI; docs). Use agent teammates with git worktrees per group, but only one Gradle build can run at a time on the dev machine, so teammates must serialise builds (or run builds in CI).
 - Never lower a gate, never suppress a rule inline. After each group run `./gradlew spotlessApply && ./gradlew check lint`, and for Swift-facing changes `./scripts/build-kit.sh debug && ./scripts/ios-test.sh`.
 - Regenerate coverage reports before quoting numbers (`rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation`).
+
+## Non-functional requirements for the fixes
+
+- **No regression:** all 2,189 existing test results stay green on JVM, Android host and iOS simulator; core and presentation coverage stay at or above the current 97.58% and 97.96% (never below the 90% gates).
+- **Security:** a fix must not add a path where a secret is logged, stringified or stored outside `SecretStore`; the fixed-order rule for mutations (permission, validation, device authentication, one gateway call, one re-read) and the no-auto-retry rule are never relaxed. Fixes touching credentials add a test that asserts no authenticated call reaches a host other than the one that issued the key.
+- **Reliability:** no new unbounded waits, loops or retries; every new suspension has a bound or a cancellation path, and cancellation is never swallowed.
+- **Performance and build:** `./gradlew check lint` wall time on CI grows by no more than 10%; no new third-party dependency.
+- **Observability:** the shared layer has no logging today; fixes do not add any. Failure causes stay visible through typed `DomainError` values and state-holder error keys.
+- **Compatibility:** the Swift-facing API stays free of generics, default arguments, `Result` and Objective-C reserved prefixes; any public API change updates the iOS tests in the same commit.
+
+## Implementation order and parallel workstreams
+
+1. **Group 1, credentials and address changes (sequential, first):** FR-R01 (F-A-1), then FR-R03 (F-B-1), FR-R05 (F-A-4), FR-R06 (F-A-5), FR-R02 (F-A-2, two commits), FR-R30 (F-A-7).
+2. **Group 2, state holders (parallel after Group 1):** FR-R for F-B-2, F-B-3, F-B-4, F-B-6, F-B-7, F-B-9, F-D-2, F-A-3, F-A-6, F-A-8.
+3. **Group 3, tests, contracts and CI (parallel with Group 2):** F-C-1, F-C-2, F-C-3, F-C-4, F-C-5 with F-D-5 (one fix), F-C-6, F-C-8, F-C-7.
+4. **Group 4, docs and spec (last, because they describe the final code):** F-D-1, F-D-3, F-D-4, F-D-6 and the remaining P2 items.
+Each group runs in its own git worktree (`git worktree add ../pafm-<group> <branch>`), merged back in the order above. Gradle builds are serialised: one build at a time on the dev machine.
 
 ## Functional requirements (one per finding)
 
@@ -95,8 +112,9 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** Correctness over speed: the app shows stale credentials state, and key-expiry recovery (one-tap re-pair) never triggers on the main flows.
 - **Fix:** Apply the marker centrally (a decorator over the company-scoped gateways, or inside `retryingRead` and `failed` via a small `AuthAwareCall` helper) so every `Unauthorized` marks `SignedOut` once. Make `boardKeyId == null` refuse the revoke-other path or treat it as unknown.
 - **Acceptance criteria:**
-  - `inbox_refresh_401_marks_instance_signed_out`, `approve_401_marks_instance_signed_out_and_keeps_config` (instance row still has name/uri/default company).
-
+  - `inbox_refresh_401_marks_instance_signed_out`: `RefreshInbox` whose gateway returns `Unauthorized` leaves the instance `SignedOut`, with name, address, default company and sort order unchanged.
+  - Table-driven: one mutation use case from each of the decision, budget, agent, run, issue and dashboard packages, and `ApproveApproval`, does the same on a 401 (`approve_401_marks_instance_signed_out_and_keeps_config`).
+  - `unauthorized_marks_signed_out_exactly_once`: two consecutive 401s produce one status write.
 
 ### FR-R05 (P1): `AddInstance` trusts a caller-supplied `HealthReport` that is not bound to the address  [F-A-4]
 
@@ -107,8 +125,9 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** The refusal rule is enforced by convention in the caller, not by the use case, which contradicts "UI holds no rules".
 - **Fix:** Have `AddInstance` call `ProbeInstance` itself on the validated `BaseUri`, or accept a `ProbeResult.Accepted` that carries the probed `BaseUri` and check equality. Consider rejecting a duplicate `baseUri` (names are unique, addresses are not).
 - **Acceptance criteria:**
-  - `add_with_report_probed_for_another_address_is_refused`; `add_local_trusted_address_never_persists_even_with_clean_stale_report`.
-
+  - `add_with_report_probed_for_another_address_is_refused`: `AddInstance` given a report probed for address A and the address B returns a refusal and writes no instance and no secret.
+  - `add_local_trusted_address_never_persists_even_with_clean_stale_report`.
+  - `add_duplicate_base_uri_is_refused`, or an ADR sentence stating that repeated addresses are allowed and why.
 
 ### FR-R06 (P1): Failed enrollment and cancellation leave key, status and config inconsistent  [F-A-5]
 
@@ -130,8 +149,9 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** INTENT principle 2, "never guess what an action will do". The Reconciled contract (FR-096) is "`current` is the truth", but here it is a guess.
 - **Fix:** Compare against the pre-call state: record the set of live run ids (or newest comment id) before the call, and report `Started` only for a new run, otherwise `Unknown`/`Failed(Timeout)` with no `Skipped`. For comments, match on body and author id, or return the thread and let the screen decide. Add an unknown outcome to `InvokeOutcome` rather than reusing `Skipped`.
 - **Acceptance criteria:**
-  - `heartbeat_timeout_with_preexisting_live_run_is_not_reported_started`; `heartbeat_timeout_without_new_run_is_not_reported_skipped`; `comment_timeout_with_foreign_newest_comment_is_not_reported_as_own`.
-
+  - `heartbeat_timeout_with_preexisting_live_run_is_not_reported_started` and `heartbeat_timeout_without_new_run_is_not_reported_skipped`: the outcome is `Unknown` and the Agent detail screen shows its refresh-prompt key.
+  - `heartbeat_timeout_with_new_live_run_is_reported_started` (positive case).
+  - `comment_timeout_with_foreign_newest_comment_is_not_reported_as_own`; `comment_timeout_with_own_comment_is_reported_posted`.
 
 ### FR-R08 (P1): Stale-snapshot writes and unvalidated caller-supplied entities in use cases  [F-A-8]
 
@@ -141,8 +161,8 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** The device-auth rule can be bypassed by an out-of-date entity; lost updates on instance config.
 - **Fix:** For the destructive-option check, re-read the decision (one read) before authenticating, or take only `DecisionId` and load it. Write config changes as field-level updates on a fresh read.
 - **Acceptance criteria:**
-  - `decide_uses_server_side_option_destructiveness_for_device_auth`; `sign_out_keeps_rename_made_during_revoke`.
-
+  - `decide_uses_server_side_option_destructiveness_for_device_auth`: a caller-supplied decision copy that says non-destructive while the fresh read says destructive still requires device authentication; with Biometrics cancelled the gateway receives zero `decide` calls.
+  - `sign_out_keeps_rename_made_during_revoke`: a rename made between the server revoke and the local write is preserved.
 
 ### FR-R09 (P1): Decision screen can run two execution pollers at once; `polling` flag is shared  [F-B-2]
 
@@ -377,8 +397,9 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** 
 - **Fix:** Skip retries when `Connectivity.isOnline` is false; add an overall budget per use case; split cert failure from `Unreachable`.
 - **Acceptance criteria:**
-  - `load_approval_offline_fails_within_one_backoff_budget`.
-
+  - `load_approval_offline_fails_without_backoff`: with `Connectivity` offline `LoadApproval` returns `Failed(Unreachable)` after 0 ms of virtual time.
+  - `certificate_failure_is_not_retried`: a certificate error reaches the gateway exactly once.
+  - `multi_read_use_case_total_wait_is_bounded`: `LoadIssue` with every read failing finishes within 4 s of virtual time.
 
 ### FR-R29 (P2): Dead parameters and unused domain functions  [F-A-12]
 
@@ -388,10 +409,10 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** 
 - **Fix:** Drop the parameter; for CriticalAndHigh loop until the page fills or the server runs out.
 - **Acceptance criteria:**
-  - `critical_and_high_page_fills_across_server_pages`.
+  - `critical_and_high_page_fills_across_server_pages`: with three server pages holding 1, 0 and 5 matching rows, one `ListIssues` call (limit 5) returns 5 rows and a correct `hasMore`.
+  - The unused `userId` parameter and unused imports are gone; detekt and ktlint stay clean.
 
-
-### FR-R30 (P2): `PairInstance` polling is unbounded by server-supplied values and ignores rate limiting  [F-A-7]
+### FR-R30 (P1): `PairInstance` polling is unbounded by server-supplied values and ignores rate limiting  [F-A-7]
 
 - **Reviewer severity:** Warning  ·  **Verification:** Not separately reproduced; reviewer confidence: confirmed.
 - **Where:** auth/PairInstance.kt:72-84, 112-113
@@ -399,8 +420,9 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** A hung "waiting for approval" screen the user cannot trust; a documented behavior (rate limit) that is not implemented.
 - **Fix:** Clamp the interval to a range (for example 250 ms to 10 s) and the wait to `min(expiresAt, now + 15 min)`; use `withTimeoutOrNull` on the whole wait; map 429 to an explicit tolerated error or document and test it.
 - **Acceptance criteria:**
-  - `huge_poll_interval_is_clamped`; `far_future_expiry_is_capped`; `rate_limited_poll_keeps_waiting`.
-
+  - `huge_poll_interval_is_clamped`: a `suggestedPollIntervalMs` of one hour is polled at the 10 s cap.
+  - `far_future_expiry_is_capped`: an `expiresAt` a year away ends the wait at 15 minutes with the expired state.
+  - `rate_limited_poll_keeps_waiting`: a 429 on a poll is tolerated and the next poll still happens.
 
 ### FR-R31 (P2): `Secret.startsWith` copies the whole key into an unwipeable String  [F-A-9]
 
@@ -525,8 +547,9 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** Small, but status.md is "the single source of truth" under AGENTS.
 - **Fix:** Add one-line reasons for the detekt deviations. Fix the status table. Delete the heap dump. Add an ADR sentence for fakes in the shipped artifact.
 - **Acceptance criteria:**
-  - Status table matches the body; the detekt file carries a reason per deviation.
-
+  - Every non-default key in `config/detekt/detekt.yml` has a one-line reason comment (checked by a small script test).
+  - The status table matches its body; `git ls-files` contains no `*.hprof` file.
+  - An ADR sentence records that fakes ship in the framework (cross-reference FR for F-D-12).
 
 ### FR-R42 (P2): CI supply-chain pinning and unpinned tools  [F-C-7]
 
@@ -580,8 +603,7 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** Surface area and binary size; not a secret exposure.
 - **Fix:** Decide in Phase 2 whether demo mode is a release feature (PRD FR-009 "demo factory" says yes) and record it in an ADR.
 - **Acceptance criteria:**
-  - ADR records the decision.
-
+  - A new ADR records whether the demo graph and its fake demo key ship in release builds. If they are excluded, a release-build test asserts `createDemoGraph` is unavailable. If they are included, the ADR states why (FR-009 "demo factory") and `docs/technical-details.md` lists it.
 
 ### FR-R47 (P2): Lint configs are lenient (swift-format enables only two rules; SwiftLint is near default)  [F-D-13]
 
@@ -591,8 +613,7 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** Low now; when the Swift code grows the gates will be weaker than AGENTS.md's "zero issues" implies.
 - **Fix:** Enable `force_unwrapping`, `force_cast`, `unused_import` and swift-format's default rule set in a later PR.
 - **Acceptance criteria:**
-  - n/a, observation.
-
+  - `xcrun swift-format lint --recursive --strict` passes with swift-format's default rule set enabled, and `swiftlint --strict` passes with `force_unwrapping`, `force_cast` and `unused_import` enabled.
 
 ### FR-R48 (P2): ADR bodies still describe designs that do not exist; the correction is an appended "Note"  [F-D-6]
 
@@ -602,8 +623,8 @@ Rating corrections from verification: F-A-2's "one factory throws" half is a War
 - **Why it matters:** Future Phase 1b authors grep for `SavedFilter`/`LogCursor` and find nothing; the ADR log is meant to be the reliable record.
 - **Fix:** Rewrite the four Decision paragraphs with the real names (keep a one-line "originally proposed as ..." history), and update data-dictionary.md.
 - **Acceptance criteria:**
-  - every backticked identifier in the ADR Decision paragraphs of ADR-018, 022, 023, 024 resolves via `grep -r` in `shared/`.
-
+  - Every backticked identifier in the Decision paragraphs of ADR-018, 022, 023 and 024 resolves via `grep -r` in `shared/` (checked by a script test).
+  - `data-dictionary.md` uses `UnsupportedInteraction` where the code does.
 
 ### FR-R49 (P2): Infrastructure Konsist rule is vacuous today and will still miss platform source sets later  [F-D-7]
 
@@ -697,6 +718,8 @@ Reproducing tests were temporary and were deleted; the evidence (test names and 
 - The contract suites are the specification for Phase 1b; correcting them (F-C-1, F-C-4) before 1b starts avoids encoding wrong behavior in real adapters.
 
 ## Open questions
+
+0. **Policy for the 37 findings that were confirmed by reading but not reproduced:** each fix starts with a failing test where the behavior is observable. If the test passes, the finding is refuted: record it as refuted in `status.md` with the passing test kept as a regression test, and make no production change.
 
 1. Should `createGraph` keep wiring fakes, or take a mode now (F-B-10)? Recommendation: add the seam in Phase 1b, document it now.
 2. Is an enabled "Continue to pairing" button with an empty action acceptable in the Phase 1a app? Reviewer D says yes, documented in four places.
