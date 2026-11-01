@@ -43,8 +43,19 @@ struct DemoFactoriesInteropTests {
         #expect(await eventually { manage.state.value.rows.count == 3 && !edit.state.value.name.isEmpty })
 
         #expect(manage.state.value.rows.map(\.name) == ["Home factory", "Cloud factory", "Test factory"])
+        #expect(manage.state.value.rows.last?.address == "http://localhost:3100")
         #expect(edit.state.value.name == "Cloud factory")
         #expect(edit.state.value.exposure == .public)
+    }
+
+    @Test func settingsShowsThePhoneOfTheMock() async {
+        let holder = graph.createSettingsStateHolder()
+        #expect(await eventually { holder.state.value.factories.count == 3 })
+
+        #expect(holder.state.value.deviceName == "Alex's iPhone")
+        #expect(holder.state.value.appLockEnabled)
+        #expect(holder.state.value.idlePeriod == .fiveMinutes)
+        #expect(holder.state.value.factories.map(\.name) == ["Home factory", "Cloud factory", "Test factory"])
     }
 
     @Test func appAndSettingsStartFromTheDemoDevice() async {

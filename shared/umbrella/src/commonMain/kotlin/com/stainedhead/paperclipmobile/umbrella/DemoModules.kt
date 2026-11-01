@@ -1,10 +1,14 @@
 package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.domain.AppSettings
+import com.stainedhead.paperclipmobile.domain.DeploymentMode
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.Exposure
+import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.ServerStatus
 import com.stainedhead.paperclipmobile.domain.port.AgentGateway
 import com.stainedhead.paperclipmobile.domain.port.AppSettingsStore
 import com.stainedhead.paperclipmobile.domain.port.ApprovalGateway
@@ -55,8 +59,6 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
 import org.koin.dsl.module
 
-private const val DEMO_DEVICE_NAME = "Demo phone"
-
 /**
  * Every port backed by the shared fakes, seeded with the demo data set of the design mocks (ADR-026). The clock is
  * frozen at a mid-week instant; the Home factory holds a fake board key and every company-scoped read sees Acme Labs.
@@ -72,18 +74,33 @@ internal fun demoPortsModule() =
             }
         }
         single<AppSettingsStore> {
-            FakeAppSettingsStore(AppSettings(DEMO_DEVICE_NAME, selectedInstanceId = InstanceId(DemoIds.HOME_FACTORY)))
+            FakeAppSettingsStore(
+                AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = InstanceId(DemoIds.HOME_FACTORY)),
+            )
         }
         single<Biometrics> { FakeBiometrics() }
         single<Connectivity> { FakeConnectivity() }
         single<PairingBrowser> { FakePairingBrowser() }
-        single<HealthGateway> { FakeHealthGateway() }
+        single<HealthGateway> {
+            FakeHealthGateway(
+                DomainResult.Success(
+                    HealthReport(
+                        ServerStatus.Ok,
+                        DeploymentMode.Authenticated,
+                        Exposure.Private,
+                        DemoFactories.SERVER_VERSION,
+                        false,
+                    ),
+                ),
+            )
+        }
         single<DeviceTimeZone> { FakeDeviceTimeZone() }
         single<AuthGateway> {
             FakeAuthGateway().apply {
                 meResult = DomainResult.Success(DemoFactories.access())
                 meWithKeyResult = DomainResult.Success(DemoFactories.access())
                 companiesResult = DomainResult.Success(DemoFactories.companies())
+                keysResult = DomainResult.Success(DemoFactories.boardKeys())
             }
         }
         demoAttentionPorts()

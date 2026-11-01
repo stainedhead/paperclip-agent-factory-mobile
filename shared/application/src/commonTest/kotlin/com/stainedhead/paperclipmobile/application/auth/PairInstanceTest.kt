@@ -57,6 +57,23 @@ class PairInstanceTest {
         }
 
     @Test
+    fun `FR-002 after pairing the token is only in the secret store and never in the configuration or settings`() =
+        runTest {
+            val env = env()
+            env.script(ChallengeStatus.Approved)
+
+            env.pair()(unpaired.id, TestData.acme)
+
+            env.secrets.pathsFor(unpaired.id) shouldBe setOf("instance/inst-1/boardToken")
+            env.repository.current
+                .toString()
+                .contains(TestData.TOKEN) shouldBe false
+            env.settings.current
+                .toString()
+                .contains(TestData.TOKEN) shouldBe false
+        }
+
+    @Test
     fun `FR-020 a cancelled challenge stores nothing and wipes the pending token`() =
         runTest {
             val env = env()

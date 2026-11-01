@@ -72,7 +72,7 @@ class DemoGraphFactoriesTest {
             state.rows.map { it.name } shouldBe listOf("Home factory", "Cloud factory", "Test factory")
             val (homeRow, cloud, test) = state.rows
             homeRow.status shouldBe FactoryStatusUi.SignedIn
-            homeRow.address shouldBe "https://factory.tail1234.ts.net"
+            homeRow.address shouldBe "https://paperclip.tail1234.ts.net"
             homeRow.expiry.state shouldBe KeyExpiryUi.Valid
             homeRow.expiry.daysLeft shouldBe 23
             homeRow.companies.map { it.name } shouldBe listOf("Acme Labs", "Side Project Co")
