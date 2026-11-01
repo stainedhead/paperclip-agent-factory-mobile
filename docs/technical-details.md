@@ -69,3 +69,4 @@ Dependabot (`.github/dependabot.yml`) proposes weekly grouped updates for Gradle
 
 - Board keys are rejected on the live-events WebSocket (`/api/companies/{id}/events/ws` accepts agent keys and browser sessions), so the app polls.
 - `/api/health` returns `deploymentMode` and `deploymentExposure` to anyone; the server `version` is only in the response to signed-in callers.
+- A fresh authenticated server reports `bootstrapStatus: bootstrap_pending` (no users yet). Phase 1b contract tests must complete the bootstrap invite to create the first board user before they can pair.
