@@ -31,3 +31,7 @@
 ## Facts to remember
 
 - The local Paperclip is now **running** (port 3100, source build `2026.1023.0+1086`, ahead of the npm package I checked) but is still `local_trusted`, which the app refuses by design. Do not change it. Its `/api/health` already returns `deploymentMode` and `deploymentExposure`, so it is a good fixture for the refusal path. Pin the server version tested by contract tests, not this dev build.
+
+## Phase 1a
+
+Spec created: [../261101-phase-1a-shared-contracts/spec.md](../261101-phase-1a-shared-contracts/spec.md) (2026-11-01).
