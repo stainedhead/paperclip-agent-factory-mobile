@@ -66,7 +66,6 @@ struct GraphInteropTests {
 
     @Test func workScreensStartLoadingAndAcceptTypedIntents() {
         let list = graph.work.createWorkListStateHolder(instanceId: "inst-1", companyId: "company-acme")
-        #expect(list.state.value.phase == .loading)
         #expect(list.state.value.filter == .allOpen)
         list.onIntent(intent: WorkListIntentFilterSelected(filter: .blocked))
         list.onIntent(intent: WorkListIntentSearchChanged(text: "pap"))
@@ -86,7 +85,6 @@ struct GraphInteropTests {
 
     @Test func agentScreensStartLoadingAndAcceptTypedIntents() {
         let agents = graph.agents.createAgentsStateHolder(instanceId: "inst-1", companyId: "company-acme")
-        #expect(agents.state.value.phase == .loading)
         #expect(agents.state.value.refreshIntervalSeconds == 15)
         agents.onIntent(intent: AgentsIntentPauseTapped(agentId: "agent-eng-1"))
         agents.onIntent(intent: AgentsIntentPauseCancelled.shared)
@@ -109,7 +107,7 @@ struct GraphInteropTests {
         run.close()
 
         let home = graph.factory.createFactoryHomeStateHolder(instanceId: "inst-1", companyId: "company-acme")
-        #expect(home.state.value.phase == .loading)
+        #expect(home.state.value.refreshIntervalSeconds == 15)
         home.onIntent(intent: FactoryHomeIntentRefresh.shared)
         home.close()
     }

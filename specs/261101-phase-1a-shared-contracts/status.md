@@ -67,6 +67,6 @@ Update this file after every task and phase. It is the single source of progress
 - [x] Application: 21 use cases in `issue`, `interaction`, `agent`, `run`, `dashboard`; role x action matrix and single-attempt tests (acceptance 8 and 10); device authentication before the gateway for pause agent and cancel run (acceptance 9)
 - [x] Presentation: Work list, Issue (with interaction forms), Factory home, Agents, Agent detail and Run viewer state holders (offline acceptance 11 in each)
 - [x] Umbrella wiring as `graph.work`, `graph.agents`, `graph.runs`, `graph.factory`; Konsist: mutation rule covers the new packages, `DeviceAuthRulesTest`
-- [x] `./gradlew spotlessApply && ./gradlew check lint -q` green; Kover (fresh `reportCore.xml`, domain+application) 97.42% lines (2191 of 2249); (fresh `reportPresentation.xml`) 97.87% (3822 of 3905)
+- [x] `./gradlew spotlessApply && ./gradlew check lint -q` green; Kover (fresh `reportCore.xml`, domain+application) 97.42% lines (2192 of 2250); (fresh `reportPresentation.xml`) 97.88% (3826 of 3909)
 - [x] iOS: `build-kit.sh debug`, SwiftLint, swift-format and `ios-test.sh` green (`GraphInteropTests` has a case per new group)
 - [ ] Open the slice 1a-3 pull request (not opened by the implementing agent)
