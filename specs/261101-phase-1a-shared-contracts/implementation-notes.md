@@ -42,3 +42,10 @@ The exported surface used from Swift is only the six state holders, their state/
 ## Lessons learned
 
 (none yet)
+
+## Slice 1a-2 TDD log (red seen first, per group)
+
+Process correction for this slice: every group below was written test first, run, seen failing, then implemented. "Compile red" = the first test of a new type failed on a missing symbol; "assertion red" = the type existed as a stub that returned a wrong value (never `TODO()`) and the tests failed on assertions.
+- Domain `Severity`, `Money`, `DecideBy`, `AttentionRules`, `InboxGrouping`, source/approval/interaction kinds, `ResolverAudience`: compile red, then stubs for `isDecideNow`/`isNewToday`/`group`/`InboxGrouping.group` gave 6 assertion failures (`expected true but was false`, `expected [DecideNow, Whenever]`), then green. One test row was wrong, not the code (on a UTC Sunday the next day is already next week); corrected with the reason in the row label.
+- Domain `InlineActionPolicy`, `Decision` model and `validateInputs`, `ApprovalActions`, `BudgetIncident.validate`, `SnoozeTimes`: compile red (255 errors), then stubs gave 24 assertion failures, then green.
+- Fakes: `AttentionCacheContract` + `FakeAttentionCacheContractTest` red (missing `AttentionFixtures`/`FakeAttentionCache`), then green. The gateway fakes carry the server's rules and have `AttentionFakesBehaviourTest`.

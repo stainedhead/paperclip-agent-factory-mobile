@@ -17,3 +17,30 @@ data class CompanyId(
         require(value.isNotBlank()) { "CompanyId must not be blank" }
     }
 }
+
+/** Server identity of a decision. */
+data class DecisionId(
+    val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "DecisionId must not be blank" }
+    }
+}
+
+/** Server identity of an approval. */
+data class ApprovalId(
+    val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "ApprovalId must not be blank" }
+    }
+}
+
+/** Server identity of a budget incident. */
+data class BudgetIncidentId(
+    val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "BudgetIncidentId must not be blank" }
+    }
+}
