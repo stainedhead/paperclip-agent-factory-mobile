@@ -39,20 +39,19 @@ Every change must pass all of these locally before you commit:
 ./gradlew spotlessCheck            # ktlint formatting
 ./gradlew detekt                   # static analysis, zero issues
 ./gradlew lint                     # Android Lint, zero new warnings
-./gradlew allTests                 # commonTest, androidUnitTest, iosSimulatorArm64Test
+./gradlew allTests                 # commonTest on jvm, Android host (androidHostTest) and iosSimulatorArm64
 ./gradlew konsistTest              # architecture rules
-./gradlew koverVerify              # coverage gate (see TDD)
+./gradlew koverVerifyCore koverVerifyPresentation   # coverage gates (see TDD)
 ./gradlew check                    # runs everything above
 
 # iOS (from the repository root)
-./gradlew :shared:umbrella:assembleXCFramework
-swiftlint --strict iosApp
-swift-format lint --recursive --strict iosApp
-xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+./scripts/build-kit.sh              # builds PaperclipKit.xcframework into iosApp/Frameworks (debug, or: release)
+swiftlint --strict
+xcrun swift-format lint --recursive --strict iosApp/Sources iosApp/Tests iosApp/Packages/PaperclipKit/Package.swift
+./scripts/ios-test.sh              # xcodegen generate, then xcodebuild test on an installed iPhone simulator
 ```
 
-Use `./gradlew spotlessApply` and `swift-format format --in-place` to fix formatting. Never disable a rule inline to get a build green; if a rule is wrong for this codebase, change it in its config file in its own commit and explain why.
+Use `./gradlew spotlessApply` and `xcrun swift-format format --in-place --recursive iosApp/Sources iosApp/Tests` to fix formatting. Never disable a rule inline to get a build green; if a rule is wrong for this codebase, change it in its config file in its own commit and explain why.
 
 ## Test-Driven Development
 
@@ -71,7 +70,7 @@ No production code is written without a failing test first. Bug fixes start with
 | domain, application, presentation | `commonTest` | kotlin.test, Kotest assertions, Turbine, `kotlinx-coroutines-test` | Use fakes from `shared/testing`. Runs on JVM and iOS simulator. |
 | api, realtime | `commonTest` | Ktor `MockEngine`, JSON fixtures recorded from the pinned Paperclip server | One test per endpoint mapping and per error shape |
 | persistence | `commonTest` | SQLDelight in-memory driver | |
-| securestore, platform | `androidInstrumentedTest`, `iosTest` | Real Keychain / Keystore on simulator and emulator | Verify secrets never reach SQLDelight or backups |
+| securestore, platform | `androidDeviceTest`, `iosTest` | Real Keychain / Keystore on simulator and emulator | Verify secrets never reach SQLDelight or backups |
 | contract | `contractTest` (JVM) | Ktor client against Paperclip in Docker, pinned version | Runs in CI, not on every local build |
 | Android UI | `androidApp/src/test`, `androidTest` | JUnit 5, Compose UI test, Roborazzi screenshots | UI renders state; behaviour is tested in shared |
 | iOS UI | `iosAppTests`, `iosAppUITests` | Swift Testing, XCTest, XCUITest | Same rule |
@@ -131,7 +130,7 @@ Every port in `shared/domain` has a fake in `shared/testing` that is complete en
 └── src/
     ├── commonMain/kotlin/com/stainedhead/paperclipmobile/<layer>/…
     ├── commonTest/kotlin/…
-    ├── androidMain/  androidUnitTest/  androidInstrumentedTest/
+    ├── androidMain/  androidHostTest/  androidDeviceTest/
     └── iosMain/      iosTest/
 ```
 
