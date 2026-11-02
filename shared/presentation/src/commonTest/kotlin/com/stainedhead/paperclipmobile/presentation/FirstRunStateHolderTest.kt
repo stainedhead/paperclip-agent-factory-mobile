@@ -14,6 +14,7 @@ import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -370,5 +371,50 @@ class FirstRunStateHolderTest {
             holder.state.value.isDemo shouldBe true
             env.health.probeCalls shouldBe 0
             holder.close()
+        }
+
+    private fun Env.gateProbes(): Map<String, CompletableDeferred<Unit>> {
+        val gates = mapOf("https://a.example.com" to CompletableDeferred<Unit>())
+        health.onProbe = { uri -> gates[uri.value]?.await() }
+        return gates
+    }
+
+    @Test
+    fun `F-B-1 a probe result for an address that was edited meanwhile is ignored`() =
+        runTest {
+            val (holder, env) = holderWithEnv()
+            val gates = env.gateProbes()
+            holder.type("https://a.example.com")
+            holder.onIntent(FirstRunIntent.ProbeRequested)
+            advanceUntilIdle()
+
+            holder.type("https://b.example.com")
+            gates.getValue("https://a.example.com").complete(Unit)
+            advanceUntilIdle()
+            holder.onIntent(FirstRunIntent.ContinueRequested)
+            advanceUntilIdle()
+
+            holder.state.value.probe shouldBe ProbeStatus.Idle
+            holder.state.value.canContinue shouldBe true
+            env.repository.addCalls shouldBe 0
+            env.health.lastProbed?.value shouldBe "https://a.example.com"
+        }
+
+    @Test
+    fun `F-B-1 a late refusal does not label the new address`() =
+        runTest {
+            val (holder, env) = holderWithEnv()
+            val gates = env.gateProbes()
+            env.health.response = DomainResult.Success(FakeHealthGateway.healthy(DeploymentMode.LocalTrusted))
+            holder.type("https://a.example.com")
+            holder.onIntent(FirstRunIntent.ProbeRequested)
+            advanceUntilIdle()
+
+            holder.type("https://b.example.com")
+            gates.getValue("https://a.example.com").complete(Unit)
+            advanceUntilIdle()
+
+            holder.state.value.probe shouldBe ProbeStatus.Idle
+            holder.state.value.probeRefusal shouldBe null
         }
 }

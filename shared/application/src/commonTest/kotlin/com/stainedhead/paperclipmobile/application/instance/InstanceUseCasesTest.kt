@@ -16,12 +16,15 @@ import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 class InstanceUseCasesTest {
     private val healthy = FakeHealthGateway.healthy()
+
+    private fun accepted(address: String) = ProbeResult.Accepted(TestData.uri(address), FakeHealthGateway.healthy())
 
     private fun add(env: Env) = AddInstance(env.repository, env.clock, env.ids, env.validate)
 
@@ -32,7 +35,7 @@ class InstanceUseCasesTest {
 
             val result = ProbeInstance(env.health)(TestData.uri())
 
-            result.shouldBeInstanceOf<ProbeResult.Accepted>()
+            result.shouldBeInstanceOf<ProbeResult.Accepted>().baseUri shouldBe TestData.uri()
             env.health.lastProbed shouldBe TestData.uri()
         }
 
@@ -54,7 +57,8 @@ class InstanceUseCasesTest {
             val env = Env()
             env.health.response = DomainResult.Failure(DomainError.Unreachable)
 
-            ProbeInstance(env.health)(TestData.uri()) shouldBe ProbeResult.Failed(DomainError.Unreachable)
+            ProbeInstance(env.health)(TestData.uri()) shouldBe
+                ProbeResult.Failed(TestData.uri(), DomainError.Unreachable)
         }
 
     @Test
@@ -134,7 +138,14 @@ class InstanceUseCasesTest {
             env.storeToken(instance)
             val update = UpdateInstance(env.repository, env.secrets, env.validate)
 
-            val result = update(instance.id, instance.toEdit().copy(address = "https://other.example.com"))
+            val result =
+                update(
+                    instance.id,
+                    instance.toEdit().copy(
+                        address = "https://other.example.com",
+                        probed = accepted("https://other.example.com"),
+                    ),
+                )
 
             (result as UpdateInstanceResult.Updated).credentialsCleared shouldBe true
             env.secrets.pathsFor(instance.id) shouldBe emptySet()
@@ -142,6 +153,41 @@ class InstanceUseCasesTest {
             stored.status shouldBe InstanceStatus.SignedOut
             stored.boardKeyId shouldBe null
             stored.baseUri.value shouldBe "https://other.example.com"
+        }
+
+    @Test
+    fun `F-B-1 an address change without an accepted probe for that address is not applied`() =
+        runTest {
+            val instance = TestData.instance()
+            val env = Env(listOf(instance))
+            env.storeToken(instance)
+            val update = UpdateInstance(env.repository, env.secrets, env.validate)
+
+            val result = update(instance.id, instance.toEdit().copy(address = "https://never-probed.example.com"))
+
+            result.shouldNotBeInstanceOf<UpdateInstanceResult.Updated>()
+            env.secrets.pathsFor(instance.id).size shouldBe 1
+            env.repository.get(instance.id)?.baseUri shouldBe instance.baseUri
+            env.repository.updateCalls shouldBe 0
+        }
+
+    @Test
+    fun `F-B-1 a probe of another address or a refused report does not allow the address change`() =
+        runTest {
+            val instance = TestData.instance()
+            val env = Env(listOf(instance))
+            val update = UpdateInstance(env.repository, env.secrets, env.validate)
+            val edit = instance.toEdit().copy(address = "https://other.example.com")
+
+            update(instance.id, edit.copy(probed = accepted("https://different.example.com"))) shouldBe
+                UpdateInstanceResult.ProbeRequired
+            val localTrusted = FakeHealthGateway.healthy(DeploymentMode.LocalTrusted)
+            update(
+                instance.id,
+                edit.copy(probed = ProbeResult.Accepted(TestData.uri("https://other.example.com"), localTrusted)),
+            ) shouldBe
+                UpdateInstanceResult.ProbeRequired
+            env.repository.updateCalls shouldBe 0
         }
 
     @Test

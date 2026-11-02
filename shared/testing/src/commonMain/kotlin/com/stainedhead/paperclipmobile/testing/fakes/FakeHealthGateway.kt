@@ -23,9 +23,13 @@ class FakeHealthGateway(
     var lastProbed: BaseUri? = null
         private set
 
+    /** Runs while a probe is "in flight", after it is counted and before its result returns, so tests can gate it. */
+    var onProbe: (suspend (BaseUri) -> Unit)? = null
+
     override suspend fun probe(baseUri: BaseUri): DomainResult<HealthReport> {
         probeCalls += 1
         lastProbed = baseUri
+        onProbe?.invoke(baseUri)
         return responses[baseUri] ?: response
     }
 

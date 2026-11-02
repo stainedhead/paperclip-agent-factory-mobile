@@ -4,6 +4,7 @@ package com.stainedhead.paperclipmobile.application.auth
 
 import com.stainedhead.paperclipmobile.application.Env
 import com.stainedhead.paperclipmobile.application.instance.InstanceEdit
+import com.stainedhead.paperclipmobile.application.instance.ProbeResult
 import com.stainedhead.paperclipmobile.application.instance.UpdateInstance
 import com.stainedhead.paperclipmobile.domain.ChallengeStatus
 import com.stainedhead.paperclipmobile.domain.DomainError
@@ -13,6 +14,7 @@ import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.testing.TestData
+import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,7 +44,13 @@ class EnrollmentAddressChangeTest {
     private fun edit(
         name: String = unpaired.displayName,
         address: String = unpaired.baseUri.value,
-    ) = InstanceEdit(name, address, unpaired.defaultCompanyId, emptyList())
+    ) = InstanceEdit(
+        name,
+        address,
+        unpaired.defaultCompanyId,
+        emptyList(),
+        probed = ProbeResult.Accepted(TestData.uri(address), FakeHealthGateway.healthy()),
+    )
 
     private fun Env.keyCallsToNewHost() =
         auth.authenticatedCalls.filter { it.host == newHost && it.token == TestData.TOKEN }

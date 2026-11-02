@@ -211,6 +211,7 @@ class FirstRunStateHolder(
     }
 
     private fun addressChanged(text: String) {
+        actions.addressChanged()
         mutableState.update { it.withAddress(text, useCases.validateAddress(text)).copy(probe = ProbeStatus.Idle) }
     }
 
@@ -250,7 +251,10 @@ class FirstRunStateHolder(
 /** What the steps of the first-run flow share: the factory added so far and what its probe returned. */
 internal class FirstRunSession {
     var instanceId: InstanceId? = null
-    var report: HealthReport? = null
+
+    /** The accepted probe of the address that was probed; null when no probe is accepted for the current address. */
+    var probed: ProbeResult.Accepted? = null
+    var probeJob: Job? = null
 }
 
 /** The asynchronous steps of the first-run flow. */
@@ -276,11 +280,20 @@ internal class FirstRunActions(
             state.value.takeIf { it.canContinue && it.probe != ProbeStatus.Probing }?.normalizedAddress ?: return
         val uri = (useCases.validateAddress(address) as? BaseUriResult.Valid)?.uri ?: return
         state.update { it.copy(probe = ProbeStatus.Probing, error = null, probeRefusal = null) }
-        scope.launch {
-            val result = useCases.probe(uri)
-            session.report = (result as? ProbeResult.Accepted)?.report
-            state.update { it.withProbe(result) }
-        }
+        session.probeJob?.cancel()
+        session.probeJob =
+            scope.launch {
+                val result = useCases.probe(uri)
+                if (result.baseUri.value != state.value.normalizedAddress) return@launch
+                session.probed = result as? ProbeResult.Accepted
+                state.update { it.withProbe(result) }
+            }
+    }
+
+    /** The address was edited: a probe still in flight is for another address, so it is cancelled and forgotten. */
+    fun addressChanged() {
+        session.probeJob?.cancel()
+        session.probed = null
     }
 
     private fun FirstRunState.withProbe(result: ProbeResult): FirstRunState =
@@ -319,6 +332,7 @@ internal class FirstRunActions(
 
     fun back() {
         cancelPairing()
+        session.probeJob?.cancel()
         state.update {
             if (it.step ==
                 FirstRunStep.Pair
@@ -340,14 +354,22 @@ internal class FirstRunSaving(
 ) {
     fun save() {
         val current = state.value
-        val report = session.report
-        if (current.probe != ProbeStatus.Accepted || report == null || current.isBusy) return
+        val probed = session.probed
+        if (current.probe != ProbeStatus.Accepted || probed == null || current.isBusy) return
         val address = current.normalizedAddress ?: return
+        if (probed.baseUri.value != address) return
         val name = current.name.ifBlank { address.substringAfter("://").substringBefore('/').substringBefore(':') }
         state.update { it.copy(isBusy = true, error = null, nameIssue = null) }
         scope.launch {
             val existing = session.instanceId
-            val saved = if (existing == null) add(name, address, report) else update(existing, name, address)
+            val saved =
+                if (existing ==
+                    null
+                ) {
+                    add(name, address, probed.report)
+                } else {
+                    update(existing, name, address, probed)
+                }
             state.update { if (saved) it.copy(step = FirstRunStep.Pair, isBusy = false) else it.copy(isBusy = false) }
         }
     }
@@ -380,9 +402,11 @@ internal class FirstRunSaving(
         id: InstanceId,
         name: String,
         address: String,
+        probed: ProbeResult.Accepted,
     ): Boolean {
         val current = useCases.get(id) ?: return fail { it.copy(error = ErrorUi(ErrorKey.NotFound)) }
-        return when (val result = useCases.update(id, current.toEdit().copy(displayName = name, address = address))) {
+        val edit = current.toEdit().copy(displayName = name, address = address, probed = probed)
+        return when (val result = useCases.update(id, edit)) {
             is UpdateInstanceResult.Updated -> {
                 true
             }
@@ -402,6 +426,10 @@ internal class FirstRunSaving(
 
             UpdateInstanceResult.NotFound -> {
                 fail { it.copy(error = ErrorUi(ErrorKey.NotFound)) }
+            }
+
+            UpdateInstanceResult.ProbeRequired -> {
+                fail { it.copy(probe = ProbeStatus.Idle) }
             }
         }
     }

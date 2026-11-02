@@ -7,18 +7,24 @@ import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.domain.port.HealthGateway
 
+/** What a probe found. Every result names the [baseUri] it was taken for, so a late one is never misapplied. */
 sealed interface ProbeResult {
+    val baseUri: BaseUri
+
     data class Accepted(
+        override val baseUri: BaseUri,
         val report: HealthReport,
     ) : ProbeResult
 
     /** The server is reachable but must not be added. */
     data class Refused(
+        override val baseUri: BaseUri,
         val reason: ProbeRefusal,
         val report: HealthReport,
     ) : ProbeResult
 
     data class Failed(
+        override val baseUri: BaseUri,
         val error: DomainError,
     ) : ProbeResult
 }
@@ -33,12 +39,16 @@ class ProbeInstance(
     suspend operator fun invoke(baseUri: BaseUri): ProbeResult =
         when (val result = gateway.probe(baseUri)) {
             is DomainResult.Failure -> {
-                ProbeResult.Failed(result.error)
+                ProbeResult.Failed(baseUri, result.error)
             }
 
             is DomainResult.Success -> {
                 val refusal = result.value.refusal()
-                if (refusal == null) ProbeResult.Accepted(result.value) else ProbeResult.Refused(refusal, result.value)
+                if (refusal == null) {
+                    ProbeResult.Accepted(baseUri, result.value)
+                } else {
+                    ProbeResult.Refused(baseUri, refusal, result.value)
+                }
             }
         }
 }

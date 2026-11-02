@@ -14,6 +14,7 @@ import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -443,5 +444,48 @@ class EditInstanceStateHolderTest {
             holder.state.value.companies
                 .map { it.role }
                 .toSet() shouldBe setOf(RoleUi.Viewer)
+        }
+
+    @Test
+    fun `F-B-1 canSave stays false after the address is edited during a probe`() =
+        runTest {
+            val (holder, env) = loaded()
+            val gate = CompletableDeferred<Unit>()
+            env.health.onProbe = { uri -> if (uri.value == "https://a.example.com") gate.await() }
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://a.example.com"))
+            holder.onIntent(EditInstanceIntent.ProbeRequested)
+            advanceUntilIdle()
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://b.example.com"))
+            gate.complete(Unit)
+            advanceUntilIdle()
+            holder.onIntent(EditInstanceIntent.SaveRequested)
+            advanceUntilIdle()
+
+            holder.state.value.probe shouldBe ProbeStatus.Idle
+            holder.state.value.canSave shouldBe false
+            env.repository
+                .get(home.id)
+                ?.baseUri
+                ?.value shouldBe TestData.HOME_URI
+        }
+
+    @Test
+    fun `F-B-1 a late refusal in the edit screen does not label the new address`() =
+        runTest {
+            val (holder, env) = loaded()
+            val gate = CompletableDeferred<Unit>()
+            env.health.onProbe = { uri -> if (uri.value == "https://a.example.com") gate.await() }
+            env.health.response = DomainResult.Success(FakeHealthGateway.healthy(DeploymentMode.LocalTrusted))
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://a.example.com"))
+            holder.onIntent(EditInstanceIntent.ProbeRequested)
+            advanceUntilIdle()
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://b.example.com"))
+            gate.complete(Unit)
+            advanceUntilIdle()
+
+            holder.state.value.probe shouldBe ProbeStatus.Idle
+            holder.state.value.probeRefusal shouldBe null
         }
 }

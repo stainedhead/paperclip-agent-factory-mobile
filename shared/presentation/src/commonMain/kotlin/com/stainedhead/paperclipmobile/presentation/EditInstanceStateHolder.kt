@@ -252,6 +252,7 @@ class EditInstanceStateHolder(
     }
 
     private fun addressChanged(text: String) {
+        actions.fields.addressChanged()
         mutableState.update { current ->
             val parsed = useCases.validateAddress(text)
             val normalized = (parsed as? BaseUriResult.Valid)?.uri?.value
@@ -294,7 +295,10 @@ internal class EditInstanceSession(
     private val state: MutableStateFlow<EditInstanceState>,
 ) {
     var loaded: Instance? = null
-    var report: HealthReport? = null
+
+    /** The accepted probe of the address that was probed; null when no probe is accepted for the current address. */
+    var probed: ProbeResult.Accepted? = null
+    var probeJob: Job? = null
     val savedAddress: String? get() = loaded?.baseUri?.value
 
     fun show(instance: Instance) {
@@ -382,11 +386,21 @@ internal class EditInstanceFields(
         val parsed = useCases.validateAddress(state.value.address) as? BaseUriResult.Valid ?: return
         if (state.value.probe == ProbeStatus.Probing) return
         state.update { it.copy(probe = ProbeStatus.Probing, error = null, probeRefusal = null) }
-        scope.launch {
-            val result = useCases.probe(parsed.uri)
-            session.report = (result as? ProbeResult.Accepted)?.report
-            state.update { it.withProbe(result).revalidated() }
-        }
+        session.probeJob?.cancel()
+        session.probeJob =
+            scope.launch {
+                val result = useCases.probe(parsed.uri)
+                val current = useCases.validateAddress(state.value.address) as? BaseUriResult.Valid
+                if (current?.uri != result.baseUri) return@launch
+                session.probed = result as? ProbeResult.Accepted
+                state.update { it.withProbe(result).revalidated() }
+            }
+    }
+
+    /** The address was edited: a probe still in flight is for another address, so it is cancelled and forgotten. */
+    fun addressChanged() {
+        session.probeJob?.cancel()
+        session.probed = null
     }
 
     private fun EditInstanceState.withProbe(result: ProbeResult): EditInstanceState =
@@ -468,12 +482,13 @@ internal class EditInstanceSaving(
     }
 
     private suspend fun add(current: EditInstanceState) {
-        val probed = session.report
-        if (probed == null) {
+        val probed = session.probed
+        val address = useCases.validateAddress(current.address) as? BaseUriResult.Valid
+        if (probed == null || address?.uri != probed.baseUri) {
             state.update { it.copy(isBusy = false) }
             return
         }
-        when (val result = useCases.add(current.name, current.address, probed)) {
+        when (val result = useCases.add(current.name, current.address, probed.report)) {
             is AddInstanceResult.Added -> {
                 saved(result.instance)
             }
@@ -502,6 +517,7 @@ internal class EditInstanceSaving(
                 address = current.address,
                 defaultCompanyId = current.defaultCompanyId?.let { CompanyId(it) },
                 pins = current.pins.mapNotNull { SpkiPin.parse(it) },
+                probed = session.probed,
             )
         when (val result = useCases.update(id, edit)) {
             is UpdateInstanceResult.Updated -> {
@@ -518,6 +534,10 @@ internal class EditInstanceSaving(
 
             UpdateInstanceResult.NotFound -> {
                 state.update { it.copy(isBusy = false, error = ErrorUi(ErrorKey.NotFound)) }
+            }
+
+            UpdateInstanceResult.ProbeRequired -> {
+                state.update { it.copy(isBusy = false, probe = ProbeStatus.Idle).revalidated() }
             }
         }
     }

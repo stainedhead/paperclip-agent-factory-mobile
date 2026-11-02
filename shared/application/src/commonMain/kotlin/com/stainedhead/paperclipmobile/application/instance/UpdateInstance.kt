@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.application.instance
 
 import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
+import com.stainedhead.paperclipmobile.domain.BaseUri
 import com.stainedhead.paperclipmobile.domain.BaseUriError
 import com.stainedhead.paperclipmobile.domain.BaseUriResult
 import com.stainedhead.paperclipmobile.domain.CompanyId
@@ -12,15 +13,19 @@ import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
 import kotlinx.coroutines.flow.first
 
-/** The editable fields of a factory (PRD FR-006, FR-016, FR-017). */
+/**
+ * The editable fields of a factory (PRD FR-006, FR-016, FR-017). [probed] is the accepted health probe of the NEW
+ * address; it is required, and must be for exactly that address, when the address changes.
+ */
 data class InstanceEdit(
     val displayName: String,
     val address: String,
     val defaultCompanyId: CompanyId?,
     val pins: List<SpkiPin>,
+    val probed: ProbeResult.Accepted?,
 )
 
-fun Instance.toEdit() = InstanceEdit(displayName, baseUri.value, defaultCompanyId, pins)
+fun Instance.toEdit() = InstanceEdit(displayName, baseUri.value, defaultCompanyId, pins, probed = null)
 
 sealed interface UpdateInstanceResult {
     /** [credentialsCleared] is true when a new address made the stored key unusable (ADR-012). */
@@ -30,6 +35,9 @@ sealed interface UpdateInstanceResult {
     ) : UpdateInstanceResult
 
     data object NotFound : UpdateInstanceResult
+
+    /** The address changed but no accepted probe of exactly that address was given. Nothing was changed. */
+    data object ProbeRequired : UpdateInstanceResult
 
     data class InvalidName(
         val issue: InstanceNameIssue,
@@ -74,6 +82,7 @@ class UpdateInstance(
     ): UpdateInstanceResult {
         val current = repository.get(id) ?: return UpdateInstanceResult.NotFound
         val addressChanged = parsed.uri != current.baseUri
+        if (addressChanged && !edit.isProbedFor(parsed.uri)) return UpdateInstanceResult.ProbeRequired
         if (addressChanged) secrets.deleteNamespace(current.id)
         val edited =
             current.copy(
@@ -92,3 +101,6 @@ class UpdateInstance(
         return UpdateInstanceResult.Updated(updated, credentialsCleared = addressChanged)
     }
 }
+
+private fun InstanceEdit.isProbedFor(uri: BaseUri) =
+    probed != null && probed.baseUri == uri && probed.report.refusal() == null
