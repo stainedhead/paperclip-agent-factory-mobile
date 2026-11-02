@@ -12,6 +12,7 @@ final class EditFactoryUITests: XCTestCase {
         app.launchArguments =
             ["-demo", "-demo-tab", "factories", "-demo-open", route, "-demo-diagnostics"] + extra
         app.launch()
+        app.waitUntilUnlocked()
         XCTAssertTrue(app.element("edit-factory").waitForExistence(timeout: 30), "the edit form never appeared")
         return app
     }

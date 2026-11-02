@@ -12,6 +12,7 @@ final class FactoriesUITests: XCTestCase {
         app.launchArguments = ["-demo", "-demo-biometrics", "approved", "-demo-diagnostics"]
         app.launch()
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30), "the tab bar never appeared")
+        app.waitUntilUnlocked()
         app.tabBars.firstMatch.buttons["Factories"].tap()
         XCTAssertTrue(app.navigationBars["Factories"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.element("factory-card-demo-home").waitForExistence(timeout: 10))

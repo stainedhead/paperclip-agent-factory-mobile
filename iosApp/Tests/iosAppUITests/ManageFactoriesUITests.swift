@@ -16,6 +16,7 @@ final class ManageFactoriesUITests: XCTestCase {
         ]
         app.launch()
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30), "the tab bar never appeared")
+        app.waitUntilUnlocked()
         XCTAssertTrue(app.element("manage-row-demo-home").waitForExistence(timeout: 15))
         return app
     }

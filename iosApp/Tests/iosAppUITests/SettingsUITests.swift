@@ -15,6 +15,7 @@ final class SettingsUITests: XCTestCase {
         ]
         app.launch()
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30), "the tab bar never appeared")
+        app.waitUntilUnlocked()
         XCTAssertTrue(app.element("settings").waitForExistence(timeout: 15))
         return app
     }

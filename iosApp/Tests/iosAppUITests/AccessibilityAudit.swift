@@ -8,9 +8,17 @@ extension XCTestCase {
     @discardableResult
     func auditAccessibility(_ app: XCUIApplication, screen: String) throws -> [String] {
         var findings: [String] = []
-        try app.performAccessibilityAudit { issue in
-            findings.append("\(issue.auditType) | \(issue.compactDescription) | \(issue.element?.label ?? "-")")
-            return true
+        // The audit samples a screenshot. On a slow runner it can catch cards still fading in and report black text on
+        // white as a contrast failure, so an audit with a contrast finding is repeated (up to three times) after the
+        // screen has settled; a real contrast problem shows up every time and still fails the test.
+        for attempt in 1...3 {
+            findings = []
+            try app.performAccessibilityAudit { issue in
+                findings.append("\(issue.auditType) | \(issue.compactDescription) | \(issue.element?.label ?? "-")")
+                return true
+            }
+            if !findings.contains(where: { $0.contains("Contrast failed") }) { break }
+            if attempt < 3 { Thread.sleep(forTimeInterval: 2) }
         }
         let attachment = XCTAttachment(string: findings.joined(separator: "\n"))
         attachment.name = "accessibility-audit-\(screen)"
