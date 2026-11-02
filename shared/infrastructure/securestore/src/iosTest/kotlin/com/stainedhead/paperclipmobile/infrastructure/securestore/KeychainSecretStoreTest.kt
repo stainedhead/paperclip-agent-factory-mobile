@@ -60,6 +60,84 @@ class KeychainSecretStoreTest {
             backend.items.getValue("instance/a/boardToken").protection shouldBe Protection.BiometryCurrentSet
         }
 
+    private val account = "instance/a/boardToken"
+    private val spare = account + REPLACEMENT_SUFFIX
+
+    @Test
+    fun `F-B-3 a replacement whose new item cannot be added keeps the previous secret`() =
+        runTest {
+            store.put(key, Secret.of("one"), open)
+            backend.addFailuresByAccount[spare] = errSecInteractionNotAllowed
+
+            store.put(key, Secret.of("two"), open) shouldBe SecretWriteResult.Failed
+
+            (store.read() as SecretReadResult.Found).secret shouldBe Secret.of("one")
+            backend.operations.none { it == "delete $account" } shouldBe true
+        }
+
+    @Test
+    fun `F-B-3 a replacement whose old item cannot be deleted keeps it and leaves no spare`() =
+        runTest {
+            store.put(key, Secret.of("one"), open)
+            backend.deleteFailuresByAccount[account] = errSecInteractionNotAllowed
+
+            store.put(key, Secret.of("two"), open) shouldBe SecretWriteResult.Failed
+
+            (store.read() as SecretReadResult.Found).secret shouldBe Secret.of("one")
+            backend.items.keys.toList() shouldBe listOf(account)
+        }
+
+    @Test
+    fun `F-B-3 the new item is added before the old one is deleted and no spare is left`() =
+        runTest {
+            store.put(key, Secret.of("one"), open)
+            backend.operations.clear()
+
+            store.put(key, Secret.of("two"), open) shouldBe SecretWriteResult.Stored
+
+            (backend.operations.indexOf("add $spare") < backend.operations.indexOf("delete $account")) shouldBe true
+            backend.items.keys.toList() shouldBe listOf(account)
+            (store.read() as SecretReadResult.Found).secret shouldBe Secret.of("two")
+        }
+
+    @Test
+    fun `F-B-3 a failed protected replacement keeps the old secret and does not read as Invalidated`() =
+        runTest {
+            store.put(key, Secret.of("one"), protected)
+            backend.addFailures[Protection.BiometryCurrentSet] = errSecNotAvailable
+            backend.addFailures[Protection.UserPresence] = errSecNotAvailable
+
+            store.put(key, Secret.of("two"), protected) shouldBe SecretWriteResult.Failed
+
+            (store.read() as SecretReadResult.Found).secret shouldBe Secret.of("one")
+        }
+
+    @Test
+    fun `F-B-3 the old item survives a failed biometry attempt until the fallback is in place`() =
+        runTest {
+            store.put(key, Secret.of("one"), protected)
+            backend.addFailures[Protection.BiometryCurrentSet] = errSecNotAvailable
+            backend.operations.clear()
+
+            store.put(key, Secret.of("two"), protected) shouldBe SecretWriteResult.Stored
+
+            backend.items.getValue(account).protection shouldBe Protection.UserPresence
+            val firstDelete = backend.operations.indexOfFirst { it == "delete $account" }
+            val fallbackAdded = backend.operations.indexOf("add $spare")
+            (fallbackAdded in 0 until firstDelete) shouldBe true
+        }
+
+    @Test
+    fun `F-B-3 a failure after the old item was deleted reports Failed and leaves no spare secret behind`() =
+        runTest {
+            store.put(key, Secret.of("one"), open)
+            backend.failAddAfterDelete += account
+
+            store.put(key, Secret.of("two"), open) shouldBe SecretWriteResult.Failed
+
+            backend.items.keys.none { it.endsWith(REPLACEMENT_SUFFIX) } shouldBe true
+        }
+
     @Test
     fun `AD-030 a protected secret asks for the current biometric set and records that it is protected`() =
         runTest {

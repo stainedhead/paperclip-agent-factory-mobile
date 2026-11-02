@@ -8,7 +8,9 @@ import platform.Security.errSecItemNotFound
 import platform.Security.errSecSuccess
 
 internal const val MARKER_SUFFIX = "#protected"
+internal const val REPLACEMENT_SUFFIX = "#new"
 private val MARKER_VALUE = byteArrayOf(1)
+private const val REPLACE_ATTEMPTS = 2
 
 internal fun Int.isGoneOrAbsent(): Boolean = this == errSecSuccess || this == errSecItemNotFound
 
@@ -28,7 +30,7 @@ internal class KeychainWriter(
                 if (policy.requireUserPresence) {
                     addProtected(account, bytes)
                 } else {
-                    removeMarker(account) && addReplacing(account, bytes, Protection.None)
+                    addReplacing(account, bytes, Protection.None) && removeMarker(account)
                 }
             return if (stored) SecretWriteResult.Stored else SecretWriteResult.Failed
         } finally {
@@ -53,18 +55,29 @@ internal class KeychainWriter(
         return false
     }
 
+    /**
+     * Adds the item, replacing one that exists. A replacement is not an in-place update (that would keep the old access
+     * control), so the new value is first added under a spare account: if that fails, or the old item cannot be
+     * deleted, the old secret is untouched and still reads as itself. Only the short step between deleting the old item
+     * and adding the new one under its own name can lose it; that add is tried twice and the spare never survives
+     * (review1b F-B-3).
+     */
     private fun addReplacing(
         account: String,
         bytes: ByteArray,
         protection: Protection,
     ): Boolean {
-        var status = backend.add(account, bytes, protection)
-        if (status == errSecDuplicateItem) {
-            // Replace, so a changed protection takes effect (an in-place update would keep the old access control).
-            if (backend.delete(account) != errSecSuccess) return false
-            status = backend.add(account, bytes, protection)
-        }
-        return status == errSecSuccess
+        val status = backend.add(account, bytes, protection)
+        if (status != errSecDuplicateItem) return status == errSecSuccess
+        val spare = account + REPLACEMENT_SUFFIX
+        // A spare left by an earlier replacement that was killed half way is stale: clear it, then add the new one.
+        val replaced =
+            backend.delete(spare).isGoneOrAbsent() &&
+                backend.add(spare, bytes, protection) == errSecSuccess &&
+                backend.delete(account) == errSecSuccess &&
+                (0 until REPLACE_ATTEMPTS).any { backend.add(account, bytes, protection) == errSecSuccess }
+        backend.delete(spare)
+        return replaced
     }
 
     private fun removeMarker(account: String): Boolean = backend.delete(account + MARKER_SUFFIX).isGoneOrAbsent()
