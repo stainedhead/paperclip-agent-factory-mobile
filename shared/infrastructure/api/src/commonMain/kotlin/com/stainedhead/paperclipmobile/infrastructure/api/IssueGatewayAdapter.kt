@@ -90,11 +90,17 @@ class IssueGatewayAdapter(
         id: IssueId,
     ): DomainResult<List<Comment>> {
         if (!isServerId(id.value)) return DomainResult.Failure(DomainError.NotFound)
-        return calls
-            .send(scope.instanceId, HttpMethod.Get, listOf("issues", id.value, "comments"), listOf("order" to "asc"))
-            .decode<List<CommentDto>>()
-            .let { rows -> rows.ofCompany(scope) { it.companyId } }
-            .map { rows -> allOrNone(rows.filterNot { it.isDeleted() }) { it.toDomain() } }
+        val rows =
+            calls
+                .send(
+                    scope.instanceId,
+                    HttpMethod.Get,
+                    listOf("issues", id.value, "comments"),
+                    listOf("order" to "asc"),
+                ).decode<List<CommentDto>>()
+                .ofCompany(scope) { it.companyId }
+                .map { all -> allOrNone(all.filterNot { it.isDeleted() }) { it.toDomain() } }
+        return calls.provingOwnership(scope, id, rows)
     }
 
     override suspend fun addComment(
@@ -168,11 +174,13 @@ class IssueGatewayAdapter(
         id: IssueId,
     ): DomainResult<List<Attachment>> {
         if (!isServerId(id.value)) return DomainResult.Failure(DomainError.NotFound)
-        return calls
-            .send(scope.instanceId, HttpMethod.Get, listOf("issues", id.value, "attachments"))
-            .decode<List<AttachmentDto>>()
-            .let { rows -> rows.ofCompany(scope) { it.companyId } }
-            .map { rows -> allOrNone(rows) { it.toDomain() } }
+        val rows =
+            calls
+                .send(scope.instanceId, HttpMethod.Get, listOf("issues", id.value, "attachments"))
+                .decode<List<AttachmentDto>>()
+                .ofCompany(scope) { it.companyId }
+                .map { all -> allOrNone(all) { it.toDomain() } }
+        return calls.provingOwnership(scope, id, rows)
     }
 
     /**

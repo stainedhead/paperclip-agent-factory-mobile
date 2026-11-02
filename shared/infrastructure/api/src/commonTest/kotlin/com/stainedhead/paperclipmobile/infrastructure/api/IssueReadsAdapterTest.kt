@@ -265,6 +265,11 @@ class IssueReadsAdapterTest {
     fun `AD-013 an empty thread is empty and a comment of another company is not trusted`() =
         runTest {
             assertEquals(emptyList(), world.issues.comments(world.acme, root).value())
+            // An empty thread proves nothing about whose issue it is, so the issue is read as well.
+            assertEquals(
+                listOf("/api/issues/$PAP_1182/comments", "/api/issues/$PAP_1182"),
+                world.server.requests.map { it.path },
+            )
             val foreign = IssueRowFixtures.comment(comment(9, "x", "2026-11-01T09:00:00Z", "company-globex"))
             assertEquals(failed(DomainError.NotFound), gateway("[$foreign]").comments(world.acme, root))
             listOf("{}", "[1]", """[{"id":"x"}]""", "").forEach { body ->

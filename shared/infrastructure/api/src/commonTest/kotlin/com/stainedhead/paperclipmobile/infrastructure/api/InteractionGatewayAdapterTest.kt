@@ -222,7 +222,8 @@ class InteractionGatewayAdapterTest {
                 val reply = gateway(body, contentType = type).list(world.acme, issue)
                 assertEquals(failed(DomainError.Malformed), reply, body)
             }
-            assertEquals(emptyList(), gateway("[]").list(world.acme, issue).value())
+            val empty = InteractionGatewayAdapter(answeringIssueClient("[]"), world.instances, world.secrets)
+            assertEquals(emptyList(), empty.list(world.acme, issue).value())
         }
 
     @Test

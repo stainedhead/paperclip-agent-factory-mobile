@@ -22,3 +22,17 @@ internal suspend fun CompanyCalls.requireIssue(
         .ownedBy(scope) { it.companyId }
         .map { }
 }
+
+/**
+ * A list of rows that each name their company proves whose issue it is; an empty one proves nothing, so the issue is
+ * asked once more. A thread that really is empty costs one extra read; an issue of another company is NotFound.
+ */
+internal suspend fun <T> CompanyCalls.provingOwnership(
+    scope: CompanyScope,
+    issueId: IssueId,
+    rows: DomainResult<List<T>>,
+): DomainResult<List<T>> {
+    if (rows !is DomainResult.Success || rows.value.isNotEmpty()) return rows
+    val owned = requireIssue(scope, issueId)
+    return if (owned is DomainResult.Failure) owned else rows
+}

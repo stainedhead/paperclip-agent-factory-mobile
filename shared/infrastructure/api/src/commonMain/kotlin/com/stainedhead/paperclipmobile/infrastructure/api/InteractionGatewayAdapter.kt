@@ -36,11 +36,13 @@ class InteractionGatewayAdapter(
         issueId: IssueId,
     ): DomainResult<List<Interaction>> {
         if (!isServerId(issueId.value)) return DomainResult.Failure(DomainError.NotFound)
-        return calls
-            .send(scope.instanceId, HttpMethod.Get, listOf("issues", issueId.value, "interactions"))
-            .decode<List<JsonObject>>()
-            .ofCompany(scope) { it.companyOfRow() }
-            .map { rows -> allOrNone(rows) { it.toInteraction() } }
+        val rows =
+            calls
+                .send(scope.instanceId, HttpMethod.Get, listOf("issues", issueId.value, "interactions"))
+                .decode<List<JsonObject>>()
+                .ofCompany(scope) { it.companyOfRow() }
+                .map { all -> allOrNone(all) { it.toInteraction() } }
+        return calls.provingOwnership(scope, issueId, rows)
     }
 
     override suspend fun answer(

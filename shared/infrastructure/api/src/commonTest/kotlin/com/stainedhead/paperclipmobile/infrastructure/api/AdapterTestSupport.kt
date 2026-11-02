@@ -28,3 +28,21 @@ internal fun answeringClient(
 /** Bodies a gateway must call Malformed whatever it asked for: html, empty, null and a wrong top-level type. */
 internal val NOT_THE_EXPECTED_SHAPE =
     listOf("", "null", "<html><body>login</body></html>", "\"text\"", "12")
+
+/**
+ * Like [answeringClient] but `GET /issues/{id}` answers an issue of Acme, so a gateway that proves ownership of an
+ * empty list still finds the issue; every other request gets [body].
+ */
+internal fun answeringIssueClient(
+    body: String,
+    contentType: String = "application/json",
+): PaperclipHttpClient =
+    PaperclipHttpClient(
+        MockEngine { request ->
+            val isIssue = request.url.encodedPath.matches(Regex(".*/api/issues/[^/]+"))
+            val text = if (isIssue) """{"id":"x","companyId":"company-acme"}""" else body
+            val type = if (isIssue) "application/json" else contentType
+            respond(text, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, type))
+        },
+        allowInsecureLocal = false,
+    )
