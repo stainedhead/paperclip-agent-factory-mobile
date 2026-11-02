@@ -24,6 +24,7 @@ struct ManageFactoriesView: View {
                 }
             } header: {
                 Text(countText(state.rows.count))
+                    .foregroundStyle(Palette.textSecondary.color)
                     .accessibilityIdentifier("manage-count")
             } footer: {
                 VStack(alignment: .leading, spacing: Spacing.medium) {

@@ -22,7 +22,11 @@ struct SettingsView: View {
                             .font(Typography.body)
                             .submitLabel(.done)
                             .onSubmit { model.commitDeviceName(nameDraft) }
-                            .frame(minWidth: 120, minHeight: Spacing.minimumTarget)
+                            .frame(
+                                minWidth: 120, maxWidth: .infinity, minHeight: Spacing.minimumTarget,
+                                alignment: .trailing
+                            )
+                            .contentShape(Rectangle())
                             .accessibilityLabel(ShellLabel.settingsDeviceName.text)
                             .accessibilityIdentifier("settings-device-name")
                     }
