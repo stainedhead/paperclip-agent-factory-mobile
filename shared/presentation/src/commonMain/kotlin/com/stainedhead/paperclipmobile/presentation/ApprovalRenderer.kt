@@ -3,6 +3,7 @@ package com.stainedhead.paperclipmobile.presentation
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Approval
 import com.stainedhead.paperclipmobile.domain.ApprovalActions
+import com.stainedhead.paperclipmobile.domain.ApprovalComment
 import com.stainedhead.paperclipmobile.domain.ApprovalDetail
 import com.stainedhead.paperclipmobile.domain.ApprovalPayload
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
@@ -24,6 +25,9 @@ internal data class ApprovalModel(
     val feedback: FeedbackUi? = null,
 ) {
     fun withApproval(approval: Approval): ApprovalModel = copy(detail = detail?.copy(approval = approval), error = null)
+
+    fun withComment(comment: ApprovalComment): ApprovalModel =
+        copy(detail = detail?.let { it.copy(comments = it.comments + comment) })
 
     fun mayAct(
         action: Action,

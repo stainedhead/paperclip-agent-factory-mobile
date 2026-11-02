@@ -4,7 +4,6 @@ import com.stainedhead.paperclipmobile.application.MutationResult
 import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Approval
-import com.stainedhead.paperclipmobile.domain.ApprovalComment
 import com.stainedhead.paperclipmobile.domain.ApprovalId
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.CompanyContext
@@ -182,17 +181,12 @@ class ApprovalStateHolder(
         if (!model.value.mayAct(Action.CommentOnApproval, connectivity.isOnline.value)) return
         runMutation({ context -> useCases.comment(context, id, body) }) { result ->
             when (result) {
-                is MutationResult.Done -> appendComment(result.value)
-                is MutationResult.Reconciled -> appendComment(result.current)
+                is MutationResult.Done -> model.update { it.withComment(result.value) }
+                is MutationResult.Reconciled -> model.update { it.withComment(result.current) }
                 is MutationResult.Unknown -> load()
                 else -> Unit
             }
         }
-    }
-
-    private fun appendComment(comment: ApprovalComment) {
-        val detail = model.value.detail
-        model.update { it.copy(detail = detail?.copy(comments = detail.comments + comment)) }
     }
 
     private fun act(

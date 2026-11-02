@@ -64,8 +64,8 @@ class ResumeAgent(
 }
 
 /**
- * Wakes an agent now (PRD FR-071). The agent's live run ids are read BEFORE the call (one read; the one gateway call for
- * the mutation rule is unchanged, ADR-032). After a timeout the runs are read once more: a live run that was not there
+ * Wakes an agent now (PRD FR-071). The agent's live run ids are read BEFORE the call (one read; the one-call rule for
+ * the mutation is unchanged, ADR-032). After a timeout the runs are read once more: a live run that was not there
  * before is reported as started, anything else is [MutationResult.Unknown], never "skipped" or a guess (F-A-6).
  */
 class InvokeHeartbeat(
