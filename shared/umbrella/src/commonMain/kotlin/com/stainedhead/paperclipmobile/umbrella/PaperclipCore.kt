@@ -83,6 +83,12 @@ object PaperclipCore {
         )
 
     /**
+     * The graph a platform app starts with. **Until Phase 1b it is backed by fakes, not by a server** (ADR-037): an
+     * empty in-memory `SecretStore`, a `Biometrics` that always approves, a `Clock` frozen at 2026-11-01T12:00Z that
+     * never advances (so the idle lock, the undo window, key expiry and "Decide now" grouping cannot be exercised
+     * through it), and gateways that answer from memory. Phase 1b replaces these bindings with real adapters behind the
+     * same ports; the signature stays. Do not ship a build that reaches this function with the fakes still bound.
+     *
      * @param allowInsecureLocal true only in debug builds; lets `http://localhost` and `http://10.0.2.2` be added.
      */
     fun createGraph(allowInsecureLocal: Boolean): PaperclipGraph {

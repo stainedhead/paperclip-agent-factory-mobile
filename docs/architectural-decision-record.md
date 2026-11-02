@@ -107,9 +107,8 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 ## ADR-018: Decisions: inputs belong to the decision, `decideBy` and the agent name are hints, and decide carries an idempotency key
 
 **Context.** The PRD attached `inputs[]` to options; the server attaches them to the decision and validates them whichever option is chosen. `GET /decisions/{id}` has neither `decideBy` (triage data) nor the agent name (research Q4, Q8).
-**Decision.** `Decision.inputs` lives on the decision. `Decision.decideBy` and `originAgentName` are optional; the Decision screen is opened with the feed item's values as hints and the Phase 1b adapter may fill them. `DecideDecision` sends an `idempotencyKey` made with the `IdGenerator` so a manual re-tap after a timeout replays instead of running the effects twice; the use case itself never retries. Polling (`PollDecisionExecution`) re-reads until `executionStatus` is `succeeded`, `partial` or `failed` (or the decision is `expired`/`cancelled`), on the `Clock`, with a capped number of attempts.
+**Decision.** `Decision.inputs` lives on the decision. `Decision.decideBy` and `Decision.originAgentName` are optional; the Decision screen is opened with the feed item's values as hints and the Phase 1b adapter may fill them. `DecideDecision` takes the `DecisionId`, re-reads the decision (ADR-032) and sends an `idempotencyKey` made with the `IdGenerator`, so a manual re-tap after a timeout replays instead of running the effects twice; the use case itself never retries. `PollDecisionExecution` re-reads until the execution has finished or the decision is no longer open, waiting with coroutine `delay` for `INTERVAL_MS` between at most `MAX_READS` reads (ADR-027: timers are coroutine time, not the `Clock` port). Originally proposed as polling "on the `Clock`" with a capped number of attempts.
 **Consequences.** A timeout after decide re-reads the decision (FR-096) and shows what really happened. A 409 re-reads and shows the final state with no options.
-**Note.** `PollDecisionExecution` waits with coroutine `delay` (up to 10 reads, 1 s apart), not with the `Clock` port, as ADR-027 later fixed for all timers.
 
 ## ADR-019: Inline actions are server flag AND app support AND role; mutations run in a fixed order
 
@@ -129,26 +128,23 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD) and has no device authentication (FR-014 lists "raising a budget" for incidents only; see ADR-013).
 **Consequences.** A viewer or an operator never reaches the gateway for a budget; a role change mid-session is handled by the server's 403 (`Forbidden`).
 
-## ADR-022: Saved filters map to server params, except priority which is filtered on the client
+## ADR-022: Saved filters (`IssueFilter`) map to server params, except priority which is filtered on the client
 
 **Context.** Research W1: the server has no `priority` filter and the web has none of the PRD's five saved views by those names.
-**Decision.** `SavedFilter` = `AllOpen` (`status=backlog,todo,in_progress,in_review,blocked`), `Blocked` (`attention=blocked`), `InReview` (`status=in_review`), `AssignedToMe` (`assigneeUserId=me`, restricted to open statuses) and `CriticalAndHigh` (all open statuses from the server, then `priority in {critical, high}` on the device by `SavedFilter.matches`). Search sends `q` and keeps the saved filter. The list uses `view=compact` and pages by `limit`/`offset`; the gateway takes an `IssueQuery` so Phase 1b builds the URL.
+**Decision.** `IssueFilter` has `AllOpen` (`status=backlog,todo,in_progress,in_review,blocked`), `Blocked` (`attention=blocked`), `InReview` (`status=in_review`), `AssignedToMe` (`assigneeUserId=me`, restricted to open statuses) and `CriticalAndHigh` (all open statuses from the server, then urgent priority on the device by `IssueFilter.matches`). Search sends `q` and keeps the filter. The list uses `view=compact` and pages by `limit` and `offset`; the gateway takes an `IssueQuery` so Phase 1b builds the URL. Originally proposed as `SavedFilter` and `SavedFilter.matches`.
 **Consequences.** `CriticalAndHigh` can show fewer than a page; the holder keeps loading while a page was full. The fake applies the same rules as the server.
-**Note.** In code the type is `IssueFilter` (not `SavedFilter`) and the on-device rule is `IssueFilter.matches`.
 
-## ADR-023: Interactions are a sealed domain type with five supported kinds; anything else is `Unsupported` and is never sent
+## ADR-023: Interactions are a sealed domain type with five supported kinds; anything else is `UnsupportedInteraction` and is never sent
 
 **Context.** Research W7/W8: six server kinds with large payloads; `connection_intent` has other endpoints; the resolver rule for a board user is addressee plus creator plus viewer role.
-**Decision.** `Interaction` is a sealed interface: `SuggestTasks`, `AskUserQuestions`, `RequestConfirmation`, `RequestCheckboxConfirmation`, `RequestItemVerdicts` (only the fields a form renders) and `Unsupported(kind)` (also for `connection_intent`). `Interaction.answerFor` builds a typed `InteractionAnswer` that validates required answers, reasons and selection counts on the device; `RespondToInteraction` maps an answer to exactly one gateway call and never takes an `Unsupported`. `resolverAudience` reuses `ResolverAudience.allowsUser`; an interaction that is not for the user, not pending, or has an `acceptanceBlocker` is read only.
+**Decision.** `Interaction` is a sealed interface: `SuggestTasks`, `AskUserQuestions`, `RequestConfirmation`, `RequestCheckboxConfirmation`, `RequestItemVerdicts` (only the fields a form renders) and `UnsupportedInteraction` (also for `connection_intent`). The extension `Interaction.validate` checks a typed `InteractionAnswer` and returns an `AnswerIssue` (or null), covering required answers, reasons and selection counts on the device; `RespondToInteraction` maps a valid answer to exactly one gateway call and never takes an `UnsupportedInteraction`. `ResolverAudience.allowsUser` decides who may answer; an interaction that is not for the user, not pending, or has an `acceptanceBlocker` is read only. Originally proposed as `Unsupported(kind)` and `Interaction.answerFor`.
 **Consequences.** The mobile app cannot send an invalid payload; the server's 422 remains the backstop.
-**Note.** In code the unsupported case is the class `UnsupportedInteraction`, and the device-side answer check is the extension `Interaction.validate(answer)`, which returns an `AnswerIssue` or null; there is no `Interaction.answerFor`.
 
 ## ADR-024: Names are joined on the device, "current issue" comes from live runs, and the tail is by byte offset and sequence
 
 **Context.** Research W2/A1/R1: the issue, comment and agent rows carry ids, not names; there is no current-issue field; logs are read by byte offset and events by sequence number.
-**Decision.** Gateways return domain objects with the ids; `LoadIssue` and `LoadAgent` join assignee and author names from `AgentGateway.list`. An agent's current issue is the `issueId` of its active live run. `TailRunLog` takes a `LogCursor(offset)` and returns the new text and the next cursor; `RunGateway.events(afterSeq)` the same by sequence. The Run viewer keeps `autoScroll = true` until the user scrolls up (`UserScrolled` intent) and turns it back on at `JumpToLatest`.
+**Decision.** Gateways return domain objects with the ids; `LoadIssue` and `LoadAgent` join assignee and author names from `AgentGateway`. An agent's current issue is the `issueId` of its active live run. `RunGateway.log` reads from a byte offset and returns a `LogChunk` (`content`, `nextOffset`); `TailRunLog` takes and returns a bounded `LogTail`, and `RunGateway.events` reads by sequence number. The Run viewer keeps `autoScroll` on until the user scrolls up (`UserScrolled` intent) and turns it back on at `JumpToLatest`. Originally proposed as a `LogCursor(offset)`.
 **Consequences.** The polling policy of slice 1a-4 only has to call the holders' `Refresh` intent at the right interval.
-**Note.** In code there is no `LogCursor`: `RunGateway.log(scope, id, offset)` returns a `LogChunk(content, nextOffset)`, `TailRunLog` takes and returns a bounded `LogTail`, and `RunGateway.events(scope, id, afterSeq)` reads events by sequence number.
 
 ## ADR-025: Decision detail offers Snooze only when it was opened from an Inbox card
 
@@ -237,11 +233,11 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-035: The demo graph, the fakes and the contract suites ship inside the framework
 
-**Status:** Accepted (2026-11-01, review fix F-C-13; the surface question is tracked as F-D-12)
+**Status:** Accepted (2026-11-01, review fixes F-C-13 and F-D-12)
 
 **Context.** `shared/umbrella` depends on `:shared:testing` so that `createDemoGraph()` can run the whole app on fakes without a server. The consequence is that the fakes, the contract suites and the demo data set (with fake test-only keys) are part of `PaperclipKit.xcframework` and the Android library.
 
-**Decision.** Accepted for Phase 1a because demo mode is a product feature of the walking skeleton and the screens are built against it. The fake keys are obviously fake (`pcp_board_TESTONLY...`), no real secret can be in them, and `createGraph` (the real graph) does not reference them. Splitting the demo graph into its own artifact, or stripping it from release builds, is decided with F-D-12 before a store build exists.
+**Decision.** Accepted for Phase 1a because demo mode is a product feature of the walking skeleton and the screens are built against it. The fake keys are obviously fake (`pcp_board_TESTONLY...`), no real secret can be in them, and `createGraph` (the real graph) does not reference them. Whether the demo graph stays in a store build is a Phase 2 decision (PRD FR-009 "demo factory" argues for keeping it); splitting it into its own artifact is then a build change, not a code change. Until then this ADR is the record: they ship, in every build.
 
 **Consequences.** Release size includes the fakes until that split. Konsist keeps `Secret.reveal()` out of everything except infrastructure and `shared/testing`, so shipping the fakes does not widen where a secret can be read. `FakePairingBrowser` records the approval URLs it is asked to open (the pairing contract needs to read them back), so the shipped fake holds whatever link the demo graph gives it; the demo set contains only test-only values, and the real graph wires the real browser bridge in Phase 1b.
 
@@ -255,3 +251,12 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Fewer contract classes, each real. Acceptance criterion 4 reads "fake-only; real adapters in Phase 1b".
 
+## ADR-037: `createGraph` is backed by fakes until Phase 1b, and the seam is the port bindings
+
+**Status:** Accepted (2026-11-01, review fix F-B-10)
+
+**Context.** `PaperclipCore.createGraph(allowInsecureLocal)` is the graph the iPhone app starts with, yet every port in it is a fake: an in-memory `SecretStore`, a `Biometrics` that always approves, a `Clock` frozen at 2026-11-01T12:00Z, gateways that answer from memory. The demo graph freezes its clock too (Wednesday 2026-11-04T12:00Z). Neither can exercise the idle lock, the five-second undo window, key expiry, "Decide now" grouping or snooze presets, and the biometric failure paths cannot be triggered from either graph.
+
+**Decision.** This is accepted for Phase 1a, which has no adapters, and is stated where a reader looks: the KDoc of `createGraph`, `docs/technical-details.md` ("The graph") and this ADR. The seam is the Koin module that binds the ports (`portsModule()` for `createGraph`, `demoPortsModule()` for the demo): Phase 1b replaces the bindings there with real adapters, and platform-owned ports (secure store, biometrics, connectivity, pairing browser, time zone, lifecycle) arrive from the app. The shape of that hand-over is decided in Phase 1b; `createGraph` is not renamed now because the Swift app calls it and the name disappears with the fakes.
+
+**Consequences.** A build that reaches `createGraph` with the fakes still bound must not be released: Phase 1b's first acceptance criterion is a test that the graph binds no `FakeBiometrics` and no `FakeSecretStore`. Time-dependent rules are tested at the state-holder and use-case level with an advanceable `FakeClock` (the app lock re-engaging after the idle period is covered through the graph in `DemoGraphDeviceTest`), not by waiting in either graph.
