@@ -1,0 +1,29 @@
+# Builds on detekt's defaults. Deviations are listed here with the reason, never as inline suppressions.
+build:
+  maxIssues: 0
+
+style:
+  MagicNumber:
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotation: true
+  ReturnCount:
+    max: 4
+    excludeGuardClauses: true
+  MaxLineLength:
+    maxLineLength: 120
+  UnusedPrivateMember:
+    active: true
+
+naming:
+  FunctionNaming:
+    # Test functions use backticked sentences.
+    ignoreAnnotated: ['Test']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][A-Za-z0-9_]*'
+
+complexity:
+  LongMethod:
+    threshold: 60
+  CyclomaticComplexMethod:
+    threshold: 15
