@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The mocks' four button looks. Every one is at least 44 pt tall and shows the pressed state.
+/// The mocks' four button looks. Every one is at least 44 pt tall and shows the pressed state. A disabled button is
+/// muted grey with secondary text (not dimmed), so it stays readable and still passes the contrast audit.
 struct AppButtonStyle: ButtonStyle {
     enum Kind {
         case primary
@@ -18,14 +19,16 @@ struct AppButtonStyle: ButtonStyle {
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity, minHeight: Spacing.minimumTarget)
             .padding(.horizontal, Spacing.medium)
-            .foregroundStyle(foreground.color)
-            .background(background.color, in: RoundedRectangle(cornerRadius: Radius.button))
+            .foregroundStyle((isEnabled ? foreground : Palette.textSecondary).color)
+            .background(
+                (isEnabled ? background : Palette.muted).color, in: RoundedRectangle(cornerRadius: Radius.button)
+            )
             .overlay {
-                if kind == .secondary || kind == .destructive {
+                if isEnabled && (kind == .secondary || kind == .destructive) {
                     RoundedRectangle(cornerRadius: Radius.button).strokeBorder(Palette.border.color)
                 }
             }
-            .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
+            .opacity(configuration.isPressed ? 0.75 : 1)
             .contentShape(RoundedRectangle(cornerRadius: Radius.button))
     }
 

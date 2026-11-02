@@ -95,4 +95,23 @@ struct ScreenModelOwnershipTests {
         #expect(environment.referenceDate == nil)
         environment.shutdown()
     }
+
+    @Test func theFirstRunScreenStaysUntilDoneEvenAfterSteppingBackToTheAddress() async {
+        let environment = AppEnvironment(
+            configuration: LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"]))
+        environment.start()
+        #expect(await eventually { environment.app.state.isLoaded })
+        #expect(environment.firstRunInProgress == false)
+        environment.firstRun.send(FirstRunIntentAddressChanged(text: "https://paperclip.example.org"))
+        environment.firstRun.send(FirstRunIntentProbeRequested.shared)
+        #expect(await eventually { environment.firstRun.state.probe == .accepted })
+        environment.firstRun.send(FirstRunIntentContinueRequested.shared)
+        #expect(await eventually { environment.firstRun.state.step == .pair })
+        #expect(environment.firstRunInProgress)
+
+        environment.firstRun.send(FirstRunIntentBackRequested.shared)
+        #expect(environment.firstRun.state.step == .address)
+        #expect(environment.firstRunInProgress, "the factory is saved, so the flow is still open")
+        environment.shutdown()
+    }
 }

@@ -19,6 +19,17 @@ extension DeviceAuthIssue: CatalogKey { static var catalogNamespace: String { "d
 extension EffectKindUi: CatalogKey { static var catalogNamespace: String { "effect" } }
 extension FeedbackKind: CatalogKey { static var catalogNamespace: String { "feedback" } }
 extension InvalidKey: CatalogKey { static var catalogNamespace: String { "invalid" } }
+extension FactoryStatusUi: CatalogKey { static var catalogNamespace: String { "status" } }
+extension ProbeStatus: CatalogKey { static var catalogNamespace: String { "probe" } }
+extension ProbeRefusal: CatalogKey { static var catalogNamespace: String { "refusal" } }
+extension PairingStatus: CatalogKey { static var catalogNamespace: String { "pairing" } }
+extension InstanceNameIssue: CatalogKey { static var catalogNamespace: String { "nameIssue" } }
+extension Exposure: CatalogKey { static var catalogNamespace: String { "exposure" } }
+extension RoleUi: CatalogKey { static var catalogNamespace: String { "role" } }
+extension RemovalEffect: CatalogKey { static var catalogNamespace: String { "removal" } }
+extension ServerKeyOutcome: CatalogKey { static var catalogNamespace: String { "keyOutcome" } }
+extension IdlePeriod: CatalogKey { static var catalogNamespace: String { "idle" } }
+extension PairedDevicesStatus: CatalogKey { static var catalogNamespace: String { "devices" } }
 
 enum L10n {
     /// The localized text for `key`; extra arguments fill `%@` placeholders in order.
@@ -76,6 +87,126 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case severityHigh
     case severityMedium
     case severityLow
+    case firstRunHeadline
+    case firstRunIntro
+    case stepAddress
+    case stepPair
+    case stepSecure
+    case stepCurrent
+    case fieldAddressLabel
+    case fieldAddressHelp
+    case fieldNameLabel
+    case fieldNamePlaceholder
+    case fieldNameHelp
+    case checkAddress
+    case checking
+    case probeFoundTitle
+    case probeVersion
+    case probeRefusedTitle
+    case firstRunKeyNote
+    case firstRunContinueToPairing
+    case pairTitle
+    case pairIntro
+    case pairOpen
+    case pairWaiting
+    case pairCancel
+    case pairTryAgain
+    case secureTitle
+    case secureIntro
+    case secureCompanies
+    case secureAppLock
+    case secureAppLockHelp
+    case secureFinish
+    case commonBack
+    case commonDone
+    case commonSave
+    case commonRemove
+    case commonKeep
+    case commonEdit
+    case commonDismiss
+    case commonOn
+    case commonOff
+    case factoriesSettings
+    case factoriesAdd
+    case factoriesPairAgain
+    case factoriesEmptyTitle
+    case factoriesEmptyMessage
+    case factoriesCurrent
+    case factoriesLoadingCompanies
+    case factoriesCompanySelected
+    case expiryDaysOne
+    case expiryDaysOther
+    case expiryExpired
+    case statusKeyExpired
+    case manageCountOne
+    case manageCountOther
+    case manageHint
+    case manageRemoveAction
+    case manageMoveUp
+    case manageMoveDown
+    case manageReorderRejected
+    case removeTitle
+    case removeFooter
+    case removeConfirm
+    case editTitleEdit
+    case editTitleAdd
+    case editSectionFactory
+    case editSectionCompanies
+    case editSectionAccess
+    case editSectionAccessAnonymous
+    case editOpenOnLaunch
+    case editNoDefaultCompany
+    case editBoardKey
+    case editNoCompaniesLoaded
+    case editSectionSecurity
+    case editPinTitle
+    case editPinHelp
+    case editPinPlaceholder
+    case editPinAdd
+    case editPinInvalid
+    case editPairAgain
+    case editSignOut
+    case editRemove
+    case editAddressChangeWarning
+    case editSaveNeedsCheck
+    case editSignOutTitle
+    case editSignOutMessage
+    case editSignOutConfirm
+    case editSaved
+    case editOfflineNote
+    case settingsThisPhone
+    case settingsDeviceName
+    case settingsDeviceNameHelp
+    case settingsDeviceNameInvalid
+    case settingsDestructive
+    case settingsDestructiveHelp
+    case settingsEachFactory
+    case settingsKeysAndDevices
+    case settingsPairedDevices
+    case settingsAccountHelp
+    case settingsSignOutEverywhere
+    case settingsSignOutEverywhereTitle
+    case settingsSignOutEverywhereMessage
+    case settingsSignOutEverywhereConfirm
+    case settingsUnconfirmedRevokes
+    case settingsSignOutFailures
+    case settingsDeviceNameSave
+    case devicesTitle
+    case devicesChooseFactory
+    case devicesThisPhone
+    case devicesLastUsed
+    case devicesNeverUsed
+    case devicesExpiresNever
+    case devicesRevoke
+    case devicesLoading
+    case devicesFailed
+    case devicesEmpty
+    case revokeTitle
+    case revokeMessage
+    case revokeThisPhoneMessage
+    case revokeConfirm
+    case settingsSignOutOne
+    case settingsSignedInAs
 }
 
 extension ShellLabel {

@@ -134,6 +134,50 @@
         }
       }
     },
+    "devices.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The keys could not be loaded."
+          }
+        }
+      }
+    },
+    "devices.idle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not loaded"
+          }
+        }
+      }
+    },
+    "devices.loaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keys"
+          }
+        }
+      }
+    },
+    "devices.loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading keys…"
+          }
+        }
+      }
+    },
     "disabled.offline": {
       "extractionState": "manual",
       "localizations": {
@@ -398,6 +442,39 @@
         }
       }
     },
+    "exposure.private": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "private network"
+          }
+        }
+      }
+    },
+    "exposure.public": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "public"
+          }
+        }
+      }
+    },
+    "exposure.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "exposure unknown"
+          }
+        }
+      }
+    },
     "feedback.deviceAuth": {
       "extractionState": "manual",
       "localizations": {
@@ -460,6 +537,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "No answer arrived, so it's unclear whether that took effect. Refresh before trying again."
+          }
+        }
+      }
+    },
+    "idle.fifteenMinutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "15 minutes"
+          }
+        }
+      }
+    },
+    "idle.fiveMinutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes"
+          }
+        }
+      }
+    },
+    "idle.immediately": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immediately"
+          }
+        }
+      }
+    },
+    "idle.oneHour": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 hour"
+          }
+        }
+      }
+    },
+    "idle.oneMinute": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 minute"
+          }
+        }
+      }
+    },
+    "idle.thirtyMinutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 minutes"
           }
         }
       }
@@ -706,6 +849,83 @@
         }
       }
     },
+    "keyOutcome.alreadyInvalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key was already invalid on the server."
+          }
+        }
+      }
+    },
+    "keyOutcome.notAttempted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No key was stored, so none was revoked."
+          }
+        }
+      }
+    },
+    "keyOutcome.revoked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key was revoked on the server."
+          }
+        }
+      }
+    },
+    "keyOutcome.unconfirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server could not be reached, so the key may still be valid. Revoke it in the web app."
+          }
+        }
+      }
+    },
+    "label.checkAddress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check address"
+          }
+        }
+      }
+    },
+    "label.checking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        }
+      }
+    },
+    "label.commonBack": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
     "label.commonCancel": {
       "extractionState": "manual",
       "localizations": {
@@ -713,6 +933,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancel"
+          }
+        }
+      }
+    },
+    "label.commonDismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "label.commonDone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "label.commonEdit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
           }
         }
       }
@@ -728,6 +981,17 @@
         }
       }
     },
+    "label.commonKeep": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep"
+          }
+        }
+      }
+    },
     "label.commonLoading": {
       "extractionState": "manual",
       "localizations": {
@@ -735,6 +999,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Loading…"
+          }
+        }
+      }
+    },
+    "label.commonOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
           }
         }
       }
@@ -750,6 +1025,28 @@
         }
       }
     },
+    "label.commonOn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On"
+          }
+        }
+      }
+    },
+    "label.commonRemove": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        }
+      }
+    },
     "label.commonRetry": {
       "extractionState": "manual",
       "localizations": {
@@ -757,6 +1054,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Try again"
+          }
+        }
+      }
+    },
+    "label.commonSave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
           }
         }
       }
@@ -816,6 +1124,578 @@
         }
       }
     },
+    "label.devicesChooseFactory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factory"
+          }
+        }
+      }
+    },
+    "label.devicesEmpty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No keys."
+          }
+        }
+      }
+    },
+    "label.devicesExpiresNever": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No expiry"
+          }
+        }
+      }
+    },
+    "label.devicesFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The keys could not be loaded."
+          }
+        }
+      }
+    },
+    "label.devicesLastUsed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last used %@"
+          }
+        }
+      }
+    },
+    "label.devicesLoading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading keys…"
+          }
+        }
+      }
+    },
+    "label.devicesNeverUsed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never used"
+          }
+        }
+      }
+    },
+    "label.devicesRevoke": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoke"
+          }
+        }
+      }
+    },
+    "label.devicesThisPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone"
+          }
+        }
+      }
+    },
+    "label.devicesTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired devices"
+          }
+        }
+      }
+    },
+    "label.editAddressChangeWarning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changing the address removes this phone’s key for this factory. Check the new address, save, then pair again."
+          }
+        }
+      }
+    },
+    "label.editBoardKey": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board key"
+          }
+        }
+      }
+    },
+    "label.editNoCompaniesLoaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Companies appear once this phone is signed in."
+          }
+        }
+      }
+    },
+    "label.editNoDefaultCompany": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last used"
+          }
+        }
+      }
+    },
+    "label.editOfflineNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are offline. Checking and pairing need a connection."
+          }
+        }
+      }
+    },
+    "label.editOpenOnLaunch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open on launch"
+          }
+        }
+      }
+    },
+    "label.editPairAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair again"
+          }
+        }
+      }
+    },
+    "label.editPinAdd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add pin"
+          }
+        }
+      }
+    },
+    "label.editPinHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended for public cloud factories"
+          }
+        }
+      }
+    },
+    "label.editPinInvalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That is not a valid pin."
+          }
+        }
+      }
+    },
+    "label.editPinPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sha256/…"
+          }
+        }
+      }
+    },
+    "label.editPinTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin server certificate"
+          }
+        }
+      }
+    },
+    "label.editRemove": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove factory"
+          }
+        }
+      }
+    },
+    "label.editSaveNeedsCheck": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the new address before saving."
+          }
+        }
+      }
+    },
+    "label.editSaved": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved."
+          }
+        }
+      }
+    },
+    "label.editSectionAccess": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your access · %@"
+          }
+        }
+      }
+    },
+    "label.editSectionAccessAnonymous": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your access"
+          }
+        }
+      }
+    },
+    "label.editSectionCompanies": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Companies"
+          }
+        }
+      }
+    },
+    "label.editSectionFactory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factory"
+          }
+        }
+      }
+    },
+    "label.editSectionSecurity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security"
+          }
+        }
+      }
+    },
+    "label.editSignOut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        }
+      }
+    },
+    "label.editSignOutConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        }
+      }
+    },
+    "label.editSignOutMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone’s key for this factory is deleted, and revoked on the server if it can be reached."
+          }
+        }
+      }
+    },
+    "label.editSignOutTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of “%@”?"
+          }
+        }
+      }
+    },
+    "label.editTitleAdd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add factory"
+          }
+        }
+      }
+    },
+    "label.editTitleEdit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit factory"
+          }
+        }
+      }
+    },
+    "label.expiryDaysOne": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board key expires in 1 day"
+          }
+        }
+      }
+    },
+    "label.expiryDaysOther": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board key expires in %lld days"
+          }
+        }
+      }
+    },
+    "label.expiryExpired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board key expired"
+          }
+        }
+      }
+    },
+    "label.factoriesAdd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a factory"
+          }
+        }
+      }
+    },
+    "label.factoriesCompanySelected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, selected"
+          }
+        }
+      }
+    },
+    "label.factoriesCurrent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current factory"
+          }
+        }
+      }
+    },
+    "label.factoriesEmptyMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a factory to start deciding from your phone."
+          }
+        }
+      }
+    },
+    "label.factoriesEmptyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No factories yet"
+          }
+        }
+      }
+    },
+    "label.factoriesLoadingCompanies": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading companies…"
+          }
+        }
+      }
+    },
+    "label.factoriesPairAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair again"
+          }
+        }
+      }
+    },
+    "label.factoriesSettings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "label.fieldAddressHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Must start with https://"
+          }
+        }
+      }
+    },
+    "label.fieldAddressLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factory address"
+          }
+        }
+      }
+    },
+    "label.fieldNameHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown in the factory switcher. 1–40 characters."
+          }
+        }
+      }
+    },
+    "label.fieldNameLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "label.fieldNamePlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home factory"
+          }
+        }
+      }
+    },
     "label.firstRunAddressPlaceholder": {
       "extractionState": "manual",
       "localizations": {
@@ -834,6 +1714,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continue to pairing"
+          }
+        }
+      }
+    },
+    "label.firstRunContinueToPairing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue to pairing"
+          }
+        }
+      }
+    },
+    "label.firstRunHeadline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your first factory"
+          }
+        }
+      }
+    },
+    "label.firstRunIntro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A factory is one Paperclip server. Decide, monitor and intervene from here. You can add more factories later."
+          }
+        }
+      }
+    },
+    "label.firstRunKeyNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your access key is created after you approve this phone in the browser, and stays in the iPhone Keychain. Nothing leaves this phone except requests to this factory."
           }
         }
       }
@@ -904,6 +1828,149 @@
         }
       }
     },
+    "label.manageCountOne": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 factory"
+          }
+        }
+      }
+    },
+    "label.manageCountOther": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld factories"
+          }
+        }
+      }
+    },
+    "label.manageHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to reorder. The top factory opens first on launch unless you open another."
+          }
+        }
+      }
+    },
+    "label.manageMoveDown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move down"
+          }
+        }
+      }
+    },
+    "label.manageMoveUp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move up"
+          }
+        }
+      }
+    },
+    "label.manageRemoveAction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@"
+          }
+        }
+      }
+    },
+    "label.manageReorderRejected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The order could not be saved. Try again."
+          }
+        }
+      }
+    },
+    "label.pairCancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel pairing"
+          }
+        }
+      }
+    },
+    "label.pairIntro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip opens a secure browser sheet. Sign in if asked, approve this phone, then close the sheet."
+          }
+        }
+      }
+    },
+    "label.pairOpen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open approval page"
+          }
+        }
+      }
+    },
+    "label.pairTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approve this phone"
+          }
+        }
+      }
+    },
+    "label.pairTryAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "label.pairWaiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for your approval…"
+          }
+        }
+      }
+    },
     "label.placeholderMessage": {
       "extractionState": "manual",
       "localizations": {
@@ -926,6 +1993,193 @@
         }
       }
     },
+    "label.probeFoundTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server found"
+          }
+        }
+      }
+    },
+    "label.probeRefusedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server cannot be used"
+          }
+        }
+      }
+    },
+    "label.probeVersion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip %@"
+          }
+        }
+      }
+    },
+    "label.removeConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        }
+      }
+    },
+    "label.removeFooter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your work in Paperclip is not affected."
+          }
+        }
+      }
+    },
+    "label.removeTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove “%@”?"
+          }
+        }
+      }
+    },
+    "label.revokeConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoke key"
+          }
+        }
+      }
+    },
+    "label.revokeMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything using this key loses access to the factory."
+          }
+        }
+      }
+    },
+    "label.revokeThisPhoneMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is this phone’s key. Revoking it signs this phone out of the factory."
+          }
+        }
+      }
+    },
+    "label.revokeTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoke “%@”?"
+          }
+        }
+      }
+    },
+    "label.secureAppLock": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock app with Face ID"
+          }
+        }
+      }
+    },
+    "label.secureAppLockHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask for Face ID when you open the app."
+          }
+        }
+      }
+    },
+    "label.secureCompanies": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open on launch"
+          }
+        }
+      }
+    },
+    "label.secureFinish": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start using Paperclip"
+          }
+        }
+      }
+    },
+    "label.secureIntro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your access key is saved in the iPhone Keychain. Choose what opens first."
+          }
+        }
+      }
+    },
+    "label.secureTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Almost done"
+          }
+        }
+      }
+    },
+    "label.settingsAccountHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name, email and role come from each factory and are changed in its web app."
+          }
+        }
+      }
+    },
     "label.settingsAppLock": {
       "extractionState": "manual",
       "localizations": {
@@ -933,6 +2187,83 @@
           "stringUnit": {
             "state": "translated",
             "value": "App lock"
+          }
+        }
+      }
+    },
+    "label.settingsDestructive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destructive actions"
+          }
+        }
+      }
+    },
+    "label.settingsDestructiveHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause, cancel, reject and budget always ask for Face ID"
+          }
+        }
+      }
+    },
+    "label.settingsDeviceName": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device name"
+          }
+        }
+      }
+    },
+    "label.settingsDeviceNameHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Names the key on new pairings"
+          }
+        }
+      }
+    },
+    "label.settingsDeviceNameInvalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use 1–60 characters."
+          }
+        }
+      }
+    },
+    "label.settingsDeviceNameSave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save name"
+          }
+        }
+      }
+    },
+    "label.settingsEachFactory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each factory"
           }
         }
       }
@@ -948,6 +2279,116 @@
         }
       }
     },
+    "label.settingsKeysAndDevices": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keys and devices"
+          }
+        }
+      }
+    },
+    "label.settingsPairedDevices": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired devices and keys"
+          }
+        }
+      }
+    },
+    "label.settingsSignOutEverywhere": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out everywhere"
+          }
+        }
+      }
+    },
+    "label.settingsSignOutEverywhereConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out everywhere"
+          }
+        }
+      }
+    },
+    "label.settingsSignOutEverywhereMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone’s keys are deleted, and revoked on each server that can be reached. You will pair again to use a factory."
+          }
+        }
+      }
+    },
+    "label.settingsSignOutEverywhereTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of every factory?"
+          }
+        }
+      }
+    },
+    "label.settingsSignOutFailures": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld factories could not be signed out on this phone."
+          }
+        }
+      }
+    },
+    "label.settingsSignOutOne": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of %@"
+          }
+        }
+      }
+    },
+    "label.settingsSignedInAs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in as %@"
+          }
+        }
+      }
+    },
+    "label.settingsThisPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone"
+          }
+        }
+      }
+    },
     "label.settingsTitle": {
       "extractionState": "manual",
       "localizations": {
@@ -955,6 +2396,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Settings"
+          }
+        }
+      }
+    },
+    "label.settingsUnconfirmedRevokes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld keys could not be confirmed as revoked on their servers."
           }
         }
       }
@@ -999,6 +2451,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "Medium"
+          }
+        }
+      }
+    },
+    "label.statusKeyExpired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key expired"
+          }
+        }
+      }
+    },
+    "label.stepAddress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Address"
+          }
+        }
+      }
+    },
+    "label.stepCurrent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %lld of 3: %@"
+          }
+        }
+      }
+    },
+    "label.stepPair": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair"
+          }
+        }
+      }
+    },
+    "label.stepSecure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secure"
           }
         }
       }
@@ -1054,6 +2561,303 @@
           "stringUnit": {
             "state": "translated",
             "value": "Work"
+          }
+        }
+      }
+    },
+    "nameIssue.empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a name."
+          }
+        }
+      }
+    },
+    "nameIssue.taken": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another factory already has this name."
+          }
+        }
+      }
+    },
+    "nameIssue.tooLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use at most 40 characters."
+          }
+        }
+      }
+    },
+    "pairing.cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pairing was cancelled."
+          }
+        }
+      }
+    },
+    "pairing.expired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The approval request expired. Try again."
+          }
+        }
+      }
+    },
+    "pairing.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pairing did not complete."
+          }
+        }
+      }
+    },
+    "pairing.idle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to pair"
+          }
+        }
+      }
+    },
+    "pairing.waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for your approval…"
+          }
+        }
+      }
+    },
+    "probe.accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server found"
+          }
+        }
+      }
+    },
+    "probe.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not check the address"
+          }
+        }
+      }
+    },
+    "probe.idle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not checked yet"
+          }
+        }
+      }
+    },
+    "probe.probing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        }
+      }
+    },
+    "probe.refused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server cannot be used"
+          }
+        }
+      }
+    },
+    "refusal.bootstrapPending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server has not finished its first-time setup. Finish setup in the web app first."
+          }
+        }
+      }
+    },
+    "refusal.localTrusted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server runs in local trusted mode, which has no sign-in. Paperclip Mobile only connects to servers that require sign-in."
+          }
+        }
+      }
+    },
+    "refusal.notReady": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server says it is not ready yet. Try again in a moment."
+          }
+        }
+      }
+    },
+    "refusal.unknownDeploymentMode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server did not say how it signs people in, so it cannot be used safely."
+          }
+        }
+      }
+    },
+    "removal.cachedData": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletes its cached data from this phone."
+          }
+        }
+      }
+    },
+    "removal.configuration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletes its saved settings from this phone."
+          }
+        }
+      }
+    },
+    "removal.serverKey": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revokes the key on the server if it can be reached."
+          }
+        }
+      }
+    },
+    "removal.storedKey": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletes its access key from this phone."
+          }
+        }
+      }
+    },
+    "role.operator": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operator"
+          }
+        }
+      }
+    },
+    "role.owner": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owner"
+          }
+        }
+      }
+    },
+    "role.viewer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewer"
+          }
+        }
+      }
+    },
+    "status.needsRePairing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs pairing again"
+          }
+        }
+      }
+    },
+    "status.signedIn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        }
+      }
+    },
+    "status.signedOut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed out"
           }
         }
       }

@@ -1,7 +1,8 @@
 import PaperclipKit
 import SwiftUI
 
-/// Chooses what the app shows: loading, the lock, first run when there is no factory yet, or the tab shell. It also
+/// Chooses what the app shows: loading, the lock, first run when there is no factory yet (or while the flow that adds
+/// one is still on its pairing and secure steps), or the tab shell. It also
 /// hides everything in the app switcher.
 struct RootView: View {
     let environment: AppEnvironment
@@ -18,6 +19,7 @@ struct RootView: View {
             }
         }
         .background(Palette.background.color.ignoresSafeArea())
+        .environment(\.referenceDate, environment.referenceDate)
     }
 
     private static let switcherBlur: CGFloat = 30
@@ -28,7 +30,7 @@ struct RootView: View {
             LoadingState()
         } else if state.lock == .locked {
             LockView(environment: environment)
-        } else if !state.hasFactories {
+        } else if !state.hasFactories || environment.firstRunInProgress {
             FirstRunView(model: environment.firstRun, onTryDemo: environment.useDemo)
         } else {
             TabShellView(environment: environment)

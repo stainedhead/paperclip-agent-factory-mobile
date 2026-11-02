@@ -80,6 +80,10 @@ final class AppEnvironment {
         return configuration.useDemo ? DemoGraphProvider() : LiveGraphProvider(opener: page)
     }
 
+    /// The first-run flow has saved the factory but is not finished: it keeps the screen until Done (also when the
+    /// person steps back to the address), so adding the factory does not swap the flow for the tab shell half way.
+    private(set) var firstRunInProgress = false
+
     /// "Now" for "Updated ..." labels: a graph with its own clock (the demo's is frozen) is measured against that
     /// clock, a live graph against the wall clock (nil).
     var referenceDate: Date? {
@@ -93,6 +97,8 @@ final class AppEnvironment {
         applyDemoLaunchOptions()
         app.didUpdate = { [weak self] state in self?.appStateChanged(state) }
         observe(app)
+        firstRun.didUpdate = { [weak self] state in self?.firstRunChanged(state) }
+        observe(firstRun)
         appStateChanged(app.state)
     }
 
@@ -108,6 +114,14 @@ final class AppEnvironment {
         firstRun.send(FirstRunIntentPairCancelled.shared)
         for case let model as HolderModel<EditInstanceStateHolder> in models.allModels {
             model.send(EditInstanceIntentPairCancelled.shared)
+        }
+    }
+
+    private func firstRunChanged(_ state: FirstRunState) {
+        switch state.step {
+        case .pair, .secure: firstRunInProgress = true
+        case .done: firstRunInProgress = false
+        case .address: break
         }
     }
 

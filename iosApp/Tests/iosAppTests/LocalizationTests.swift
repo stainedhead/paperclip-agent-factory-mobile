@@ -24,6 +24,17 @@ struct LocalizationTests {
     @Test func everyFeedbackKindHasText() { check(FeedbackKind.allCases) }
     @Test func everyInvalidKeyHasText() { check(InvalidKey.allCases) }
     @Test func everyShellLabelHasText() { check(ShellLabel.allCases) }
+    @Test func everyFactoryStatusHasText() { check(FactoryStatusUi.allCases) }
+    @Test func everyProbeStatusHasText() { check(ProbeStatus.allCases) }
+    @Test func everyProbeRefusalHasText() { check(ProbeRefusal.allCases) }
+    @Test func everyPairingStatusHasText() { check(PairingStatus.allCases) }
+    @Test func everyInstanceNameIssueHasText() { check(InstanceNameIssue.allCases) }
+    @Test func everyExposureHasText() { check(Exposure.allCases) }
+    @Test func everyRoleHasText() { check(RoleUi.allCases) }
+    @Test func everyRemovalEffectHasText() { check(RemovalEffect.allCases) }
+    @Test func everyServerKeyOutcomeHasText() { check(ServerKeyOutcome.allCases) }
+    @Test func everyIdlePeriodHasText() { check(IdlePeriod.allCases) }
+    @Test func everyPairedDevicesStatusHasText() { check(PairedDevicesStatus.allCases) }
 
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {
         #expect(ErrorKey.certificateInvalid.catalogKey == "error.certificateInvalid")
