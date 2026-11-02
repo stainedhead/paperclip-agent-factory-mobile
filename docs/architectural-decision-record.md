@@ -234,3 +234,24 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `RetryBudget` holds the 3.5 s a use case may spend waiting across ALL its reads; `retryingRead(budget)` stops retrying when the budget is spent or `Connectivity` says offline. `LoadApproval`, `LoadIssue` and `LoadInstanceAccess` (the multi-read use cases) take `Connectivity` and share one budget per call; single-read use cases keep a fresh budget. `DomainError.CertificateInvalid` is split from `Unreachable` and is not transient, so it reaches the screen at once (`ErrorKey.CertificateInvalid`).
 
 **Consequences.** Phase 1b adapters must map TLS and name-verification failures to `CertificateInvalid` and plain connection failures to `Unreachable`. Mutations are still never retried.
+
+## ADR-035: The demo graph, the fakes and the contract suites ship inside the framework
+
+**Status:** Accepted (2026-11-01, review fix F-C-13; the surface question is tracked as F-D-12)
+
+**Context.** `shared/umbrella` depends on `:shared:testing` so that `createDemoGraph()` can run the whole app on fakes without a server. The consequence is that the fakes, the contract suites and the demo data set (with fake test-only keys) are part of `PaperclipKit.xcframework` and the Android library.
+
+**Decision.** Accepted for Phase 1a because demo mode is a product feature of the walking skeleton and the screens are built against it. The fake keys are obviously fake (`pcp_board_TESTONLY...`), no real secret can be in them, and `createGraph` (the real graph) does not reference them. Splitting the demo graph into its own artifact, or stripping it from release builds, is decided with F-D-12 before a store build exists.
+
+**Consequences.** Release size includes the fakes until that split. Konsist keeps `Secret.reveal()` out of everything except infrastructure and `shared/testing`, so shipping the fakes does not widen where a secret can be read.
+
+## ADR-036: A test claims only what it exercises
+
+**Status:** Accepted (2026-11-01, review fixes F-C-4, F-C-5 and F-D-5)
+
+**Context.** Several checks counted as evidence without being able to fail: platform contract suites that read back what they had just scripted, and a traceability rule satisfied by an `FR-` id in a comment.
+
+**Decision.** (1) A contract suite must assert an obligation a real adapter could break; suites that cannot (Connectivity, AppLifecycle: a `StateFlow` already guarantees them) are deleted and listed as exempt with the reason in `PortAndSecretRulesTest`. (2) A requirement is "named by a test" only when its id is in the backtick name of a `@Test` function in a `commonTest` source set; a requirement whose Phase 1a test covers only part of it is also listed in the `partial` map of `RequirementsTraceabilityTest` with what is left. (3) A guard (Konsist rule, CI check) needs a negative case or a mutation that makes it fail, recorded in the commit that adds it.
+
+**Consequences.** Fewer contract classes, each real. Acceptance criterion 4 reads "fake-only; real adapters in Phase 1b".
+
