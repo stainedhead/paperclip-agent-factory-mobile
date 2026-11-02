@@ -153,12 +153,13 @@ class AgentsStateHolder(
                     AgentActionUi.RunNow -> {
                         mutate(
                             context,
-                        ) { useCases.invoke(it, agent) }.let { ActionResult(it.feedback, null) }
+                        ) { useCases.invoke(it, agent) }.let { ActionResult(it.feedback, null, role = it.role) }
                     }
                 }
             model.update { m ->
                 m.copy(
                     busy = null,
+                    role = result.role ?: m.role,
                     version = m.version + 1,
                     feedback = result.feedback,
                     agents =

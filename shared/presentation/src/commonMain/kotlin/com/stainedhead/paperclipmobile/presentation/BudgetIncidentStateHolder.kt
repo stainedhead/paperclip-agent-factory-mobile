@@ -166,6 +166,11 @@ class BudgetIncidentStateHolder(
             val context = ensureContext()
             val result = context?.let { useCases.resolve(it, incident, resolution) }
             model.update { it.copy(submitting = false, feedback = result?.toFeedback(), version = it.version + 1) }
+            if (result?.wasForbidden() ==
+                true
+            ) {
+                model.refreshContext(useCases.resolveContext, companyScope) { copy(context = it) }
+            }
             when (result) {
                 is MutationResult.Done -> show(result.value)
                 is MutationResult.Reconciled -> show(result.current)

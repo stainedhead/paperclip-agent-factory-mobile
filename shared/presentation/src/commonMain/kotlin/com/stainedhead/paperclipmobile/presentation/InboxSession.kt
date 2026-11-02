@@ -123,6 +123,12 @@ internal class InboxSession(
             }
             val result = action(context)
             model.update { it.copy(mutating = false, feedback = result.toFeedback()) }
+            if (result.wasForbidden()) {
+                model.refreshContext(
+                    useCases.resolveContext,
+                    companyScope,
+                ) { copy(context = it) }
+            }
             onResult(result)
             if (result.mayHaveChangedTheServer()) refresh()
         }

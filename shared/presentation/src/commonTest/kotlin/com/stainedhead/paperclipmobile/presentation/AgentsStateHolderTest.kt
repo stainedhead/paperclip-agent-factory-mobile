@@ -23,7 +23,7 @@ internal fun TestScope.workEnv(role: Role = Role.Owner): Env {
     return env
 }
 
-private fun TestScope.agentsHolder(env: Env) =
+internal fun TestScope.agentsHolder(env: Env) =
     AgentsStateHolder(
         env.agentList,
         env.connectivity,

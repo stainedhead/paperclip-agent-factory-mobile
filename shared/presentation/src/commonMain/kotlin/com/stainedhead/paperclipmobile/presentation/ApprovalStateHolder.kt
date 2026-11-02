@@ -213,6 +213,11 @@ class ApprovalStateHolder(
             val context = ensureContext()
             val result = context?.let { call(it) }
             model.update { it.copy(submitting = false, feedback = result?.toFeedback(), version = it.version + 1) }
+            if (result?.wasForbidden() ==
+                true
+            ) {
+                model.refreshContext(useCases.resolveContext, companyScope) { copy(context = it) }
+            }
             result?.let(onResult)
         }
     }

@@ -117,6 +117,11 @@ Fix: the Run viewer keeps the default 15 s interval until a run has loaded; the 
 Not red by design: the orders and names match today (the finding said so), so UiEnumMappingTest passes before and after; the fix is structural. It checks that every domain enum maps to the twin of the same name and that the round trips return the original.
 Fix: the 14 ordinal/valueOf one-liners became exhaustive 'when (this)' without else, and the 7 inline entries[ordinal]/valueOf sites use new toUi functions in EnumMappings.kt, so a new or reordered domain value now fails to compile (checked: no .ordinal/valueOf/entries[ left in presentation except sorting chips by source kind).
 
+### 2026-11-01 F-D-2 a 403 re-resolves the role once (Group 2)
+
+Red evidence: forbiddenMutationReResolvesTheRole failed in all 8 holder families (Approval, Decision, Budget, Agent detail, Agents, Run viewer, Issue, Work list) with 'expected:<2> but was:<1>' (auth.me was called once; the role stayed Operator and actions stayed enabled); the Inbox variant was added after the fix and passes.
+Fix: a Forbidden mutation result triggers ONE resolveContext call (ContextSource.reResolve for the work screens, refreshContext for the screens that keep the context in their model); the mutation is not repeated, the old role is kept if the read fails, and the holder re-renders with the new role (ActionResult.role carries it). Reads that answer Forbidden are not handled; the finding only asked for mutations to refresh the role.
+
 ## Edge cases and solutions
 
 (none yet)

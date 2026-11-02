@@ -45,7 +45,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] FR-R20 (P1) F-C-6: `contract.yml` is green and tests nothing; the nightly drift job cannot detect drift
 - [ ] FR-R21 (P1) F-C-8: "No credential to the wrong host" is not testable with the fakes; only the address-edit path is cove
 - [ ] FR-R22 (P1) F-D-1: technical-details.md states AGENTS.md is stale in ways it is not (false "known limitation")
-- [ ] FR-R23 (P1) F-D-2: Spec 5a "403 after a role change refreshes the role" is not implemented; role is cached for a holder
+- [x] FR-R23 (P1) F-D-2: Spec 5a "403 after a role change refreshes the role" is not implemented; role is cached for a holder
 - [ ] FR-R24 (P1) F-D-3: Spec and status files are stale against what was built (progress table, criterion 14 text, FR-096 wo
 - [ ] FR-R25 (P1) F-D-4: PRD still contradicts the pinned server and the built behaviour in three places
 - [ ] FR-R26 (P1) F-D-5: Requirements-traceability rule is satisfied by a comment mention, so "every FR is named by a test" i
@@ -102,3 +102,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-B-8 done (paired-devices loads are ordered and cancelled).
 - 2026-11-01: F-B-9 done (no stuck run viewer, no lost budget outcome).
 - 2026-11-01: F-B-11 done (UI enum mappings are exhaustive when expressions).
+- 2026-11-01: F-D-2 done (a 403 re-resolves the role once).

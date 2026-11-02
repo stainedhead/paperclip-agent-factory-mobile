@@ -782,4 +782,30 @@ class InboxInlineActionGuardTest {
 
             env.budgets.count("resolve") shouldBe 0
         }
+
+    @Test
+    fun `forbiddenMutationReResolvesTheRole in Inbox`() =
+        runTest {
+            val env = env(Role.Operator)
+            val holder = loaded(env, listOf(AttentionFixtures.approvalItem("ap-1")))
+            holder.state.value
+                .items()
+                .first()
+                .inlineActions
+                .isNotEmpty() shouldBe true
+            env.auth.meResult = DomainResult.Success(TestData.access(Role.Viewer))
+            env.approvals.failures["approve"] = DomainError.Forbidden
+            val resolved = env.auth.count("me")
+
+            holder.onIntent(InboxIntent.ApproveTapped("approval:ap-1"))
+            advanceUntilIdle()
+
+            env.approvals.count("approve") shouldBe 1
+            env.auth.count("me") shouldBe resolved + 1
+            holder.state.value
+                .items()
+                .first()
+                .inlineActions shouldBe emptyList()
+            holder.state.value.actionsDisabledReason shouldBe ActionsDisabledReason.ViewerRole
+        }
 }

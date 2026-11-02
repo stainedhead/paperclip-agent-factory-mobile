@@ -28,13 +28,13 @@ import kotlin.test.Test
 
 private val instance = TestData.instance()
 
-private fun TestScope.decisionEnv(role: Role = Role.Owner): Env {
+internal fun TestScope.decisionEnv(role: Role = Role.Owner): Env {
     val env = Env(listOf(instance)) { testScheduler.currentTime }
     env.auth.meResult = DomainResult.Success(TestData.access(role))
     return env
 }
 
-private fun TestScope.decisionHolder(
+internal fun TestScope.decisionHolder(
     env: Env,
     agentHint: String? = null,
     decideByHint: String? = null,

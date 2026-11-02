@@ -21,7 +21,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-private fun TestScope.runHolder(
+internal fun TestScope.runHolder(
     env: Env,
     runId: String = "run-live",
 ) = RunViewerStateHolder(

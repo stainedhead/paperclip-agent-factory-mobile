@@ -186,7 +186,14 @@ class WorkListStateHolder(
         scope.launch {
             val result =
                 mutate(context) { useCases.create(it, NewIssue(intent.title, priority = intent.priority.toDomain())) }
-            model.update { it.copy(creating = false, feedback = result.feedback, createdId = result.value?.id?.value) }
+            model.update {
+                it.copy(
+                    creating = false,
+                    role = result.role ?: it.role,
+                    feedback = result.feedback,
+                    createdId = result.value?.id?.value,
+                )
+            }
             if (needsReload(result)) {
                 model.update { it.copy(loading = false) }
                 reload()

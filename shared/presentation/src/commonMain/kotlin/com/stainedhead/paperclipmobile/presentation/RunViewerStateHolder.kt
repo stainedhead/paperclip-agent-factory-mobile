@@ -167,6 +167,7 @@ class RunViewerStateHolder(
             model.update {
                 it.copy(
                     cancelling = false,
+                    role = result.role ?: it.role,
                     version = it.version + 1,
                     feedback = result.feedback,
                     run = result.value ?: it.run,

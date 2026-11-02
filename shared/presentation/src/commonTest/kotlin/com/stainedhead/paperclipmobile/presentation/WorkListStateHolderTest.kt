@@ -17,7 +17,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-private fun TestScope.listHolder(env: Env) =
+internal fun TestScope.listHolder(env: Env) =
     WorkListStateHolder(
         env.workList,
         env.connectivity,

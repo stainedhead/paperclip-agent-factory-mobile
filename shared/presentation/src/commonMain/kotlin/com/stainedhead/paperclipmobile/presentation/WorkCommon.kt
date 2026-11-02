@@ -11,6 +11,7 @@ import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.IssuePriority
 import com.stainedhead.paperclipmobile.domain.IssueStatus
+import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.RunStatus
 import com.stainedhead.paperclipmobile.domain.SpendWindow
 import com.stainedhead.paperclipmobile.domain.SpendWindowKind
@@ -32,6 +33,10 @@ internal class ContextSource(
     val role get() = cached.value?.role
 
     val userId get() = cached.value?.userId
+
+    /** Resolves the role again after a 403; keeps the old one if that read fails. Returns the new context or null. */
+    suspend fun reResolve(): CompanyContext? =
+        (resolve(scope) as? DomainResult.Success)?.value?.also { cached.value = it }
 
     suspend fun get(): DomainResult<CompanyContext> =
         cached.value?.let { DomainResult.Success(it) }
@@ -83,6 +88,8 @@ internal fun HeartbeatRun.toRow() =
 internal data class ActionResult<T>(
     val feedback: FeedbackUi?,
     val value: T?,
+    /** The role resolved again after a 403, so the screen can show the new role's actions. */
+    val role: Role? = null,
     /** The call may have changed the server although there is no entity to show: the screen should reload. */
     val reload: Boolean = false,
 )
@@ -102,10 +109,16 @@ internal suspend fun <T> mutate(
                 is MutationResult.Done -> ActionResult(null, result.value)
                 is MutationResult.Reconciled -> ActionResult(result.toFeedback(), result.current)
                 is MutationResult.Unknown -> ActionResult(result.toFeedback(), null, reload = true)
-                else -> ActionResult(result.toFeedback(), null)
+                else -> ActionResult(result.toFeedback(), null, role = reResolved(context, result))
             }
         }
     }
+
+/** After a 403 the person's role is read once more; any other result leaves it alone. */
+private suspend fun reResolved(
+    context: ContextSource,
+    result: MutationResult<*>,
+): Role? = if (result.wasForbidden()) context.reResolve()?.role else null
 
 /** A reference to an issue shown as a link: a parent, a blocker, an agent's current issue. */
 data class IssueRefUi(
