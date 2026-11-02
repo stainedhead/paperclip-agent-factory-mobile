@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.infrastructure.api.contract
 
 import com.stainedhead.paperclipmobile.domain.AgentId
+import com.stainedhead.paperclipmobile.domain.AgentStatus
 import com.stainedhead.paperclipmobile.domain.ApprovalId
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.Assignee
@@ -22,6 +23,7 @@ import kotlin.time.Duration.Companion.days
 class LiveMutationsTest {
     private companion object {
         const val NEW_BUDGET_CENTS = 1000L
+        const val MAX_NOTE = 160
     }
 
     @Test
@@ -137,28 +139,23 @@ class LiveMutationsTest {
                 LiveReport.note("attention mutations", "the seeded approval has no card in the feed")
                 return@live
             }
-            soft(
-                "AttentionGateway.dismiss",
-            ) { attention.dismiss(scope, item.dismissalKey).verified("AttentionGateway.dismiss") }
-            soft(
-                "AttentionGateway.restore",
-            ) { attention.restore(scope, item.dismissalKey).verified("AttentionGateway.restore") }
-            soft("AttentionGateway.snooze") {
+            val dismissed = attention.dismiss(scope, item.dismissalKey).verified("AttentionGateway.dismiss")
+            observe("attention dismiss value") { "${dismissed.kind} active=${dismissed.isActive}" }
+            attention.restore(scope, item.dismissalKey).verified("AttentionGateway.restore")
+            val snoozed =
                 attention
                     .snooze(
                         scope,
                         item.dismissalKey,
                         Clock.System.now() + 1.days,
                     ).verified("AttentionGateway.snooze")
-            }
-            soft(
-                "AttentionGateway.restore",
-            ) { attention.restore(scope, item.dismissalKey).verified("AttentionGateway.restore") }
-            soft("AttentionGateway.setDecideBy") {
-                attention
-                    .setDecideBy(scope, AttentionSourceKind.Approval, seeded.id, DecideBy.ThisWeek)
-                    .verified("AttentionGateway.setDecideBy")
-            }
+            observe(
+                "attention snooze value",
+            ) { "${snoozed.kind} active=${snoozed.isActive} until=${snoozed.snoozedUntil != null}" }
+            attention.restore(scope, item.dismissalKey).verified("AttentionGateway.restore", "(after snooze)")
+            attention
+                .setDecideBy(scope, AttentionSourceKind.Approval, seeded.id, DecideBy.ThisWeek)
+                .verified("AttentionGateway.setDecideBy")
         }
 
     @Test
@@ -170,19 +167,39 @@ class LiveMutationsTest {
                 return@live
             }
             val id = AgentId(seeded.id)
-            soft("AgentGateway.pause") { agents.pause(scope, id).verified("AgentGateway.pause") }
-            soft("AgentGateway.resume") { agents.resume(scope, id).verified("AgentGateway.resume") }
-            soft("AgentGateway.setBudget") {
-                agents.setBudget(scope, id, Money.usdCents(NEW_BUDGET_CENTS)).verified("AgentGateway.setBudget")
+            val paused = agents.pause(scope, id).verified("AgentGateway.pause")
+            observe("pause reply") {
+                assertEquals(AgentStatus.Paused, paused.status)
+                "status=${paused.status} reason=${paused.pauseReason}"
             }
-            val outcome =
-                soft(
-                    "AgentGateway.invokeHeartbeat",
-                ) { agents.invokeHeartbeat(scope, id).verified("AgentGateway.invokeHeartbeat") }
+            val resumed = agents.resume(scope, id).verified("AgentGateway.resume")
+            observe("resume reply") {
+                assertTrue(resumed.status != AgentStatus.Paused)
+                "status=${resumed.status} reason=${resumed.pauseReason}"
+            }
+            val budgeted =
+                agents
+                    .setBudget(
+                        scope,
+                        id,
+                        Money.usdCents(NEW_BUDGET_CENTS),
+                    ).verified("AgentGateway.setBudget")
+            observe("setBudget reply") {
+                assertEquals(Money.usdCents(NEW_BUDGET_CENTS), budgeted.monthlyBudget)
+                "budget=${budgeted.monthlyBudget} spend=${budgeted.monthSpend}"
+            }
+            val outcome = agents.invokeHeartbeat(scope, id).verified("AgentGateway.invokeHeartbeat")
+            observe("invokeHeartbeat outcome") { outcome::class.simpleName.orEmpty() }
             val run = (outcome as? InvokeOutcome.Started)?.run ?: return@live
-            soft("RunGateway.get") { runs.get(scope, run.id).verified("RunGateway.get") }
-            soft("RunGateway.events") { runs.events(scope, run.id, 0).verified("RunGateway.events") }
-            soft("RunGateway.log") { runs.log(scope, run.id, 0).verified("RunGateway.log") }
-            soft("RunGateway.cancel") { runs.cancel(scope, run.id).verified("RunGateway.cancel") }
+            val read = runs.get(scope, run.id).verified("RunGateway.get")
+            observe(
+                "run read",
+            ) { "status=${read.status} source=${read.invocationSource} agentMatches=${read.agentId == id}" }
+            val events = runs.events(scope, run.id, 0).verified("RunGateway.events")
+            observe("run events") { "count=${events.size}" }
+            val chunk = runs.log(scope, run.id, 0).verified("RunGateway.log")
+            observe("run log") { "chunk=$chunk".take(MAX_NOTE) }
+            val cancelled = runs.cancel(scope, run.id).verified("RunGateway.cancel")
+            observe("run cancel") { "status=${cancelled.status}" }
         }
 }

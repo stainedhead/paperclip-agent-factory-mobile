@@ -61,6 +61,18 @@ class PinnedStubFidelityTest {
         }
 
     @Test
+    fun `a malformed issue id is 404 and a malformed agent id is a shortname lookup`() =
+        runTest {
+            // Observed on the live 2026.1023.0 container (contract run 41509506174): an issue id that is not a uuid is
+            // looked up as an identifier and not found; an agent id is a shortname, which needs a company.
+            assertEquals(DomainResult.Failure(DomainError.NotFound), raw(HttpMethod.Get, "issues", "not-a-uuid"))
+            assertRejected(
+                "Agent shortname lookup requires companyId query parameter",
+                raw(HttpMethod.Get, "agents", "not-a-uuid"),
+            )
+        }
+
+    @Test
     fun `a non integer attention limit answers 400 and an out of range one names the range`() =
         runTest {
             world.home.attention.items += FeedFixtures.standard()

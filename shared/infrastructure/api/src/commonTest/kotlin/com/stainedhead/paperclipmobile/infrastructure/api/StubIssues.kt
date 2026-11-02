@@ -112,11 +112,17 @@ internal class StubIssues(
         val issue = store.issues.firstOrNull { it.id == s[1] }
         val refusal = issue?.let { request.resourceRefusal(it.company, NOT_FOUND) }
         return when {
-            !isStubUuid(s[1]) -> StubReply.error(500, "Internal server error")
+            // Not a uuid: looked up as an identifier such as PAP-39 and not found (live run 41509506174).
+            !isStubUuid(s[1]) -> StubReply.notFound(NOT_FOUND)
+
             issue == null -> StubReply.notFound(NOT_FOUND)
+
             refusal != null -> refusal
+
             s.size == 2 -> issueRoute(request, issue)
+
             s.size == 3 && request.method == HttpMethod.Get && s[2] == "runs" -> issueRuns(issue)
+
             else -> null
         }
     }

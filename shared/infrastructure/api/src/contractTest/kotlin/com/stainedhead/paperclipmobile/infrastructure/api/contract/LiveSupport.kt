@@ -78,3 +78,15 @@ internal fun record(
 }
 
 internal const val MAX_REASON = 400
+
+/**
+ * Checks one fact about the live server that the adapters assume but the source did not settle. The block asserts and
+ * returns a short description; a mismatch is recorded in the report as MISMATCH instead of failing the run, so one run
+ * shows every difference at once (AD-050).
+ */
+internal inline fun observe(
+    label: String,
+    block: () -> String,
+) {
+    soft(label) { LiveReport.note(label, block()) }
+}

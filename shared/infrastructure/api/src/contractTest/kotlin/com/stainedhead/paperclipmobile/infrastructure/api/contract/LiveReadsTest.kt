@@ -74,6 +74,10 @@ class LiveReadsTest {
             val detail = issues.get(scope, IssueId(first.id)).verified("IssueGateway.get")
             assertEquals("Contract read issue", detail.issue.title)
             assertNotNull(first.identifier)
+            LiveReport.note(
+                "issue identifier",
+                "${detail.issue.identifier} priority=${detail.issue.priority} status=${detail.issue.status}",
+            )
             issues.comments(scope, IssueId(first.id)).verified("IssueGateway.comments")
             issues.attachments(scope, IssueId(first.id)).verified("IssueGateway.attachments")
             interactions.list(scope, IssueId(first.id)).verified("InteractionGateway.list")

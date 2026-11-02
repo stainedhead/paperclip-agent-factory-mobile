@@ -60,7 +60,8 @@ internal class StubAgents(
         request: StubRequest,
         s: List<String>,
     ): StubReply? {
-        if (!isStubUuid(s[1])) return StubReply.error(500, "Internal server error")
+        // Not a uuid: the route takes it for a shortname, which needs a company (live run 41509506174).
+        if (!isStubUuid(s[1])) return StubReply.error(422, "Agent shortname lookup requires companyId query parameter")
         val agent = agents.firstOrNull { it.id == s[1] } ?: return StubReply.notFound(NOT_FOUND)
         request.resourceRefusal(agent.company, NOT_FOUND)?.let { return it }
         return if (s.size == 2) {

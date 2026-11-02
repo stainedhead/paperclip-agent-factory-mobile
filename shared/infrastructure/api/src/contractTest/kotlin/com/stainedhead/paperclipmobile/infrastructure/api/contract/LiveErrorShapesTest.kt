@@ -29,6 +29,7 @@ class LiveErrorShapesTest {
                     Secret.of("pcp_board_TESTONLY_wrong"),
                 ).verifiedError("AuthGateway.meWithKey", DomainError.Unauthorized)
             val reply = raw.call("GET", "/api/cli-auth/me", bearer = "pcp_board_TESTONLY_wrong")
+            LiveReport.note("401 body", reply.body.take(MAX_BODY))
             assertEquals(UNAUTHORIZED, reply.status)
             assertNotNull(reply.string("error"), "The 401 body is not {\"error\": text}: ${reply.describe()}")
             assertEquals(DomainError.Unauthorized, ErrorMapper.fromStatus(reply.status, reply.body))
@@ -44,6 +45,7 @@ class LiveErrorShapesTest {
             approvals.get(scope, ApprovalId(missing)).verifiedError("ApprovalGateway.get", DomainError.NotFound)
             agents.get(scope, AgentId(missing)).verifiedError("AgentGateway.get", DomainError.NotFound)
             val reply = raw.call("GET", "/api/issues/$missing", bearer = key)
+            LiveReport.note("404 body", reply.body.take(MAX_BODY))
             assertEquals(NOT_FOUND, reply.status, reply.describe())
             assertNotNull(reply.string("error"), reply.describe())
         }
@@ -59,8 +61,10 @@ class LiveErrorShapesTest {
                     "runs" to "/api/heartbeat-runs/not-a-uuid",
                     "decisions" to "/api/decisions/not-a-uuid",
                 )
-            val seen = routes.associate { (name, path) -> name to raw.call("GET", path, bearer = key).status }
+            val replies = routes.associate { (name, path) -> name to raw.call("GET", path, bearer = key) }
+            val seen = replies.mapValues { it.value.status }
             LiveReport.note("malformed id statuses", seen.toString())
+            replies.forEach { (name, reply) -> LiveReport.note("malformed id body $name", reply.body.take(MAX_BODY)) }
             assertTrue(seen.values.all { it in CLIENT_OR_SERVER_ERROR }, "A malformed id succeeded: $seen")
             assertEquals(
                 BAD_REQUEST,
@@ -82,10 +86,12 @@ class LiveErrorShapesTest {
             assertTrue(result is DomainResult.Failure, "A random company answered: $result")
             val reply = raw.call("GET", "/api/companies/${stranger.companyId.value}/issues", bearer = key)
             LiveReport.note("unknown company status", "${reply.status} -> ${(result as DomainResult.Failure).error}")
+            LiveReport.note("unknown company body", reply.body.take(MAX_BODY))
             assertTrue(reply.status in listOf(FORBIDDEN, NOT_FOUND), reply.describe())
         }
 
     private companion object {
+        const val MAX_BODY = 160
         const val BAD_REQUEST = 400
         const val UNAUTHORIZED = 401
         const val FORBIDDEN = 403
