@@ -86,7 +86,7 @@ Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsi
 | `DeviceAuthRulesTest` | Exactly these use cases take `DeviceAuthGuard`: `RemoveInstance`, `DecideDecision`, `RejectApproval`, `ResolveBudgetIncident`, `PauseAgent`, `CancelRun`. |
 | `RequirementsTraceabilityTest` | Each of the 47 Phase 1a requirement ids appears in a `commonTest` source. The exemption map is empty. |
 
-Each rule also asserts it can see the code it guards, so an empty scan cannot pass vacuously, with one exception: the infrastructure rule skips any module that has no `src/commonMain`, and today all five are such stubs, so it checks nothing yet.
+Each rule also asserts it can see the code it guards, so an empty scan cannot pass vacuously, and the infrastructure rule scans every `src/<set>Main` source set (commonMain, iosMain, androidMain, jvmMain) of every module and fails when a Kotlin file sits outside them. Today the five infrastructure modules are stubs, so on the real tree it checks nothing yet; a fixture test with a module that has only `iosMain` and `androidMain` files proves it reports a violation there (F-D-7).
 
 ## Mutation use cases: the fixed order
 
