@@ -25,6 +25,18 @@ import com.stainedhead.paperclipmobile.testing.TestData
 class FakeAuthGateway : AuthGateway {
     val calls = mutableMapOf<String, Int>()
 
+    /**
+     * Every call that carries or resolves a credential, in order, with the host it would reach and the token it would
+     * send. Tests assert that no such call reaches a host other than the one that issued the key.
+     */
+    val authenticatedCalls = mutableListOf<AuthenticatedCall>()
+
+    /** Resolves the host a stored-key call (`me`, `listBoardKeys`, ...) reaches, as an adapter reads the repository. */
+    var hostOf: (InstanceId) -> BaseUri? = { null }
+
+    /** Resolves the token a stored-key call sends, as a real adapter reads the secret store. */
+    var tokenOf: (InstanceId) -> String? = { null }
+
     var createResult: DomainResult<PairingChallenge>? = null
     val pollResults = ArrayDeque<DomainResult<ChallengeStatus>>()
     var meResult: DomainResult<BoardAccess> = DomainResult.Success(TestData.access())
@@ -48,8 +60,13 @@ class FakeAuthGateway : AuthGateway {
 
     fun count(name: String): Int = calls[name] ?: 0
 
-    private fun record(name: String) {
+    private fun record(
+        name: String,
+        host: BaseUri? = null,
+        token: String? = null,
+    ) {
         calls[name] = count(name) + 1
+        authenticatedCalls += AuthenticatedCall(name, host, token)
     }
 
     override suspend fun createChallenge(
@@ -57,7 +74,7 @@ class FakeAuthGateway : AuthGateway {
         clientName: String,
         requestedCompanyId: CompanyId?,
     ): DomainResult<PairingChallenge> {
-        record("createChallenge")
+        record("createChallenge", baseUri)
         val result = createResult ?: DomainResult.Success(TestData.challenge())
         lastPendingToken = (result as? DomainResult.Success)?.value?.pendingBoardToken
         return result
@@ -68,7 +85,7 @@ class FakeAuthGateway : AuthGateway {
         challengeId: String,
         challengeToken: Secret,
     ): DomainResult<ChallengeStatus> {
-        record("pollChallenge")
+        record("pollChallenge", baseUri, challengeToken.reveal())
         val next = if (pollResults.size > 1) pollResults.removeFirst() else pollResults.firstOrNull()
         return next ?: DomainResult.Success(ChallengeStatus.Pending)
     }
@@ -77,14 +94,14 @@ class FakeAuthGateway : AuthGateway {
         baseUri: BaseUri,
         key: Secret,
     ): DomainResult<BoardAccess> {
-        record("meWithKey")
+        record("meWithKey", baseUri, key.reveal())
         val accepted = validKeys
         if (accepted != null && key.reveal() !in accepted) return DomainResult.Failure(DomainError.Unauthorized)
         return meWithKeyResult
     }
 
     override suspend fun me(instanceId: InstanceId): DomainResult<BoardAccess> {
-        record("me")
+        record("me", hostOf(instanceId), tokenOf(instanceId))
         if (instanceId in revokedInstances ||
             instanceId in signedOutInstances
         ) {
@@ -94,12 +111,12 @@ class FakeAuthGateway : AuthGateway {
     }
 
     override suspend fun listCompanies(instanceId: InstanceId): DomainResult<List<CompanyRef>> {
-        record("listCompanies")
+        record("listCompanies", hostOf(instanceId), tokenOf(instanceId))
         return companiesResult
     }
 
     override suspend fun listBoardKeys(instanceId: InstanceId): DomainResult<List<BoardKey>> {
-        record("listBoardKeys")
+        record("listBoardKeys", hostOf(instanceId), tokenOf(instanceId))
         val keys = keysResult
         return if (keys is DomainResult.Success) {
             DomainResult.Success(keys.value.filter { it.id !in revokedKeyIds })
@@ -112,7 +129,7 @@ class FakeAuthGateway : AuthGateway {
         instanceId: InstanceId,
         keyId: String,
     ): DomainResult<Unit> {
-        record("revokeBoardKey")
+        record("revokeBoardKey", hostOf(instanceId), tokenOf(instanceId))
         val keys = (keysResult as? DomainResult.Success)?.value
         if (revokeKeyResult is DomainResult.Success && keys != null) {
             if (keys.none { it.id == keyId && it.id !in revokedKeyIds }) {
@@ -126,8 +143,15 @@ class FakeAuthGateway : AuthGateway {
     }
 
     override suspend fun revokeCurrentKey(instanceId: InstanceId): DomainResult<Unit> {
-        record("revokeCurrentKey")
+        record("revokeCurrentKey", hostOf(instanceId), tokenOf(instanceId))
         if (revokeCurrentResult is DomainResult.Success) revokedInstances += instanceId
         return revokeCurrentResult
     }
 }
+
+/** One call that reached (or would reach) [host], with the token it sent. [token] is a fake test token. */
+data class AuthenticatedCall(
+    val name: String,
+    val host: BaseUri?,
+    val token: String?,
+)

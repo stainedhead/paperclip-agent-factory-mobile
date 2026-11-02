@@ -10,6 +10,7 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.testing.TestData
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineStart
@@ -200,5 +201,20 @@ class PairInstanceTest {
             env.pair()(unpaired.id, null)
 
             testScheduler.currentTime shouldBe 500
+        }
+
+    @Test
+    fun `F-C-8 every pairing call goes to the factory's own address and never to another factory`() =
+        runTest {
+            val other = TestData.instance(id = "inst-2", name = "Other", uri = "https://other.example.com")
+            val env = Env(listOf(unpaired, other)) { testScheduler.currentTime }
+            env.script(ChallengeStatus.Approved)
+
+            env.pair()(unpaired.id, null).shouldBeInstanceOf<SignInResult.SignedIn>()
+
+            env.auth.authenticatedCalls.map { it.name } shouldContainAll listOf("createChallenge", "pollChallenge")
+            env.auth.authenticatedCalls
+                .mapNotNull { it.host }
+                .toSet() shouldBe setOf(unpaired.baseUri)
         }
 }

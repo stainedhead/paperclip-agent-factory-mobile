@@ -35,6 +35,9 @@ class FakeSecretStore : SecretStore {
         values[key.path] = value
     }
 
+    /** The stored value of [key] without the port, so a fake gateway can see which token it would send. */
+    fun peek(key: SecretKey): String? = values[key.path]
+
     fun pathsFor(instanceId: InstanceId): Set<String> =
         paths.filter { it.startsWith(SecretKey.namespacePrefix(instanceId)) }.toSet()
 

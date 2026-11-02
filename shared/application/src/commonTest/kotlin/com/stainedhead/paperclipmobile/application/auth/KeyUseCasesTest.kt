@@ -10,6 +10,7 @@ import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
@@ -38,6 +39,20 @@ class KeyUseCasesTest {
             env.repository.get(unpaired.id)?.authMethod shouldBe AuthMethod.ManualBoardKey
             env.repository.get(unpaired.id)?.status shouldBe InstanceStatus.SignedIn
             key.isWiped shouldBe true
+        }
+
+    @Test
+    fun `F-C-8 the pasted key is validated against the entered address only`() =
+        runTest {
+            val other = TestData.instance(id = "inst-2", name = "Other", uri = "https://other.example.com")
+            val env = Env(listOf(unpaired, other))
+
+            env.manual()(unpaired.id, Secret.of(TestData.TOKEN)).shouldBeInstanceOf<SignInResult.SignedIn>()
+
+            env.auth.authenticatedCalls
+                .filter { it.token == TestData.TOKEN }
+                .mapNotNull { it.host }
+                .toSet() shouldBe setOf(unpaired.baseUri)
         }
 
     @Test

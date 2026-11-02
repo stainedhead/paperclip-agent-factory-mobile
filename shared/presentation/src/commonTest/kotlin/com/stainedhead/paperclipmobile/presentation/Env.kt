@@ -135,6 +135,11 @@ class Env(
     private val signedOutMarker = SignedOutMarker(repository)
     private val enrollment = KeyEnrollment(auth, secrets, repository, clock, settings)
 
+    init {
+        auth.hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }
+        auth.tokenOf = { id -> secrets.peek(SecretKey(id, SecretName.BoardToken)) }
+    }
+
     val probe = ProbeInstance(health)
     val add = AddInstance(repository, clock, ids, validate)
     val update = UpdateInstance(repository, secrets, validate)

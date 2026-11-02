@@ -67,6 +67,11 @@ class Env(
     val signedOut = SignedOutMarker(repository)
     val enrollment = KeyEnrollment(auth, secrets, repository, clock, settings)
 
+    init {
+        auth.hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }
+        auth.tokenOf = { id -> secrets.peek(SecretKey(id, SecretName.BoardToken)) }
+    }
+
     fun context(
         role: Role = Role.Owner,
         userId: String? = "user-1",
