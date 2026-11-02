@@ -520,3 +520,37 @@ The three allow-listed operations are `DecisionGateway.get`, `decide` and `dismi
 - ADR-070 (this branch's `PairingBrowsers.fromCallback`) and the other stream's ADR-045 (`ApprovalPageOpener`) describe two callback mechanisms for one Swift limitation; one will be dropped at merge. Not decided here.
 - A flaky test in `shared/presentation` (`AtomicGuardsTest`, concurrent DismissTapped, JVM only) failed once in CI (run 41537107026) and passed on the next push; it is not touched by this group.
 - The `ios` workflow was cancelled by newer pushes on several heads; its last verdict is in `status.md`.
+
+## Rereview 1b (23bf5a9..5587ba8), 2026-11-02
+
+Method: a failing test first, run and seen red for the stated reason; minimum change; module tests; `./gradlew spotlessApply && ./gradlew check lint` (chained, the exit code is checked); one commit per finding, pushed. The brief numbered the findings one higher than the re-review file from the redaction on; this table and the commit tags use the re-review numbers (F-R-5 is the redaction, F-R-6 the `InstanceId`).
+
+| Finding | Result | Commit | Red evidence |
+|---|---|---|---|
+| F-R-1 recreation lost after a failed reopen or a kill | reproduced | dfe3c44 | `SweepMarkerRecoveryTest`: 4 of 5 failed (marker not set before the wipe, a failed reopen then a healthy open reported `recreated=false`, a kill before the sweep, a marker that cannot be set did not stop the wipe); `LiveGraphTest` "launch after a wipe whose sweep never ran" failed (third launch still announced) and "sweep that failed keeps the marker" failed once the clear was unconditional. `JvmPersistenceTest` corrupted-file test now needs `sweepCompleted()` before the quiet reopen. |
+| F-R-2 sign out / remove blocked by a Denied read | reproduced | f1f0e1e | Application and presentation tests failed to compile (`KeyReadDenied`, `RemoveInstanceHereOnly`, `SignOutInstanceHereOnly` did not exist); the exhaustive `when`s of Manage factories and the Edit screen then failed to compile. Konsist `DeviceAuthRulesTest` pins the destructive set and failed until the two new use cases were listed (intended). |
+| F-R-3 `:443` bypasses pins | reproduced | 1e9fcf4 | `BaseUriTest` (2) failed ("https://h:443" kept the port); `PairingPinsTest` "explicit default port" failed (1 of 3: sent unpinned, a request reached the engine). |
+| F-R-4 live guard has no positive identity | reproduced | 43c9d7d, 1f3a147 | `ServerBootstrapGuardTest`: 4 of 6 failed (signed up on a server in use, no refusal without the invite, port 3100 accepted with the override). CI result below. |
+| F-R-5 redaction drops long snake words | reproduced | 2f49ca5 | `ErrorMapperTest` "long snake case ... survive" failed: `validation_failed_budget_exceeded` became `http_422`. The "token looking runs are still removed" test passed before and after (pin). Real reasons used: the three budget 422 texts, "Agent token did not verify; ...", "Costs are outside this actor's authorization boundary", the shortname 422. |
+| F-R-6 `InstanceId` may hold `/` | reproduced | bec3a19 | `ValueObjectsTest` failed with the production change stashed (`a/b` accepted). Rows with such an id are skipped on read (`toInstanceOrNull` catches the `IllegalArgumentException`). |
+| F-R-7 killed key replacement | note only | none | Documented in the `KeychainWriter` kdoc: fail-closed. |
+| F-R-8 stream 2i must handle new cases | note | this section | See "Merge notes for stream 2i". |
+
+### Deviations (rereview)
+
+- `SweepOrphanSecrets` changed its return type (`Int` to `SweepResult`): a public application type, used only by `LiveGraph` and its tests.
+- `RawServer` in the contract source set was opened (`open class`, `open fun call`) so the guard can be tested with a scripted server.
+- F-R-4 is verified in CI (see the run ids in `status.md`); Docker does not run here.
+- The local `ServerBootstrapGuardTest` and the commit 43c9d7d reached the remote with two detekt findings (the chained gate was run through a wrapper that returned 0); 1f3a147 fixes them. The wrapper now returns the gate's exit code.
+
+### Merge notes for stream 2i (Swift exhaustive-enum surface)
+
+SKIE exposes sealed types and enums as exhaustive Swift enums, so the iPhone UI must handle these cases before it compiles against this branch (none of them is switched on in `iosApp/Sources` today):
+
+- `ErrorKey`: `AuthDeclined` (declined Face ID/passcode or locked device; offer retry and, on the screens below, "here only"), `KeyInvalidated` (re-pair, FR-015).
+- `ServerKeyOutcome`: `Declined` (the key prompt was declined, nothing sent). `Unconfirmed` is also what "here only" reports: show the paired-devices hint.
+- `DomainError` (only if the UI maps it itself): `ConnectionLost`, `DeviceAuthDeclined`, `KeyInvalidated`.
+- `SignOutResult.Declined`; new `SignOutHereOnlyResult` (`SignedOut`, `NotAuthorized`, `NotFound`); `RemoveInstanceResult.NotAuthorized` and the new `KeyReadDenied`, plus `RemoveInstanceHereOnly`. These are application types, normally reached only through state: the state fields to render are `RemovalConfirmationUi.hereOnly`, `ManageFactoriesState.error`, `SettingsConfirmation.SignOutHereOnly`, `SettingsState.deviceAuthIssue`, `EditConfirmation.SignOutHereOnly` and `RemoveHereOnly`.
+- `SettingsUseCases`, `ManageFactoriesUseCases` and `EditInstanceUseCases` gained constructor parameters; the Swift app builds state holders through the graph, not these constructors.
+- `PaperclipGraph.startupNotice: StartupNotice(databaseRecreated, orphanSecretsRemoved)`: show once when `databaseRecreated` (it repeats at the next launch if a sweep could not finish, ADR-085).
+- Launch: `PaperclipCore.openLiveGraph(allowInsecureLocal:pairingBrowser:)` and `LiveIosGraph.openLiveGraph(allowInsecureLocal:pairingBrowser:settings:)` throw; `PairingBrowsers.onMainThread(show:dismiss:)`. Close state holders before `PaperclipGraph.close()`.
