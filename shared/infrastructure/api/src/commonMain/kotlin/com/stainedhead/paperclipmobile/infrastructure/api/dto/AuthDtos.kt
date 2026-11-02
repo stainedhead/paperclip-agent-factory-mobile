@@ -12,6 +12,8 @@ import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.UserProfile
 import com.stainedhead.paperclipmobile.infrastructure.api.parseInstantOrNull
+import io.ktor.http.encodeURLParameter
+import io.ktor.http.encodeURLPathPart
 import kotlinx.serialization.Serializable
 
 // Shapes from server/src/routes/access.ts and server/src/services/board-auth.ts (research Q2). DTOs that hold a
@@ -45,11 +47,15 @@ private fun ChallengeCreatedDto.hasBlankField(): Boolean = listOf(id, token, boa
  * The challenge becomes a domain value. The server returns `approvalUrl: null` when it cannot derive its own origin
  * (access.ts:2802); the approval page is then the instance's address plus `/cli-auth/{id}?token={token}`, which is the
  * `approvalPath` the server builds (access.ts:167).
+ *
+ * The server builds `approvalUrl` from request headers (`x-forwarded-proto`, `x-forwarded-host`, access.ts:73-80), so
+ * behind a proxy it can be `http://` or a foreign host. It is used only when it has the instance's own scheme, host and
+ * port and no user info; otherwise the URL is built here from [baseUri] (review1b F-A-3, ADR-076).
  */
 internal fun ChallengeCreatedDto.toDomain(baseUri: BaseUri): PairingChallenge? {
     val expires = parseInstantOrNull(expiresAt)
     if (expires == null || hasBlankField()) return null
-    val approval = approvalUrl?.takeIf { it.isNotBlank() } ?: "${baseUri.value}/cli-auth/$id?token=$token"
+    val approval = approvalUrl?.takeIf { ApprovalOrigin.isOwn(it, baseUri) } ?: ApprovalOrigin.built(baseUri, id, token)
     return PairingChallenge(
         id = id,
         challengeToken = Secret.of(token),
@@ -153,3 +159,47 @@ internal data class AckDto(
     val ok: Boolean? = null,
     val revoked: Boolean? = null,
 )
+
+/** Decides whether a server-supplied approval address is the instance's own page, and builds the local one. */
+internal object ApprovalOrigin {
+    private const val HTTPS = "https"
+    private const val HTTPS_PORT = "443"
+    private const val HTTP_PORT = "80"
+    private val AUTHORITY_END = charArrayOf('/', '?', '#')
+    private val FORBIDDEN = charArrayOf('\\', '@', ' ')
+
+    fun built(
+        baseUri: BaseUri,
+        id: String,
+        token: String,
+    ): String = "${baseUri.value}/cli-auth/${id.encodeURLPathPart()}?token=${token.encodeURLParameter()}"
+
+    /** True when [url] has exactly the scheme, host and port of [baseUri] and carries no credentials or odd bytes. */
+    fun isOwn(
+        url: String,
+        baseUri: BaseUri,
+    ): Boolean {
+        val own = originOf(baseUri.value) ?: return false
+        val candidate = originOf(url) ?: return false
+        return candidate == own && url.none { it.isISOControl() }
+    }
+
+    /** `scheme://host:port` in lower case with the default port made explicit, or null for anything unusual. */
+    private fun originOf(text: String): String? {
+        val schemeEnd = text.indexOf("://")
+        if (schemeEnd <= 0) return null
+        val scheme = text.substring(0, schemeEnd).lowercase()
+        val rest = text.substring(schemeEnd + 3)
+        val authority = rest.substring(0, rest.indexOfAny(AUTHORITY_END).let { if (it < 0) rest.length else it })
+        if (authority.isEmpty() || authority.any { it in FORBIDDEN }) return null
+        val hostAndPort = authority.lowercase()
+        val hasPort = hostAndPort.substringAfterLast(':', "").let { it.isNotEmpty() && it.all(Char::isDigit) }
+        val explicit =
+            when {
+                hasPort -> hostAndPort
+                scheme == HTTPS -> "$hostAndPort:$HTTPS_PORT"
+                else -> "$hostAndPort:$HTTP_PORT"
+            }
+        return "$scheme://$explicit"
+    }
+}
