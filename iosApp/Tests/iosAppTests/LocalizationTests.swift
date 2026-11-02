@@ -46,6 +46,11 @@ struct LocalizationTests {
     @Test func everyInboxGroupHasText() { check(InboxGroupUi.allCases) }
     @Test func everyInlineActionHasText() { check(InlineActionUi.allCases) }
     @Test func everyInboxLabelHasText() { check(InboxLabel.allCases) }
+    @Test func everyDecisionLabelHasText() { check(DecisionLabel.allCases) }
+    @Test func everyDecisionFinalKindHasText() { check(DecisionFinalKind.allCases) }
+    @Test func everyEffectStatusHasText() { check(EffectStatusUi.allCases) }
+    @Test func everyExecutionStatusHasText() { check(ExecutionStatusUi.allCases) }
+    @Test func everyDecideByKindHasText() { check(DecideByKindUi.allCases) }
 
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {
         #expect(ErrorKey.certificateInvalid.catalogKey == "error.certificateInvalid")

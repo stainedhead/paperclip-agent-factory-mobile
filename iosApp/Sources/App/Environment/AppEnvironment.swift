@@ -66,6 +66,7 @@ final class AppEnvironment {
     @ObservationIgnored private var wentOffline = false
     @ObservationIgnored private var wentOfflineAfterDetail = false
     @ObservationIgnored private var decisionHints: [String: DecisionHints] = [:]
+    @ObservationIgnored private var decisionIdentifiers: [String: String?] = [:]
 
     convenience init(configuration: LaunchConfiguration) {
         let page = ASWebAuthSessionPairingBrowser()
@@ -181,9 +182,13 @@ final class AppEnvironment {
 
     /// What the Inbox card knew when it was tapped (agent name, decide-by, snooze key). The decision endpoint has none
     /// of them, so the screen asks for them with its model; without hints it simply has no Snooze.
-    func rememberDecisionHints(_ hints: DecisionHints, for id: String) {
+    func rememberDecisionHints(_ hints: DecisionHints, for id: String, identifier: String? = nil) {
         decisionHints[id] = hints
+        decisionIdentifiers[id] = identifier
     }
+
+    /// The issue the card named ("PAP-1182"), when the screen was opened from a card.
+    func decisionIdentifier(for id: String) -> String? { decisionIdentifiers[id] ?? nil }
 
     func decisionModel(id: String) -> HolderModel<DecisionStateHolder> {
         let model = models.model(for: .decision(id: id)) {

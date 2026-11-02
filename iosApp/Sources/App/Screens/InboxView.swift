@@ -258,6 +258,10 @@ private struct InboxScreen: View {
     // MARK: - Navigation
 
     private func open(_ item: InboxItemUi) {
+        if item.open.kind == .decision {
+            environment.rememberDecisionHints(
+                DecisionHintMapping.hints(item), for: item.open.id, identifier: item.identifier)
+        }
         switch InboxDestination(target: item.open, webUrl: item.webUrl) {
         case .route(let route): environment.router.push(route, in: .inbox)
         case .sheet(let sheet): environment.router.present(sheet)

@@ -11,6 +11,7 @@ struct RouteDestination: View {
         case .settings: SettingsView(environment: environment)
         case .pairedDevices: PairedDevicesView(environment: environment)
         case .manageFactories: ManageFactoriesView(environment: environment)
+        case .decision(let id): DecisionView(environment: environment, id: id)
         default: RoutePlaceholderView(route: route)
         }
     }
