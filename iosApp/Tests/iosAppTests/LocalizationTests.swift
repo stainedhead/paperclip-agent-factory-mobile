@@ -61,6 +61,10 @@ struct LocalizationTests {
             #expect(ApprovalPresentation.doneText(status) != "approvalDone.\(status)", "no sentence for \(status)")
         }
     }
+    @Test func everyBudgetLabelHasText() { check(BudgetLabel.allCases) }
+    @Test func everyBudgetThresholdHasText() { check(BudgetThresholdUi.allCases) }
+    @Test func everyBudgetChoiceHasText() { check(BudgetChoice.allCases) }
+    @Test func everyBudgetOutcomeHasText() { check(BudgetOutcomeUi.allCases) }
     @Test func everyDecideByKindHasText() { check(DecideByKindUi.allCases) }
 
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {

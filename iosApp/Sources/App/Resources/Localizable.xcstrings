@@ -783,6 +783,237 @@
         }
       }
     },
+    "budget.amountHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Must be more than %@, what has been spent."
+          }
+        }
+      }
+    },
+    "budget.amountLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New monthly budget"
+          }
+        }
+      }
+    },
+    "budget.amountPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For example 250"
+          }
+        }
+      }
+    },
+    "budget.choiceHeader": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What now?"
+          }
+        }
+      }
+    },
+    "budget.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "budget.keepPausedHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The agent stays paused. Nothing is spent until someone resumes it."
+          }
+        }
+      }
+    },
+    "budget.navTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget incident"
+          }
+        }
+      }
+    },
+    "budget.raiseHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raises the monthly budget and resumes the agent. Asks for Face ID."
+          }
+        }
+      }
+    },
+    "budget.scope": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "budget.submitKeep": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep paused"
+          }
+        }
+      }
+    },
+    "budget.submitRaise": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise and resume"
+          }
+        }
+      }
+    },
+    "budget.updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from the factory"
+          }
+        }
+      }
+    },
+    "budget.usage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of %@ monthly budget · %@ used"
+          }
+        }
+      }
+    },
+    "budget.working": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        }
+      }
+    },
+    "budgetChoice.keepPaused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep paused"
+          }
+        }
+      }
+    },
+    "budgetChoice.raiseAndResume": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise and resume"
+          }
+        }
+      }
+    },
+    "budgetOutcome.keptPaused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept paused. The agent stays paused."
+          }
+        }
+      }
+    },
+    "budgetOutcome.noLongerActive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No longer active. It was resolved elsewhere or has ended."
+          }
+        }
+      }
+    },
+    "budgetOutcome.raised": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget raised. The agent resumes."
+          }
+        }
+      }
+    },
+    "budgetThreshold.hard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hard stop reached"
+          }
+        }
+      }
+    },
+    "budgetThreshold.soft": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soft limit reached"
+          }
+        }
+      }
+    },
     "decideBy.none": {
       "extractionState": "manual",
       "localizations": {

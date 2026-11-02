@@ -48,6 +48,29 @@ struct DetailScreenRoutingTests {
         environment.shutdown()
     }
 
+    @Test func dismissingTheBudgetSheetRefreshesTheInboxSoAResolvedCardIsGone() async {
+        let environment = demo()
+        #expect(await eventually { environment.inbox?.state.phase == .content })
+        let id = "budget_alert:inc-eng-2"
+        func listed() -> Bool {
+            environment.inbox?.state.sections.contains { $0.items.contains { $0.id == id } } ?? false
+        }
+        #expect(listed())
+        environment.router.present(.budgetIncident(id: "inc-eng-2"))
+        let model = environment.budgetModel(id: "inc-eng-2")
+        let observing = Task { await model.observe() }
+        #expect(await eventually { model.state.phase == .content })
+        model.choose(.keepPaused)
+        #expect(await eventually { model.state.canSubmit })
+        model.submit()
+        #expect(await eventually { model.state.outcome == .keptPaused })
+
+        environment.router.dismissSheet()
+        #expect(await eventually { !listed() })
+        observing.cancel()
+        environment.shutdown()
+    }
+
     @Test func aRememberedDecisionHintIsUsedOnceTheScreenModelIsCreated() async {
         let environment = demo()
         #expect(await eventually { environment.app.state.selectedCompanyId != nil })
@@ -103,6 +126,13 @@ struct DetailLaunchOptionsTests {
         ])
         #expect(config.resolvedElsewhere == ["decision", "approval", "budget"])
         #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).resolvedElsewhere.isEmpty)
+    }
+
+    @Test func theServerSpendIsReadAsMinorUnitsAndIgnoredWhenNotANumber() {
+        let config = LaunchConfiguration(arguments: ["iosApp", "-demo", "-demo-budget-server-spend", "21000"])
+        #expect(config.budgetServerSpend == 21_000)
+        #expect(
+            LaunchConfiguration(arguments: ["iosApp", "-demo-budget-server-spend", "lots"]).budgetServerSpend == nil)
     }
 
     @Test func offlineAfterDetailAsksForOfflineOnceADetailScreenHasContent() {

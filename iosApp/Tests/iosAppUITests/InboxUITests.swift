@@ -160,22 +160,18 @@ final class InboxUITests: XCTestCase {
     }
 
     @MainActor
-    func testDetailsReviewOptionsAndRaiseOpenTheirScreensAsLabelledPlaceholders() {
+    func testDetailsReviewOptionsAndRaiseOpenTheirScreens() {
         let app = launchInbox()
         app.buttons["inbox-card-\(InboxIds.approval)-details"].tap()
-        XCTAssertEqual(
-            app.staticTexts["route-placeholder-id"].waitForExistence(timeout: 10)
-                ? app.staticTexts["route-placeholder-id"].label : "",
-            "approval:ap-hire-qa")
+        XCTAssertTrue(app.element("approval-screen").waitForExistence(timeout: 10))
         app.navigationBars.buttons.firstMatch.tap()
 
         app.buttons["inbox-card-\(InboxIds.decision)-review"].tap()
-        XCTAssertTrue(app.staticTexts["route-placeholder-id"].waitForExistence(timeout: 10))
-        XCTAssertEqual(app.staticTexts["route-placeholder-id"].label, "decision:dec-1182")
+        XCTAssertTrue(app.element("decision-screen").waitForExistence(timeout: 10))
         app.navigationBars.buttons.firstMatch.tap()
 
         app.buttons["inbox-card-\(InboxIds.budget)-raise"].tap()
-        XCTAssertTrue(app.element("sheet-placeholder-budget").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.element("budget-screen").waitForExistence(timeout: 10))
     }
 
     @MainActor

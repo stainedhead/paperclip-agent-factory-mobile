@@ -87,6 +87,7 @@ final class AppEnvironment {
         firstRun = FirstRunModel(holder: graph.createFirstRunStateHolder())
         pairingPage.onEvent = { [weak self] in self?.pairingPageEvent($0) }
         router.onChange = { [weak self] in self?.releaseScreenModels() }
+        router.onSheetDismissed = { [weak self] in self?.inbox?.refresh() }
     }
 
     private static func provider(
@@ -325,6 +326,7 @@ final class AppEnvironment {
         for result in configuration.scriptedBiometrics {
             controls.scriptBiometrics(result: result)
         }
+        if let spend = configuration.budgetServerSpend { controls.setBudgetServerSpend(minorUnits: spend) }
         for kind in configuration.resolvedElsewhere {
             switch kind {
             case "decision": controls.resolveDecisionElsewhere(decisionId: "dec-1182", optionId: "wait")

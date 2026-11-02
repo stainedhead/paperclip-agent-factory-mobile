@@ -23,7 +23,7 @@ struct TabShellView: View {
                 .tag(tab)
             }
         }
-        .sheet(item: sheet) { SheetDestination(sheet: $0) }
+        .sheet(item: sheet) { SheetDestination(sheet: $0, environment: environment) }
     }
 
     private var sheet: Binding<AppSheet?> {

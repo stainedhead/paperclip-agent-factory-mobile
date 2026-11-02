@@ -11,6 +11,8 @@ import PaperclipKit
 /// - `-demo-offline`: take the demo phone offline once the Inbox has loaded, so the offline states can be seen.
 /// - `-demo-resolved-elsewhere decision,approval,budget`: those items were already resolved on the web, so their
 ///   screens open on the final state (their Inbox cards may still be listed, as in a feed read a moment earlier).
+/// - `-demo-budget-server-spend <minor units>`: the server's own figure for the spend is that high (above what the
+///   incident showed), so a raise that clears the shown spend can still be refused with the server's reason.
 /// - `-demo-offline-after-detail`: go offline once the first Decision, Approval or Budget screen has its content.
 /// - `-demo-open decision:<id>|approval:<id>|budget:<id>`: also open one of those screens.
 /// - `-demo-diagnostics`: show a small read-only counter overlay (prompt count) that UI tests can read.
@@ -22,6 +24,7 @@ struct LaunchConfiguration {
     let showsDiagnostics: Bool
     let goesOffline: Bool
     let offlineAfterDetail: Bool
+    let budgetServerSpend: Int64?
     let resolvedElsewhere: Set<String>
     let startTab: AppTab?
     let startRoute: String?
@@ -32,6 +35,7 @@ struct LaunchConfiguration {
         showsDiagnostics = arguments.contains("-demo-diagnostics")
         goesOffline = arguments.contains("-demo-offline")
         offlineAfterDetail = arguments.contains("-demo-offline-after-detail")
+        budgetServerSpend = Self.value(after: "-demo-budget-server-spend", in: arguments).flatMap { Int64($0) }
         resolvedElsewhere = Set(
             (Self.value(after: "-demo-resolved-elsewhere", in: arguments) ?? "").split(separator: ",").map(String.init))
         startTab = Self.value(after: "-demo-tab", in: arguments).flatMap { AppTab(rawValue: $0) }

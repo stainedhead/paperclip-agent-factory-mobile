@@ -317,10 +317,5 @@ struct FeedbackBanner: View {
         .accessibilityIdentifier("feedback-banner")
     }
 
-    private var message: String {
-        if let issue = feedback.deviceAuth { return L10n.text(issue) }
-        if let invalid = feedback.invalid { return L10n.text(invalid) }
-        if let error = feedback.error { return "\(L10n.text(feedback.kind)) \(L10n.text(error.key))" }
-        return L10n.text(feedback.kind)
-    }
+    private var message: String { FeedbackPresentation.text(feedback) }
 }
