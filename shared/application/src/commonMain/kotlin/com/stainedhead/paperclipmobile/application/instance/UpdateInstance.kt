@@ -53,7 +53,7 @@ class UpdateInstance(
         id: InstanceId,
         edit: InstanceEdit,
     ): UpdateInstanceResult {
-        val current = repository.get(id) ?: return UpdateInstanceResult.NotFound
+        if (repository.get(id) == null) return UpdateInstanceResult.NotFound
         val nameIssue = InstanceNames.issueFor(edit.displayName, repository.observeAll().first(), self = id)
         return when (val parsed = validateAddress(edit.address)) {
             is BaseUriResult.Invalid -> {
@@ -61,16 +61,18 @@ class UpdateInstance(
             }
 
             is BaseUriResult.Valid -> {
-                if (nameIssue != null) UpdateInstanceResult.InvalidName(nameIssue) else apply(current, edit, parsed)
+                if (nameIssue != null) UpdateInstanceResult.InvalidName(nameIssue) else apply(id, edit, parsed)
             }
         }
     }
 
+    /** Reads the factory again right before writing, so a key enrollment that finished meanwhile is not reverted. */
     private suspend fun apply(
-        current: Instance,
+        id: InstanceId,
         edit: InstanceEdit,
         parsed: BaseUriResult.Valid,
     ): UpdateInstanceResult {
+        val current = repository.get(id) ?: return UpdateInstanceResult.NotFound
         val addressChanged = parsed.uri != current.baseUri
         if (addressChanged) secrets.deleteNamespace(current.id)
         val edited =

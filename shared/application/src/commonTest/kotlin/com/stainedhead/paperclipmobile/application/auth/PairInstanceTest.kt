@@ -144,14 +144,15 @@ class PairInstanceTest {
         }
 
     @Test
-    fun `a failure to read the key after approval rolls the stored token back`() =
+    fun `a failure to validate the key after approval stores nothing`() =
         runTest {
             val env = env()
             env.script(ChallengeStatus.Approved)
-            env.auth.meResult = DomainResult.Failure(DomainError.ServerError)
+            env.auth.meWithKeyResult = DomainResult.Failure(DomainError.ServerError)
 
             env.pair()(unpaired.id, null) shouldBe SignInResult.Failed(DomainError.ServerError)
 
+            env.secrets.putCalls shouldBe 0
             env.secrets.pathsFor(unpaired.id) shouldBe emptySet()
             env.repository.get(unpaired.id)?.status shouldBe InstanceStatus.SignedOut
         }

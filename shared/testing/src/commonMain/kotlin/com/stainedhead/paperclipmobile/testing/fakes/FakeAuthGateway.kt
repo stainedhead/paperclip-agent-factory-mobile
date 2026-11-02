@@ -22,15 +22,9 @@ import com.stainedhead.paperclipmobile.testing.TestData
  * makes `me` answer 401, revoking a listed key removes it and an unknown key id is a 404, and when [validKeys] is set
  * only those tokens are accepted by `meWithKey`.
  */
-class FakeAuthGateway : AuthGateway {
-    val calls = mutableMapOf<String, Int>()
-
-    /**
-     * Every call that carries or resolves a credential, in order, with the host it would reach and the token it would
-     * send. Tests assert that no such call reaches a host other than the one that issued the key.
-     */
-    val authenticatedCalls = mutableListOf<AuthenticatedCall>()
-
+class FakeAuthGateway :
+    AuthCallLog(),
+    AuthGateway {
     /** Resolves the host a stored-key call (`me`, `listBoardKeys`, ...) reaches, as an adapter reads the repository. */
     var hostOf: (InstanceId) -> BaseUri? = { null }
 
@@ -57,17 +51,6 @@ class FakeAuthGateway : AuthGateway {
     /** The pending token handed out by the last created challenge, so tests can check it was wiped. */
     var lastPendingToken: Secret? = null
         private set
-
-    fun count(name: String): Int = calls[name] ?: 0
-
-    private fun record(
-        name: String,
-        host: BaseUri? = null,
-        token: String? = null,
-    ) {
-        calls[name] = count(name) + 1
-        authenticatedCalls += AuthenticatedCall(name, host, token)
-    }
 
     override suspend fun createChallenge(
         baseUri: BaseUri,
@@ -125,6 +108,21 @@ class FakeAuthGateway : AuthGateway {
         }
     }
 
+    override suspend fun listBoardKeysWithKey(
+        baseUri: BaseUri,
+        key: Secret,
+    ): DomainResult<List<BoardKey>> {
+        record("listBoardKeysWithKey", baseUri, key.reveal())
+        val accepted = validKeys
+        if (accepted != null && key.reveal() !in accepted) return DomainResult.Failure(DomainError.Unauthorized)
+        val keys = keysResult
+        return if (keys is DomainResult.Success) {
+            DomainResult.Success(keys.value.filter { it.id !in revokedKeyIds })
+        } else {
+            keys
+        }
+    }
+
     override suspend fun revokeBoardKey(
         instanceId: InstanceId,
         keyId: String,
@@ -155,3 +153,30 @@ data class AuthenticatedCall(
     val host: BaseUri?,
     val token: String?,
 )
+
+/** The call counters and the credential-bearing call log of [FakeAuthGateway]. */
+abstract class AuthCallLog {
+    val calls = mutableMapOf<String, Int>()
+
+    /**
+     * Every call that carries or resolves a credential, in order, with the host it would reach and the token it would
+     * send. Tests assert that no such call reaches a host other than the one that issued the key.
+     */
+    val authenticatedCalls = mutableListOf<AuthenticatedCall>()
+
+    /** Runs while a call is "in flight", before its result is returned, so a test can edit state mid-request. */
+    var onCall: (suspend (AuthenticatedCall) -> Unit)? = null
+
+    fun count(name: String): Int = calls[name] ?: 0
+
+    protected suspend fun record(
+        name: String,
+        host: BaseUri? = null,
+        token: String? = null,
+    ) {
+        calls[name] = count(name) + 1
+        val call = AuthenticatedCall(name, host, token)
+        authenticatedCalls += call
+        onCall?.invoke(call)
+    }
+}

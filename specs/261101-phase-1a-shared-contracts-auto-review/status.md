@@ -23,7 +23,7 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Fix checklist (tick when merged to the branch with its regression test; note commit hashes in implementation-notes.md)
 
-- [ ] FR-R01 (P0) F-A-1: A board key can be sent to a different host if the address is edited while pairing or manual entry i
+- [x] FR-R01 (P0) F-A-1: A board key can be sent to a different host if the address is edited while pairing or manual entry i
 - [ ] FR-R02 (P0) F-A-2: Sign out and sign out everywhere can leave credentials behind when cancelled or when one factory thr
 - [ ] FR-R03 (P0) F-B-1: A late probe result is applied to a different address, so an unprobed (possibly `local_trusted`) add
 - [ ] FR-R04 (P1) F-A-3: A 401 on any company-scoped read or mutation does not mark the factory Signed out (PRD FR-023)
@@ -82,3 +82,4 @@ Update this file after every task and phase. It is the single source of progress
 ## Recent activity
 
 - 2026-11-01: spec created from the review PRD.
+- 2026-11-01: FR-R01 fixed (F-A-1 key host binding).

@@ -32,6 +32,7 @@ abstract class AuthPairingContract {
         approvalInTheBrowserShowsOnThePoll()
         anExpiredChallengeShowsAsExpired()
         aValidKeyIsAcceptedAndAWrongOneIsUnauthorized()
+        aKeyListedWithAPendingKeyIsOnlyForThatKey()
     }
 
     private suspend fun newChallenge(gateway: AuthGateway): PairingChallenge =
@@ -68,6 +69,14 @@ abstract class AuthPairingContract {
         val access = gateway.meWithKey(server, validKey).mustSucceed("me with a valid key")
         check(access.profile.userId.isNotBlank()) { "me names the signed-in person" }
         gateway.meWithKey(server, invalidKey).mustFailWith(DomainError.Unauthorized, "me with a wrong key")
+    }
+
+    private suspend fun aKeyListedWithAPendingKeyIsOnlyForThatKey() {
+        val gateway = create()
+        val keys = gateway.listBoardKeysWithKey(server, validKey).mustSucceed("keys with a valid pending key")
+        val keyId = gateway.meWithKey(server, validKey).mustSucceed("me with a valid key").keyId
+        check(keyId == null || keys.any { it.id == keyId }) { "the pending key is among the keys the server lists" }
+        gateway.listBoardKeysWithKey(server, invalidKey).mustFailWith(DomainError.Unauthorized, "keys with a wrong key")
     }
 }
 

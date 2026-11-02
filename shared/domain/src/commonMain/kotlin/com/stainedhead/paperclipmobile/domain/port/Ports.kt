@@ -149,6 +149,15 @@ interface AuthGateway {
 
     suspend fun listBoardKeys(instanceId: InstanceId): DomainResult<List<BoardKey>>
 
+    /**
+     * `GET /api/board-keys` with a key that is not stored yet, sent to [baseUri] only. Enrollment uses it so a pending
+     * key never travels to a host other than the one that issued it (ADR-012).
+     */
+    suspend fun listBoardKeysWithKey(
+        baseUri: BaseUri,
+        key: Secret,
+    ): DomainResult<List<BoardKey>>
+
     suspend fun revokeBoardKey(
         instanceId: InstanceId,
         keyId: String,

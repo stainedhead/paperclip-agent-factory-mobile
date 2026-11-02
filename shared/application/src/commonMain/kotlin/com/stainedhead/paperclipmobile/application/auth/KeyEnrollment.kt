@@ -52,37 +52,47 @@ class KeyEnrollment(
     private val clock: Clock,
     private val settings: AppSettingsStore,
 ) {
-    /** [knownKeyId] is given when the key was already validated; otherwise it is read with the stored key. */
+    /**
+     * [knownKeyId] is given when the key was already validated against [instance]'s address. Otherwise the key is
+     * validated here, and in both cases every request goes to the snapshot's own address, so a pending key never
+     * reaches a host that did not issue it (ADR-012). If the address was edited while the key was in flight, nothing is
+     * kept and the result is `Failed(Conflict)`.
+     */
     suspend fun complete(
         instance: Instance,
         token: Secret,
         method: AuthMethod,
         knownKeyId: String?,
     ): SignInResult {
+        val keyId =
+            knownKeyId ?: when (val me = auth.meWithKey(instance.baseUri, token)) {
+                is DomainResult.Success -> me.value.keyId
+                is DomainResult.Failure -> return SignInResult.Failed(me.error)
+            }
+        val expiresAt =
+            auth.listBoardKeysWithKey(instance.baseUri, token).let { keys ->
+                (keys as? DomainResult.Success)?.value?.firstOrNull { it.id == keyId }?.expiresAt
+            }
+        return store(instance, token, method, keyId, expiresAt)
+    }
+
+    private suspend fun store(
+        instance: Instance,
+        token: Secret,
+        method: AuthMethod,
+        keyId: String?,
+        expiresAt: Instant?,
+    ): SignInResult {
         val policy = SecretPolicy(requireUserPresence = settings.observe().first().appLockEnabled)
         val key = SecretKey(instance.id, SecretName.BoardToken)
         if (secrets.put(key, token, policy) != SecretWriteResult.Stored) return SignInResult.StorageFailed
-        val keyId =
-            if (knownKeyId != null) {
-                knownKeyId
-            } else {
-                when (val me = auth.me(instance.id)) {
-                    is DomainResult.Success -> {
-                        me.value.keyId
-                    }
-
-                    is DomainResult.Failure -> {
-                        secrets.delete(key)
-                        return SignInResult.Failed(me.error)
-                    }
-                }
-            }
-        val expiresAt =
-            auth.listBoardKeys(instance.id).let { keys ->
-                (keys as? DomainResult.Success)?.value?.firstOrNull { it.id == keyId }?.expiresAt
-            }
+        val fresh = repository.get(instance.id)
+        if (fresh == null || fresh.baseUri != instance.baseUri) {
+            secrets.delete(key)
+            return SignInResult.Failed(DomainError.Conflict)
+        }
         repository.update(
-            instance.copy(
+            fresh.copy(
                 authMethod = method,
                 boardKeyId = keyId,
                 keyExpiresAt = expiresAt,
