@@ -268,9 +268,10 @@ class CompanyScopedAuditTest {
                     ) {
                         throw IOException("failed GET https://home.example.com/x?token=${keys.joinToString()}")
                     }
+                    // A proxy that echoes the submitted keys in a 422 error text (F-C-5).
                     respond(
-                        "{}",
-                        HttpStatusCode.InternalServerError,
+                        """{"error":"cannot use ${keys.joinToString(" and ")}"}""",
+                        HttpStatusCode.UnprocessableEntity,
                         headersOf(HttpHeaders.ContentType, "application/json"),
                     )
                 }

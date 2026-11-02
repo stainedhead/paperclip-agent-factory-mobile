@@ -9,6 +9,7 @@ import kotlinx.serialization.SerializationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 /** AD-003: one place maps every HTTP status and body shape, and every transport failure, to a [DomainError]. */
 class ErrorMapperTest {
@@ -82,7 +83,7 @@ class ErrorMapperTest {
 
     @Test
     fun `AD-003 a long server reason is cut so it cannot flood the screen`() {
-        val reason = (status(422, """{"error":"${"x".repeat(1_000)}"}""") as DomainError.Rejected).reason
+        val reason = (status(422, """{"error":"${"word ".repeat(300)}"}""") as DomainError.Rejected).reason
         assertEquals(ErrorMapper.MAX_REASON_LENGTH, reason.length)
     }
 
@@ -117,5 +118,46 @@ class ErrorMapperTest {
         val error = ErrorMapper.fromTransport(IOException("GET https://x/api?token=pcp_cli_auth_TESTONLY"))
         assertIs<DomainError.Unreachable>(error)
         assertEquals("Unreachable", error.toString().substringAfterLast('.').removeSuffix(")"))
+    }
+
+    @Test
+    fun `F-C-5 the reason of a rejection never carries a token or a bearer header or a url or a long secret`() {
+        val echoed =
+            listOf(
+                "bad key pcp_board_TESTONLY_abcdef0123 given",
+                "Authorization: Bearer abc.def-ghi_jkl rejected",
+                "see https://home.example.com/cli-auth/1?token=SECRETVALUE now",
+                "token=SECRETVALUE&x=1 is invalid",
+                "hash 0123456789abcdef0123456789abcdef0123456789abcdef seen",
+                "challenge QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo= bad",
+                "pcp_bootstrap_0123456789abcdef0123456789abcdef0123",
+            )
+        echoed.forEach { text ->
+            val reason = (status(422, """{"error":"$text"}""") as DomainError.Rejected).reason
+            listOf("pcp_", "Bearer ", "https://", "SECRETVALUE", "0123456789abcdef", "QUJDREVG").forEach { secret ->
+                assertTrue(secret !in reason, "'$secret' survived in '$reason' (from '$text')")
+            }
+            assertTrue(reason.isNotBlank())
+        }
+    }
+
+    @Test
+    fun `F-C-5 a plain server reason is kept as the server wrote it`() {
+        assertEquals(DomainError.Rejected("Title is required"), status(400, """{"error":"Title is required"}"""))
+        assertEquals(
+            DomainError.Rejected("Approval already resolved"),
+            status(422, """{"error":"Approval already resolved"}"""),
+        )
+    }
+
+    @Test
+    fun `F-C-5 a reason that is only a secret falls back to the status`() {
+        assertEquals(DomainError.Rejected("http_422"), status(422, """{"error":"pcp_board_TESTONLY_abcdef0123"}"""))
+    }
+
+    @Test
+    fun `F-C-5 the cut reason is at most the maximum even after the redaction marker is added`() {
+        val reason = (status(422, """{"error":"${"pcp_board_x ".repeat(100)}"}""") as DomainError.Rejected).reason
+        assertTrue(reason.length <= ErrorMapper.MAX_REASON_LENGTH)
     }
 }

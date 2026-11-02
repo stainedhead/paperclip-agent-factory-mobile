@@ -83,6 +83,17 @@ internal object ErrorMapper {
             else -> classifyPlatformFailure(cause)
         }
 
+    private const val REMOVED = "[removed]"
+
+    private val SECRET_SHAPES =
+        listOf(
+            Regex("pcp_[A-Za-z0-9_]+"),
+            Regex("(?i)bearer\\s+\\S+"),
+            Regex("(?i)https?://\\S+"),
+            Regex("(?i)(token|key|secret|password|signature)=[^&\\s\"']+"),
+            Regex("[A-Za-z0-9+/_=-]{24,}"),
+        )
+
     private fun reasonOf(
         status: Int,
         body: String,
@@ -97,7 +108,18 @@ internal object ErrorMapper {
             } catch (_: IllegalArgumentException) {
                 null
             }
-        return message?.trim()?.takeIf { it.isNotEmpty() }?.take(MAX_REASON_LENGTH) ?: "http_$status"
+        return message?.let(::redacted)?.take(MAX_REASON_LENGTH)?.takeIf { it.isNotBlank() } ?: "http_$status"
+    }
+
+    /**
+     * Server text is shown to the person and may reach a log, so anything shaped like a credential is replaced
+     * before it is cut (F-C-5): board keys and bootstrap tokens (`pcp_...`), bearer headers, urls, `token=` style
+     * query values and any unbroken run of 24 or more key characters (hex, base64, uuid). A text that is nothing but
+     * removed parts says nothing, so the caller falls back to the status.
+     */
+    private fun redacted(message: String): String {
+        val cleaned = SECRET_SHAPES.fold(message.trim()) { text, shape -> shape.replace(text, REMOVED) }
+        return cleaned.takeIf { it.replace(REMOVED, "").any { char -> char.isLetterOrDigit() } }.orEmpty()
     }
 }
 

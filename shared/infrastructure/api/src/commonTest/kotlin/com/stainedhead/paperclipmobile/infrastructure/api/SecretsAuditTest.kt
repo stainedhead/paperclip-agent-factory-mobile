@@ -112,24 +112,60 @@ class SecretsAuditTest {
             everySecret.forEach { secret -> assertTrue(secret !in sink, "a secret leaked into: $sink") }
         }
 
-    /** An engine whose exceptions and error bodies are stuffed with every secret, as a hostile stack could be. */
+    /**
+     * An engine whose exceptions and error bodies are stuffed with every secret, as a hostile stack or a proxy that
+     * echoes its input could be: it rotates through a thrown IOException, a 422 whose `error` echoes the secrets (the
+     * only body text that reaches a `Rejected` reason and so a screen) and a 500 whose body echoes them (F-C-5).
+     */
     private fun failingGateway(secrets: List<String>): AuthGatewayAdapter {
         var round = 0
+        val echoed = "bad request for ${secrets.joinToString(" ")} at ${secrets.joinToString("&token=")}"
         val engine =
             MockEngine {
                 round += 1
-                if (round % 2 ==
-                    1
-                ) {
-                    throw IOException("failed GET https://home.example.com/x?token=${secrets.joinToString()}")
+                when (round % HOSTILE_KINDS) {
+                    0 -> {
+                        throw IOException("failed GET https://home.example.com/x?token=${secrets.joinToString()}")
+                    }
+
+                    1 -> {
+                        respond(
+                            """{"error":"$echoed"}""",
+                            HttpStatusCode.UnprocessableEntity,
+                            headersOf(HttpHeaders.ContentType, "application/json"),
+                        )
+                    }
+
+                    else -> {
+                        respond(
+                            """{"error":"$echoed"}""",
+                            HttpStatusCode.InternalServerError,
+                            headersOf(HttpHeaders.ContentType, "application/json"),
+                        )
+                    }
                 }
-                respond(
-                    """{"error":"${secrets.first().take(0)}Server error"}""",
-                    HttpStatusCode.InternalServerError,
-                    headersOf(HttpHeaders.ContentType, "application/json"),
-                )
             }
         val client = PaperclipHttpClient(engine, allowInsecureLocal = false) { world.trace += it }
         return AuthGatewayAdapter(client, world.instances, world.secrets)
+    }
+
+    @Test
+    fun `a 422 whose error text echoes every secret reaches the caller with the secrets removed`() =
+        runTest {
+            val secrets = listOf(TestData.TOKEN, AuthWorld.OTHER_TOKEN, "pcp_board_TESTONLY_pending0123456789")
+            val gateway = failingGateway(secrets)
+            val outcomes = (1..HOSTILE_KINDS).map { gateway.meWithKey(home, Secret.of(secrets.last())) }
+            val rejected =
+                outcomes
+                    .filterIsInstance<DomainResult.Failure>()
+                    .map { it.error }
+                    .filterIsInstance<DomainError.Rejected>()
+            assertTrue(rejected.isNotEmpty(), "the 422 must have been mapped to a rejection: $outcomes")
+            val sink = outcomes.joinToString("\n") + world.trace.joinToString("\n")
+            secrets.forEach { secret -> assertTrue(secret !in sink, "a secret leaked into: $sink") }
+        }
+
+    private companion object {
+        const val HOSTILE_KINDS = 3
     }
 }
