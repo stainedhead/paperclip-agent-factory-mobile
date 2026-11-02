@@ -83,8 +83,7 @@ struct DiagnosticsOverlay: View {
                     .padding(Spacing.extraSmall)
                     .background(.thinMaterial)
                     .accessibilityIdentifier("diagnostics-trace")
-                    .accessibilityLabel("Trace")
-                    .accessibilityValue(trace)
+                    .accessibilityLabel(trace)
                 Spacer()
             }
         }

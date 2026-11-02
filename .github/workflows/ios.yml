@@ -52,6 +52,7 @@ jobs:
       # 27.2 (local development), so it reports here without blocking; it must pass locally (ADR-080).
       - name: Accessibility audits (non-blocking)
         id: audits
+        if: always()
         continue-on-error: true
         env:
           TEST_SET: audits
