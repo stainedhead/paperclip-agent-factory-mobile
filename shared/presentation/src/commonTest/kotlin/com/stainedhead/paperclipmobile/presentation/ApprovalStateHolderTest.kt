@@ -94,6 +94,7 @@ class ApprovalLoadingTest {
                     "Product Designer",
                     "claude_local",
                     "agent-cto",
+                    "CTO",
                     MoneyUi(20_000, "USD"),
                     listOf("figma"),
                     null,

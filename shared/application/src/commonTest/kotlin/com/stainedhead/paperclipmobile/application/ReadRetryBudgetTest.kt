@@ -27,7 +27,7 @@ class ReadRetryBudgetTest {
             env.connectivity.setOnline(false)
             env.approvals.failures["get"] = DomainError.Unreachable
 
-            val result = LoadApproval(env.approvals, env.connectivity)(env.scope, ApprovalId("ap-1"))
+            val result = LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, ApprovalId("ap-1"))
 
             result shouldBe DomainResult.Failure(DomainError.Unreachable)
             testScheduler.currentTime shouldBe 0
@@ -40,7 +40,7 @@ class ReadRetryBudgetTest {
             val env = Env()
             env.approvals.failures["get"] = DomainError.CertificateInvalid
 
-            val result = LoadApproval(env.approvals, env.connectivity)(env.scope, ApprovalId("ap-1"))
+            val result = LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, ApprovalId("ap-1"))
 
             result shouldBe DomainResult.Failure(DomainError.CertificateInvalid)
             env.approvals.count("get") shouldBe 1
@@ -85,7 +85,7 @@ class ReadRetryBudgetTest {
             val env = Env()
             env.approvals.failures["get"] = DomainError.Timeout
 
-            LoadApproval(env.approvals, env.connectivity)(env.scope, ApprovalId("ap-1"))
+            LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, ApprovalId("ap-1"))
 
             env.approvals.count("get") shouldBe 4
             testScheduler.currentTime shouldBe 3_500

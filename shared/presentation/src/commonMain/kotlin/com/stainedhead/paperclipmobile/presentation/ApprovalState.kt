@@ -32,6 +32,8 @@ sealed interface ApprovalPayloadUi {
         val title: String?,
         val adapterType: String?,
         val reportsToAgentId: String?,
+        /** The manager's name when it could be read; show it instead of the id. */
+        val reportsToName: String?,
         val monthlyBudget: MoneyUi?,
         val skills: List<String>,
         val capabilities: String?,

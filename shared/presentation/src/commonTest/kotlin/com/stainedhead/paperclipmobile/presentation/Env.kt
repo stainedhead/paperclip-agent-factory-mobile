@@ -201,7 +201,7 @@ class Env(
     val approval =
         ApprovalUseCases(
             resolveContext,
-            LoadApproval(approvals, connectivity),
+            LoadApproval(approvals, agents, connectivity),
             ApproveApproval(approvals),
             RejectApproval(approvals, deviceAuth),
             RequestRevision(approvals),
