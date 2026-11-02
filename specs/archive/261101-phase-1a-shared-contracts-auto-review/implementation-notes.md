@@ -243,3 +243,20 @@ Process note: the first full `check` failed only on Kotlin/Native (a test name c
 ## Group 4 commit hashes
 
 See the "Findings: final table" in status.md.
+
+## Independent re-review (Step 10) - 2026-11-01
+
+An independent re-review (mutation checks plus adversarial tests) found no new Must Fix. Four Warnings were fixed, one commit each.
+
+| Finding | Commit | Red evidence |
+|---|---|---|
+| F-R-1 stale whole-Instance write (SwitchCompany, CheckCredentials, LoadInstanceAccess) | ba91903 | Pre-fix code: 3 of 3 `StaleWriteTest` cases failed (address reverted). Now `InstanceLocks.modify` re-reads under the factory lock and writes field-level changes; with the lock removed 1 case fails again. CheckCredentials also skips the write when the address or key id changed since the check. |
+| F-R-2 UpdateInstance cancelled between deleteNamespace and update | 80defbf | `UpdateInstanceCancellationTest` ended SignedIn with no key before the fix; delete + update now run in `NonCancellable` under the lock. |
+| F-R-3 weak tests | 1f7a5cc | Mutant 1 (drop late-probe address check) fails `FirstRunStateHolderTest` 1/21; mutant 2 (swallow CancellationException) fails `SignOutCancellationTest` 1/4. Both restored with `git checkout`. |
+| F-R-4 FirstRunModel closes the app-lifetime holder when `.task` ends | c88c524 | The old test asserted the close; replaced by a test that cancels and re-runs `observe()` and keeps using the model. Ownership rule: the App owns the model; views only mirror; the owner calls `close()`. |
+
+Deferred Info findings:
+- F-R-5 (a 401 is not bound to the key that produced it): narrow window that self-corrects on the next pairing; needs a credential epoch across gateways, Phase 1b.
+- F-R-6 (underscore hosts refused, bidi characters accepted in the path): needs an owner decision on host policy; no safety impact today.
+- F-R-7 (factory lock held across secure-store writes): the assumption that secure-store calls return promptly belongs in the Phase 1b adapters; add a bound there.
+- F-R-8 (manual keys without a key id cannot revoke other devices): deliberate safety choice; confirm against the pinned server in the contract tests (Phase 1b).
