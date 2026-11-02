@@ -43,7 +43,10 @@ class StubPaperclipServer(
     val requests = mutableListOf<RecordedRequest>()
 
     /** Every exception message this stub could leak: none by design; the audit test reads responses instead. */
-    val engine: MockEngine = MockEngine { request -> handle(request) }
+    val engine: MockEngine = newEngine()
+
+    /** Another engine on the same server: a client closes the engine it was given, so each client needs its own. */
+    fun newEngine(): MockEngine = MockEngine { request -> handle(request) }
 
     fun host(name: String): StubHost = hosts.getOrPut(name) { StubHost(name, clock) }
 

@@ -16,6 +16,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDeviceTimeZone
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIdGenerator
 import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
+import io.ktor.client.engine.mock.MockEngine
 import java.io.File
 
 /**
@@ -35,11 +36,15 @@ internal class LiveTestPlatform(
     override val timeZone: DeviceTimeZone = FakeDeviceTimeZone()
     override val persistence: PaperclipPersistence = openJvmPersistence(clock, file)
     val clients = mutableListOf<PaperclipHttpClient>()
+    val engines = mutableListOf<MockEngine>()
     var releases = 0
         private set
 
     override fun httpClient(allowInsecureLocal: Boolean): PaperclipHttpClient =
-        PaperclipHttpClient(stub.engine, allowInsecureLocal).also { clients += it }
+        stub.newEngine().let { engine ->
+            engines += engine
+            PaperclipHttpClient(engine, allowInsecureLocal).also { clients += it }
+        }
 
     override fun release() {
         releases++

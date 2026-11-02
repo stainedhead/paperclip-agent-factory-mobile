@@ -1,9 +1,13 @@
 package com.stainedhead.paperclipmobile.umbrella
 
+import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.port.AttentionGateway
 import com.stainedhead.paperclipmobile.domain.port.LiveEvents
+import com.stainedhead.paperclipmobile.presentation.FirstRunStep
 import com.stainedhead.paperclipmobile.testing.fakes.FakePairingBrowser
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
@@ -18,14 +22,19 @@ class LiveGraphTest {
             val platform = LiveTestPlatform()
             val graph = graphOn(platform)
 
-            val app = graph.createAppStateHolder()
+            val settings = graph.createSettingsStateHolder()
             val factories = graph.createFactoriesStateHolder()
 
-            app.state.value.hasFactories shouldBe false
+            // The database answered (the default device name arrived) and it holds no factory: nothing was seeded.
+            val loaded = settings.state.awaitLive { it.deviceName.isNotEmpty() }
+            loaded.factories shouldBe emptyList()
             factories.state.value.isEmpty shouldBe true
             factories.state.value.rows shouldBe emptyList()
             platform.stub.requests shouldBe emptyList()
-            app.close()
+            graph
+                .createFirstRunStateHolder()
+                .state.value.step shouldBe FirstRunStep.Address
+            settings.close()
             factories.close()
             graph.close()
         }
@@ -44,6 +53,25 @@ class LiveGraphTest {
         bound.filter { it.contains(".testing.") } shouldBe emptyList()
         graph.close()
     }
+
+    @Test
+    fun `closing the graph closes the HTTP client and the database, and the platform once`() =
+        runTest {
+            val platform = LiveTestPlatform()
+            val graph = graphOn(platform)
+            platform.engines.size shouldBe 1
+            val engineJob = platform.engines.single().coroutineContext[Job]!!
+            engineJob.isActive shouldBe true
+
+            graph.close()
+            graph.close()
+
+            engineJob.join()
+            engineJob.isActive shouldBe false
+            platform.clients.size shouldBe 1
+            platform.releases shouldBe 1
+            shouldThrow<Exception> { platform.persistence.instances.get(InstanceId("any")) }
+        }
 
     @Test
     fun `closing the graph twice lets go of the platform once`() {
