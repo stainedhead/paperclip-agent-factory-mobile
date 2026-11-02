@@ -2,8 +2,8 @@
 
 **Spec:** specs/archive/261101-phase-1a-shared-contracts
 **Branch:** feat/phase-1a-shared-contracts (stacked on phase-1a/spec, PR #4; Phase 0 PRs #1 to #3 unmerged)
-**Review PRD:** specs/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md
-**Review spec:** specs/261101-phase-1a-shared-contracts-auto-review/
+**Review PRD:** specs/archive/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md
+**Review spec:** specs/archive/261101-phase-1a-shared-contracts-auto-review/
 **Process Start:** 2026-11-01T19:29:08Z
 **Process End:** —
 **Total Runtime:** —
@@ -21,9 +21,9 @@
 | 5  | Prepare Review PRD              | ✅ Complete | 2026-11-01T22:57:18Z | 2026-11-01T23:12:46Z | 15 |
 | 6  | Archive Original Spec           | ✅ Complete | 2026-11-01T23:12:46Z | 2026-11-01T23:14:00Z | 1 |
 | 7  | Spec Review Fixes               | ✅ Complete | 2026-11-01T23:14:00Z | 2026-11-02T00:03:25Z | 49 |
-| 8  | Implement Review Fixes          | 🔄 In Progress | 2026-11-02T00:03:25Z | — | — |
-| 9  | Archive Fixes Spec              | ⬜ Pending | — | — | — |
-| 10 | Final Quality Pass              | ⬜ Pending | — | — | — |
+| 8  | Implement Review Fixes          | ✅ Complete | 2026-11-02T00:03:25Z | 2026-11-02T02:37:18Z | 154 |
+| 9  | Archive Fixes Spec              | ✅ Complete | 2026-11-02T02:37:18Z | 2026-11-02T02:37:18Z | 1 |
+| 10 | Final Quality Pass              | 🔄 In Progress | 2026-11-02T02:37:18Z | — | — |
 | 11 | Process Analysis Report         | ⬜ Pending | — | — | — |
 | 12 | Open Pull Request               | ⬜ Pending | — | — | — |
 
@@ -45,7 +45,8 @@
 - 2026-11-01T22:57:18Z: Step 4 complete. 4 reviewers (52 findings) + verification (12 of 14 reproduced, 3 ratings corrected). Review PRD written: 51 requirements (P0 3, P1 23, P2 25) at phase-1a-shared-contracts-auto-review-PRD.md. Step 5 (review-prd) starting. CI on PR #5: shared, contract, security green; ios running at last check.
 - 2026-11-01T23:12:46Z: Step 5 complete. review-prd verdict Needs revision, then fixed: split F-A-2 into P0+P1, F-A-7 raised to P1, 11 acceptance criteria made testable, NFR section, implementation order and parallel groups, policy for unreproduced findings. Counts now P0 3, P1 24, P2 24 (51). Step 6 (archive spec) starting.
 - 2026-11-01T23:14:00Z: Step 6 complete. Spec archived to specs/archive/261101-phase-1a-shared-contracts/ after making status.md truthful (it showed phases 1-3 Not Started); 9 relative links inside the spec and all references (README, technical-details, iphone-app status, review PRD, dashboard, one KDoc) rewritten; 82 markdown links checked, 0 broken. Step 7 (create-spec for the review PRD) starting.
-- 2026-11-02T00:03:25Z: Step 7 complete. Fix spec created at specs/261101-phase-1a-shared-contracts-auto-review/ (8 files, 51 tracked fixes, PRD moved in, links fixed). Owner instruction: run all remaining steps without asking; PR at the end. Step 8 (implement fixes) starting.
+- 2026-11-02T00:03:25Z: Step 7 complete. Fix spec created at specs/archive/261101-phase-1a-shared-contracts-auto-review/ (8 files, 51 tracked fixes, PRD moved in, links fixed). Owner instruction: run all remaining steps without asking; PR at the end. Step 8 (implement fixes) starting.
 - 2026-11-02T00:28:58Z: Step 8 Group 1 of 4 complete and verified by orchestrator: all 3 P0 + FR for F-A-4, F-A-5, F-A-7 fixed, 10 commits (510a01f..cbda546), none refuted; tests 2279 / 0 failures; coverage core 97.67%, presentation 97.70%; swiftlint/swift-format/Xcode tests green. Re-pair does not revoke the old key (deliberate, ADR notes). Group 2 starting.
 - 2026-11-02T01:15:25Z: Step 8 Group 2 of 4 complete and verified by orchestrator: 16 findings fixed or narrowed (20 commits since group 1), tests 2472 / 0 failures; coverage core 97.89%, presentation 98.01%; swiftlint/swift-format/Xcode tests green. Notes: F-A-8 narrowed to DecideDecision (server repeats other eligibility checks); F-A-6 presentation tests written with code (no separate red); sign-out half of F-A-8 refuted. ADR-031..034 added. Group 3 starting.
 - 2026-11-02T01:58:06Z: Step 8 Group 3 of 4 complete and verified by orchestrator: 15 findings fixed (some partly), none refuted; tests 2503 / 0 failures; coverage core 97.89%, presentation 98.01%; Swift 33 tests green; all four GitHub workflows green on 6f9f428 incl. contract smoke against the real pinned server; all 13 actions SHA-pinned. Deferred by the agent: brew/Xcode pinning, gitleaks allowlist narrowing, dependency-vuln job, detekt scope beyond shared/**. Group 4 starting.
+- 2026-11-02T02:37:18Z: Step 8 complete (all 4 groups verified: final tests 2573 / 0 failures; coverage core 97.97%, presentation 98.02%; 50 of 51 findings fixed or decided, F-D-10 deferred; one build-config flake (spotless walking build dirs) found during verification and fixed in 0c9a802). Step 9 complete: fix spec archived to specs/archive/261101-phase-1a-shared-contracts-auto-review/, 90 links ok. Step 10 (final quality pass incl. the independent re-review of the P0/P1 fixes) starting.

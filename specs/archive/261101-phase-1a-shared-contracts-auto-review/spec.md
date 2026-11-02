@@ -1,9 +1,9 @@
 # Specification: Phase 1a review fixes
 
 **Feature:** fix the defects, false assurance and stale documentation found by the Step 4 code review of Phase 1a
-**Created:** 2026-11-01 · **Status:** Implemented (Groups 1 to 4); see status.md · **Spec dir:** `specs/261101-phase-1a-shared-contracts-auto-review/`
+**Created:** 2026-11-01 · **Status:** Implemented (Groups 1 to 4); see status.md · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts-auto-review/`
 **Source PRD:** [phase-1a-shared-contracts-auto-review-PRD.md](./phase-1a-shared-contracts-auto-review-PRD.md) (full text of every finding, location, fix and acceptance criteria)
-**Parent spec:** [../archive/261101-phase-1a-shared-contracts/spec.md](../archive/261101-phase-1a-shared-contracts/spec.md)
+**Parent spec:** [../archive/261101-phase-1a-shared-contracts/spec.md](../261101-phase-1a-shared-contracts/spec.md)
 
 ## 1. Executive summary
 
@@ -116,4 +116,4 @@ Group 1 credentials and address changes (sequential) -> Group 2 state holders an
 ## 12. References
 
 - PRD (moved here by create-spec): [phase-1a-shared-contracts-auto-review-PRD.md](./phase-1a-shared-contracts-auto-review-PRD.md)
-- [AGENTS.md](../../AGENTS.md), [INTENT.md](../../INTENT.md), [parent spec](../archive/261101-phase-1a-shared-contracts/spec.md)
+- [AGENTS.md](../../../AGENTS.md), [INTENT.md](../../../INTENT.md), [parent spec](../261101-phase-1a-shared-contracts/spec.md)

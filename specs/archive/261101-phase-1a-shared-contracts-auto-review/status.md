@@ -1,6 +1,6 @@
 # Status: Phase 1a review fixes
 
-**Created:** 2026-11-01 · **Spec dir:** `specs/261101-phase-1a-shared-contracts-auto-review/`
+**Created:** 2026-11-01 · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts-auto-review/`
 
 Update this file after every task and phase. It is the single source of progress.
 
@@ -13,7 +13,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 2 Architecture and plan | Complete |
 | Phase 3 Task breakdown | Complete |
 | Phase 4 Implementation (Groups 1 to 4) | Complete (all four groups on the branch; see the finding table) |
-| Phase 5 Completion and archive | Not Started (archive after the independent re-review) |
+| Phase 5 Completion and archive | Archived at dev-flow Step 9. The independent re-review required by spec success criterion 5 runs in Step 10 and its result is recorded in `implementation-notes.md` and `DEV-FLOW-STATUS.md`; one requirement (FR-R44, F-D-10) is deferred with its reason |
 
 ## Phase 0 checklist
 

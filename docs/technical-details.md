@@ -242,7 +242,7 @@ The files are `.github/workflows/{shared,ios,contract,security}.yml`. AGENTS.md 
 
 ## Behaviour added by the Phase 1a review fixes
 
-Decisions are in ADR-030 to ADR-037; the fix spec is `specs/261101-phase-1a-shared-contracts-auto-review/`.
+Decisions are in ADR-030 to ADR-037; the fix spec is `specs/archive/261101-phase-1a-shared-contracts-auto-review/`.
 
 | Topic | Behaviour |
 |---|---|

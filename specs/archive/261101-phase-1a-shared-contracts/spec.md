@@ -4,7 +4,7 @@
 
 
 **Feature:** domain model, ports, use cases, presentation state holders, fakes and demo data for the shared Kotlin core
-**Created:** 2026-11-01 · **Status:** Built and archived (Phase 1a complete; review fixes tracked in `specs/261101-phase-1a-shared-contracts-auto-review/`) · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts/`
+**Created:** 2026-11-01 · **Status:** Built and archived (Phase 1a complete; review fixes tracked in `specs/archive/261101-phase-1a-shared-contracts-auto-review/`) · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts/`
 **Parent plan:** [../261101-iphone-app/plan.md](../../261101-iphone-app/plan.md) section 4, slices 1a-1 to 1a-4
 
 ## 1. Executive summary
