@@ -108,7 +108,11 @@ class BudgetIncidentStateHolder(
                             if (it.version != started) {
                                 it
                             } else {
-                                it.copy(incident = result.value, outcome = null, loadedAt = clock.now())
+                                it.copy(
+                                    incident = result.value,
+                                    outcome = BudgetIncidentRenderer.outcomeOf(result.value.status),
+                                    loadedAt = clock.now(),
+                                )
                             }
                         }
                     }
@@ -122,9 +126,13 @@ class BudgetIncidentStateHolder(
         }
     }
 
+    /** A resolved incident leaves the server's active list, so `NotFound` must not erase what the person just did. */
     private fun noLongerActiveOrError(error: DomainError) {
         if (error == DomainError.NotFound) {
-            model.update { it.copy(outcome = BudgetOutcomeUi.NoLongerActive, loadedAt = clock.now()) }
+            model.update {
+                val kept = it.outcome?.takeIf { outcome -> outcome != BudgetOutcomeUi.NoLongerActive }
+                it.copy(outcome = kept ?: BudgetOutcomeUi.NoLongerActive, loadedAt = clock.now())
+            }
         } else {
             model.update { it.copy(error = error.toErrorUi()) }
         }

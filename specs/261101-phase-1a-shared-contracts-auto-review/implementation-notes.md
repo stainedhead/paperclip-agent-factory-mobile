@@ -107,6 +107,11 @@ Fix: a version counter in the Approval, Decision, Budget, AgentDetail, Agents, R
 Red evidence: slowLoadForPreviousFactoryDoesNotOverwriteCurrent 'expected:<cloud> but was:<home>' (the slow answer for the first factory overwrote the second).
 Fix: SettingsDevices keeps loadJob, cancels it when a new load starts, and applies a result only while pairedDevices still names the requested factory.
 
+### 2026-11-01 F-B-9 no stuck run viewer, no lost budget outcome (Group 2)
+
+Red evidence: failedFirstLoadKeepsRefreshInterval 'expected:<15> but was:<0>'; refreshAfterResolveKeepsRaisedOutcome 'expected:<Raised> but was:<NoLongerActive>'.
+Fix: the Run viewer keeps the default 15 s interval until a run has loaded; the Budget holder keeps a resolved outcome when a refresh answers NotFound and maps the status with outcomeOf when a load succeeds.
+
 ## Edge cases and solutions
 
 (none yet)

@@ -204,7 +204,12 @@ private fun renderRun(
         isOffline = !online,
         actionsDisabledReason = disabledReason(online, role, Action.CancelRun),
         updatedAtEpochMillis = model.loadedAtMillis,
-        refreshIntervalSeconds = if (run?.isLive == true) RUNNING_REFRESH_SECONDS else 0,
+        refreshIntervalSeconds =
+            when {
+                run == null -> SCREEN_REFRESH_SECONDS
+                run.isLive -> RUNNING_REFRESH_SECONDS
+                else -> 0
+            },
         error = model.error,
         feedback = model.feedback,
     )

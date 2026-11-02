@@ -36,7 +36,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] FR-R11 (P1) F-B-4: Inbox inline Approve/Reject do not check the card type or the inline-action policy
 - [x] FR-R12 (P1) F-B-6: Holders run on `Dispatchers.Default` but guards and fields are plain check-then-set
 - [x] FR-R13 (P1) F-B-7: Approval comment append uses a stale snapshot; a refresh can overwrite a just-finished action
-- [ ] FR-R14 (P1) F-B-9: Screens can get stuck with no refresh or lose a final outcome
+- [x] FR-R14 (P1) F-B-9: Screens can get stuck with no refresh or lose a final outcome
 - [ ] FR-R15 (P1) F-C-1: Decision contract suite asserts a "conflict" the pinned server does not return
 - [ ] FR-R16 (P1) F-C-2: Run viewer never tests Cancel run being disabled offline after the run loaded (acceptance 11 overcla
 - [ ] FR-R17 (P1) F-C-3: Role and timeout matrix is narrower than its names and acceptance 8 and 10 claim
@@ -100,3 +100,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-B-6 done (guards and shared fields are atomic).
 - 2026-11-01: F-B-7 done (a late read never overwrites a finished action).
 - 2026-11-01: F-B-8 done (paired-devices loads are ordered and cancelled).
+- 2026-11-01: F-B-9 done (no stuck run viewer, no lost budget outcome).

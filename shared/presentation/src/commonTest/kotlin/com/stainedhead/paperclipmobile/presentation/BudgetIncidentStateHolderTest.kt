@@ -339,4 +339,21 @@ class BudgetIncidentActionsTest {
             advanceUntilIdle()
             env.budgets.count("incident") shouldBe 2
         }
+
+    @Test
+    fun `refreshAfterResolveKeepsRaisedOutcome`() =
+        runTest {
+            val env = budgetEnv()
+            val holder = loaded(env)
+            holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
+            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(BudgetIntent.SubmitTapped)
+            advanceUntilIdle()
+            holder.state.value.outcome shouldBe BudgetOutcomeUi.Raised
+
+            holder.onIntent(BudgetIntent.Refresh)
+            advanceUntilIdle()
+
+            holder.state.value.outcome shouldBe BudgetOutcomeUi.Raised
+        }
 }

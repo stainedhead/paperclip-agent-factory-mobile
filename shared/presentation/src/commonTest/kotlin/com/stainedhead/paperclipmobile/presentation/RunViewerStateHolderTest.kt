@@ -145,6 +145,18 @@ class RunViewerLoadTest {
             holder.state.value.logText shouldBe ""
             holder.state.value.logUnavailable shouldBe true
         }
+
+    @Test
+    fun `failedFirstLoadKeepsRefreshInterval`() =
+        runTest {
+            val env = workEnv()
+            env.runs.failures["get"] = DomainError.Unreachable
+            val holder = runHolder(env)
+            advanceUntilIdle()
+
+            holder.state.value.phase shouldBe DetailPhase.Failed
+            holder.state.value.refreshIntervalSeconds shouldBe 15
+        }
 }
 
 class RunViewerCancelTest {
