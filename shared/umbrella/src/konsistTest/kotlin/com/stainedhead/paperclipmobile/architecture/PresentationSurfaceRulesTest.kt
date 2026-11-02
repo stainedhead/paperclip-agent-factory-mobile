@@ -37,4 +37,14 @@ class PresentationSurfaceRulesTest {
             additionalMessage = "Public presentation properties must not use Result types",
         ) { it.type?.name !in forbiddenTypes }
     }
+
+    /** `description` and `hash` collide with `NSObject` members: Objective-C export renames them (`description_`). */
+    @Test
+    fun `no public presentation property is named like an NSObject member`() {
+        val scope = scope("presentation")
+        Assertions.assertTrue(scope.properties().isNotEmpty(), "Expected presentation properties")
+        scope.properties().filter { it.hasPublicOrDefaultModifier }.assertTrue(
+            additionalMessage = "Public presentation properties must not be named description or hash",
+        ) { it.name !in setOf("description", "hash") }
+    }
 }

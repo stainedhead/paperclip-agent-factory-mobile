@@ -93,7 +93,7 @@ internal object IssueRenderer {
             id = issue.id.value,
             identifier = issue.identifier,
             title = issue.title,
-            description = issue.description,
+            summary = issue.description,
             status = issue.status.toUi(),
             priority = issue.priority.toUi(),
             assigneeName = issue.assigneeAgentId?.let { model.view?.agentNames?.get(it) },

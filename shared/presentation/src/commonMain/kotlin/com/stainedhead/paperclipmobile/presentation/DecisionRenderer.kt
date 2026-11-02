@@ -128,7 +128,7 @@ internal object DecisionRenderer {
         OptionUi(
             id = option.id,
             label = option.label,
-            description = option.description,
+            summary = option.description,
             isDestructive = option.isDestructive,
             needsDeviceAuth = option.isDestructive,
             effects = option.effects.map(::effect),

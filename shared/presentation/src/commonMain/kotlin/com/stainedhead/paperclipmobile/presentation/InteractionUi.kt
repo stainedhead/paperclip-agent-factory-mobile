@@ -75,7 +75,7 @@ internal fun Verdict.toUi(): VerdictUi =
 data class ChoiceUi(
     val id: String,
     val label: String,
-    val description: String?,
+    val summary: String?,
     val selected: Boolean,
 )
 
@@ -93,7 +93,7 @@ data class QuestionUi(
 data class VerdictItemUi(
     val id: String,
     val label: String,
-    val description: String?,
+    val summary: String?,
     val verdict: VerdictUi?,
     val reason: String,
 )

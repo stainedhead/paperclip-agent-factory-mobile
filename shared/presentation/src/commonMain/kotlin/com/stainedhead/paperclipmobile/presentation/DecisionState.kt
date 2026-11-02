@@ -39,7 +39,7 @@ data class EffectSummaryUi(
 data class OptionUi(
     val id: String,
     val label: String,
-    val description: String?,
+    val summary: String?,
     val isDestructive: Boolean,
     val needsDeviceAuth: Boolean,
     val effects: List<EffectSummaryUi>,

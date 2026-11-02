@@ -24,7 +24,7 @@ data class IssueHeaderUi(
     val id: String,
     val identifier: String,
     val title: String,
-    val description: String?,
+    val summary: String?,
     val status: IssueStatusUi,
     val priority: IssuePriorityUi,
     val assigneeName: String?,
