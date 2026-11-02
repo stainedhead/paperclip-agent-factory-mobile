@@ -7,6 +7,7 @@ struct RouteDestination: View {
 
     var body: some View {
         switch route {
+        case .editFactory(let id): EditFactoryView(environment: environment, instanceId: id)
         case .manageFactories: ManageFactoriesView(environment: environment)
         default: RoutePlaceholderView(route: route)
         }

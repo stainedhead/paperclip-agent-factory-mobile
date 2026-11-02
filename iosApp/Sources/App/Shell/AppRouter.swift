@@ -75,6 +75,14 @@ final class AppRouter {
         onChange?()
     }
 
+    /// Removes the top screen of a tab's stack (Cancel, Save, a finished removal).
+    func pop(_ tab: AppTab) {
+        guard var path = paths[tab], !path.isEmpty else { return }
+        path.removeLast()
+        paths[tab] = path
+        onChange?()
+    }
+
     func popToRoot(_ tab: AppTab) {
         paths[tab] = []
         onChange?()

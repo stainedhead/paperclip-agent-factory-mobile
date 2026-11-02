@@ -87,6 +87,8 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case severityHigh
     case severityMedium
     case severityLow
+    case editRemoveMessage
+    case editConnectedAs
     case firstRunHeadline
     case firstRunIntro
     case stepAddress

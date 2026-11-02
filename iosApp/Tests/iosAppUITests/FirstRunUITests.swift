@@ -121,6 +121,8 @@ extension XCUIElement {
     func clearAndTypeText(_ text: String) {
         guard let current = value as? String else { return }
         focus()
+        // The first tap may land mid-text; the delete keys below remove what is before the cursor.
+        coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5)).tap()
         typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count))
         typeText(text)
     }

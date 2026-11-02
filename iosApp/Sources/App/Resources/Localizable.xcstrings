@@ -1256,6 +1256,17 @@
         }
       }
     },
+    "label.editConnectedAs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected as %@"
+          }
+        }
+      }
+    },
     "label.editNoCompaniesLoaded": {
       "extractionState": "manual",
       "localizations": {
@@ -1373,6 +1384,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove factory"
+          }
+        }
+      }
+    },
+    "label.editRemoveMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This deletes its saved data and access key from this phone, and revokes the key on the server if it can be reached. Your work in Paperclip is not affected."
           }
         }
       }
@@ -2186,7 +2208,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "App lock"
+            "value": "Lock app with Face ID"
           }
         }
       }
