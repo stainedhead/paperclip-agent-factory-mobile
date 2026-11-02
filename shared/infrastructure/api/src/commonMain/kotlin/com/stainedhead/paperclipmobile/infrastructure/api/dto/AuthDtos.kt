@@ -162,6 +162,7 @@ internal data class AckDto(
 
 /** Decides whether a server-supplied approval address is the instance's own page, and builds the local one. */
 internal object ApprovalOrigin {
+    private const val SEPARATOR = "://"
     private const val HTTPS = "https"
     private const val HTTPS_PORT = "443"
     private const val HTTP_PORT = "80"
@@ -186,10 +187,10 @@ internal object ApprovalOrigin {
 
     /** `scheme://host:port` in lower case with the default port made explicit, or null for anything unusual. */
     private fun originOf(text: String): String? {
-        val schemeEnd = text.indexOf("://")
+        val schemeEnd = text.indexOf(SEPARATOR)
         if (schemeEnd <= 0) return null
         val scheme = text.substring(0, schemeEnd).lowercase()
-        val rest = text.substring(schemeEnd + 3)
+        val rest = text.substring(schemeEnd + SEPARATOR.length)
         val authority = rest.substring(0, rest.indexOfAny(AUTHORITY_END).let { if (it < 0) rest.length else it })
         if (authority.isEmpty() || authority.any { it in FORBIDDEN }) return null
         val hostAndPort = authority.lowercase()
