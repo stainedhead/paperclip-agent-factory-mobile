@@ -97,6 +97,11 @@ Red evidence (AtomicGuardsTest, JVM only, 60 iterations x 4 concurrent callers o
 Fix: Guards.kt claim() (compareAndSet loop) replaces every 'if (flag) return; update { flag = true }' in the Decision, Approval, Budget, Agents, AgentDetail, RunViewer, WorkList, Issue, FactoryHome, Settings and Inbox holders and sessions; AppStateHolder keeps settings, backgroundedAt and unlocking in one MutableStateFlow cell and clears unlocking in finally; ContextSource.cached, Factories, ManageFactories and SettingsConfirmations.instances are MutableStateFlow cells. Run 5 times after the fix: 4 tests, 0 failures, 8.7 s each run.
 Not changed: the first-run and edit probe/pair job fields (probeJob, pairJob, session.probed) are still plain; they are written from intents on the UI thread and read from coroutines they launch, and a lost write there is bounded by the address binding of F-B-1 (a stale probe is dropped by address). Recorded as a known limitation.
 
+### 2026-11-01 F-B-7 a late read never overwrites a finished action (Group 2)
+
+Red evidence: staleLoadDoesNotOverwriteAfterApprove 'expected:<Approved> but was:<Pending>'; AgentDetail 'expected:<Paused> but was:<Running>'; Decision stale load re-opened a decided decision (assertion false). The comment lost-update half was appended inside a single update in the F-A-6 commit (ApprovalModel.withComment), so it needs no separate test.
+Fix: a version counter in the Approval, Decision, Budget, AgentDetail, Agents, RunViewer and Issue models. An action bumps it in the same update that clears its in-flight flag; a read records the version when it starts and drops its result if the version moved. Test support: afterRead hooks in FakeApprovalGateway, FakeDecisionGateway, FakeAgentGateway (the answer is read first, then delayed, so it really is older than what follows).
+
 ## Edge cases and solutions
 
 (none yet)

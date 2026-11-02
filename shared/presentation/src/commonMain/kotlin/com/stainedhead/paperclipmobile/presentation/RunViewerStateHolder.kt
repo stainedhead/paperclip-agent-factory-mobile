@@ -30,6 +30,8 @@ private data class RunModel(
     val loading: Boolean = false,
     val confirmCancel: Boolean = false,
     val cancelling: Boolean = false,
+    /** Counts finished actions. A read that started before one finished must not replace its result (F-B-7). */
+    val version: Int = 0,
     val loadedAtMillis: Long? = null,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
@@ -90,18 +92,19 @@ class RunViewerStateHolder(
     private fun refresh() {
         if (!connectivity.isOnline.value) return
         if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
+        val started = model.value.version
         scope.launch {
             val allowed = context.get()
             if (allowed is DomainResult.Failure) {
                 model.update { it.copy(error = allowed.error.toErrorUi()) }
             } else {
-                readRun()
+                readRun(started)
             }
             model.update { it.copy(loading = false) }
         }
     }
 
-    private suspend fun readRun() {
+    private suspend fun readRun(started: Int) {
         when (val result = useCases.load(companyScope, id, model.value.events)) {
             is DomainResult.Failure -> {
                 model.update { it.copy(error = result.error.toErrorUi()) }
@@ -109,7 +112,11 @@ class RunViewerStateHolder(
 
             is DomainResult.Success -> {
                 model.update {
-                    it.copy(run = result.value.run, events = result.value.events, role = context.role)
+                    if (it.version != started) {
+                        it
+                    } else {
+                        it.copy(run = result.value.run, events = result.value.events, role = context.role)
+                    }
                 }
                 readLog()
             }
@@ -157,7 +164,14 @@ class RunViewerStateHolder(
         }
         scope.launch {
             val result = mutate(context) { useCases.cancel(it, run) }
-            model.update { it.copy(cancelling = false, feedback = result.feedback, run = result.value ?: it.run) }
+            model.update {
+                it.copy(
+                    cancelling = false,
+                    version = it.version + 1,
+                    feedback = result.feedback,
+                    run = result.value ?: it.run,
+                )
+            }
         }
     }
 }

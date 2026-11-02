@@ -99,21 +99,22 @@ class BudgetIncidentStateHolder(
     private fun load() {
         if (!connectivity.isOnline.value) return
         if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
+        val started = model.value.version
         scope.launch {
             if (ensureContext() != null) {
                 when (val result = useCases.load(companyScope, id)) {
                     is DomainResult.Success -> {
                         model.update {
-                            it.copy(
-                                incident = result.value,
-                                outcome = null,
-                                loadedAt = clock.now(),
-                            )
+                            if (it.version != started) {
+                                it
+                            } else {
+                                it.copy(incident = result.value, outcome = null, loadedAt = clock.now())
+                            }
                         }
                     }
 
                     is DomainResult.Failure -> {
-                        noLongerActiveOrError(result.error)
+                        if (model.value.version == started) noLongerActiveOrError(result.error)
                     }
                 }
             }
@@ -156,7 +157,7 @@ class BudgetIncidentStateHolder(
         scope.launch {
             val context = ensureContext()
             val result = context?.let { useCases.resolve(it, incident, resolution) }
-            model.update { it.copy(submitting = false, feedback = result?.toFeedback()) }
+            model.update { it.copy(submitting = false, feedback = result?.toFeedback(), version = it.version + 1) }
             when (result) {
                 is MutationResult.Done -> show(result.value)
                 is MutationResult.Reconciled -> show(result.current)

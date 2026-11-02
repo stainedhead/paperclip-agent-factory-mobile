@@ -17,6 +17,7 @@ import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -549,5 +550,30 @@ class DecisionPollingTest {
             advanceUntilIdle()
             holder.state.value.execution
                 ?.isPolling shouldBe false
+        }
+}
+
+/** F-B-7: a read that was answered before the decision was made must not replace the decision. */
+class DecisionStaleLoadTest {
+    @Test
+    fun `staleLoadDoesNotOverwriteAfterDecide`() =
+        runTest {
+            val env = decisionEnv()
+            val holder = decisionHolder(env)
+            advanceUntilIdle()
+            env.decisions.afterRead = { delay(5_000) }
+            holder.onIntent(DecisionIntent.Refresh)
+            runCurrent()
+            env.decisions.afterRead = null
+
+            holder.onIntent(DecisionIntent.OptionSelected("ship"))
+            holder.onIntent(DecisionIntent.ConfirmTapped)
+            advanceTimeBy(100)
+
+            advanceUntilIdle()
+
+            holder.state.value.options
+                .isEmpty() shouldBe true
+            (holder.state.value.finalState != null) shouldBe true
         }
 }

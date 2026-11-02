@@ -9,9 +9,12 @@ import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
@@ -229,5 +232,31 @@ class AgentDetailActionsTest {
 
             env.agents.count("invokeHeartbeat") shouldBe 1
             holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Unknown, error = ErrorUi(ErrorKey.Timeout))
+        }
+}
+
+/** F-B-7: a read that was answered before an action finished must not replace the action's result. */
+class AgentDetailStaleLoadTest {
+    @Test
+    fun `staleLoadDoesNotOverwriteAfterPause`() =
+        runTest {
+            val env = workEnv()
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            env.agents.afterRead = { delay(5_000) }
+            holder.onIntent(AgentDetailIntent.Refresh)
+            runCurrent()
+            env.agents.afterRead = null
+
+            holder.onIntent(AgentDetailIntent.PauseTapped)
+            holder.onIntent(AgentDetailIntent.PauseConfirmed)
+            advanceTimeBy(100)
+            holder.state.value.agent
+                ?.status shouldBe AgentStatusUi.Paused
+
+            advanceUntilIdle()
+
+            holder.state.value.agent
+                ?.status shouldBe AgentStatusUi.Paused
         }
 }

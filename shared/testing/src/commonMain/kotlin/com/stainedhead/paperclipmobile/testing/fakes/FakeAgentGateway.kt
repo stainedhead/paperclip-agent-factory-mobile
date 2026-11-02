@@ -27,6 +27,9 @@ class FakeAgentGateway(
     /** Runs when `invokeHeartbeat` is called, before any scripted failure: what the server did meanwhile. */
     var onInvoke: (() -> Unit)? = null
 
+    /** Runs after `get` has read the agent and before it answers: the answer is then older than what follows. */
+    var afterRead: (suspend () -> Unit)? = null
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
@@ -44,7 +47,9 @@ class FakeAgentGateway(
         id: AgentId,
     ): DomainResult<Agent> {
         record("get")?.let { return DomainResult.Failure(it) }
-        return store[id]?.let { DomainResult.Success(it) } ?: DomainResult.Failure(DomainError.NotFound)
+        val snapshot = store[id]?.let { DomainResult.Success(it) } ?: DomainResult.Failure(DomainError.NotFound)
+        afterRead?.invoke()
+        return snapshot
     }
 
     override suspend fun pause(

@@ -23,6 +23,8 @@ internal data class IssueModel(
     val issueUrl: String? = null,
     val loading: Boolean = false,
     val busy: Boolean = false,
+    /** Counts finished actions. A read that started before one finished must not replace its result (F-B-7). */
+    val version: Int = 0,
     val loadedAtMillis: Long? = null,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,

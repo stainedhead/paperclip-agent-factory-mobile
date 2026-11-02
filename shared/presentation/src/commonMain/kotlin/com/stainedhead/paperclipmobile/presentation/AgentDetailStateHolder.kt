@@ -27,6 +27,8 @@ private data class DetailModel(
     val loading: Boolean = false,
     val confirmPause: Boolean = false,
     val busy: Boolean = false,
+    /** Counts finished actions. A read that started before one finished must not replace its result (F-B-7). */
+    val version: Int = 0,
     val loadedAtMillis: Long? = null,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
@@ -89,6 +91,7 @@ class AgentDetailStateHolder(
     private fun load() {
         if (!connectivity.isOnline.value) return
         if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
+        val started = model.value.version
         scope.launch {
             val allowed = context.get()
             if (allowed is DomainResult.Failure) {
@@ -101,11 +104,15 @@ class AgentDetailStateHolder(
 
                     is DomainResult.Success -> {
                         model.update {
-                            it.copy(
-                                view = result.value,
-                                role = context.role,
-                                loadedAtMillis = clock.now().toEpochMilliseconds(),
-                            )
+                            if (it.version != started) {
+                                it
+                            } else {
+                                it.copy(
+                                    view = result.value,
+                                    role = context.role,
+                                    loadedAtMillis = clock.now().toEpochMilliseconds(),
+                                )
+                            }
                         }
                     }
                 }
@@ -168,6 +175,7 @@ class AgentDetailStateHolder(
             model.update { m ->
                 m.copy(
                     busy = false,
+                    version = m.version + 1,
                     feedback = result.feedback,
                     view =
                         result.value?.let { agent -> m.view?.copy(agent = agent) } ?: m.view,

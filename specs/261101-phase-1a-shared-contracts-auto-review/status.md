@@ -35,7 +35,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] FR-R10 (P1) F-B-3: Sign-in outcomes map to wrong or inconsistent error keys
 - [x] FR-R11 (P1) F-B-4: Inbox inline Approve/Reject do not check the card type or the inline-action policy
 - [x] FR-R12 (P1) F-B-6: Holders run on `Dispatchers.Default` but guards and fields are plain check-then-set
-- [ ] FR-R13 (P1) F-B-7: Approval comment append uses a stale snapshot; a refresh can overwrite a just-finished action
+- [x] FR-R13 (P1) F-B-7: Approval comment append uses a stale snapshot; a refresh can overwrite a just-finished action
 - [ ] FR-R14 (P1) F-B-9: Screens can get stuck with no refresh or lose a final outcome
 - [ ] FR-R15 (P1) F-C-1: Decision contract suite asserts a "conflict" the pinned server does not return
 - [ ] FR-R16 (P1) F-C-2: Run viewer never tests Cancel run being disabled offline after the run loaded (acceptance 11 overcla
@@ -98,3 +98,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-B-4 done (inline Approve/Reject check the card and the policy).
 - 2026-11-01: F-B-5 done (role gating uses Permissions everywhere).
 - 2026-11-01: F-B-6 done (guards and shared fields are atomic).
+- 2026-11-01: F-B-7 done (a late read never overwrites a finished action).

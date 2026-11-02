@@ -16,18 +16,19 @@ internal class IssueLoader(
             return
         }
         if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
+        val started = model.value.version
         session.scope.launch {
             val allowed = session.context.get()
             if (allowed is DomainResult.Failure) {
                 model.update { it.copy(error = allowed.error.toErrorUi()) }
             } else {
-                read()
+                read(started)
             }
             model.update { it.copy(loading = false) }
         }
     }
 
-    private suspend fun read() {
+    private suspend fun read(started: Int) {
         when (val issue = session.useCases.load(session.companyScope, session.id)) {
             is DomainResult.Failure -> {
                 model.update { it.copy(error = issue.error.toErrorUi()) }
@@ -38,6 +39,7 @@ internal class IssueLoader(
                 val instance = session.useCases.getInstance(session.companyScope.instanceId)
                 val identifier = issue.value.detail.issue.identifier
                 model.update {
+                    if (it.version != started) return@update it
                     it.copy(
                         view = issue.value,
                         interactions = (interactions as? DomainResult.Success)?.value ?: it.interactions,

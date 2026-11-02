@@ -31,6 +31,9 @@ class FakeApprovalGateway(
     /** Runs after a scripted failure so a test can model "resolved elsewhere while the call was in flight". */
     var serverChangesOnFailure: ((Approval) -> Approval)? = null
 
+    /** Runs after `get` has read the approval and before it answers: the answer is then older than what follows. */
+    var afterRead: (suspend () -> Unit)? = null
+
     /** The server stores a comment even though the answer is a scripted failure (a timeout after the write). */
     var storesCommentOnFailure = false
 
@@ -46,7 +49,9 @@ class FakeApprovalGateway(
         id: ApprovalId,
     ): DomainResult<Approval> {
         record("get")?.let { return DomainResult.Failure(it) }
-        return store[id]?.let { DomainResult.Success(it) } ?: DomainResult.Failure(DomainError.NotFound)
+        val snapshot = store[id]?.let { DomainResult.Success(it) } ?: DomainResult.Failure(DomainError.NotFound)
+        afterRead?.invoke()
+        return snapshot
     }
 
     override suspend fun linkedIssues(

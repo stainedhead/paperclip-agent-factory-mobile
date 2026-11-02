@@ -34,6 +34,9 @@ class FakeDecisionGateway(
     private val decidedKeys = mutableMapOf<DecisionId, String>()
     var serverChangesOnFailure: ((Decision) -> Decision)? = null
 
+    /** Runs after `get` has read the decision and before it answers: the answer is then older than what follows. */
+    var afterRead: (suspend () -> Unit)? = null
+
     data class DecideCall(
         val id: DecisionId,
         val optionId: String,
@@ -58,7 +61,9 @@ class FakeDecisionGateway(
     ): DomainResult<Decision> {
         record("get")?.let { return DomainResult.Failure(it) }
         val decision = store[id] ?: return DomainResult.Failure(DomainError.NotFound)
-        return DomainResult.Success(readWithSettling(id, decision))
+        val snapshot = DomainResult.Success(readWithSettling(id, decision))
+        afterRead?.invoke()
+        return snapshot
     }
 
     /** What a read sees while the effects are still running, and the settled decision afterwards. */

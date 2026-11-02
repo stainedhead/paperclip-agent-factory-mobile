@@ -16,8 +16,10 @@ import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -455,5 +457,29 @@ class ApprovalCommentTimeoutTest {
             holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Unknown, error = ErrorUi(ErrorKey.Timeout))
             env.approvals.count("get") shouldBe 2
             holder.state.value.comments.size shouldBe 1
+        }
+}
+
+/** F-B-7: a read that was answered before an action finished must not replace the action's result. */
+class ApprovalStaleLoadTest {
+    @Test
+    fun `staleLoadDoesNotOverwriteAfterApprove`() =
+        runTest {
+            val env = approvalEnv()
+            val holder = approvalHolder(env)
+            advanceUntilIdle()
+            env.approvals.afterRead = { delay(5_000) }
+            holder.onIntent(ApprovalIntent.Refresh)
+            runCurrent()
+            env.approvals.afterRead = null
+
+            holder.onIntent(ApprovalIntent.ApproveTapped)
+            advanceTimeBy(100)
+            holder.state.value.status shouldBe ApprovalStatusUi.Approved
+
+            advanceUntilIdle()
+
+            holder.state.value.status shouldBe ApprovalStatusUi.Approved
+            holder.state.value.actions shouldBe listOf(ApprovalActionUi.Comment)
         }
 }

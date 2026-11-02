@@ -113,11 +113,12 @@ class DecisionStateHolder(
     private fun load() {
         if (!connectivity.isOnline.value) return
         if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
+        val started = model.value.version
         scope.launch {
             val context = ensureContext()
             if (context != null) {
                 when (val result = useCases.load(companyScope, id)) {
-                    is DomainResult.Success -> show(result.value)
+                    is DomainResult.Success -> if (model.value.version == started) show(result.value)
                     is DomainResult.Failure -> model.update { it.copy(error = result.error.toErrorUi()) }
                 }
             }
@@ -177,7 +178,7 @@ class DecisionStateHolder(
         scope.launch {
             val context = ensureContext()
             val result = if (context == null) null else action(context)
-            model.update { it.copy(submitting = false, feedback = result?.toFeedback()) }
+            model.update { it.copy(submitting = false, feedback = result?.toFeedback(), version = it.version + 1) }
             when (result) {
                 is MutationResult.Done -> show(result.value)
                 is MutationResult.Reconciled -> show(result.current)

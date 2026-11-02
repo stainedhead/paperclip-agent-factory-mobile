@@ -27,6 +27,8 @@ internal data class DecisionModel(
     val snoozed: Boolean = false,
     val polling: Boolean = false,
     val submitting: Boolean = false,
+    /** Counts finished actions. A read that started before one finished must not replace its result (F-B-7). */
+    val version: Int = 0,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
 ) {

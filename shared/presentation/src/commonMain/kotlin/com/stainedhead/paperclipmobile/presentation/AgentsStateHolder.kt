@@ -26,6 +26,8 @@ private data class AgentsModel(
     val loading: Boolean = false,
     val confirmPause: AgentId? = null,
     val busy: AgentId? = null,
+    /** Counts finished actions. A read that started before one finished must not replace its result (F-B-7). */
+    val version: Int = 0,
     val loadedAtMillis: Long? = null,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
@@ -84,6 +86,7 @@ class AgentsStateHolder(
     private fun load() {
         if (!connectivity.isOnline.value) return
         if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
+        val started = model.value.version
         scope.launch {
             val allowed = context.get()
             if (allowed is DomainResult.Failure) {
@@ -96,12 +99,16 @@ class AgentsStateHolder(
 
                     is DomainResult.Success -> {
                         model.update {
-                            it.copy(
-                                agents = result.value.agents,
-                                role = context.role,
-                                loaded = true,
-                                loadedAtMillis = clock.now().toEpochMilliseconds(),
-                            )
+                            if (it.version != started) {
+                                it
+                            } else {
+                                it.copy(
+                                    agents = result.value.agents,
+                                    role = context.role,
+                                    loaded = true,
+                                    loadedAtMillis = clock.now().toEpochMilliseconds(),
+                                )
+                            }
                         }
                     }
                 }
@@ -152,6 +159,7 @@ class AgentsStateHolder(
             model.update { m ->
                 m.copy(
                     busy = null,
+                    version = m.version + 1,
                     feedback = result.feedback,
                     agents =
                         result.value?.let { updated -> m.agents.map { if (it.id == updated.id) updated else it } }

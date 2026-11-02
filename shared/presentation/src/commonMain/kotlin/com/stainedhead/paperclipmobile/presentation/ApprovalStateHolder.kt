@@ -105,16 +105,17 @@ class ApprovalStateHolder(
     private fun load() {
         if (!connectivity.isOnline.value) return
         if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
+        val started = model.value.version
         scope.launch {
             if (ensureContext() != null) {
                 when (val result = useCases.load(companyScope, id)) {
                     is DomainResult.Success -> {
                         model.update {
-                            it.copy(
-                                detail = result.value,
-                                loadedAt = clock.now(),
-                                error = null,
-                            )
+                            if (it.version != started) {
+                                it
+                            } else {
+                                it.copy(detail = result.value, loadedAt = clock.now(), error = null)
+                            }
                         }
                     }
 
@@ -211,7 +212,7 @@ class ApprovalStateHolder(
         scope.launch {
             val context = ensureContext()
             val result = context?.let { call(it) }
-            model.update { it.copy(submitting = false, feedback = result?.toFeedback()) }
+            model.update { it.copy(submitting = false, feedback = result?.toFeedback(), version = it.version + 1) }
             result?.let(onResult)
         }
     }

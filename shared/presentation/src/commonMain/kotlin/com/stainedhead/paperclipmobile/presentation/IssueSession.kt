@@ -47,7 +47,7 @@ internal class IssueSession(
             val result = call()
             model.update { current ->
                 val applied = result.value?.let { apply(current, it) } ?: current
-                applied.copy(busy = false, feedback = result.feedback)
+                applied.copy(busy = false, version = applied.version + 1, feedback = result.feedback)
             }
             if (result.value != null || result.reload) reload?.invoke()
         }
