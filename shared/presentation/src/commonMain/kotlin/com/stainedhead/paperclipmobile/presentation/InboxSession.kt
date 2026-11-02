@@ -133,6 +133,8 @@ internal class InboxSession(
                 return@launch
             }
             val result = action(context)
+            // The outcome (a card hidden) lands before the claim is released, so a late tap cannot act twice.
+            onResult(result)
             model.update { it.copy(mutating = false, feedback = result.toFeedback()) }
             if (result.wasForbidden()) {
                 model.refreshContext(
@@ -140,7 +142,6 @@ internal class InboxSession(
                     companyScope,
                 ) { copy(context = it) }
             }
-            onResult(result)
             if (result.mayHaveChangedTheServer()) refresh()
         }
     }

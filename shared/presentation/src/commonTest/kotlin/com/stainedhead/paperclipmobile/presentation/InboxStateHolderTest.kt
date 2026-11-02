@@ -557,6 +557,21 @@ class InboxActionsTest {
         }
 
     @Test
+    fun `a second dismiss of a card that is already dismissed never reaches the gateway`() =
+        runTest {
+            val env = env()
+            val holder = loaded(env)
+            env.attention.servesStaleFeed = true
+
+            holder.onIntent(InboxIntent.DismissTapped("approval:ap-1"))
+            advanceUntilIdle()
+            holder.onIntent(InboxIntent.DismissTapped("approval:ap-1"))
+            advanceUntilIdle()
+
+            env.attention.count("dismiss") shouldBe 1
+        }
+
+    @Test
     fun `a refresh that was computed before the dismissal does not bring the card back until the server agrees`() =
         runTest {
             val env = env()
