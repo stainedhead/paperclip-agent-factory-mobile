@@ -80,6 +80,9 @@ Update this file after every task and phase. It is the single source of progress
 - Partly covered requirements (F-C-5): FR-002, FR-008, FR-013, FR-016 and FR-097 have a tagged test for the Phase 1a part only; the rest is Phase 1b/1c (see the `partial` map in `RequirementsTraceabilityTest`). No requirement lacks an honest test.
 - Deferred inside F-C-7: pinning `brew install swiftlint xcodegen` and `xcode-version: latest-stable` (brew cannot pin by hash), narrowing the gitleaks `TESTONLY` allowlist (cannot be exercised without Docker locally), and a Gradle dependency-vulnerability job.
 - Deferred inside F-C-13: detekt over `build-logic`, root scripts and `androidApp`; Kover merging presentation execution data into the `core` total (accepted by AGENTS wording).
+- Deferred inside F-C-6: drift detection on `/api/openapi.json`. The pinned server source (`~/Code/Test/paperclip/server/src`) has no openapi route, so the smoke script covers `/api/health` and the pairing challenge create/poll shapes instead.
+- F-C-5: the sampled tags were checked against the review's own sample (FR-002/008/013/016/097 judged partial); the other 42 ids were not individually re-audited beyond being in `@Test` names.
+- F-C-10: 50 JVM stress iterations of the refresh wiring tests passed; the Android host and iOS simulator ran them once per `check`.
 - `unused_import` is configured as a SwiftLint analyzer rule (F-D-13): it only runs under `swiftlint analyze`, not `swiftlint --strict`.
 
 ## Blockers
