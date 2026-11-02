@@ -485,3 +485,10 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** Seeding the company and the first issue is required; everything else the server may legitimately refuse (an agent that needs board approval, an approval type, a wake of a process agent) is attempted with `soft`, which records the server's answer in the run report and goes on. A step is asserted hard once a run has shown how the server behaves, and the stubs were corrected where the real server differed. Decisions, interactions to answer and budget incidents cannot be created by a board key at all (agent run context or real spend is needed), so they stay MockEngine-only and are listed as such, not simulated.
 **Consequences.** The report is the honest coverage statement; the status and notes files quote the CI run that produced it.
+
+## ADR-074: A resume is followed by one read, because the server answers it mid-transition
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** The live contract run showed that Paperclip applies a pause or resume in steps: a resume answers `status paused`, no pause reason, `lifecycleState resuming`, and the very next read shows `idle`. `ResumeAgent` (application layer, a cross-ownership edit made test-first in its own commit) therefore reads the agent once when the reply says `resuming`, and reports that read; if the read fails it reports the server's reply. The resume itself is still sent exactly once. Pause is unchanged (its reply, `paused`/`manual`, is the state the person asked for). The adapter, the shared contract and the fake keep modelling the settled state; the stub has an opt-in `transitions` mode that reproduces the server.
+**Consequences.** The screen no longer shows a paused agent under a Resume button that was just pressed. An agent that is still `pausing` or `resuming` when a screen loads is shown with the server's status; a state holder that wants to hide the transition can use `Agent.lifecycleState`, which the mapper already carries (not done here).

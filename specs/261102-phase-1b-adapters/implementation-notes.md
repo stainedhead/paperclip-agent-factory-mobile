@@ -383,3 +383,50 @@ bb6a689 engine closed with the client (red first) · 085ba3c live graph core, `L
 
 `shared/umbrella`: JVM 46, Android host 34, iOS simulator 34, Konsist 58 (all modules' rules; was 55), 0 failed, 0 skipped. `shared/infrastructure/api`: 303 on each of JVM, Android host and iOS simulator (299 before). All shared modules together: JVM 1227, Android host 1203, iOS simulator 1238, Konsist 58. Kover from a fresh XML: Core 97.98% (2568 of 2621 lines, unchanged), Presentation 98.02% (4217 of 4302). Swift Testing in the app host: 48 tests in 9 suites (was 44), plus 1 XCUITest; all passed. Framework size: research L9.
 
+
+## 1b-5b: the contract test against the pinned server (AD-050, AD-051)
+
+Built: `shared/infrastructure/api` JVM `contract` compilation and `contractTest` task (ADR-072); `ServerBootstrap`, `Pairing`, `Seeder`, `RawServer` (JDK HTTP/1.1 client for what the adapters do not do), `MemorySecretStore`, `LiveContext` (the production adapters on OkHttp), `LiveReport` plus a `LauncherSessionListener` that prints the live-versus-MockEngine table; 16 live tests in five classes and 3 offline helper tests (`ContractHelpersTest`, written first and seen red as `Unresolved reference 'InviteToken'`); `scripts/paperclip-test-server.sh invite` (ADR-071); `contract.yml` runs the test after the smoke script in the `pinned` job and in the nightly `latest` job (same steps, report uploaded as an artifact, `PAPERCLIP_CONTRACT_REQUIRED=true`, Android platform installed because AGP configures every module).
+
+### What ran in CI (the only place the container runs)
+
+| Run | Commit | Result | What it taught |
+|---|---|---|---|
+| 41506991104 | 24a58c7 | failed, "workflow file issue" | A step name containing `: ` is invalid YAML; names are quoted. |
+| 41507159863 | 819ed77 | failed, 16 of 16 live tests | Server, smoke and invite steps worked; the JDK client's h2c upgrade made the server drop the connection (HTTP/1.1 only now). |
+| 41507946641 | 603f63d | failed | Sign-up `403 INVALID_ORIGIN` (research L-1); compose got `BETTER_AUTH_TRUSTED_ORIGINS` and the auth rate limit off. |
+| 41508734276 | 7e875df | failed | Sign-up, invite acceptance, pairing and company seeding passed; then `TestData.uri` refused `http://localhost` (a test-side defect, fixed). |
+| 41509506174 | 0bea6e4 | success | First full pass: 46 of 52 operations live. |
+| 41510683239 | b4585a7 | success | Observations: resume answered mid-transition, malformed id statuses, bodies. |
+| 41511756580 | 1174690 | success | Observed how pause and resume settle (L-4). |
+| 41513381521 | 48329d6 | success | Hard assertions for what was observed: pass again, 46 of 52 operations live, 0 MISMATCH, 0 FAIL. |
+| 41514074651 | 48329d6 (manual dispatch) | success | Both jobs: pinned, and `latest` (the drift job, 46 of 52 as well). |
+
+Pushes used: 8 for code (24a58c7, 819ed77, 603f63d, 7e875df, 0bea6e4, b4585a7, 1174690, and the 48329d6 group of three commits). Earlier hypotheses that were wrong: that `PAPERCLIP_PUBLIC_URL` makes Better Auth trust the test origin; that a resume reply is the stale row (it is the new, mid-transition row); that issues and agents answer 500 to a malformed id.
+
+### Live-verified versus MockEngine only (from `live-operations.txt` of run 41513381521)
+
+| Verified live (46) | MockEngine only (6) and why |
+|---|---|
+| Health: probe (authenticated, private, ok; before the bootstrap it is refused as BootstrapPending). Auth: createChallenge, pollChallenge, meWithKey (also its Unauthorized path), me, listCompanies, listBoardKeys, listBoardKeysWithKey, revokeBoardKey, revokeCurrentKey. Attention: feed, dismiss, snooze, restore, setDecideBy. Approval: get, linkedIssues, comments, approve, reject, requestRevision, addComment. Issue: list (open, in review, search), get, comments, addComment (also reopen), setStatus, assign (also clear), create, attachments. Interaction: list. Agent: list, get, pause, resume, invokeHeartbeat, setBudget. Run: get, events, log, cancel, forIssue, forAgent, live. Dashboard: dashboard, windowSpend. | `DecisionGateway.get/decide/dismiss`: a decision can only be created by an agent with a run (`routes/decisions.js:122-130`). `BudgetGateway.incident/resolve`: an incident needs spend above a policy. `InteractionGateway.answer`: interactions are created by agents. These stay covered by the MockEngine tests and the stub (research C7). |
+
+Not covered live even among the verified operations: pagination of the attention feed (cursor) and of the issue list (the data set is tiny), the `blocked` filter, attachment bytes with `Range`, `forIssue` with real runs, a `Skipped` wake, the log with content, a non-empty window spend, and every 409/422 text of the mutations. Decision-based and budget-based attention cards were not in the feed.
+
+### Corrections the live server forced
+
+1. `ResumeAgent` (application layer, outside stream ownership, own test-first commit bebdbf2): reads once after a `resuming` reply (ADR-074). Red: `Expected Idle but was Paused`.
+2. `StubIssues`/`StubAgents`: a non-uuid issue id is 404 and an agent id 422 (red: the stub answered 500; `PinnedStubFidelityTest`).
+3. `StubAgents` has an opt-in `transitions` mode; `AgentGatewayAdapterTest` shows the adapter maps the mid-transition rows (red: `Unresolved reference 'transitions'`).
+4. `docker/paperclip-test/compose.yml`: `BETTER_AUTH_TRUSTED_ORIGINS`, `PAPERCLIP_AUTH_RATE_LIMIT_ENABLED=false`.
+
+### Deviations
+
+- The base URL is `http://localhost:3199`, not `127.0.0.1:3199` as the brief had it: plain http is allowed for `localhost` and `10.0.2.2` only and the allow-list was not widened (`ContractTarget` rewrites a numeric loopback).
+- The shared port contract suites are not run against the live server: they assume stub data (fixed ids, a closed issue, a scripted expiry, a shared `AuthPairingContract.letExpire` hook). The live tests are written for seeded data instead; the gap is listed above.
+- The bootstrap invite is inserted with the image's `postgres` client, not with the CLI (ADR-071).
+- Several steps use `soft`/`observe` in the first runs; after run 41511756580 every observed behaviour became a hard assertion, except lifecycle strings of a settled pause, which are only recorded.
+- Local state: the developer's own Paperclip (port 3100, embedded Postgres 54329) is running on this machine, so no throwaway server was started from the npm copy; everything about the server was read from the dist and then observed in CI.
+
+### Tests and gates (from generated artifacts after the final `check lint`)
+
+`shared/infrastructure/api`: 305 on each of JVM, Android host and iOS simulator (303 before; +1 malformed ids, +1 resume mid-transition); `contractTest`: 19 in CI (3 offline, 16 live), skipped (16) without a server. `shared/application`: two new tests (mid-transition resume, failed follow-up read). All shared modules: JVM 1231, Android host 1207, iOS simulator 1242, Konsist 58. Kover from a fresh XML: Core 97.98% (2568 of 2621 lines), Presentation 98.02% (4217 of 4302).
