@@ -1,0 +1,262 @@
+# Implementation notes: Phase 1a review fixes
+
+**Date:** 2026-11-01
+
+Record decisions, edge cases, deviations and lessons as fixes land, with commit hashes. Update after every task.
+
+## Technical decisions
+
+### 2026-11-01 F-A-1 key host binding (FR-R01)
+
+Commit: see the hash table at the end of this file (F-A-1).
+Red evidence: EnrollmentAddressChangeTest failed before the fix, e.g. 'Unexpected elements ... AuthenticatedCall(name=me, host=https://evil-b.example.com, token=pcp_board_TESTONLY...)' and 'expected:<Renamed> but was:<Home factory>'.
+Fix: AuthGateway.listBoardKeysWithKey(baseUri, key) added (fake and contract case); KeyEnrollment validates and lists keys with the key against the snapshot host BEFORE storing, then re-reads the instance, deletes the key and returns Failed(Conflict) if baseUri changed, and writes only onto the fresh instance. UpdateInstance re-reads right before writing. Existing test 'a failure to read the key after approval rolls the stored token back' encoded the store-then-delete dance; it now asserts nothing is stored (putCalls 0).
+Residual: no per-instance mutex between UpdateInstance and KeyEnrollment; the check-then-write window is two suspend calls and a lost race ends with the key deleted by UpdateInstance (address change always deletes the namespace).
+
+### 2026-11-01 F-B-1 probe result bound to the probed address (FR-R03)
+
+Red evidence (all five failed before the fix): FirstRun 'expected:<Idle> but was:<Accepted>' and late refusal 'expected:<Idle> but was:<Refused>'; EditInstance 'canSave expected:<false> but was:<true>' (the verifier had not run the Edit variant: it reproduces) and 'expected:<Idle> but was:<Refused>'; UpdateInstance 'Updated should not be of type Updated'.
+Fix: ProbeResult variants carry baseUri (decision: bound result, research Q1 answered: ProbeResult.Accepted(baseUri, report), holders stay thin). Holders keep the probe Job, cancel it in addressChanged/back, drop a result whose baseUri is not the current address, and keep session.probed (the Accepted result) instead of a bare HealthReport; save/add requires probed.baseUri == the current address. UpdateInstance now needs InstanceEdit.probed for exactly the new address (accepted, not refused) or answers ProbeRequired and changes nothing (rule in the application layer, not only the canSave flag). The ADR-012 UpdateInstance test now passes an accepted probe for the new address because the address change is gated by the probe.
+Test support: FakeHealthGateway.onProbe gate.
+
+### 2026-11-01 F-A-4 AddInstance requires a probe bound to the address (FR-R05)
+
+Red evidence: add_with_report_probed_for_another_address -> 'expected:<ProbeRequired> but was:<Added(instance=...never-probed.example.com...)>' and the clean-report/local-trusted variant 'expected:<ProbeRequired> but was:<Added(... local.example.com ...)>' (red was taken with the new signature stubbed to the old behaviour, since the old signature cannot express binding).
+Fix: AddInstance takes ProbeResult.Accepted and answers ProbeRequired when probed.baseUri differs from the validated address; local_trusted still refused in the use case. Duplicate-address policy: allowed, recorded in ADR-030; a test pins it (passes, no production change needed). Holders pass the bound probe.
+
+### 2026-11-01 F-A-5 enrollment failure and cancellation consistency (FR-R06)
+
+Red evidence (against the F-A-1 code): 'cancel between put and update leaves no orphan secret' -> 'expected:<false> but was:<true>' (secret stored while status stayed SignedOut); 'a failing update after put removes the new key and marks the factory signed out' -> 'expected:<[]> but was:<[instance/inst-1/boardToken]>'. Part 1 (failed validation keeps the previous key and status) was fixed as a side effect of F-A-1 (validation now precedes put); its test and the storage-failure and successful re-pair tests pass and are kept as regressions. Parts 2-3 verified red here.
+Fix: KeyEnrollment.store runs put, re-read and update inside withContext(NonCancellable); unless the status was committed it deletes the new key and marks a still-signed-in factory Signed out (compensation in finally, no catch). A repository exception still propagates after the compensation.
+Part 4 (re-pairing does not revoke the old key on the server): deliberately not changed. Revoking needs the old token before it is overwritten and is a server mutation the person did not ask for; the old key stays listed under Paired devices (FR-025) where it can be revoked. Recorded as accepted behaviour.
+
+### 2026-11-01 F-A-2 (cancellation half, P0) sign out is cancellation-safe (FR-R02)
+
+Red evidence: 'sign out cancelled during the revoke still deletes the secrets...' -> 'expected:<[]> but was:<[instance/inst-1/boardToken]>'.
+Fix: SignOutInstance revokes in try and always runs the local deletion and the status update in finally via the shared internal helper deleteCredentialsLocally (NonCancellable), which RemoveInstance now uses too (research Q3 answered: yes, shared helper; the fake exposes onCall so a test can suspend inside the revoke). The status update is written onto a freshly read instance. The SignOutEverywhere half follows in its own commit.
+
+### 2026-11-01 F-A-2 SignOutEverywhere continues past a failing factory (P1 half)
+
+Red evidence: 'java.lang.IllegalStateException: secure store unavailable' propagated out of SignOutEverywhere and the second factory stayed SignedIn (red taken with the result type's new `failed` field stubbed to emptyList()).
+Fix: SignOutEverywhere wraps each factory in runCatching, rethrows CancellationException, records failed ids in SignOutEverywhereResult.failed and continues; SettingsState.signOutFailures exposes the count (a plain Int, no prose). A cancelled sign out everywhere stops after the factory in progress has finished its own local deletion (shielded); remaining factories are not signed out, which is the cancel the person asked for.
+Test support: FakeSecretStore.failNamespaceDeletes.
+
+### 2026-11-01 F-A-7 bounded pairing wait (FR-R30)
+
+Red evidence: huge interval 'expected:<Cancelled> but was:<Expired>' (waited 2 x 1 h); far expiry 'expected:<900000L> but was:<3600000L>' and a year 'expected:<900000L> but was:<31536000000L>'; rate limit 'Failed(error=RateLimited) is of type Failed but expected SignedIn' (red taken with DomainError.RateLimited and its ErrorKey stubbed, since 429 had no representation).
+Fix: interval clamped 250 ms to 10 s; the wait is withTimeoutOrNull(min(expiresAt - now, 15 min)) around the polling only (approval is stored after the timed section so a timeout can never discard a key); DomainError.RateLimited (429) added with ErrorKey.RateLimited and tolerated while waiting. Existing test 'an expired challenge stops polling once the clock passes its expiry' expected 5 polls; the wait now ends at the expiry instant, so 4 polls happen (the 5th would only answer 'expired'); the test was changed with that comment, not weakened (it still asserts Expired, no secret, token wiped).
+Phase 1b adapters must map HTTP 429 to DomainError.RateLimited.
+
+### 2026-11-01 F-A-3 401 marks Signed out in one choke point (Group 2)
+
+Red evidence: 'inbox refresh | expected:<SignedOut> but was:<SignedIn>' (all ten use-case cases) and 'expected:<1> but was:<0>' (exactly once), taken with the decorators absent.
+Fix: ADR-031. SignedOutAware<X>Gateway decorators over the nine company-scoped gateways (research Q2 answered: decorator at the port, not 30 use cases and not retryingRead, which has no scope). The umbrella binds adapters under RawPort and hands use cases the decorated bindings; a graph test proves the wiring (SignedOutWiringTest). SignedOutMarker now writes only when the factory is not already Signed out. Phase 1b adapters must map 401 to Unauthorized.
+Not done: the PRD fix also suggested making RevokeBoardKey refuse the revoke-other path when boardKeyId is null; left for Group 4 (needs a product decision on what the screen shows).
+
+### 2026-11-01 F-A-6 timeout reconciliation compares with the pre-call state (Group 2)
+
+Red evidence (against the old code, with MutationResult.Unknown only added): 'expected:<Unknown(error=Timeout)> but was:<Reconciled(error=Timeout, current=Started(run=...run-live...))>' (pre-existing live run reported as started), 'but was:<Reconciled(error=Timeout, current=Skipped)>' (no new run reported skipped), 'Failed(error=Timeout)' for the approval comment (no re-read at all), and for the issue comment 'but was:<Reconciled(... current=Comment(id=c-foreign ...' (a foreign newest comment reported as own).
+Fix: ADR-032. MutationResult.Unknown(error); InvokeHeartbeat, CommentOnIssue, CommentOnApproval read before the call and compare after a timeout or conflict. Presentation: FeedbackKind.Unknown, issue and approval threads reload, inbox refreshes. Existing tests that encoded the guess were changed in the same commit: run now timeout (now Unknown, 2 reads), issue comment timeout (Unknown, 4 reads in the holder test), approval comment timeout (Unknown), WorkRoleMatrixTest acceptance 10 (accepts Unknown for the comment case). Presentation tests for the new feedback were written together with the code, so their red run was not taken separately.
+Test support: FakeAgentGateway.onInvoke, FakeIssueGateway.storesCommentOnFailure, FakeApprovalGateway.storesCommentOnFailure.
+
+### 2026-11-01 F-A-8 decide re-reads the decision before device auth (Group 2)
+
+Red evidence: 'expected:<NotAuthorized(result=Cancelled)> but was:<Done(value=Decision(... status=Decided' (a caller copy without the cancel effect skipped biometrics; the store held the destructive one). The sign-out half (sign_out_keeps_rename_made_during_revoke) PASSES on the Group 1 code: refuted as already fixed; the test is kept.
+Fix: ADR-032 (scope paragraph). DecideDecision takes DecisionId, reads the decision, derives the real action from the fresh option, answers Failed when the read fails, and returns Reconciled(Conflict, fresh) without a gateway call when the fresh copy is not open (acceptance 12 behaviour kept). Tests changed in the same commit: tests built around a caller copy now put the copy in the fake store; read counts rose by one (acceptance 10: 3 in the holder test); FR-044 not-open now expects Reconciled(Conflict) with zero decide calls instead of Invalid(WrongStatus), because the screen can then show the final state.
+Not changed, with reason: PauseAgent, CancelRun, ResolveBudgetIncident, ApproveApproval keep entity parameters. Their device-auth requirement does not depend on the entity, the server repeats the eligibility checks, and the use case reconciles; re-reading would add a read per tap with no security gain (see ADR-032).
+
+### 2026-11-01 F-A-1 residual per-factory lock (ADR-033) (Group 2)
+
+Red evidence: 'expected:<false> but was:<true>' in InstanceLockingTest (a gated repository update: after the address edit the factory was SignedIn on the old address with no key stored).
+Fix: InstanceLocks, ADR-033; UpdateInstance, KeyEnrollment, deleteCredentialsLocally (sign out, remove) and SignedOutMarker take it. Constructor changes touched every Env in tests.
+
+### 2026-11-01 F-B-2 one execution poller per Decision screen (Group 2)
+
+Red evidence: refreshDuringExecutionPollDoesNotStartSecondPoll 'expected:<4> but was:<8>' (a Refresh during the poll started a second poller; pollingFlagStaysTrue... passed on the old code at 1.5 s, kept as a regression).
+Fix: show() no longer suspends; startPoll() claims the polling flag atomically (new claim() helper in Guards.kt, compareAndSet loop) and launches the single poller as its own job, so the load that triggered it no longer holds 'loading' for the whole poll. Only the poller clears the flag, in finally.
+
+### 2026-11-01 F-B-3 sign-in outcomes map to one consistent set of keys (Group 2)
+
+Red evidence: 'key: expected:<InvalidKey> but was:<Malformed>' (first run, pasted bad key) and 'expected:<StorageFailed> but was:<NotFound>' (edit re-pair with a failing secure store). First run showed a failed secure store as Malformed.
+Fix: ErrorKey.InvalidKey and ErrorKey.StorageFailed; one SignInResult.toFailure() (SignInFailure.kt, no else branch) used by both holders; a pasted bad key now sets pairing Failed in first run like every other failure (it stayed Idle). Existing FR-021 test asserted Malformed for the bad key and was changed to InvalidKey.
+Swift: ErrorKey gained two cases; no Swift source switches over it (checked iosApp/Sources and Tests).
+
+### 2026-11-01 F-B-4 inline Approve/Reject check the card and the policy (Group 2)
+
+Red evidence: approveTappedOnDecisionCardIsIgnored 'expected:<0> but was:<1>' (a decision id sent to the approvals endpoint), approveTappedOnNonInlineApprovalIsIgnored 'expected:<0> but was:<1>', approveWithoutSubjectStatusIsIgnored 'expected:<0> but was:<1>', approveTappedForViewerRole... 'Expected null but actual was FeedbackUi(kind=NotAllowed...)' (the viewer tap reached the use case).
+Fix: InboxApprovalActions honours approve, reject and keepPaused only if InlineActionPolicy.actionsFor(item, role) lists that action, and ignores a card without subject.status instead of assuming pending. AttentionFixtures.approvalItem now carries status pending (the real feed does, as the demo data already did).
+
+### 2026-11-01 F-B-5 role gating uses Permissions everywhere (Group 2)
+
+Red evidence: 'Expected OwnerRole but actual was null' for the Operator on the budget incident (raiseDisabledReason) and on agent detail (budgetDisabledReason). The wrong-flag half did not reproduce (role != Viewer equals Permissions today), so RoleGatingTest (Role x Action x online over disabledReason and mayAct) is a regression guard, not a red.
+Fix: RoleGating.kt (disabledReason, mayAct); ActionsDisabledReason.OwnerRole; BudgetIncidentState.raiseDisabledReason and AgentDetailState.budgetDisabledReason; every renderer and holder flag and reason goes through it (Decision confirm, dismiss and snooze now use their own action; Run cancel; Agents Resume and RunNow use their own action); rejectNeedsDeviceAuth follows DeviceAuthPolicy; interactions use RespondToInteraction.
+
+### 2026-11-01 F-B-6 guards and shared fields are atomic (Group 2)
+
+Red evidence (AtomicGuardsTest, JVM only, 60 iterations x 4 concurrent callers on Dispatchers.Default, run against the pre-fix holders): UnlockRequested prompted the device more than once in 31 of 120 iterations, Refresh loaded more than once in 76, ConfirmTapped sent the decision more than once or not at all in 113, DismissTapped dismissed more than once in 89 (counts from the first 120-iteration version; the final version uses 60 iterations and fails the same way).
+Fix: Guards.kt claim() (compareAndSet loop) replaces every 'if (flag) return; update { flag = true }' in the Decision, Approval, Budget, Agents, AgentDetail, RunViewer, WorkList, Issue, FactoryHome, Settings and Inbox holders and sessions; AppStateHolder keeps settings, backgroundedAt and unlocking in one MutableStateFlow cell and clears unlocking in finally; ContextSource.cached, Factories, ManageFactories and SettingsConfirmations.instances are MutableStateFlow cells. Run 5 times after the fix: 4 tests, 0 failures, 8.7 s each run.
+Not changed: the first-run and edit probe/pair job fields (probeJob, pairJob, session.probed) are still plain; they are written from intents on the UI thread and read from coroutines they launch, and a lost write there is bounded by the address binding of F-B-1 (a stale probe is dropped by address). Recorded as a known limitation.
+
+### 2026-11-01 F-B-7 a late read never overwrites a finished action (Group 2)
+
+Red evidence: staleLoadDoesNotOverwriteAfterApprove 'expected:<Approved> but was:<Pending>'; AgentDetail 'expected:<Paused> but was:<Running>'; Decision stale load re-opened a decided decision (assertion false). The comment lost-update half was appended inside a single update in the F-A-6 commit (ApprovalModel.withComment), so it needs no separate test.
+Fix: a version counter in the Approval, Decision, Budget, AgentDetail, Agents, RunViewer and Issue models. An action bumps it in the same update that clears its in-flight flag; a read records the version when it starts and drops its result if the version moved. Test support: afterRead hooks in FakeApprovalGateway, FakeDecisionGateway, FakeAgentGateway (the answer is read first, then delayed, so it really is older than what follows).
+
+### 2026-11-01 F-B-8 paired-devices loads are ordered and cancelled (Group 2)
+
+Red evidence: slowLoadForPreviousFactoryDoesNotOverwriteCurrent 'expected:<cloud> but was:<home>' (the slow answer for the first factory overwrote the second).
+Fix: SettingsDevices keeps loadJob, cancels it when a new load starts, and applies a result only while pairedDevices still names the requested factory.
+
+### 2026-11-01 F-B-9 no stuck run viewer, no lost budget outcome (Group 2)
+
+Red evidence: failedFirstLoadKeepsRefreshInterval 'expected:<15> but was:<0>'; refreshAfterResolveKeepsRaisedOutcome 'expected:<Raised> but was:<NoLongerActive>'.
+Fix: the Run viewer keeps the default 15 s interval until a run has loaded; the Budget holder keeps a resolved outcome when a refresh answers NotFound and maps the status with outcomeOf when a load succeeds.
+
+### 2026-11-01 F-B-11 UI enum mappings are exhaustive when expressions (Group 2)
+
+Not red by design: the orders and names match today (the finding said so), so UiEnumMappingTest passes before and after; the fix is structural. It checks that every domain enum maps to the twin of the same name and that the round trips return the original.
+Fix: the 14 ordinal/valueOf one-liners became exhaustive 'when (this)' without else, and the 7 inline entries[ordinal]/valueOf sites use new toUi functions in EnumMappings.kt, so a new or reordered domain value now fails to compile (checked: no .ordinal/valueOf/entries[ left in presentation except sorting chips by source kind).
+
+### 2026-11-01 F-D-2 a 403 re-resolves the role once (Group 2)
+
+Red evidence: forbiddenMutationReResolvesTheRole failed in all 8 holder families (Approval, Decision, Budget, Agent detail, Agents, Run viewer, Issue, Work list) with 'expected:<2> but was:<1>' (auth.me was called once; the role stayed Operator and actions stayed enabled); the Inbox variant was added after the fix and passes.
+Fix: a Forbidden mutation result triggers ONE resolveContext call (ContextSource.reResolve for the work screens, refreshContext for the screens that keep the context in their model); the mutation is not repeated, the old role is kept if the read fails, and the holder re-renders with the new role (ActionResult.role carries it). Reads that answer Forbidden are not handled; the finding only asked for mutations to refresh the role.
+
+### 2026-11-01 F-A-11 retry budget, offline and certificate failures (Group 2)
+
+Red evidence: load_approval_offline_fails_without_backoff 'expected:<0L> but was:<3500L>'; multi_read_use_case_total_wait_is_bounded 'expected:<true> but was:<false>' (a read that recovers after 1.5 s plus a read that never answers waited 5 s). certificate_failure_is_not_retried passes once DomainError.CertificateInvalid exists: with the case split, isTransientFailure() already excludes it, so that test guards the split rather than turning red.
+Fix: ADR-034. RetryBudget (3.5 s per use case), connectivity check, DomainError.CertificateInvalid with ErrorKey.CertificateInvalid, LoadApproval/LoadIssue/LoadInstanceAccess take Connectivity. Phase 1b adapters must map TLS failures to CertificateInvalid.
+
+### 2026-11-01 F-A-12 dead code removed, CriticalAndHigh fills the page (Group 2)
+
+Red evidence: critical_and_high_page_fills_across_server_pages 'Missing elements from index 1: expected [i01, i11, i12, i13, i14] but was [i01]' and the exhausted-server case 'expected:<false> but was:<true>'.
+Fix: ListIssues reads server pages (up to 10) until the page holds the limit of urgent rows or the server runs out; serverRowCount is the number of server rows used so the next page starts right after the last row shown; a later page that fails returns the rows already found with hasMore. Removed the unused userId parameter of ListIssues and SearchIssues (and their callers), the unused DayOfWeek and atStartOfDayIn imports of SnoozeTimes, and the domain function Interaction.canBeResolvedBy with its test (production uses InteractionRenderer.readOnlyReason, which has its own tests). Kept on purpose: DecideBy.toServer (the Phase 1b request mapping), IssueQuery.nextPage (used by the Issue contract), IssueFilter.matches and matchesSearch (the rule the fake shares with tests).
+
+### 2026-11-01 Group 3: tests, contracts, Konsist rules and CI
+
+Each entry names the defect shown (red, mutation or disagreement with the server) and the fix; the same text is in the commit body.
+
+- F-C-1 (4b2354a): the new DecisionContract cases failed against the old FakeDecisionGateway. Contract and fake now follow `decisions.ts:683-711`: same option and inputs replays whatever the key; another option or other inputs is Conflict; dismiss goes through the effect-less option (second dismiss replays) or, with none, a direct update (second dismiss conflicts). Two tests encoded the old rule and changed with it (AttentionFakesBehaviourTest; DismissDecisionTest FR-044). No presentation test relied on it.
+- F-C-2 (d40b0e4): three Run viewer offline tests. Mutations: deleting the `canCancelNow` online check fails 2, the `renderRun` `mayAct(online ...)` fails 2, the `disabledReason(online ...)` fails 1; before, the whole module stayed green.
+- F-C-3 (cd11bf5): `MutationMatrix.kt` has 23 rows, one per company-scoped Action. The viewer, role and timeout matrices run over it; `MutationMatrixRulesTest` (Konsist) fails when a mutation use case has no row (negative sample included). Allowed roles must get `Done` with exactly one gateway call. Deleting the CommentOnApproval permission check fails the viewer matrix.
+- F-C-4 (86e2465): platform suites rewritten around real obligations (Biometrics never reuses an approval, Clock moves on, PairingBrowser opens exactly the approval URL, pairing secrets never print). Connectivity and AppLifecycle suites deleted (StateFlow). Four mutations each fail their suite. Archive status criterion 4 now reads "fake-only; real adapters in Phase 1b". ADR-036.
+- F-C-5 and F-D-5 (a54e491): the traceability tag must be in a `@Test` function name; `partial` map for FR-002, 008, 013, 016, 097; negative test. Removing "FR-097 " from the test names (KDoc kept) now fails; before it passed.
+- F-C-6 (acb32d1): `scripts/contract-smoke.sh`. CI evidence: the push run `contract / pinned server` passed with "Paperclip contract smoke passed against http://127.0.0.1:3199" on Paperclip 2026.1023.0 (run 41372749599); a `workflow_dispatch` run (41373151085) passed both jobs including `latest`. The latest job has no `continue-on-error` and runs only on schedule and dispatch.
+- F-C-7 (5bd1e1d, b1106a7 detekt follow-up): actions pinned to SHAs with version comments; gitleaks built from `docker/gitleaks/Dockerfile` (v8.30.1 by digest, same digest as `latest` today); Dependabot docker entry; `CiPinningRulesTest`. `security` workflow green on the push with the pinned scanner.
+- F-C-8 (f6e90f0): `AuthWrongServerContract` failed against the old fake and now passes; the fake remembers the server of each challenge and pending key. Group 1 application tests already cover the use-case half.
+- F-C-9 (b3de91a): contract-per-port needs an abstract class whose `create()` returns the port plus a subclass that runs it; the reveal rule flags the identifier anywhere (with/run/::reveal) and scans androidApp when it exists; wildcard `domain.port.*` in presentation fails. Each shown by mutation.
+- F-D-7 (be73235): the infrastructure rule scans every `src/<set>Main` and a fixture module with only iosMain/androidMain files shows violations are reported.
+- F-C-10 (6fe6058): `FakeLiveEvents.subscriberCount`; the umbrella refresh tests wait for the subscriber signal, no `delay`. `RefreshSession.stop()` as a no-op fails the teardown tests. 50 consecutive JVM runs of DemoRefreshWiringTest: 0 failures (Android host and iOS simulator only run it once per `check`).
+- F-C-12 (e94bf03): the guard test uses the literal set of six destructive actions; always-prompt and never-prompt guards both fail it.
+- F-C-13 (9a5b8f2): reason comment above every detekt rule (`DetektConfigRulesTest`); ADR-035 (fakes ship in the framework), ADR-036; the 424 MB heap dump deleted, no `*.hprof` tracked.
+- F-D-8, F-D-9, F-D-13 (7d1a4a4, 3891996, fe4db74): see the commit bodies. 33 Swift tests and the XCUITest pass; SwiftLint and swift-format report 0 violations; `swiftlint analyze --strict` on a clean build log (unused_import) reports 0 violations. The model's owner (App `@State`) and the code that closes it (the view's `.task`) share a lifetime only because the app is iPhone-only with one scene; a multi-scene build must create the model per scene (comment in PaperclipApp.swift).
+
+Process note: three commits were first pushed or made with a detekt finding in a Konsist test (CiPinningRulesTest, RequirementsTraceabilityTest magic numbers, PortAndSecretRulesTest line length). Two were fixed forward in b1106a7 and the third amended before pushing; the `&&` between the gate and the commit was missing. From then on the gates gated the commit.
+
+### 2026-11-01 Group 4: docs, PRD, spec text and the remaining small items
+
+- F-A-9 (3d95028): `Secret.startsWith` compares the CharArray in place. No red run: the behaviour tests (empty prefix, equal, longer, wiped, empty secret) pass before and after; the finding is about memory lifetime.
+- F-A-10 (d32bedd, 0bd8b7b): `BaseUriError.InvalidPath` and the rules in `PathRules` and `HostRules` (documented in the BaseUri KDoc and configuration-reference). Decisions: a trailing dot is refused rather than rewritten (it is a different string for key binding and TLS names); Unicode hosts must be pasted as punycode (no IDNA table in common Kotlin); an IPv4-looking host must be canonical; the path must have no empty segment, so `https://h//` is invalid. Red: 5 of the new tests failed before the rules. The 16 existing BaseUri tests are unchanged.
+- F-D-2 reads (060593c): red 9 of 10; the Inbox test was added with the holder change.
+- F-A-3 revoke (30168e3): decision recorded in the commit: with `boardKeyId == null` the phone cannot tell "revoke another device" from "revoke myself", so `RevokeBoardKey` sends nothing and answers `RevokeKeyResult.CurrentKeyUnknown`; Settings shows `ErrorKey.CurrentKeyUnknown`.
+- F-B-12 (9118611): `AppLifecycleBridge.setForeground(Boolean)` covers both calls; the graph attaches the holder from `createAppStateHolder()` (one shell per graph, a later holder replaces an earlier one). Swift test updated. The `unlock()` finally half was done in F-B-6.
+- F-B-13 (0026607): `description` -> `summary` with a Konsist rule (red before the rename). Deferred, reasons: UI twins for `IdlePeriod`, `Exposure`, `ProbeRefusal`, `InstanceNameIssue` have no Swift consumer yet; boxed nullable numbers have no cheap SKIE-side option; hiding public initialisers would break constructing intents from Swift.
+- F-D-11 (28022f5): `build-kit.sh` preflight, staged swap and `.configuration` marker; `ios-test.sh` framework check; `test-build-kit.sh` (11 checks).
+- F-D-6 (26f4e1c): the four Decision paragraphs use the real symbols; `check-adr-identifiers.py` fails on the old text. F-B-10 and F-D-12: ADR-037, ADR-035 update, createGraph KDoc, no behaviour change.
+- F-D-1, F-D-3, F-D-4 and the counts (3900860, 4ee49b9, c5de41f): see the commit bodies. AGENTS.md was already correct; its only residue is the `android.yml` row (no `androidApp/` yet), stated in technical-details.
+- F-D-10: deferred. F-C-11: observation.
+- Final gates: `spotlessApply`, `check lint` (with `-Pkotlin.incremental=false` after an AGP incremental-compile crash), `build-kit.sh debug`, SwiftLint `--strict`, swift-format `--strict` (0 violations), `ios-test.sh` (33 Swift tests and the XCUITest pass), fresh Kover (core 97.97%, presentation 98.02%), markdown link and anchor check over 35 files (0 broken), 28 documentation claims re-sampled against code (one mismatch found and fixed: "21 nullable numbers" is 29).
+
+## Edge cases and solutions
+
+(none yet)
+
+## Deviations from plan
+
+(none yet)
+
+## Group 1 commit hashes
+
+| Finding | Commit |
+|---|---|
+| F-C-8 prerequisite (host and token recording fake) | 510a01f |
+| F-A-1 | 1ca031a |
+| F-B-1 | cc404bd (plus the follow-up test commit after eb1afad) |
+| F-A-4 | 05624e0 |
+| F-A-5 | 4ad957d |
+| F-A-2 cancellation half | 2663f69 |
+| F-A-2 SignOutEverywhere half | e67e22c |
+| F-A-7 | eb1afad |
+
+F-C-8 (FR-R21) stays open in status.md: the host-recording fake is in, but the contract case "a challenge created for server A polled against server B is NotFound" belongs to Group 3.
+Group 1 coverage (fresh Kover run): core 97.67% (was 97.58%), presentation 97.70% (was 97.96%, -0.26): the drop is Kover counting the header lines of when-branches that stopped being last plus the unreachable-by-design ProbeRequired defence branches in four holder results.
+
+## Group 2 commit hashes
+
+| Finding | Commit |
+|---|---|
+| F-A-3 | 1737df4 |
+| F-A-6 | 8ed50dc (+ 1c2a2ac detekt follow-up) |
+| F-A-8 | 210b02a |
+| F-A-1 residual (per-factory lock) | f6e1d5d |
+| F-B-2 | 7099838 |
+| F-B-3 | 734ee6e |
+| F-B-4 | d84eb48 |
+| F-B-5 | 4e23ba4 |
+| F-B-6 | fb0b167 |
+| F-B-7 | bc2966a |
+| F-B-8 | 88d1d9f |
+| F-B-9 | a5940a2 |
+| F-B-11 | 9ee7576 |
+| F-D-2 | 047568d |
+| F-A-11 | e145f9a |
+| F-A-12 | f9155c5 |
+
+Group 2 coverage (fresh Kover run): core 97.89%, presentation 98.01%.
+Process note: the first full `check` failed only on Kotlin/Native (a test name containing a comma, String.format in common code); fixed in 968bdc6. The commit for F-A-6 was pushed with a detekt failure and fixed in 1c2a2ac.
+
+## Group 3 commit hashes
+
+| Finding | Commit |
+|---|---|
+| F-C-1 | 4b2354a |
+| F-C-2 | d40b0e4 |
+| F-C-3 | cd11bf5 |
+| F-C-4 | 86e2465 |
+| F-C-5 and F-D-5 | a54e491 |
+| F-C-6 | acb32d1 |
+| F-C-7 | 5bd1e1d (+ b1106a7 detekt follow-up) |
+| F-C-8 | f6e90f0 |
+| F-C-9 | b3de91a |
+| F-D-7 | be73235 |
+| F-C-10 | 6fe6058 |
+| F-C-12 | e94bf03 |
+| F-C-13 | 9a5b8f2 |
+| F-D-8 | 7d1a4a4 |
+| F-D-9 | 3891996 |
+| F-D-13 | fe4db74 |
+
+## Lessons learned
+
+(none yet)
+
+## Group 4 commit hashes
+
+See the "Findings: final table" in status.md.
+
+## Independent re-review (Step 10) - 2026-11-01
+
+An independent re-review (mutation checks plus adversarial tests) found no new Must Fix. Four Warnings were fixed, one commit each.
+
+| Finding | Commit | Red evidence |
+|---|---|---|
+| F-R-1 stale whole-Instance write (SwitchCompany, CheckCredentials, LoadInstanceAccess) | ba91903 | Pre-fix code: 3 of 3 `StaleWriteTest` cases failed (address reverted). Now `InstanceLocks.modify` re-reads under the factory lock and writes field-level changes; with the lock removed 1 case fails again. CheckCredentials also skips the write when the address or key id changed since the check. |
+| F-R-2 UpdateInstance cancelled between deleteNamespace and update | 80defbf | `UpdateInstanceCancellationTest` ended SignedIn with no key before the fix; delete + update now run in `NonCancellable` under the lock. |
+| F-R-3 weak tests | 1f7a5cc | Mutant 1 (drop late-probe address check) fails `FirstRunStateHolderTest` 1/21; mutant 2 (swallow CancellationException) fails `SignOutCancellationTest` 1/4. Both restored with `git checkout`. |
+| F-R-4 FirstRunModel closes the app-lifetime holder when `.task` ends | c88c524 | The old test asserted the close; replaced by a test that cancels and re-runs `observe()` and keeps using the model. Ownership rule: the App owns the model; views only mirror; the owner calls `close()`. |
+
+Deferred Info findings:
+- F-R-5 (a 401 is not bound to the key that produced it): narrow window that self-corrects on the next pairing; needs a credential epoch across gateways, Phase 1b.
+- F-R-6 (underscore hosts refused, bidi characters accepted in the path): needs an owner decision on host policy; no safety impact today.
+- F-R-7 (factory lock held across secure-store writes): the assumption that secure-store calls return promptly belongs in the Phase 1b adapters; add a bound there.
+- F-R-8 (manual keys without a key id cannot revoke other devices): deliberate safety choice; confirm against the pinned server in the contract tests (Phase 1b).

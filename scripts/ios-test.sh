@@ -5,6 +5,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+framework="${KIT_DESTINATION:-iosApp/Frameworks/PaperclipKit.xcframework}"
+if [ ! -d "$framework" ]; then
+  echo "error: $framework is missing; run scripts/build-kit.sh first." >&2
+  exit 1
+fi
+echo "Using PaperclipKit.xcframework ($(cat "${framework%.xcframework}.configuration" 2>/dev/null || echo 'unknown configuration'))"
+
 (cd iosApp && xcodegen generate --quiet)
 
 device_id="${IOS_SIMULATOR_ID:-$(xcrun simctl list devices available -j | python3 -c '

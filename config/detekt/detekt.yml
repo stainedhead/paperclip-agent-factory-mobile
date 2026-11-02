@@ -1,29 +1,38 @@
 # Builds on detekt's defaults. Deviations are listed here with the reason, never as inline suppressions.
+# Every rule block below needs a comment line directly above it saying why it deviates (checked by DetektConfigRulesTest).
+# Zero issues is the gate (AGENTS.md); detekt's default of tolerating some issues would let the count creep up.
 build:
   maxIssues: 0
 
 style:
+  # Constants are named where they are declared, so `const val X = 5` is not flagged (the default flags it).
   MagicNumber:
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
     ignoreAnnotation: true
+  # A parser or mapper with a guard clause per invalid input needs more than the default 2 returns; guards stay uncounted.
   ReturnCount:
     max: 4
     excludeGuardClauses: true
+  # Restates the default (120), which is also the ktlint and .editorconfig limit, so the three cannot drift apart silently.
   MaxLineLength:
     maxLineLength: 120
+  # The default is inactive; unused private members are dead code that review kept finding (F-A-12).
   UnusedPrivateMember:
     active: true
 
 naming:
+  # Test functions use backticked sentences.
   FunctionNaming:
-    # Test functions use backticked sentences.
     ignoreAnnotated: ['Test']
+  # Constants may carry digits and underscores, for example `START_EPOCH_SECONDS` or `HTTP_429`.
   TopLevelPropertyNaming:
     constantPattern: '[A-Z][A-Za-z0-9_]*'
 
 complexity:
+  # Restates the default (60) so that raising it is a visible edit to this file.
   LongMethod:
     threshold: 60
+  # Restates the default (15) so that raising it is a visible edit to this file.
   CyclomaticComplexMethod:
     threshold: 15

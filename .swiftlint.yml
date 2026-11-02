@@ -12,6 +12,7 @@ opt_in_rules:
   - explicit_init
   - first_where
   - sorted_imports
+  - force_unwrapping
 
 line_length:
   warning: 120
@@ -19,3 +20,8 @@ line_length:
 
 disabled_rules:
   - todo
+
+# force_cast is on by default; force_unwrapping is opt-in above. unused_import only runs in `swiftlint analyze`
+# (it needs a compiler log), so it is listed for that mode and does not affect `swiftlint --strict`.
+analyzer_rules:
+  - unused_import

@@ -4,4 +4,4 @@ useDefault = true
 
 [allowlist]
 description = "Obviously fake test-only values"
-regexes = ['''TESTONLY''', '''pcp_board_TESTONLY''']
+regexes = ['''TESTONLY''']

@@ -10,6 +10,7 @@ enum class BaseUriError {
     InvalidHost,
     InvalidPort,
     UserInfoNotAllowed,
+    InvalidPath,
     QueryOrFragmentNotAllowed,
 }
 
@@ -30,6 +31,18 @@ sealed interface BaseUriResult {
  * caller says insecure local addresses are allowed (debug builds); a host is required; user info, query strings and
  * fragments are rejected; an explicit port and a path prefix are kept; scheme and host are lower-cased and a trailing
  * slash is removed.
+ *
+ * Hardening (review F-A-10), because the value is concatenated into every request URL:
+ * - the path must be made of non-empty segments with no whitespace, control characters or backslashes, no `.` or `..`
+ *   segment (also when percent-encoded), and every `%` must start a valid escape that does not hide a control
+ *   character, `/` or `\` ([BaseUriError.InvalidPath]);
+ * - a host is dot-separated labels of 1 to 63 ASCII letters, digits and hyphens, not starting or ending with a hyphen,
+ *   at most 253 characters, with no trailing dot (`example.com.` is a different string for key binding and TLS names,
+ *   so it is refused rather than silently rewritten). Punycode (`xn--`) is accepted; a Unicode host must be pasted in
+ *   punycode (there is no IDNA table in common Kotlin);
+ * - a host whose labels are all digits must be a canonical IPv4 address (four parts, 0 to 255, no leading zeros);
+ *   a bracketed IPv6 literal must be a well-formed address (at most one `::`, groups of 1 to 4 hex digits, optional
+ *   trailing IPv4); all of these fail with [BaseUriError.InvalidHost].
  */
 class BaseUri private constructor(
     val value: String,
@@ -48,8 +61,6 @@ class BaseUri private constructor(
         private const val MAX_PORT = 65_535
         private const val MAX_PORT_DIGITS = 5
         private val INSECURE_LOCAL_HOSTS = setOf("localhost", "10.0.2.2")
-        private val HOST_NAME = Regex("[a-z0-9]([a-z0-9.-]*[a-z0-9])?")
-        private val IPV6_HOST = Regex("\\[[0-9a-f:.]+]")
 
         fun parse(
             input: String,
@@ -71,7 +82,9 @@ class BaseUri private constructor(
             if (scheme != "http" && scheme != "https") return BaseUriError.UnsupportedScheme
             val rest = text.substring(schemeEnd + SCHEME_SEPARATOR.length)
             if (rest.contains('?') || rest.contains('#')) return BaseUriError.QueryOrFragmentNotAllowed
-            return validateAuthority(scheme, rest.substringBefore('/'), allowInsecureLocal)
+            val authority = rest.substringBefore('/')
+            return validateAuthority(scheme, authority, allowInsecureLocal)
+                ?: if (PathRules.isValid(rest.removePrefix(authority))) null else BaseUriError.InvalidPath
         }
 
         private fun validateAuthority(
@@ -88,7 +101,7 @@ class BaseUri private constructor(
                     BaseUriError.InvalidPort
                 }
 
-                !isValidHost(lowerHost) -> {
+                !HostRules.isValid(lowerHost) -> {
                     BaseUriError.InvalidHost
                 }
 
@@ -119,8 +132,6 @@ class BaseUri private constructor(
         private fun isValidPort(port: String): Boolean =
             port.isNotEmpty() && port.all { it in '0'..'9' } &&
                 port.length <= MAX_PORT_DIGITS && port.toInt() in 1..MAX_PORT
-
-        private fun isValidHost(host: String): Boolean = HOST_NAME.matches(host) || IPV6_HOST.matches(host)
 
         private fun normalise(text: String): String {
             val schemeEnd = text.indexOf(SCHEME_SEPARATOR)
