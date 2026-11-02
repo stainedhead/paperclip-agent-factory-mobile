@@ -105,13 +105,14 @@ internal class StubWork(
     val clock: () -> Instant,
 ) {
     val budgets = StubBudgets()
+    val approvals = StubApprovals()
 
     fun handle(request: StubRequest): StubReply? {
         val segments = request.segments
         if (segments.size >= COMPANY_PATH_MIN && segments[0] == "companies") {
             request.companyRefusal(segments[1])?.let { return it }
         }
-        return budgets.handle(request)
+        return budgets.handle(request) ?: approvals.handle(request)
     }
 
     private companion object {

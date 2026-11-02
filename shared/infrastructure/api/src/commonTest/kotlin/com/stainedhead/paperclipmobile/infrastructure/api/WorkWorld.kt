@@ -42,6 +42,7 @@ class WorkWorld(
     internal val home: StubWork get() = server.host(HOME).work
 
     val budget = BudgetGatewayAdapter(client, instances, secrets)
+    val approvals = ApprovalGatewayAdapter(client, instances, secrets)
 
     init {
         server.issueKey(HOME, TestData.TOKEN, KEY_ID, "Alex's iPhone", roles)
