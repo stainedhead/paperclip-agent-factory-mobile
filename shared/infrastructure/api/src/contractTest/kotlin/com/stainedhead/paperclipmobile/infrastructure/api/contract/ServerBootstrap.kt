@@ -14,6 +14,9 @@ internal class BoardSession(
  *    makes that user the first instance admin (202 `bootstrapAccepted`). The invite is created in the container by
  *    `scripts/paperclip-test-server.sh invite`; its token arrives in `PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE`.
  *
+ * Positive identity (rereview1b F-R-4): a fresh server must accept the invite minted inside the test container, and
+ * one already in use must hold the fixed TESTONLY account; the test never signs up on a server in use.
+ *
  * Nothing secret is printed: failures carry the status and the server's short error text only.
  */
 internal object ServerBootstrap {
@@ -22,14 +25,24 @@ internal object ServerBootstrap {
     private const val NAME = "Contract Test"
     private const val ACCEPTED = 202
     private val OK = 200..299
+    private const val NO_INVITE =
+        "the server reports bootstrap_pending and PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE holds no invite. Only the " +
+            "invite of scripts/paperclip-test-server.sh invite proves the server is the throwaway test container."
 
     fun establishSession(
         raw: RawServer,
         inviteText: String?,
     ): BoardSession {
         val jar = CookieJar()
-        signIn(raw, jar)
-        if (isBootstrapPending(raw)) acceptBootstrapInvite(raw, jar, inviteText)
+        if (isBootstrapPending(raw)) {
+            // A fresh server: only the invite minted inside the test container proves it is ours (F-R-4).
+            val token = inviteText?.let(InviteToken::parse) ?: refuse(NO_INVITE)
+            signUpOrIn(raw, jar)
+            acceptBootstrapInvite(raw, jar, token)
+        } else {
+            // A server already in use is ours only if it holds the fixed TESTONLY account. Never sign up on it.
+            signInOnly(raw, jar)
+        }
         val session = raw.call("GET", "/api/auth/get-session", cookie = jar.header())
         check(session.status in OK) { "The session is not valid after sign-in: ${session.describe()}" }
         return BoardSession(jar.header())
@@ -41,7 +54,23 @@ internal object ServerBootstrap {
         return health.string("bootstrapStatus") == "bootstrap_pending"
     }
 
-    private fun signIn(
+    private fun refuse(reason: String): Nothing = throw IllegalStateException("Refusing to run: $reason")
+
+    private fun signInOnly(
+        raw: RawServer,
+        jar: CookieJar,
+    ) {
+        val reply = raw.call("POST", "/api/auth/sign-in/email", credentials(withName = false))
+        jar.store(reply.setCookies)
+        if (!(reply.status in OK && !jar.isEmpty)) {
+            refuse(
+                "the server is in use and does not hold the throwaway test account, so it is not the test server " +
+                    "(sign-in answered ${reply.describe()}).",
+            )
+        }
+    }
+
+    private fun signUpOrIn(
         raw: RawServer,
         jar: CookieJar,
     ) {
@@ -59,16 +88,12 @@ internal object ServerBootstrap {
     private fun acceptBootstrapInvite(
         raw: RawServer,
         jar: CookieJar,
-        inviteText: String?,
+        token: String,
     ) {
-        val token =
-            inviteText?.let(InviteToken::parse)
-                ?: error(
-                    "The server reports bootstrap_pending and PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE holds no invite. " +
-                        "Create one with scripts/paperclip-test-server.sh invite.",
-                )
         val reply = raw.call("POST", "/api/invites/$token/accept", """{"requestType":"human"}""", cookie = jar.header())
-        check(reply.status == ACCEPTED) { "Accepting the bootstrap invite answered ${reply.describe()}" }
+        if (reply.status != ACCEPTED) {
+            refuse("the bootstrap invite was not accepted, so this is not the test container (${reply.describe()}).")
+        }
         check(!isBootstrapPending(raw)) { "The server still reports bootstrap_pending after the invite was accepted" }
     }
 

@@ -40,7 +40,7 @@ internal class RawResponse(
  * paired app (key) reach the server. It exists only for what the adapters cannot do (sign-up, approving a pairing,
  * seeding data, probing a malformed id); everything the app does goes through the production adapters.
  */
-internal class RawServer(
+internal open class RawServer(
     private val baseUrl: String,
 ) {
     private val http =
@@ -52,7 +52,7 @@ internal class RawServer(
             .connectTimeout(Duration.ofSeconds(CONNECT_SECONDS))
             .build()
 
-    fun call(
+    open fun call(
         method: String,
         path: String,
         body: String? = null,

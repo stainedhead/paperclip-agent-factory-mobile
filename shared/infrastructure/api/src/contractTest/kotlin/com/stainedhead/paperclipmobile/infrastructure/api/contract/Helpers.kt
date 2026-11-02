@@ -43,6 +43,7 @@ internal class CookieJar {
 internal object ContractTarget {
     const val OPT_IN_VARIABLE = "PAPERCLIP_CONTRACT_I_KNOW_THIS_MUTATES"
     const val DEFAULT_TEST_PORT = 3199
+    private const val DEVELOPER_PORT = 3100
     private const val NUMERIC_LOOPBACK = "127.0.0.1"
     private const val LOCALHOST = "localhost"
     private val LOOPBACK_HOSTS = setOf(LOCALHOST, NUMERIC_LOOPBACK)
@@ -68,6 +69,7 @@ internal object ContractTarget {
             uri.scheme != "http" -> "Refusing to run: the test server speaks plain http on loopback only."
             uri.host !in LOOPBACK_HOSTS -> "Refusing to run: ${uri.host} is not a loopback host."
             uri.userInfo != null -> "Refusing to run: the base url carries credentials."
+            uri.port == DEVELOPER_PORT -> "Refusing to run: port $DEVELOPER_PORT is the developer's own Paperclip."
             uri.port != port -> "Refusing to run: the test server listens on port $port, not ${uri.port}."
             else -> null
         }
