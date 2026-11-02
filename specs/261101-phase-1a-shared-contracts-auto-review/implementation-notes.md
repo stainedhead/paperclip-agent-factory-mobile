@@ -70,6 +70,11 @@ Not changed, with reason: PauseAgent, CancelRun, ResolveBudgetIncident, ApproveA
 Red evidence: 'expected:<false> but was:<true>' in InstanceLockingTest (a gated repository update: after the address edit the factory was SignedIn on the old address with no key stored).
 Fix: InstanceLocks, ADR-033; UpdateInstance, KeyEnrollment, deleteCredentialsLocally (sign out, remove) and SignedOutMarker take it. Constructor changes touched every Env in tests.
 
+### 2026-11-01 F-B-2 one execution poller per Decision screen (Group 2)
+
+Red evidence: refreshDuringExecutionPollDoesNotStartSecondPoll 'expected:<4> but was:<8>' (a Refresh during the poll started a second poller; pollingFlagStaysTrue... passed on the old code at 1.5 s, kept as a regression).
+Fix: show() no longer suspends; startPoll() claims the polling flag atomically (new claim() helper in Guards.kt, compareAndSet loop) and launches the single poller as its own job, so the load that triggered it no longer holds 'loading' for the whole poll. Only the poller clears the flag, in finally.
+
 ## Edge cases and solutions
 
 (none yet)

@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -505,5 +506,48 @@ class DecisionActionsTest {
             advanceUntilIdle()
             // The load, and the read the use case makes before asking the device (ADR-032).
             env.decisions.count("get") shouldBe 2
+        }
+}
+
+/** F-B-2: one execution poller at a time, and `polling` stays true until the only poller finishes. */
+class DecisionPollingTest {
+    private suspend fun TestScope.startPolling(env: Env): DecisionStateHolder {
+        env.decisions.runningReads = 100
+        val holder = decisionHolder(env)
+        advanceUntilIdle()
+        holder.onIntent(DecisionIntent.OptionSelected("ship"))
+        holder.onIntent(DecisionIntent.ConfirmTapped)
+        runCurrent()
+        return holder
+    }
+
+    @Test
+    fun `refreshDuringExecutionPollDoesNotStartSecondPoll`() =
+        runTest {
+            val env = decisionEnv()
+            val holder = startPolling(env)
+            val before = env.decisions.count("get")
+
+            holder.onIntent(DecisionIntent.Refresh)
+            advanceTimeBy(3_100)
+
+            // One poller reads once a second; a second poller would double this. The Refresh adds exactly one read.
+            env.decisions.count("get") - before shouldBe 1 + 3
+        }
+
+    @Test
+    fun `pollingFlagStaysTrueUntilTheOnlyPollerFinishes`() =
+        runTest {
+            val env = decisionEnv()
+            val holder = startPolling(env)
+
+            holder.onIntent(DecisionIntent.Refresh)
+            advanceTimeBy(1_500)
+
+            holder.state.value.execution
+                ?.isPolling shouldBe true
+            advanceUntilIdle()
+            holder.state.value.execution
+                ?.isPolling shouldBe false
         }
 }

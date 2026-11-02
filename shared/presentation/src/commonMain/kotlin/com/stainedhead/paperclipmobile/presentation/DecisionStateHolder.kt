@@ -186,18 +186,23 @@ class DecisionStateHolder(
         }
     }
 
-    private suspend fun show(decision: Decision) {
+    private fun show(decision: Decision) {
         model.update { it.withDecision(decision, target, clock.now()) }
-        if (model.value.decision?.isExecutionPending == true) poll()
+        if (model.value.decision?.isExecutionPending == true) startPoll()
     }
 
-    private suspend fun poll() {
-        model.update { it.copy(polling = true) }
-        val result = useCases.poll(companyScope, id)
-        model.update { it.copy(polling = false) }
-        when (result) {
-            is DomainResult.Success -> model.update { it.withDecision(result.value, target, clock.now()) }
-            is DomainResult.Failure -> model.update { it.copy(error = result.error.toErrorUi()) }
+    /** At most one poller exists; a second request while it runs does nothing, and only the poller clears the flag. */
+    private fun startPoll() {
+        if (!model.claim({ it.polling }) { it.copy(polling = true) }) return
+        scope.launch {
+            try {
+                when (val result = useCases.poll(companyScope, id)) {
+                    is DomainResult.Success -> model.update { it.withDecision(result.value, target, clock.now()) }
+                    is DomainResult.Failure -> model.update { it.copy(error = result.error.toErrorUi()) }
+                }
+            } finally {
+                model.update { it.copy(polling = false) }
+            }
         }
     }
 }
