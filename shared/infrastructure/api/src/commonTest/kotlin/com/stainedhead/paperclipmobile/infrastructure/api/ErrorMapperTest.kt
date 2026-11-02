@@ -126,15 +126,15 @@ class ErrorMapperTest {
             listOf(
                 "bad key pcp_board_TESTONLY_abcdef0123 given",
                 "Authorization: Bearer abc.def-ghi_jkl rejected",
-                "see https://home.example.com/cli-auth/1?token=SECRETVALUE now",
-                "token=SECRETVALUE&x=1 is invalid",
+                "see https://home.example.com/cli-auth/1?token=TESTONLYVALUE now",
+                "token=TESTONLYVALUE&x=1 is invalid",
                 "hash 0123456789abcdef0123456789abcdef0123456789abcdef seen",
                 "challenge QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo= bad",
                 "pcp_bootstrap_0123456789abcdef0123456789abcdef0123",
             )
         echoed.forEach { text ->
             val reason = (status(422, """{"error":"$text"}""") as DomainError.Rejected).reason
-            listOf("pcp_", "Bearer ", "https://", "SECRETVALUE", "0123456789abcdef", "QUJDREVG").forEach { secret ->
+            listOf("pcp_", "Bearer ", "https://", "TESTONLYVALUE", "0123456789abcdef", "QUJDREVG").forEach { secret ->
                 assertTrue(secret !in reason, "'$secret' survived in '$reason' (from '$text')")
             }
             assertTrue(reason.isNotBlank())
