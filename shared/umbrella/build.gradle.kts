@@ -56,4 +56,7 @@ kotlin {
         implementation(project(":shared:testing"))
         implementation(libs.koin.core)
     }
+    sourceSets.iosMain.dependencies {
+        implementation(project(":shared:infrastructure:securestore"))
+    }
 }

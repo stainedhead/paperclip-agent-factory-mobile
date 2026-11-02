@@ -30,6 +30,9 @@ import platform.Security.errSecSuccess
 class KeychainSecretStore internal constructor(
     private val backend: KeychainBackend,
 ) : SecretStore {
+    /** The Keychain of this app under the Keychain service [service]. */
+    constructor(service: String) : this(SecurityKeychain(service))
+
     private val writer = KeychainWriter(backend)
 
     override suspend fun put(
