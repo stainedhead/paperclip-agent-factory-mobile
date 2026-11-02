@@ -5,6 +5,9 @@ import Testing
 @MainActor
 struct GraphInteropTests {
     private let graph = PaperclipCore.shared.createGraph(allowInsecureLocal: false)
+    private let demo = PaperclipCore.shared.createDemoGraph()
+    private let home = "demo-home"
+    private let acme = "company-acme"
 
     @Test func appStateIsLockedOnceItsSettingsHaveLoaded() async {
         let holder = graph.createAppStateHolder()
@@ -38,74 +41,104 @@ struct GraphInteropTests {
     @Test func inboxAcceptsTypedIntentsOnceItHasSettled() async {
         let holder = graph.attention.createInboxStateHolder(instanceId: "inst-1", companyId: "company-acme")
         #expect(await eventually { holder.state.value.phase != .loading })
-        holder.onIntent(intent: InboxIntentRefresh.shared)
         holder.onIntent(intent: InboxIntentFilterSelected(kind: SourceKindUi.approval))
+        #expect(await eventually { holder.state.value.selectedFilter == .approval })
+        holder.onIntent(intent: InboxIntentRefresh.shared)
         holder.close()
     }
 
-    @Test func detailHoldersAcceptTypedIntents() {
-        let decision = graph.attention.createDecisionStateHolder(
-            instanceId: "inst-1", companyId: "company-acme", decisionId: "dec-1",
+    @Test func detailHoldersChangeStateForTheirIntents() async {
+        let decision = demo.attention.createDecisionStateHolder(
+            instanceId: home, companyId: acme, decisionId: "dec-1182",
             hints: DecisionHints(originAgentName: nil, decideBy: nil, dismissalKey: nil))
+        #expect(await eventually { decision.state.value.phase == .content })
         decision.onIntent(intent: DecisionIntentOptionSelected(optionId: "ship"))
+        #expect(await eventually { decision.state.value.canConfirm })
         decision.close()
 
-        let approval = graph.attention.createApprovalStateHolder(
-            instanceId: "inst-1", companyId: "company-acme", approvalId: "ap-1")
-        approval.onIntent(intent: ApprovalIntentNoteConfirmed(note: "no"))
+        let approval = demo.attention.createApprovalStateHolder(
+            instanceId: home, companyId: acme, approvalId: "ap-hire-qa")
+        #expect(await eventually { approval.state.value.phase == .content })
+        approval.onIntent(intent: ApprovalIntentRejectTapped.shared)
+        #expect(await eventually { approval.state.value.notePrompt == .reject })
+        approval.onIntent(intent: ApprovalIntentNoteCancelled.shared)
+        #expect(await eventually { approval.state.value.notePrompt == nil })
         approval.close()
 
-        let budget = graph.attention.createBudgetIncidentStateHolder(
-            instanceId: "inst-1", companyId: "company-acme", incidentId: "inc-1")
+        let budget = demo.attention.createBudgetIncidentStateHolder(
+            instanceId: home, companyId: acme, incidentId: "inc-eng-2")
+        #expect(await eventually { budget.state.value.phase == .content })
         budget.onIntent(intent: BudgetIntentChoiceSelected(choice: .raiseAndResume))
+        #expect(await eventually { budget.state.value.choice == .raiseAndResume })
         budget.close()
     }
 
-    @Test func workScreensAcceptTypedIntents() {
-        let list = graph.work.createWorkListStateHolder(instanceId: "inst-1", companyId: "company-acme")
+    @Test func workScreensChangeStateForTheirIntents() async {
+        let list = demo.work.createWorkListStateHolder(instanceId: home, companyId: acme)
+        #expect(await eventually { list.state.value.phase == .content })
         #expect(list.state.value.filter == .allOpen)
         list.onIntent(intent: WorkListIntentFilterSelected(filter: .blocked))
+        #expect(await eventually { list.state.value.filter == .blocked })
         list.onIntent(intent: WorkListIntentSearchChanged(text: "pap"))
-        list.onIntent(intent: WorkListIntentCreateSubmitted(title: "New", priority: .high))
+        #expect(await eventually { list.state.value.search == "pap" })
         list.close()
 
-        let issue = graph.work.createIssueStateHolder(
-            instanceId: "inst-1", companyId: "company-acme", issueId: "pap-1182")
+        let issue = demo.work.createIssueStateHolder(instanceId: home, companyId: acme, issueId: "pap-1204")
+        #expect(await eventually { issue.state.value.phase == .content })
         #expect(issue.state.value.tab == .thread)
         issue.onIntent(intent: IssueIntentTabSelected(tab: .runs))
-        issue.onIntent(intent: IssueIntentCommentSubmitted(body: "hi", reopen: false, interrupt: false))
-        issue.onIntent(intent: IssueIntentStatusSelected(status: .inReview))
-        issue.onIntent(
-            intent: IssueIntentInteractionVerdictChosen(interactionId: "i", itemId: "x", verdict: .reject))
+        #expect(await eventually { issue.state.value.tab == .runs })
         issue.close()
     }
 
-    @Test func agentScreensAcceptTypedIntents() {
-        let agents = graph.agents.createAgentsStateHolder(instanceId: "inst-1", companyId: "company-acme")
+    @Test func agentScreensChangeStateForTheirIntents() async {
+        let agents = demo.agents.createAgentsStateHolder(instanceId: home, companyId: acme)
+        #expect(await eventually { agents.state.value.phase == .content })
         #expect(agents.state.value.refreshIntervalSeconds == 15)
         agents.onIntent(intent: AgentsIntentPauseTapped(agentId: "agent-eng-1"))
+        #expect(await eventually { agents.state.value.confirmPauseAgentId == "agent-eng-1" })
         agents.onIntent(intent: AgentsIntentPauseCancelled.shared)
+        #expect(await eventually { agents.state.value.confirmPauseAgentId == nil })
         agents.close()
 
-        let detail = graph.agents.createAgentDetailStateHolder(
-            instanceId: "inst-1", companyId: "company-acme", agentId: "agent-eng-1")
+        let detail = demo.agents.createAgentDetailStateHolder(
+            instanceId: home, companyId: acme, agentId: "agent-eng-1")
+        #expect(await eventually { detail.state.value.phase == .content })
         #expect(detail.state.value.confirmPause == false)
-        detail.onIntent(intent: AgentDetailIntentBudgetSubmitted(minorUnits: 50_000))
+        detail.onIntent(intent: AgentDetailIntentPauseTapped.shared)
+        #expect(await eventually { detail.state.value.confirmPause })
+        detail.onIntent(intent: AgentDetailIntentPauseCancelled.shared)
+        #expect(await eventually { detail.state.value.confirmPause == false })
         detail.close()
     }
 
-    @Test func runViewerAndFactoryHomeAcceptTypedIntents() {
-        let run = graph.runs.createRunViewerStateHolder(
-            instanceId: "inst-1", companyId: "company-acme", runId: "run-live")
+    @Test func runViewerAndFactoryHomeChangeStateForTheirIntents() async {
+        let run = demo.runs.createRunViewerStateHolder(instanceId: home, companyId: acme, runId: "run-1204-live")
+        #expect(await eventually { run.state.value.phase == .content })
         #expect(run.state.value.autoScroll)
         #expect(run.state.value.confirmCancel == false)
         run.onIntent(intent: RunViewerIntentUserScrolled(atBottom: false))
+        #expect(await eventually { run.state.value.autoScroll == false })
         run.onIntent(intent: RunViewerIntentCancelTapped.shared)
+        #expect(await eventually { run.state.value.confirmCancel })
         run.close()
 
-        let home = graph.factory.createFactoryHomeStateHolder(instanceId: "inst-1", companyId: "company-acme")
-        #expect(home.state.value.refreshIntervalSeconds == 15)
-        home.onIntent(intent: FactoryHomeIntentRefresh.shared)
-        home.close()
+        let factory = demo.factory.createFactoryHomeStateHolder(instanceId: home, companyId: acme)
+        #expect(await eventually { factory.state.value.phase == .content })
+        #expect(factory.state.value.refreshIntervalSeconds == 15)
+        factory.onIntent(intent: FactoryHomeIntentRefresh.shared)
+        #expect(await eventually { factory.state.value.phase == .content })
+        factory.close()
+    }
+
+    /// Intents that start a mutation are not sent here: the holder would be closed while the call is in flight. The
+    /// Kotlin tests cover their behaviour; this only proves the constructors and their labels exist for Swift.
+    @Test func mutationIntentsAreReachableFromSwift() {
+        _ = WorkListIntentCreateSubmitted(title: "New", priority: .high)
+        _ = IssueIntentCommentSubmitted(body: "hi", reopen: false, interrupt: false)
+        _ = IssueIntentStatusSelected(status: .inReview)
+        _ = IssueIntentInteractionVerdictChosen(interactionId: "i", itemId: "x", verdict: .reject)
+        _ = AgentDetailIntentBudgetSubmitted(minorUnits: 50_000)
+        _ = ApprovalIntentNoteConfirmed(note: "no")
     }
 }

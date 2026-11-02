@@ -209,20 +209,37 @@ struct DemoFlowAndRefreshInteropTests {
         factory.close()
     }
 
-    @Test func aRefreshSessionStartsAndStopsFromAHoldersTarget() async {
+    @Test func aRefreshSessionRunsAlongsideAHolderAndStopsCleanly() async {
         let agents = graph.agents.createAgentsStateHolder(instanceId: home, companyId: acme)
         #expect(await eventually { agents.state.value.phase == .content })
 
         let session = graph.refresh.start(target: agents.refreshTarget)
+        agents.onIntent(intent: AgentsIntentPauseTapped(agentId: "agent-eng-1"))
+        #expect(await eventually { agents.state.value.confirmPauseAgentId == "agent-eng-1" })
         session.stop()
+        agents.onIntent(intent: AgentsIntentPauseCancelled.shared)
+        #expect(await eventually { agents.state.value.confirmPauseAgentId == nil })
         agents.close()
     }
 
-    @Test func theLifecycleBridgeFollowsTheShell() {
+    @Test func aHoldersRefreshTargetPublishesItsIntervalAsAnAsyncSequence() async {
+        let agents = graph.agents.createAgentsStateHolder(instanceId: home, companyId: acme)
+        #expect(await eventually { agents.state.value.phase == .content })
+
+        var interval: Int32?
+        for await seconds in agents.refreshTarget.refreshIntervalSeconds {
+            interval = seconds.int32Value
+            break
+        }
+        #expect(interval == 15)
+        agents.close()
+    }
+
+    @Test func theLifecycleBridgeFollowsTheShell() async {
         #expect(graph.lifecycle.isForeground.value.boolValue)
         graph.lifecycle.enterBackground()
-        #expect(graph.lifecycle.isForeground.value.boolValue == false)
+        #expect(await eventually { graph.lifecycle.isForeground.value.boolValue == false })
         graph.lifecycle.enterForeground()
-        #expect(graph.lifecycle.isForeground.value.boolValue)
+        #expect(await eventually { graph.lifecycle.isForeground.value.boolValue })
     }
 }
