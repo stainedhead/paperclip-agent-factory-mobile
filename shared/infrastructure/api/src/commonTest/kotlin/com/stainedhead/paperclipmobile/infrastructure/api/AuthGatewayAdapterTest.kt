@@ -300,14 +300,14 @@ class AuthAccountAdapterTest {
         }
 
     @Test
-    fun `AD-011 no usable stored secret is Unauthorized and sends nothing`() =
+    fun `AD-011 no usable stored secret sends nothing and is told apart from a 401 by review1b F-A-2`() =
         runTest {
             assertEquals(unauthorized, world.gateway.me(InstanceId("inst-signed-out")))
             world.secrets.invalidated = true
-            assertEquals(DomainResult.Failure(DomainError.Unauthorized), world.gateway.me(InstanceId("inst-1")))
+            assertEquals(DomainResult.Failure(DomainError.KeyInvalidated), world.gateway.me(InstanceId("inst-1")))
             world.secrets.invalidated = false
             world.secrets.denyReads = true
-            assertEquals(DomainResult.Failure(DomainError.Unauthorized), world.gateway.me(InstanceId("inst-1")))
+            assertEquals(DomainResult.Failure(DomainError.DeviceAuthDeclined), world.gateway.me(InstanceId("inst-1")))
             assertTrue(world.server.requests.isEmpty())
         }
 

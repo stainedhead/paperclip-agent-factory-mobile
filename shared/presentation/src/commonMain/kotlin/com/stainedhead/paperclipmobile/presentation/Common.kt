@@ -61,6 +61,12 @@ enum class ErrorKey {
     /** The phone's secure store refused to keep the key. */
     StorageFailed,
 
+    /** The person declined Face ID or the passcode for the key. Nothing was sent or changed; try again (F-A-2). */
+    AuthDeclined,
+
+    /** The phone's key was invalidated (for example a new fingerprint): the factory needs re-pairing (FR-015). */
+    KeyInvalidated,
+
     /** This phone does not know which server key is its own, so it will not revoke keys (PRD FR-025). */
     CurrentKeyUnknown,
 }
@@ -84,6 +90,8 @@ internal fun DomainError.toErrorUi(): ErrorUi =
         DomainError.ServerError -> ErrorUi(ErrorKey.ServerError)
         DomainError.RateLimited -> ErrorUi(ErrorKey.RateLimited)
         DomainError.Malformed -> ErrorUi(ErrorKey.Malformed)
+        DomainError.DeviceAuthDeclined -> ErrorUi(ErrorKey.AuthDeclined)
+        DomainError.KeyInvalidated -> ErrorUi(ErrorKey.KeyInvalidated)
     }
 
 /** Why device authentication did not go ahead. */
@@ -177,6 +185,9 @@ enum class ServerKeyOutcome {
     AlreadyInvalid,
     Unconfirmed,
     NotAttempted,
+
+    /** The person declined the key prompt: nothing was revoked or deleted (F-A-2). */
+    Declined,
 }
 
 internal fun RevokeOutcome.toUi() =
@@ -185,6 +196,7 @@ internal fun RevokeOutcome.toUi() =
         RevokeOutcome.AlreadyInvalid -> ServerKeyOutcome.AlreadyInvalid
         RevokeOutcome.Unconfirmed -> ServerKeyOutcome.Unconfirmed
         RevokeOutcome.NotAttempted -> ServerKeyOutcome.NotAttempted
+        RevokeOutcome.Declined -> ServerKeyOutcome.Declined
     }
 
 /** Which factory and company a screen is for. Strings, because Swift passes ids it got from the screen before. */

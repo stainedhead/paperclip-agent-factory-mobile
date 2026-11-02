@@ -13,6 +13,18 @@ sealed interface DomainError {
     /** 401: the key is missing, revoked or expired. The factory shows as Signed out and keeps its configuration. */
     data object Unauthorized : DomainError
 
+    /**
+     * The person declined the device authentication that guards this phone's key (Face ID or passcode prompt). No
+     * request was sent and nothing changed: the factory stays Signed in and the person can try again (review1b F-A-2).
+     */
+    data object DeviceAuthDeclined : DomainError
+
+    /**
+     * The phone's key was invalidated, for example by a new fingerprint (FR-015). No request was sent. The factory
+     * needs re-pairing; the key on the server may still be live (review1b F-A-2).
+     */
+    data object KeyInvalidated : DomainError
+
     /** 403: the role cannot do this in this company. */
     data object Forbidden : DomainError
 

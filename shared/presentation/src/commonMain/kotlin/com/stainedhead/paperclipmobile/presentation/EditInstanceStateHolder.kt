@@ -627,6 +627,10 @@ internal class EditInstanceTeardown(
     private suspend fun signOut(id: InstanceId) {
         val result = useCases.signOut(id)
         useCases.get(id)?.let { session.show(it) }
+        if (result == SignOutResult.Declined) {
+            state.update { it.copy(isBusy = false, error = ErrorUi(ErrorKey.AuthDeclined)) }
+            return
+        }
         val outcome = (result as? SignOutResult.SignedOut)?.serverKey?.toUi()
         state.update { it.copy(isBusy = false, serverKeyOutcome = outcome, companies = emptyList()) }
     }

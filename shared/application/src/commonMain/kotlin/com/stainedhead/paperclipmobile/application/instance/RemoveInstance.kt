@@ -45,8 +45,17 @@ class RemoveInstance(
         try {
             if (instance.status == InstanceStatus.SignedIn) outcome = revoker.revoke(id)
         } finally {
-            deleteCredentialsLocally(secrets, locks, id) { repository.delete(id) }
+            // A declined key prompt means the revoke never ran: nothing is deleted behind the person (F-A-2).
+            if (outcome !=
+                RevokeOutcome.Declined
+            ) {
+                deleteCredentialsLocally(secrets, locks, id) { repository.delete(id) }
+            }
         }
-        return RemoveInstanceResult.Removed(outcome)
+        return if (outcome == RevokeOutcome.Declined) {
+            RemoveInstanceResult.NotAuthorized(BiometricResult.Cancelled)
+        } else {
+            RemoveInstanceResult.Removed(outcome)
+        }
     }
 }

@@ -20,6 +20,8 @@ class ErrorMappingTest {
                 DomainError.ServerError to ErrorKey.ServerError,
                 DomainError.RateLimited to ErrorKey.RateLimited,
                 DomainError.Malformed to ErrorKey.Malformed,
+                DomainError.DeviceAuthDeclined to ErrorKey.AuthDeclined,
+                DomainError.KeyInvalidated to ErrorKey.KeyInvalidated,
             )
 
         table.forEach { (error, key) -> error.toErrorUi() shouldBe ErrorUi(key) }

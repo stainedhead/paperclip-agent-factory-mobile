@@ -197,6 +197,25 @@ class SettingsStateHolderTest {
         }
 
     @Test
+    fun `F-A-2 a declined key prompt on sign out changes nothing and says so`() =
+        runTest {
+            val env = Env(listOf(home))
+            env.storeToken(home)
+            val holder = ready(env)
+            env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.DeviceAuthDeclined)
+
+            holder.onIntent(SettingsIntent.SignOutRequested("home"))
+            holder.onIntent(SettingsIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.AuthDeclined)
+            holder.state.value.lastSignOutKey shouldBe null
+            holder.state.value.isBusy shouldBe false
+            env.secrets.paths.isEmpty() shouldBe false
+            env.repository.get(home.id)?.status shouldBe InstanceStatus.SignedIn
+        }
+
+    @Test
     fun `FR-024 sign out asks first and reports whether the server confirmed`() =
         runTest {
             val env = Env(listOf(home))

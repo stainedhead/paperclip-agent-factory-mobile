@@ -381,6 +381,24 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
+    fun `F-A-2 a declined key prompt on sign out keeps the factory signed in and shows the declined key`() =
+        runTest {
+            val env = Env(listOf(home))
+            env.storeToken(home)
+            val (holder, _) = loaded(env)
+            env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.DeviceAuthDeclined)
+
+            holder.onIntent(EditInstanceIntent.SignOutRequested)
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.AuthDeclined)
+            holder.state.value.status shouldBe FactoryStatusUi.SignedIn
+            holder.state.value.isBusy shouldBe false
+            env.secrets.paths.isEmpty() shouldBe false
+        }
+
+    @Test
     fun `FR-006 remove asks first needs the device and every auth failure leaves it in place`() =
         runTest {
             val env = Env(listOf(home))

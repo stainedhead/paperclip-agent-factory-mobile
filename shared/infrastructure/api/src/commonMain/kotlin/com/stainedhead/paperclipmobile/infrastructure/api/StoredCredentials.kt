@@ -18,14 +18,24 @@ internal class StoredCredentials(
     private val instances: InstanceRepository,
     private val secrets: SecretStore,
 ) {
-    /** A factory that is not configured is NotFound; a key that is missing, invalidated or declined is Unauthorized. */
+    /**
+     * A factory that is not configured is NotFound. A key that is missing is Unauthorized; one invalidated by a new
+     * fingerprint is KeyInvalidated (re-pair); a declined prompt is DeviceAuthDeclined (nothing changes, try again).
+     * Only a real server 401 and a missing key may sign the factory out (review1b F-A-2).
+     */
     suspend fun <T> call(
         instanceId: InstanceId,
         block: suspend (Instance, com.stainedhead.paperclipmobile.domain.Secret) -> DomainResult<T>,
     ): DomainResult<T> {
         val instance = instances.get(instanceId) ?: return DomainResult.Failure(DomainError.NotFound)
         val read = secrets.get(SecretKey(instanceId, SecretName.BoardToken), REASON)
-        val key = (read as? SecretReadResult.Found)?.secret ?: return DomainResult.Failure(DomainError.Unauthorized)
+        val key =
+            when (read) {
+                is SecretReadResult.Found -> read.secret
+                SecretReadResult.Missing -> return DomainResult.Failure(DomainError.Unauthorized)
+                SecretReadResult.Invalidated -> return DomainResult.Failure(DomainError.KeyInvalidated)
+                SecretReadResult.Denied -> return DomainResult.Failure(DomainError.DeviceAuthDeclined)
+            }
         return try {
             block(instance, key)
         } finally {

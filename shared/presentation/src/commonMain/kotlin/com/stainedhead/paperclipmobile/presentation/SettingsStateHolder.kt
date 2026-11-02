@@ -354,6 +354,7 @@ internal class SettingsConfirmations(
             it.copy(
                 isBusy = false,
                 lastSignOutKey = (result as? SignOutResult.SignedOut)?.serverKey?.toUi(),
+                error = if (result == SignOutResult.Declined) ErrorUi(ErrorKey.AuthDeclined) else it.error,
             )
         }
     }

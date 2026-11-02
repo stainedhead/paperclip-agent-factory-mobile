@@ -16,6 +16,9 @@ sealed interface SignOutResult {
     ) : SignOutResult
 
     data object NotFound : SignOutResult
+
+    /** The person declined the prompt that guards the key. Nothing was revoked or deleted; try again (F-A-2). */
+    data object Declined : SignOutResult
 }
 
 /**
@@ -34,15 +37,18 @@ class SignOutInstance(
         try {
             if (instance.status == InstanceStatus.SignedIn) outcome = revoker.revoke(id)
         } finally {
-            deleteCredentialsLocally(secrets, locks, id) {
-                repository.get(id)?.let {
-                    repository.update(
-                        it.copy(boardKeyId = null, keyExpiresAt = null, status = InstanceStatus.SignedOut),
-                    )
-                }
+            // A declined prompt means the revoke never ran: the key stays, so nothing is deleted behind the person.
+            if (outcome != RevokeOutcome.Declined) deleteLocally(id)
+        }
+        return if (outcome == RevokeOutcome.Declined) SignOutResult.Declined else SignOutResult.SignedOut(outcome)
+    }
+
+    private suspend fun deleteLocally(id: InstanceId) {
+        deleteCredentialsLocally(secrets, locks, id) {
+            repository.get(id)?.let {
+                repository.update(it.copy(boardKeyId = null, keyExpiresAt = null, status = InstanceStatus.SignedOut))
             }
         }
-        return SignOutResult.SignedOut(outcome)
     }
 }
 
@@ -75,7 +81,7 @@ class SignOutEverywhere(
             val result = attempt.getOrNull()
             if (result is SignOutResult.SignedOut) {
                 signedOut += result
-            } else if (error != null) {
+            } else if (error != null || result == SignOutResult.Declined) {
                 failed += instance.id
             }
         }
