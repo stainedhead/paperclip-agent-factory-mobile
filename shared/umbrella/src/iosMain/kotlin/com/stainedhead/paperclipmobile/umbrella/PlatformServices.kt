@@ -1,7 +1,12 @@
 package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.port.Biometrics
+import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
+import com.stainedhead.paperclipmobile.infrastructure.platform.LocalAuthenticationBiometrics
+import com.stainedhead.paperclipmobile.infrastructure.platform.NwConnectivity
+import com.stainedhead.paperclipmobile.infrastructure.platform.ReasonTexts
 import com.stainedhead.paperclipmobile.infrastructure.securestore.KeychainSecretStore
 import com.stainedhead.paperclipmobile.testing.contract.SecretStoreContract
 
@@ -12,6 +17,19 @@ import com.stainedhead.paperclipmobile.testing.contract.SecretStoreContract
 object PlatformServices {
     /** A Keychain store whose items live under [service]. Tests pass a unique service so they touch no app items. */
     fun createKeychainSecretStore(service: String): SecretStore = KeychainSecretStore(service)
+
+    /** Face ID, Touch ID or the passcode (LocalAuthentication); the two texts are the localized prompt reasons. */
+    fun createBiometrics(
+        unlockReason: String,
+        confirmReason: String,
+    ): Biometrics = LocalAuthenticationBiometrics(ReasonTexts(unlockReason, confirmReason))
+
+    /** The system network monitor. Hand it to [closeConnectivity] when the graph is discarded. */
+    fun createConnectivity(): Connectivity = NwConnectivity()
+
+    fun closeConnectivity(connectivity: Connectivity) {
+        (connectivity as? NwConnectivity)?.close()
+    }
 
     /** Runs the shared [SecretStoreContract] on the real Keychain, each scenario in its own service. */
     suspend fun runKeychainContract() {

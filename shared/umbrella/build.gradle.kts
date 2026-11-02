@@ -58,5 +58,6 @@ kotlin {
     }
     sourceSets.iosMain.dependencies {
         implementation(project(":shared:infrastructure:securestore"))
+        implementation(project(":shared:infrastructure:platform"))
     }
 }
