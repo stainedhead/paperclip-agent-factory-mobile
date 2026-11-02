@@ -1,0 +1,31 @@
+# A throwaway Paperclip server in `authenticated` / `private` mode for contract tests and manual runs.
+# The image version comes from the single pin in gradle/libs.versions.toml (see scripts/paperclip-test-server.sh).
+# Host port 3199 keeps it clear of a developer's own Paperclip on 3100. The embedded database lives in the
+# container, so `down --volumes` resets everything. No LLM keys are set: agents cannot run, which is what we want.
+services:
+  paperclip:
+    image: ghcr.io/paperclipai/paperclip:${PAPERCLIP_SERVER_VERSION:?set by scripts/paperclip-test-server.sh}
+    ports:
+      - "127.0.0.1:${PAPERCLIP_TEST_PORT:-3199}:3100"
+    environment:
+      HOST: "0.0.0.0"
+      PAPERCLIP_HOME: "/paperclip"
+      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
+      PAPERCLIP_PUBLIC_URL: "http://localhost:${PAPERCLIP_TEST_PORT:-3199}"
+      # Obviously fake, test-only values. Never reuse them anywhere real.
+      BETTER_AUTH_SECRET: "TESTONLY-better-auth-secret-not-for-real-use-0000000000000000"
+      PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: "TESTONLY-tool-action-secret-not-for-real-use-00000000000000"
+    volumes:
+      - paperclip-test-data:/paperclip
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 3s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+    pids_limit: 2048
+    stop_grace_period: 20s
+
+volumes:
+  paperclip-test-data:
