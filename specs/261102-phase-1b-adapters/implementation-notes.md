@@ -171,3 +171,70 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
   does not run on the host JVM); iOS file protection class is requested but not verifiable on the simulator.
 - Deferred: wiring `PaperclipPersistence` into `createLiveGraph` (1b-5); deleting the factory's Keychain items on removal is
   the use case's job through `SecretStore` (1b-3); an Android emulator test.
+
+## 1b-3 device services (AD-030 to AD-033)
+
+### Group 1: research spike and fail-closed/system services
+
+- Spike first (research Q5a): the Keychain cannot be used from a bare Kotlin/Native test binary (-25291 standalone,
+  -34018 on a booted simulator, re-signed binary refused by `simctl spawn`); in the app test host it fails with -34018
+  when built unsigned and works ad-hoc signed. The spike test and a temporary `KotlinNativeSimulatorTest` block in the
+  module's build script were deleted before the first commit (CI has no such simulator).
+- Red evidence: `SystemServicesTest` failed `Unresolved reference 'SystemClock'` (and the other five classes);
+  `UnavailableSecretStoreTest` failed `Unresolved reference 'UnavailableSecretStore'`; `KeychainSecretStoreTest` failed
+  `Unresolved reference 'KeychainBackend'/'Protection'`. Green after the minimum code, on JVM, Android host and iOS.
+- `UnavailableSecretStore.get` returns `Missing` (nothing was ever stored and never will be); a test shows a second
+  instance finds nothing either, so nothing is retained anywhere. It deliberately fails `SecretStoreContract`.
+- Kotlin/Native test names cannot contain commas (compile error), JVM-style rules apply.
+- detekt: the store first had 13 functions; the write side (protection choice, replace on duplicate, marker) moved to
+  `KeychainWriter`.
+
+### Group 2: Keychain store (decisions in Kotlin, real Keychain in the app host)
+
+- Layout and mapping: ADR-051. The `#protected` marker is how `Invalidated` is told from `Missing`; it was added after
+  reading `CheckCredentials`, which maps both to state changes, so a transient failure on read is `Denied` and nothing else.
+- Red evidence: the scripted-backend tests failed to compile (`KeychainBackend`, `Protection` unresolved) before the store
+  existed; the Swift tests failed `cannot find 'PlatformServices' in scope` before the umbrella factory existed, then
+  passed on first run of the real backend. The attribute checks (`kSecAttrAccessible` = `ak..u` this-device-only,
+  `kSecAttrSynchronizable` = 0, no match when querying for a synchronizable copy), restart (second store instance),
+  namespace prefix (`a` vs `ab`) and the "no attribute holds the value" audit all run against the real Keychain.
+- Learned by failing: open items also carry an `accc` (`<SecAccessControlRef: aku>`), so "protected" is detected by a
+  constraint (`cbio`/`cpo`) in its description, not by the presence of `accc`. Two Swift tests failed on that and were
+  corrected.
+- On the simulator `.biometryCurrentSet` is accepted with nothing enrolled. The `.userPresence` fallback and the
+  "neither works, so Failed and nothing stored" branch are tested with the scripted backend only.
+- Cross-ownership edits (own commits, minimal): `scripts/ios-test.sh` now signs ad hoc (e23904d); two test-only Swift
+  files in `iosApp/Tests/iosAppTests` (`KeychainSecretStoreTests.swift`, `DeviceServicesTests.swift`). The umbrella gained
+  `iosMain/PlatformServices.kt` and an `iosMain` dependency on `securestore` and `platform`. Stream 2i runs `ios-test.sh` too.
+- Deferred to iosApp: `NSFaceIDUsageDescription` in the app's Info.plist (a device refuses Face ID without it).
+
+### Group 3: LocalAuthentication and NWPathMonitor
+
+- Red evidence: `Unresolved reference 'DeviceAuthenticator'/'LocalAuthenticationBiometrics'/'PathSource'`. A first live
+  test then failed with `Collection should contain element 4099L`: a bare test binary has no LocalAuthentication daemon, so
+  the error is an XPC error outside `LAErrorDomain`. `AuthOutcome.ServiceUnreachable` (Unavailable) was added and tested
+  (red then green). The Swift host test showed that on the simulator the passcode policy *can* be evaluated (a real
+  prompt waits 320 s), so a live "no passcode" path does not exist there; the live checks are the biometrics-only policy
+  (-7) and prompt cancellation. A first version of that Swift test hung for 320 s and was replaced.
+- `ReasonTexts` is public so the app can pass localized sentences; the umbrella takes two strings.
+- `NwConnectivity` is online until the first path (optimistic), counts updates for the test, ignores updates after close,
+  closes idempotently.
+
+### Group 4: Konsist and docs
+
+- `InfrastructureDeviceRulesTest` (6 tests): imports allowed, no database/file/user-defaults API in `securestore`, no
+  `Secret` import in `platform`, no print/log, exact public surface of both modules, and a detector self-test. They passed
+  on first run (the code was already conforming); the detector test is the proof they can fail.
+- Existing rule `Secret.reveal` only under `shared/infrastructure/` already covers the store.
+
+### 1b-3 summary
+
+- Commits: d692179 (platform services, fail-closed store, Keychain store logic), e23904d (ios-test.sh ad-hoc signing),
+  cbc492f (Security.framework backend, `PlatformServices`), 48e784e (Swift Keychain tests), 26e5230 (biometrics,
+  connectivity, umbrella factories), c8a15a9 (Konsist), 8223abf (Swift device tests); docs commit follows.
+- Tests (JUnit XML of this run): securestore jvm 3, android host 3, iOS simulator 22; platform jvm 6, android host 6,
+  iOS simulator 17; Konsist 55 (all modules); Swift app host: 8 Keychain tests + 3 device-service tests.
+- Not verifiable here: real Face ID/Touch ID, lockout, passcode-not-set on a device, real-device Keychain behaviour
+  (locked device `errSecInteractionNotAllowed`, `.biometryCurrentSet` invalidation after an enrollment change, StrongBox),
+  iCloud Keychain sync (only the `sync = 0` attribute and the empty synchronizable query are checked), and ad-hoc signing on
+  the CI runner until the PR workflow runs.

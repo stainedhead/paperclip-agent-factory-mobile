@@ -7,7 +7,7 @@ How the code is organised and built, as it exists on the branch `feat/phase-1a-s
 | Area | State |
 |---|---|
 | Shared core: domain, application, presentation, testing fakes, umbrella | Built (Phase 1a). Runs entirely on fakes. |
-| Real adapters (`shared/infrastructure/*`) | `api` has the HTTP client, `ErrorMapper`, and the health and auth gateways (Phase 1b-1); `persistence` has the SQLDelight database and the three SQL adapters (Phase 1b-2); the other three modules are stubs. |
+| Real adapters (`shared/infrastructure/*`) | `api` has the HTTP client, `ErrorMapper`, and the health and auth gateways (Phase 1b-1); `persistence` has the SQLDelight database and the three SQL adapters (Phase 1b-2); `securestore` and `platform` have the device services (Phase 1b-3); `realtime` is a stub. |
 | iPhone app | One screen: the first-run address check. Every other screen has a tested state holder and no UI. |
 | Android app | Not started. There is no `androidApp/` directory. The shared modules do build an Android library target. |
 | Push relay | Not started. |
@@ -33,7 +33,9 @@ iosApp (SwiftUI)  ──imports only──►  shared/umbrella  (Koin graph, Pap
 | `shared/umbrella` | `PaperclipCore`, `PaperclipGraph`, the Koin modules (adapters bound under `RawPort`, use cases get the decorated bindings), `AppLifecycleBridge`, `RefreshScreens`, the XCFramework `PaperclipKit` and SKIE setup; the Konsist rules (`src/konsistTest`). | Built |
 | `shared/infrastructure/api` | `PaperclipHttpClient` (Ktor; Darwin on iOS, OkHttp on Android and JVM), `ErrorMapper`, `HealthGatewayAdapter`, `AuthGatewayAdapter`, internal `dto` package. Tests run the shared contract suites through a MockEngine-backed `StubPaperclipServer`. | Health and auth |
 | `shared/infrastructure/persistence` | SQLDelight 2.4.1: tables `instance_config`, `app_settings`, `attention_cache`; `SqlInstanceRepository`, `SqlAppSettingsStore`, `SqlAttentionCache`, `PaperclipPersistence`; `openJvmPersistence`, `openIosPersistence`, `openAndroidPersistence`. No secret is stored. See "Persistence" below. | Built (1b-2) |
-| `shared/infrastructure/{realtime,securestore,platform}` | Only a `build.gradle.kts` each. | Stubs |
+| `shared/infrastructure/securestore` | `KeychainSecretStore` (iOS, Security.framework behind an internal `KeychainBackend`), `UnavailableSecretStore` (Android, JVM). See "Device services" below. | Built (1b-3) |
+| `shared/infrastructure/platform` | `SystemClock`, `UuidIdGenerator`, `SystemDeviceTimeZone`, `LocalAuthenticationBiometrics`, `NwConnectivity` (iOS), `UnavailableBiometrics`, `OptimisticConnectivity`. | Built (1b-3) |
+| `shared/infrastructure/realtime` | Only a `build.gradle.kts`. | Stub |
 
 Every module is a Kotlin Multiplatform library with the targets `jvm` (fast tests, the future push relay), `android` (AGP's KMP library plugin, minSdk 28, compileSdk 37, host tests) and `iosArm64` / `iosSimulatorArm64`. Targets, the JDK 21 toolchain, "warnings are errors" and the common test dependencies live in the convention plugin `build-logic/src/main/kotlin/pafm.kmp-library.gradle.kts`.
 
@@ -293,3 +295,12 @@ Process:
 - Files: iOS `Application Support/PaperclipData/paperclip.db` (folder and files excluded from backup), Android `noBackupFilesDir/paperclip.db`, JVM a given file or memory.
 - Tests: the existing `InstanceRepository`, `AppSettingsStore` and `AttentionCache` contract suites run against the SQL adapters on the JVM, the Android host test (JDBC driver) and the iOS simulator (native driver, temp file), plus tests for mapping, migration, recovery, concurrency, secrets and (iOS) backup exclusion. The Android driver factory is compile-checked only.
 
+
+## Device services (Phase 1b-3)
+
+- **Keychain** (`securestore`, iosMain): generic password items, service = a fixed id, account = `instance/{id}/{name}`, `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, `kSecAttrSynchronizable = false` on every query. `requireUserPresence` stores behind `.biometryCurrentSet`, else `.userPresence`, else the write fails (never open). A protected write adds a `{account}#protected` marker so a vanished protected item reads as `Invalidated`. Read failures other than not found are `Denied`; writes `Stored`/`Failed`; refused deletes throw. `deleteNamespace` lists accounts by attributes only. ADR-051. `KeychainWriter` holds the write side, `KeychainBackend` is the seam tests script, `SecurityKeychain` is the real backend.
+- **Testing**: the store's decisions and the shared `SecretStoreContract` run in `iosSimulatorArm64Test` on a scripted backend. The real Keychain needs entitlements, so `iosApp/Tests/iosAppTests/KeychainSecretStoreTests.swift` runs inside the app test host through `PlatformServices` (umbrella `iosMain`), which also runs the contract on the real Keychain. `scripts/ios-test.sh` signs ad hoc. ADR-050.
+- **Biometrics**: `LocalAuthenticationBiometrics` over an internal `DeviceAuthenticator` (`LAContextAuthenticator`: new `LAContext` per prompt, `LAPolicyDeviceOwnerAuthentication`). ADR-052 has the code mapping; no passcode means Unavailable (fail closed).
+- **Connectivity**: `NwConnectivity` over `PathSource` (`nw_path_monitor` on its own serial queue), online until the first path, `close()` cancels. The foreground flag is still the umbrella's `AppLifecycleBridge`, driven by the app.
+- **Android and JVM**: `UnavailableSecretStore`, `UnavailableBiometrics` (never approve, never store), `OptimisticConnectivity`. System clock, UUID ids and the device zone are common code. ADR-053.
+- Konsist (`InfrastructureDeviceRulesTest`): only domain/stdlib/platform imports, no database/file/user-defaults API in `securestore`, no `Secret` in `platform`, no printing, fixed public surface.
