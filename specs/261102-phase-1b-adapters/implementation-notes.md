@@ -156,9 +156,16 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 - Commits: 366fcf5 (schema v1, `SqlInstanceRepository`), 64daef9 (settings), 32134d8 (schema v2 + migration test), b7e7c82
   (attention cache), ed1639b (recovery, serial executor, audit, pruning), 794e0b2 (JVM factory), f3f0350 (iOS factory),
   760d320 (Android factory, Konsist rules), fb9ca07 (docs).
-- Tests of the persistence module from JUnit XML after the last full run: JVM 49, Android host 41 (no iOS-only files; no JVM
-  file tests), iOS simulator 45; no failures or skips. The Android-host figure is lower because `JvmPersistenceTest` and
-  `IosPersistenceTest` are platform source sets.
+- Tests of the persistence module (JUnit XML): 41 common tests run on every target; the JVM adds 8 JVM-only tests
+  (`JvmPersistenceTest`) and iOS adds 5 iOS-only tests (`IosPersistenceTest`). The counts in the final report are from a later run.
+- Outside this stream's ownership (minimal, test-first, own commit): `shared/domain` got `AttentionCache.MAX_ITEMS = 200`
+  and `shared/testing` got a cap scenario in `AttentionCacheContract`, a "never saved store still emits" scenario in
+  `AppSettingsStoreContract`, and the cap in `FakeAttentionCache`, so demo mode pages like production (AGENTS.md: fakes stay
+  behaviourally honest).
+- A newer-version file on iOS: tried a `RefuseDowngrade` schema wrapper after a first, flawed test run (the throwaway driver
+  is lazy and never wrote its version); once the test was right, plain `Schema` already passed, so the wrapper was dropped.
+- No separate detekt/Spotless exclusion commit was made: generated code lives under `build/`, already excluded, and
+  `check lint` was green with it present.
 - Deviations: no notification-defaults column (the domain `AppSettings` has no such field, so it would be dead); a real
   schema v2 exists before any release to exercise migrations (group 3); the Android factory has no test (framework SQLite
   does not run on the host JVM); iOS file protection class is requested but not verifiable on the simulator.
