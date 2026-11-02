@@ -8,10 +8,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-/** AD-020: a database written by schema version 1 opens under the current schema with its data intact. */
-class MigrationTest {
-    /** The schema exactly as version 1 shipped it, written out by hand: it must never be edited. */
-    private val versionOneSchema =
+/** The schema exactly as version 1 shipped it, written out by hand: it must never be edited. */
+object VersionOneSchema {
+    val statements =
         listOf(
             """CREATE TABLE instance_config (
                 id TEXT NOT NULL PRIMARY KEY, display_name TEXT NOT NULL, base_uri TEXT NOT NULL,
@@ -28,18 +27,21 @@ class MigrationTest {
                 updated_at TEXT NOT NULL, PRIMARY KEY (instance_id, company_id))""",
         )
 
-    private fun versionOneDatabase(): TestDatabase {
-        val database = TestDatabase(newTestDriver(createSchema = false))
-        versionOneSchema.forEach { database.execute(it) }
-        database.execute(
+    val rows =
+        listOf(
             "INSERT INTO instance_config VALUES ('inst-1', 'Home factory', 'https://home.example.com', " +
                 "'Authenticated', 'Private', 'PairedBoardKey', 'key-1', NULL, 'company-acme', NULL, '', " +
                 "'2026-11-02T10:00:00Z', NULL, 0, 'SignedIn')",
-        )
-        database.execute("INSERT INTO app_settings VALUES (1, 'Pixel', 1, 'OneHour', 'inst-1')")
-        database.execute(
+            "INSERT INTO app_settings VALUES (1, 'Pixel', 1, 'OneHour', 'inst-1')",
             "INSERT INTO attention_cache VALUES ('inst-1', 'company-acme', '{}', '2026-11-02T10:00:00Z')",
         )
+}
+
+/** AD-020: a database written by schema version 1 opens under the current schema with its data intact. */
+class MigrationTest {
+    private fun versionOneDatabase(): TestDatabase {
+        val database = TestDatabase(newTestDriver(createSchema = false))
+        (VersionOneSchema.statements + VersionOneSchema.rows).forEach { database.execute(it) }
         return database
     }
 

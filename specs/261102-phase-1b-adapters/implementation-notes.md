@@ -120,3 +120,14 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
   and shows the scan finds it (this is the mutation check, kept as a test).
 - Red evidence: `DatabaseRecoveryTest` failed `Unresolved reference 'openRecovering'`; `ConcurrencyTest` failed with the
   SQLite nested-transaction error; the orphan test failed on the leftover row before `deleteOrphans`.
+
+## Group 6: JVM factory (`openJvmPersistence`)
+
+- File or in-memory. JDBC keeps no schema version, so `prepareSchema` maintains SQLite `user_version` (0 = create, lower =
+  migrate, higher = rejected by the health check and recreated). Create plus setting the version is not one transaction:
+  a crash in between leaves version 0 and tables, the next open fails on "table exists", and recovery recreates a file that
+  held no data yet.
+- Garbage file, newer-version file and stale `-wal`/`-shm` sidecars are tested on a real file; a 0-byte file is an empty
+  database and is not counted as a recreation. A version 1 file on disk is migrated at open.
+- Red evidence: `Unresolved reference 'openJvmPersistence'`. The parallel-writers test through the production wiring
+  was written after the serial executor and passed at once; it guards the wiring, not a new behaviour.
