@@ -6,8 +6,8 @@ import java.io.File
 
 /**
  * F-C-7: a number written in the docs about the rules themselves must be the real one. The Konsist count quoted in
- * `docs/technical-details.md` is compared with the `@Test` methods in this folder, so adding a rule without updating
- * the docs fails the build instead of leaving a stale number for the next reader.
+ * `docs/technical-details.md` is compared with the `@Test` methods (declared at class-member indentation) in this
+ * folder, so adding a rule without updating the docs fails the build instead of leaving a stale number.
  */
 class DocumentedCountsRulesTest {
     private val rulesDir = File(projectRoot, "shared/umbrella/src/konsistTest/kotlin")
@@ -60,8 +60,12 @@ class DocumentedCountsRulesTest {
                 .createTempDirectory("pafm-konsist-count")
                 .toFile()
         try {
-            File(dir, "A.kt").writeText("@Test\nfun a() {}\n@Test\nfun b() {}\n")
-            File(dir, "B.kt").writeText("@Test fun c() {}\n")
+            File(dir, "A.kt").writeText("class A {\n    @Test\n    fun a() {}\n\n    @Test\n    fun b() {}\n}\n")
+            // A sample inside a raw string is indented deeper and must not count.
+            File(
+                dir,
+                "B.kt",
+            ).writeText("class B {\n    @Test fun c() {}\n    val s = \"\"\"\n        @Test\n    \"\"\"\n}\n")
             File(dir, "C.kt").writeText("fun notATest() {}\n")
             Assertions.assertEquals(PLANTED, actualCounts(dir))
         } finally {
@@ -73,7 +77,7 @@ class DocumentedCountsRulesTest {
         val STALE = 37 to 10
         val CURRENT = 71 to 17
         val PLANTED = 3 to 2
-        val TEST_ANNOTATION = Regex("^\\s*@Test\\b", RegexOption.MULTILINE)
+        val TEST_ANNOTATION = Regex("^ {4}@Test\\b", RegexOption.MULTILINE)
         val QUOTED = Regex("(\\d+)(?: tests)? in (\\d+) files")
     }
 }

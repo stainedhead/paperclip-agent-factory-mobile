@@ -459,3 +459,64 @@ Method: a failing test first for every finding; the red evidence is the assertio
 - Swift-facing additions the iOS stream will see: `ErrorKey.AuthDeclined`, `ErrorKey.KeyInvalidated`, `ServerKeyOutcome.Declined`, `PaperclipGraph.startupNotice` (`StartupNotice`), `Agent.isResuming/isPausing` (via presentation action lists only).
 - `SecretStore.namespaces()` was added to the port; the live `contractTest` `MemorySecretStore` was updated, the contract workflow was not re-run locally (no Docker).
 
+
+## Review 1b, group F2 (everything left after F1), 2026-11-02
+
+Method as in F1: a failing test first for every code finding (red seen before the fix; a pure compile failure for a new type counts only where stated), then the minimum change, `./gradlew spotlessApply && ./gradlew check lint` chained, one commit per finding (some contract-test findings share a commit because they share files, noted), push. Hashes are on `feat/phase-1b-adapters`. "Refuted" means the new test passed at once; the test stays and nothing in production changed.
+
+| Finding | Result | Commit | Evidence |
+|---|---|---|---|
+| C-2 count counts empty replies | reproduced | f3ed5f4, 151b1c2, ea1d5a0, e162a4d | Red: CI run 41526000379 (the 46 included `run events: count=0`, an empty log, `window spend rows: 0`); `LiveLedgerTest`/`LiveVerifiedTest` failed to compile before `LiveLedger`. Now `LiveLedger` counts data only. **CI run 41538007315: 49 of 52 operations verified with data, 0 reachable-but-empty, 0 FAIL, 3 allow-listed.** |
+| C-3 no gate, skips and mismatches green | reproduced | f3ed5f4 | Seeds are required; `soft`/optional seeds removed; `observe` failures are counted as `MISMATCH n` (printed at 0); `VERDICT:` line; `contractTest` `doLast` fails the build on FAIL (planted-FAIL gate check run locally: `The live contract run failed: problem: planted for the gate check`). The malformed-id statuses are asserted exactly `{issues=404, approvals=500, agents=422, runs=400, decisions=500}`. CI runs 41533308046, 41535034077, 41537107381 were red for real findings (below), 41538007315 green. |
+| C-8 contract test can hit a real server | reproduced | 2f54583 | `ContractTarget.refusal`/`markerRefusal` tests failed to compile, then passed; a run with `PAPERCLIP_CONTRACT_BASE_URL=http://paperclip.invalid:3100` and no opt-in failed all 20 live tests with "Refusing to run" and no request. The compose has no server-side marker field: the guard is opt-in env + loopback + test port + authenticated/private health (ADR-081). |
+| C-9 ownership only on success | reproduced as a gap, refuted for `forAgent` | bf29042, 151b1c2 | `LiveOwnershipTest` (second company; reads and writes through the first company's scope are NotFound, raw reads afterwards show nothing changed; positive control through its own scope). First CI run: `RunGateway.forAgent was expected to fail with NotFound but succeeded`: the list is company scoped in the path, the server answers an empty list for a foreign agent, nothing leaks; the test now pins exactly that. |
+| B-5 launch path aborts the app | reproduced | 27fbfa3 | `openLiveGraph` unresolved (compile), then Kotlin `LiveIosGraphTest` (unusable folder gives an Exception) and Swift `LiveGraphLaunchTests` (`throws` caught, usable folder opens). New surface, existing signatures unchanged (ADR-084). The sidecar-vanishing race is handled but not tested (it cannot be forced). |
+| B-9 no `NSFaceIDUsageDescription` | reproduced by construction | 00bb645 | `InfoPlistTests` reads `Bundle.main` of the app host; the key is absent before the `project.yml` change (not re-run without the key). Simulator run passes. English text only, no localized InfoPlist exists. |
+| B-6 update undoes a reorder | reproduced | 73ce508 | The shared `InstanceRepositoryContract` check `update must not undo a reorder` failed on the SQL adapter and on the fake. `updateExisting` no longer writes `sort_order` or `created_at`; the fake follows. `verifyMigrations` unaffected (a query, not the schema). |
+| B-7 invalidation mapping unverified on a device | documented, pinned | ab707da, docs | Test `F-B-7` passed at once (`errSecAuthFailed` is Denied even with a marker): refuted as a code defect, kept as the pin. The device check list and the exact list of unverified facts are in `docs/technical-details.md`, ADR-083. Still unverified on hardware. |
+| B-8 pairing browser: no dismiss, off the main thread | reproduced | 4399f8b | `CallbackPairingBrowser(show, dismiss, dispatcher)`: tests `cancelling the wait dismisses` and `show and dismiss run on the dispatcher` failed to compile, then passed; `PairingBrowsers.onMainThread` tested with `Dispatchers.setMain`. |
+| A-7 attachment slices unbounded | reproduced | cb28814 | `bytes=100-` was sent for an open range; a 1 MiB + 1 reply was handed over. Now `MAX_SLICE_BYTES` (1 MiB) per slice and per reply, bounded channel read. The existing open-range test was changed to the new range (a deliberate behaviour change). |
+| A-8 redirects only proven with MockEngine | refuted | 0975fc6 | `RealEngineRedirectTest` (JDK `HttpServer`, real OkHttp engine, 301/302/303/307/308 to another port): not followed, target sees no request, `Malformed`. Mutation `followRedirects = true` made it fail. iOS Darwin engine not tested (no loopback server test on the simulator). |
+| C-5 hostile engine not hostile, 4xx reason unredacted | reproduced | 3b204ae, e281492 | `ErrorMapperTest` F-C-5 tests failed (`pcp_`, `Bearer`, urls, `token=`, long runs survived in `Rejected.reason`); with `reasonOf` unredacted the hostile `SecretsAuditTest`, `CompanyScopedAuditTest` and `ErrorMapperTest` all fail (mutation run). The secrets scan flagged the first form of one fixture in git history: fixture rewritten with TESTONLY values, commit 3b204ae allow-listed in `.gitleaks.toml`. |
+| C-6 Konsist regex holes | reproduced | c91ed4a | Planted-violation tests for every modifier form and a temp source tree per rule (they failed on the old regex: `suspend fun`, `const val`, `public class`, `fun interface` not flagged). Wiring guard now computed (names the live seam) and scans only `createLiveGraph` in `PaperclipCore.kt`; constructor rule is per class; star and qualified Foundation store names are banned. `LiveGraphTest` resolves 24 network and persistence ports and checks none is a fake. |
+| C-7 docs drift | reproduced | 9fd3ec0, docs commits | `DocumentedCountsRulesTest` failed against "37 tests in 10 files"; counts now 67 in 16 (executed JUnit count equals the rule's count). README status, module table, openapi sentence (the pinned dist serves `/api/openapi.json`, `server/dist/app.js:543`), status.md phase table, testing guide, ADR-073 wording corrected. |
+| A-9 dot segments | reproduced | 902cbd6 | `..`, `.` and empty segments reached the engine; mutation (guard disabled) made the test fail. |
+| A-10 approval ownership on empty lists | reproduced | 6f6a772 | A foreign approval's empty issues/comments returned `Success([])`; now one ownership read. |
+| B-10 delete order | reproduced | ab707da | A marker delete failure after the value delete read as `Invalidated` (ClassCastException in the test); marker is now deleted first. |
+| C-4 `ios` workflow red | skipped (stream 2i) | status.md | One honest line in `status.md`: criterion 8 is not met on this branch because `FirstRunUITests` fails; not touched. |
+| C-10 resume still resuming | refuted | none | Covered by F1's `getsStillResuming` test in `AgentUseCasesTest` (A-6); ADR-074 wording left as is. |
+| C-11 CI items | partly done | f3ed5f4 | (f) path filters for domain, application, testing added; (b) invite scoped to the step and (d) script guard skipped: low value, ephemeral container. |
+| A-11 one bad card blanks the feed | skipped | none | Deliberate ADR-059 trade-off (a card is never skipped); an "N items unreadable" marker needs a UI design. |
+| A-12 limit rounding, `catch Throwable` | skipped | none | Limits are integers on the pinned server (latent); the `Throwable` catch is allow-listed because the Darwin engine's failure types are not all `Exception`; changing it needs a simulator run against the real engine. |
+| B-11 contract runner in the framework | skipped | none | `runKeychainContract` is used by the shipped Swift host tests; moving it needs a build-target change owned by the UI stream. |
+| B-12 monitor release, two graphs on one file | skipped | none | Small leak, needs a device check; "one live graph per process" is now documented in the launch surface notes. |
+| C-12, C-13 | info only | none | Read; the framework size claim and ADR numbering were confirmed by the reviewer. |
+
+### Corrections the live server forced in this group
+
+1. A company with a company-wide budget is paused by the server after the first finished run (cost accounting still pending trips the hard stop): every later wake answered 409 `Company is not active` (run 41537107381). Contract companies now have `budgetMonthlyCents: 0`.
+2. A run queued for an issue whose assignee is another agent is cancelled ("issue assignee changed before the queued run could start"): the issue is assigned to the agent first, and the assignment's own wake did not produce a run within 20 s, so an explicit `POST /agents/{id}/wakeup` with `payload.issueId` links the run to the issue.
+3. `POST /companies/{c}/cost-events` and `POST /issues/{id}/interactions` are open to a board key: window spend, a budget incident (agent over a 100 cent limit) and a question to answer are all seedable. ADR-073's claim that they were not is superseded (ADR-082).
+4. Resolving a budget incident with keep-paused records it as `dismissed`, not `resolved`.
+
+### Contract CI runs of this group
+
+| Run | Head | Result |
+|---|---|---|
+| 41531193390 | f3ed5f4 | red: 2 tests (company-scoped `forAgent` expectation; assignment produced no run for the issue); 45 with data, 4 problems. Budgets, attachments, questions, window spend already live. |
+| 41533308046 | 151b1c2 | red: run assigned to nobody was cancelled, log empty: 48 with data. Ownership passed. |
+| 41535034077 | ea1d5a0 | red: echo run fully live (5 events, a log with the echoed text); sleeper wake refused. |
+| 41537107381 | bbbd2eb | red: 409 `Company is not active` (cause 1 above). |
+| **41538007315** | e162a4d | **green: 49 of 52 with data, 0 empty, 0 FAIL, MISMATCH 0, 3 allow-listed, VERDICT: PASS.** |
+
+The three allow-listed operations are `DecisionGateway.get`, `decide` and `dismiss`: `POST /api/companies/{c}/decisions` answers 403 "Agent run context required" to a board key (pinned dist `routes/decisions.js:122-128`). They remain covered by MockEngine tests and the shared port contract only.
+
+### Deviations and limits (F2)
+
+- Several findings share a commit where they share files (C-2/C-3; B-10/B-7); the table lists every hash.
+- The red evidence for A-8 is a mutation (the test passed against the unchanged code, as the review suspected), for B-9 it is by construction, for A-9 it is a mutation run after the fact.
+- `shared/testing` (`InstanceRepositoryContract`, `FakeInstanceRepository`) was edited for B-6: outside this stream's ownership, minimal, in the B-6 commit.
+- Swift surface added for the iPhone UI stream: `PaperclipCore.openLiveGraph(allowInsecureLocal:pairingBrowser:)` (throws), `LiveIosGraph.openLiveGraph(allowInsecureLocal:pairingBrowser:settings:)` (throws), `PairingBrowsers.onMainThread(show:dismiss:)`, `NSFaceIDUsageDescription` in `iosApp/project.yml`. Nothing existing changed signature, no exhaustive `switch` over a shared type changed in F2.
+- ADR-070 (this branch's `PairingBrowsers.fromCallback`) and the other stream's ADR-045 (`ApprovalPageOpener`) describe two callback mechanisms for one Swift limitation; one will be dropped at merge. Not decided here.
+- A flaky test in `shared/presentation` (`AtomicGuardsTest`, concurrent DismissTapped, JVM only) failed once in CI (run 41537107026) and passed on the next push; it is not touched by this group.
+- The `ios` workflow was cancelled by newer pushes on several heads; its last verdict is in `status.md`.

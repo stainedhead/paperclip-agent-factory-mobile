@@ -96,7 +96,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 69 tests in 16 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 67 tests in 16 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -183,17 +183,20 @@ Every port except `Connectivity` and `AppLifecycle` (a `StateFlow` already guara
 
 ## Tests and coverage
 
-Numbers from the last local run (2026-11-02, after the independent re-review fixes; JUnit XML under `shared/*/build/test-results`):
+Numbers from the last local run (2026-11-02, after review1b group F2; JUnit XML under `shared/*/build/test-results`):
 
 | Where | Tests (JVM) |
 |---|---|
-| `shared/domain` | 143 |
-| `shared/application` | 303 |
-| `shared/presentation` | 326 (322 on Android host and iOS simulator: `AtomicGuardsTest`'s 4 stress tests are JVM only) |
+| `shared/domain` | 144 |
+| `shared/application` | 322 |
+| `shared/presentation` | 328 (324 on Android host and iOS simulator: `AtomicGuardsTest`'s 4 stress tests are JVM only) |
 | `shared/testing` | 48 |
-| `shared/umbrella` | 32 |
-| Konsist (`konsistTest`) | 69 in 16 files |
-| Swift (`iosApp/Tests`) | 33 Swift Testing cases in `iosAppTests` (counted from source) and 1 XCUITest |
+| `shared/umbrella` | 51 (35 on the Android host, 38 on the iOS simulator) |
+| `shared/infrastructure/api` | 335 (333 Android host, 332 iOS simulator); `contractTest`: 41 (22 skipped without a server) |
+| `shared/infrastructure/persistence` | 56 (46 Android host, 51 iOS simulator) |
+| `shared/infrastructure/securestore`, `platform` | 3 and 6 on the JVM; 35 and 17 on the iOS simulator |
+| Konsist (`konsistTest`) | 67 in 16 files |
+| Swift (`iosApp/Tests`) | 51 Swift Testing cases in `iosAppTests` (the log of `ios-test.sh`) and 1 XCUITest |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
 
@@ -201,8 +204,8 @@ Kover coverage, regenerated with `rm -rf build/reports/kover && ./gradlew koverX
 
 | Gate | Task | Line coverage | Threshold |
 |---|---|---|---|
-| Domain + application, one aggregate | `koverVerifyCore` | 97.98% (2568 covered, 53 missed) | 90% |
-| Presentation | `koverVerifyPresentation` | 98.02% (4217 covered, 85 missed) | 90% |
+| Domain + application, one aggregate | `koverVerifyCore` | 98.01% (2611 covered, 53 missed) | 90% |
+| Presentation | `koverVerifyPresentation` | 98.03% (4228 covered, 85 missed) | 90% |
 
 Kover rules cannot filter by package, so there are two custom variants, `core` and `presentation` (ADR-007). `koverVerify` alone checks nothing meaningful. Infrastructure, `testing` and `umbrella` are outside the gates.
 

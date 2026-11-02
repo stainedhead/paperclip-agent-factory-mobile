@@ -8,11 +8,11 @@ Update this file after every task and phase. It is the single source of progress
 
 | Phase | State |
 |---|---|
-| Phase 0 Specification | In Progress |
-| Phase 1 Research and data model | Not Started |
-| Phase 2 Architecture and plan | Not Started |
-| Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation | In Progress (1b-1 to 1b-5 done, review1b group F1 fixed, further review groups pending) |
+| Phase 0 Specification | Done except the `/dev-flow:review-spec` run (the independent code review of the branch took its place) |
+| Phase 1 Research and data model | Done (`research.md`, `data-dictionary.md`; answers cite the pinned dist) |
+| Phase 2 Architecture and plan | Done (`architecture.md`, `plan.md`; ADR-038 to ADR-043, ADR-050 to ADR-084) |
+| Phase 3 Task breakdown | Done (`tasks.md`) |
+| Phase 4 Implementation | In Progress (1b-1 to 1b-5 done, review1b groups F1 and F2 fixed; the iPhone UI stream owns the open `ios` check, see below) |
 | Phase 5 Completion and archive | Not Started |
 
 ## Phase 0 checklist
@@ -20,7 +20,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] Spec directory created; `spec.md` populated from the PRD
 - [x] Research questions identified (`research.md`)
 - [x] Phase files initialized
-- [ ] `/dev-flow:review-spec` run and findings resolved
+- [ ] `/dev-flow:review-spec` run and findings resolved (not run; the three independent code reviews of the branch, review1b, took its place)
 
 ## Milestones
 
@@ -32,7 +32,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] 1b-4b Issue, interaction, agent, run, dashboard (AD-013, AD-014), after re-verifying 1b-4a against the pinned dist (TASK 0)
 - [x] 1b-5 Live graph, contract test against the pinned server in CI, documentation (AD-040, AD-041, AD-050, AD-051)
   - [x] 1b-5a Live graph (AD-040, AD-041)
-  - [x] 1b-5b Contract test source set and CI (AD-050, AD-051), documentation closing (CI run 41513381521: 46 of 52 operations verified live)
+  - [x] 1b-5b Contract test source set and CI (AD-050, AD-051), documentation closing. The first count, "46 of 52 verified live" (CI run 41513381521), counted any `Success`, including empty replies; after review1b F2 the count is 49 of 52 **with data**, 3 allow-listed (CI run 41538007315, see the F2 section of the implementation notes)
 
 
 
@@ -51,4 +51,5 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: milestone 1b-5a done (AD-040, AD-041): `PaperclipCore.createLiveGraph` on an internal `LivePlatform` (iOS device services, fail-closed JVM, Android refused), `PaperclipGraph.close()`, `LiveIosGraph`, `PairingBrowsers.fromCallback`, a Konsist rule against fakes in `Live*.kt`, JVM end-to-end flows through state holders on the stub server and a real SQLite file, iOS simulator and Android host tests, and a Swift Testing suite with a real loopback health probe. Engine-closing fix in `PaperclipHttpClient`. ADR-067 to ADR-070. The container contract run (1b-5b) is still to do.
 - 2026-11-02: 1b-5b done. `contractTest` source set in `shared/infrastructure/api`, `ServerBootstrap` (sign-up, bootstrap invite, pairing approval), `scripts/paperclip-test-server.sh invite`, `contract.yml` runs it after the smoke script on pull requests touching `shared/infrastructure/**` and nightly against `latest`. Green in CI: run 41513381521 (pinned, all 16 live tests and 3 offline helper tests). Found and fixed: Better Auth origin, HTTP/1.1, resume mid-transition (ADR-074), two stub malformed-id answers. Six port operations stay MockEngine-only (research C7).
 - 2026-11-02: review1b group F1 (security Must Fix and related Warnings) fixed, one commit per finding: A-1 pins on pairing, A-2 declined or invalidated key, A-3 approvalUrl origin, B-1 wipe only on proof, B-2 recreated notice and orphan sweep, C-1 refused unprotectable Keychain write, B-3 atomic Keychain replace, B-4 graph close order, A-4 ack, A-5 outcome unknown, A-6 mid-transition agent. ADR-075 to ADR-079. Table in implementation-notes.md.
-
+- 2026-11-02: review1b group F2 (everything left after F1) fixed, one commit per finding. Contract run: an operation counts as verified only with a non-empty decoded reply; failures, mismatches, skips, never-run operations and empty-only operations fail the run (`VERDICT: FAIL` makes `contractTest` red in both the `pinned` and the nightly `latest` job); the run refuses any server but the throwaway one; it seeds window spend, run events and log, attachments, a question, linked issues and a budget incident; a second company proves the ownership checks live. CI run 41538007315: **49 of 52 operations verified with data, 0 empty, 0 FAIL, MISMATCH 0, 3 allow-listed (`DecisionGateway.get/decide/dismiss`: decisions are created only inside an agent run), VERDICT: PASS.** Also: attachment slice caps, a real-engine redirect test, redaction of rejection reasons, stronger Konsist scans, `openLiveGraph` and `PairingBrowsers.onMainThread` for Swift, `NSFaceIDUsageDescription`, update-never-undoes-reorder, marker-first Keychain delete, approval ownership on empty lists, dot-segment guard, documented counts check. ADR-081 to ADR-084. Finding table in `implementation-notes.md`.
+- Spec criterion 8 ("all four workflows green") is **not met on this branch** (F-C-4): the `ios` workflow has been red on `FirstRunUITests.testTypingAnAddressShowsValidationFromTheSharedCore` (`address-normalized` never appears; it also fails on the iPhone UI branch). That test and its view belong to the iPhone UI stream, which owns `iosApp/**`; this stream's Swift tests (51 Swift Testing cases) and the XCFramework/SwiftLint/swift-format steps pass in the same run. Not touched here; see the run ids in the F2 section.
