@@ -27,6 +27,11 @@ class FakeBudgetGateway(
     /** Called with the incident's id once it is resolved or dismissed, so a demo feed can drop its card. */
     var onResolved: ((String) -> Unit)? = null
 
+    /** Someone else resolved [id]: it is no longer active, so reading it is `NotFound`. */
+    fun resolveElsewhere(id: BudgetIncidentId) {
+        store[id]?.let { store[id] = it.copy(status = IncidentStatus.Resolved) }
+    }
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {

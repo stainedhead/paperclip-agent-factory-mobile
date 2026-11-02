@@ -82,7 +82,15 @@ internal fun demoPortsModule(seeded: Boolean = true) =
         }
         single { FakeBiometrics() }
         single<Biometrics> { get<FakeBiometrics>() }
-        single { DemoControls(get(), get()) }
+        single {
+            DemoControls(
+                get(),
+                get(),
+                get<DecisionGateway>(RawPort) as FakeDecisionGateway,
+                get<ApprovalGateway>(RawPort) as FakeApprovalGateway,
+                get<BudgetGateway>(RawPort) as FakeBudgetGateway,
+            )
+        }
         single { FakeConnectivity() }
         single<Connectivity> { get<FakeConnectivity>() }
         single<PairingBrowser> { FakePairingBrowser() }
@@ -125,10 +133,15 @@ private fun org.koin.core.module.Module.demoAttentionPorts() {
         }
     }
     single<AttentionCache> { FakeAttentionCache() }
-    single<DecisionGateway>(RawPort) { FakeDecisionGateway(DemoAttentionDetails.decisions()) }
+    single<DecisionGateway>(RawPort) {
+        FakeDecisionGateway(DemoAttentionDetails.decisions()).apply {
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
     single<ApprovalGateway>(RawPort) {
         FakeApprovalGateway(DemoAttentionDetails.approvals()).apply {
             issues = DemoAttentionDetails.linkedIssues()
+            commentList = DemoAttentionDetails.approvalComments().toMutableList()
             onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
         }
     }
