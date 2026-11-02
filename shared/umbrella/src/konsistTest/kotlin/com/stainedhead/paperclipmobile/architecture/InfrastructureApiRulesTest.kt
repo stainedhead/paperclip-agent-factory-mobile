@@ -103,7 +103,7 @@ class InfrastructureApiRulesTest {
 
     private companion object {
         const val API_PACKAGE = "$APP_PACKAGE.infrastructure.api"
-        val ALLOWED_PUBLIC = setOf("PaperclipHttpClient", "createPaperclipHttpClient")
+        val ALLOWED_PUBLIC = setOf("PaperclipHttpClient", "createPaperclipHttpClient", "CallbackPairingBrowser")
         val ALLOWED_IMPORTS =
             listOf(
                 "kotlin.",
