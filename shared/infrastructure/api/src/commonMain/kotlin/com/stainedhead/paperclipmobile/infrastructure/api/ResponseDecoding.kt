@@ -58,3 +58,10 @@ internal fun parseInstantOrNull(text: String?): Instant? =
             null
         }
     }
+
+/** A 2xx reply whose body the caller does not need (a 204, or a row the port does not return): success is success. */
+internal fun DomainResult<ApiResponse>.ack(): DomainResult<Unit> =
+    when (this) {
+        is DomainResult.Failure -> this
+        is DomainResult.Success -> DomainResult.Success(Unit)
+    }

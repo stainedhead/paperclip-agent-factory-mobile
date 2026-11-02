@@ -44,7 +44,7 @@ class StubPaperclipServer(
     /** Every exception message this stub could leak: none by design; the audit test reads responses instead. */
     val engine: MockEngine = MockEngine { request -> handle(request) }
 
-    fun host(name: String): StubHost = hosts.getOrPut(name) { StubHost(name) }
+    fun host(name: String): StubHost = hosts.getOrPut(name) { StubHost(name, clock) }
 
     /** Seeds an already issued, active key (a device that paired earlier). */
     fun issueKey(
@@ -52,8 +52,9 @@ class StubPaperclipServer(
         token: String,
         id: String,
         name: String,
+        roles: Map<String, String>? = null,
     ) {
-        host(host).keys[token] = StubKey(id, name)
+        host(host).keys[token] = StubKey(id, name, roles)
     }
 
     fun approve(
@@ -124,17 +125,19 @@ class StubPaperclipServer(
             }
 
             else -> {
-                authenticated(server, method, path, bearer)
+                authenticated(server, request, path, body, bearer)
             }
         }
     }
 
     private fun MockRequestHandleScope.authenticated(
         server: StubHost,
-        method: HttpMethod,
+        request: HttpRequestData,
         path: String,
+        body: String,
         bearer: String?,
     ): HttpResponseData {
+        val method = request.method
         val key = bearer?.let { server.keys[it] }?.takeUnless { it.revoked }
         if (key == null) return failure(HttpStatusCode.Unauthorized, "Board authentication required")
         return when {
@@ -160,10 +163,23 @@ class StubPaperclipServer(
             }
 
             else -> {
-                failure(HttpStatusCode.NotFound, "Not found")
+                companyWork(server, StubRequest(method, path, request.url.parameters, body, StubAccess(key.roles)))
             }
         }
     }
+
+    private fun MockRequestHandleScope.companyWork(
+        server: StubHost,
+        request: StubRequest,
+    ): HttpResponseData =
+        server.work.handle(request)?.let { reply(it) } ?: failure(HttpStatusCode.NotFound, "Not found")
+
+    private fun MockRequestHandleScope.reply(reply: StubReply): HttpResponseData =
+        if (reply.body == null) {
+            respond("", HttpStatusCode.fromValue(reply.status))
+        } else {
+            respond(reply.body, HttpStatusCode.fromValue(reply.status), JSON)
+        }
 
     private fun keyList(server: StubHost): String =
         server.keys.values
@@ -272,7 +288,9 @@ class StubPaperclipServer(
 /** One simulated server: how it reports health, its challenges, and its board keys by token. */
 class StubHost(
     val name: String,
+    clock: () -> Instant,
 ) {
+    internal val work = StubWork(clock)
     var health: HealthMode = HealthMode.Ready
     internal val challenges = mutableMapOf<String, StubChallenge>()
     internal val keys = mutableMapOf<String, StubKey>()
@@ -290,6 +308,7 @@ internal class StubChallenge(
 internal class StubKey(
     val id: String,
     val name: String,
+    val roles: Map<String, String>? = null,
 ) {
     var revoked = false
 }
