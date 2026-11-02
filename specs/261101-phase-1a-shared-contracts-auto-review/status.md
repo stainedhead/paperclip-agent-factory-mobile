@@ -87,3 +87,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: FR-R05 fixed (F-A-4 AddInstance requires a probe bound to the address).
 - 2026-11-01: FR-R06 fixed (F-A-5 enrollment failure and cancellation consistency).
 - 2026-11-01: FR-R02 fixed (F-A-2 (cancellation half, P0) sign out is cancellation-safe).
+- 2026-11-01: FR-R02 second commit (SignOutEverywhere continues past one failing factory) done.

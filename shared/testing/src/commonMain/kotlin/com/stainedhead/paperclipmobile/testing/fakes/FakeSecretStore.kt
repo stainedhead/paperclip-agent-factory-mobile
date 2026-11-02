@@ -21,6 +21,9 @@ class FakeSecretStore : SecretStore {
     /** When true every write fails and stores nothing. */
     var failWrites = false
 
+    /** Factories whose namespace cannot be deleted: `deleteNamespace` throws, as a failing secure store would. */
+    val failNamespaceDeletes = mutableSetOf<InstanceId>()
+
     var putCalls = 0
         private set
 
@@ -67,6 +70,7 @@ class FakeSecretStore : SecretStore {
     }
 
     override suspend fun deleteNamespace(instanceId: InstanceId) {
+        check(instanceId !in failNamespaceDeletes) { "the secure store is unavailable" }
         val prefix = SecretKey.namespacePrefix(instanceId)
         values.keys.removeAll { it.startsWith(prefix) }
     }

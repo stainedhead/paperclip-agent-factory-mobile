@@ -92,6 +92,8 @@ data class SettingsState(
     val isOffline: Boolean = false,
     val lastSignOutKey: ServerKeyOutcome? = null,
     val unconfirmedRevokes: Int = 0,
+    /** How many factories the last "sign out everywhere" could not sign out locally. */
+    val signOutFailures: Int = 0,
     val error: ErrorUi? = null,
 )
 
@@ -203,7 +205,13 @@ class SettingsStateHolder(
 
             SettingsIntent.MessageDismissed -> {
                 mutableState.update {
-                    it.copy(error = null, lastSignOutKey = null, unconfirmedRevokes = 0, deviceNameInvalid = false)
+                    it.copy(
+                        error = null,
+                        lastSignOutKey = null,
+                        unconfirmedRevokes = 0,
+                        signOutFailures = 0,
+                        deviceNameInvalid = false,
+                    )
                 }
             }
         }
@@ -338,7 +346,13 @@ internal class SettingsConfirmations(
 
     private suspend fun signOutEverywhere() {
         val result = useCases.signOutEverywhere()
-        state.update { it.copy(isBusy = false, unconfirmedRevokes = result.unconfirmed) }
+        state.update {
+            it.copy(
+                isBusy = false,
+                unconfirmedRevokes = result.unconfirmed,
+                signOutFailures = result.failed.size,
+            )
+        }
     }
 
     private suspend fun revoke(confirmation: SettingsConfirmation.RevokeKey) {

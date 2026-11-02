@@ -5,6 +5,7 @@ import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 
 sealed interface SignOutResult {
@@ -43,20 +44,43 @@ class SignOutInstance(
     }
 }
 
-/** How many factories were signed out and how many keys the server did not confirm revoking. */
+/**
+ * How many factories were signed out, how many keys the server did not confirm revoking, and which factories could
+ * not be signed out locally ([failed], for example a secure store error). The others were still signed out.
+ */
 data class SignOutEverywhereResult(
     val signedOut: Int,
     val unconfirmed: Int,
+    val failed: List<InstanceId>,
 )
 
-/** Signs out of every configured factory (PRD FR-024). */
+/**
+ * Signs out of every configured factory (PRD FR-024). A factory that cannot be signed out (a secure store or
+ * repository error) is reported in [SignOutEverywhereResult.failed] and the rest are still signed out. A cancellation
+ * is never swallowed; it stops after the factory in progress has finished its own local deletion.
+ */
 class SignOutEverywhere(
     private val repository: InstanceRepository,
     private val signOut: SignOutInstance,
 ) {
     suspend operator fun invoke(): SignOutEverywhereResult {
-        val results = repository.observeAll().first().map { signOut(it.id) }
-        val signedOut = results.filterIsInstance<SignOutResult.SignedOut>()
-        return SignOutEverywhereResult(signedOut.size, signedOut.count { it.serverKey == RevokeOutcome.Unconfirmed })
+        val failed = mutableListOf<InstanceId>()
+        val signedOut = mutableListOf<SignOutResult.SignedOut>()
+        for (instance in repository.observeAll().first()) {
+            val attempt = runCatching { signOut(instance.id) }
+            val error = attempt.exceptionOrNull()
+            if (error is CancellationException) throw error
+            val result = attempt.getOrNull()
+            if (result is SignOutResult.SignedOut) {
+                signedOut += result
+            } else if (error != null) {
+                failed += instance.id
+            }
+        }
+        return SignOutEverywhereResult(
+            signedOut.size,
+            signedOut.count { it.serverKey == RevokeOutcome.Unconfirmed },
+            failed,
+        )
     }
 }

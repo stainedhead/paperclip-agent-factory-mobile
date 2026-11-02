@@ -150,7 +150,7 @@ class KeyUseCasesTest {
 
             val result = SignOutEverywhere(env.repository, SignOutInstance(env.repository, env.secrets, env.revoker))()
 
-            result shouldBe SignOutEverywhereResult(signedOut = 2, unconfirmed = 2)
+            result shouldBe SignOutEverywhereResult(signedOut = 2, unconfirmed = 2, failed = emptyList())
             env.repository.current.all { it.status == InstanceStatus.SignedOut } shouldBe true
         }
 

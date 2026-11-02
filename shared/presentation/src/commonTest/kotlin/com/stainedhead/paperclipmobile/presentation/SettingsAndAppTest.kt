@@ -200,6 +200,22 @@ class SettingsStateHolderTest {
         }
 
     @Test
+    fun `FR-024 sign out everywhere reports a factory it could not sign out and signs out the rest`() =
+        runTest {
+            val env = Env(listOf(home, cloud))
+            env.secrets.failNamespaceDeletes += cloud.id
+            val holder = ready(env)
+
+            holder.onIntent(SettingsIntent.SignOutEverywhereRequested)
+            holder.onIntent(SettingsIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.signOutFailures shouldBe 1
+            env.repository.get(home.id)?.status shouldBe InstanceStatus.SignedOut
+            holder.close()
+        }
+
+    @Test
     fun `FR-024 sign out everywhere asks first and counts unconfirmed revokes`() =
         runTest {
             val env = Env(listOf(home, cloud))
@@ -212,6 +228,7 @@ class SettingsStateHolderTest {
             advanceUntilIdle()
 
             holder.state.value.unconfirmedRevokes shouldBe 2
+            holder.state.value.signOutFailures shouldBe 0
             holder.state.value.factories
                 .all { it.status == FactoryStatusUi.SignedOut } shouldBe true
             holder.onIntent(SettingsIntent.ConfirmationAccepted)

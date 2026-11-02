@@ -35,6 +35,12 @@ Part 4 (re-pairing does not revoke the old key on the server): deliberately not 
 Red evidence: 'sign out cancelled during the revoke still deletes the secrets...' -> 'expected:<[]> but was:<[instance/inst-1/boardToken]>'.
 Fix: SignOutInstance revokes in try and always runs the local deletion and the status update in finally via the shared internal helper deleteCredentialsLocally (NonCancellable), which RemoveInstance now uses too (research Q3 answered: yes, shared helper; the fake exposes onCall so a test can suspend inside the revoke). The status update is written onto a freshly read instance. The SignOutEverywhere half follows in its own commit.
 
+### 2026-11-01 F-A-2 SignOutEverywhere continues past a failing factory (P1 half)
+
+Red evidence: 'java.lang.IllegalStateException: secure store unavailable' propagated out of SignOutEverywhere and the second factory stayed SignedIn (red taken with the result type's new `failed` field stubbed to emptyList()).
+Fix: SignOutEverywhere wraps each factory in runCatching, rethrows CancellationException, records failed ids in SignOutEverywhereResult.failed and continues; SettingsState.signOutFailures exposes the count (a plain Int, no prose). A cancelled sign out everywhere stops after the factory in progress has finished its own local deletion (shielded); remaining factories are not signed out, which is the cancel the person asked for.
+Test support: FakeSecretStore.failNamespaceDeletes.
+
 ## Edge cases and solutions
 
 (none yet)
