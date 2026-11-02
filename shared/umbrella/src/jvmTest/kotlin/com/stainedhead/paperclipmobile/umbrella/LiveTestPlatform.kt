@@ -35,13 +35,17 @@ internal class LiveTestPlatform(
     override val idGenerator: IdGenerator = FakeIdGenerator("live-")
     override val timeZone: DeviceTimeZone = FakeDeviceTimeZone()
     override val persistence: PaperclipPersistence = openJvmPersistence(clock, file)
+
+    /** When true [httpClient] throws, as a platform that cannot create its client does. */
+    var failHttpClient = false
     val clients = mutableListOf<PaperclipHttpClient>()
     val engines = mutableListOf<MockEngine>()
     var releases = 0
         private set
 
     override fun httpClient(allowInsecureLocal: Boolean): PaperclipHttpClient =
-        stub.newEngine().let { engine ->
+        stub.newEngine().takeUnless { failHttpClient }.let { engine ->
+            check(engine != null) { "no HTTP client" }
             engines += engine
             PaperclipHttpClient(engine, allowInsecureLocal).also { clients += it }
         }

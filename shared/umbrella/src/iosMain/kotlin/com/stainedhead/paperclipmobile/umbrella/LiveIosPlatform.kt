@@ -27,17 +27,20 @@ internal class IosLivePlatform(
     keychainService: String,
     dataDirectory: String?,
     reasons: ReasonTexts,
+    monitorFactory: () -> NwConnectivity = ::NwConnectivity,
 ) : LivePlatform {
-    private val monitor = NwConnectivity()
-
     override val clock: Clock = SystemClock()
     override val idGenerator: IdGenerator = UuidIdGenerator()
     override val timeZone: DeviceTimeZone = SystemDeviceTimeZone()
     override val secretStore: SecretStore = KeychainSecretStore(keychainService)
     override val biometrics: Biometrics = LocalAuthenticationBiometrics(reasons)
-    override val connectivity: Connectivity = monitor
+
+    // The only member that can throw comes first, and the monitor last: a failure while opening the database must
+    // not leave a running network monitor behind (review1b F-B-4).
     override val persistence: PaperclipPersistence =
         if (dataDirectory == null) openIosPersistence(clock) else openIosPersistence(clock, dataDirectory)
+    private val monitor = monitorFactory()
+    override val connectivity: Connectivity = monitor
 
     override fun release() = monitor.close()
 }

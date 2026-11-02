@@ -17,16 +17,23 @@ internal fun PaperclipCore.createLiveGraph(
     pairingBrowser: PairingBrowser,
     platform: LivePlatform,
 ): PaperclipGraph {
-    val client = platform.httpClient(allowInsecureLocal)
-    val application =
-        koinApplication {
-            modules(
-                livePortsModule(platform, client, pairingBrowser),
-                useCaseModule(allowInsecureLocal),
-                presentationModule(),
-            )
-        }
-    return PaperclipGraph(application.koin, LiveResources(client, platform), startupNoticeOf(platform))
+    var client: PaperclipHttpClient? = null
+    return runCatching {
+        val http = platform.httpClient(allowInsecureLocal).also { client = it }
+        val application =
+            koinApplication {
+                modules(
+                    livePortsModule(platform, http, pairingBrowser),
+                    useCaseModule(allowInsecureLocal),
+                    presentationModule(),
+                )
+            }
+        PaperclipGraph(application.koin, LiveResources(http, platform), startupNoticeOf(platform))
+    }.getOrElse { failure ->
+        // A graph that cannot be built must not leave the database file open or the network monitor running.
+        LiveResources(client, platform).close()
+        throw failure
+    }
 }
 
 /**
@@ -44,12 +51,12 @@ private fun startupNoticeOf(platform: LivePlatform): StartupNotice {
 
 /** What a live graph owns and lets go of when it is closed, in order: the HTTP client, the database, the platform. */
 internal class LiveResources(
-    private val client: PaperclipHttpClient,
+    private val client: PaperclipHttpClient?,
     private val platform: LivePlatform,
 ) : AutoCloseable {
     override fun close() {
         try {
-            client.close()
+            client?.close()
         } finally {
             try {
                 platform.persistence.close()

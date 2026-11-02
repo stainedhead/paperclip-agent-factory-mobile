@@ -12,7 +12,11 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.koin.dsl.koinApplication
+import org.koin.dsl.module
+import org.koin.dsl.onClose
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 
@@ -115,4 +119,35 @@ class LiveGraphTest {
 
         platform.releases shouldBe 1
     }
+
+    @Test
+    fun `F-B-4 closing the graph stops the dependency container before it lets go of the resources`() {
+        val order = mutableListOf<String>()
+        val koin =
+            koinApplication {
+                modules(
+                    demoPortsModule(),
+                    useCaseModule(false),
+                    presentationModule(),
+                    module { single { ClosingProbe() } onClose { order += "container" } },
+                )
+            }.koin
+        koin.get<ClosingProbe>()
+
+        PaperclipGraph(koin, AutoCloseable { order += "resources" }).close()
+
+        order shouldBe listOf("container", "resources")
+    }
+
+    @Test
+    fun `F-B-4 a graph that cannot be built lets go of the platform and its database`() {
+        val platform = LiveTestPlatform().also { it.failHttpClient = true }
+
+        shouldThrow<IllegalStateException> { graphOn(platform) }
+
+        platform.releases shouldBe 1
+        runCatching { runBlocking { platform.persistence.instances.get(InstanceId("any")) } }.isFailure shouldBe true
+    }
 }
+
+private class ClosingProbe

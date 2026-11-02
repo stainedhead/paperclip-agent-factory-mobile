@@ -82,15 +82,17 @@ class PaperclipGraph internal constructor(
     private fun newScope() = newScreenScope()
 
     /**
-     * Lets go of what the graph owns: for a live graph the HTTP client, the database and the network monitor, each
-     * once, however often this is called. Close the screens' state holders first. Nothing may be used afterwards.
+     * Lets go of what the graph owns, the dependency container first and then, for a live graph, the HTTP client,
+     * the database and the network monitor, each once, however often this is called. Close the screens' state
+     * holders first. Nothing may be used afterwards.
      */
     fun close() {
         if (!closed.compareAndSet(0, 1)) return
+        // Reverse of creation: the container that uses the adapters goes first, then what the adapters stand on.
         try {
-            resources?.close()
-        } finally {
             koin.close()
+        } finally {
+            resources?.close()
         }
     }
 }
