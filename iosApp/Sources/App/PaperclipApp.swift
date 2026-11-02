@@ -3,7 +3,7 @@ import SwiftUI
 
 @main
 struct PaperclipApp: App {
-    private let graph: PaperclipGraph
+    @State private var model: FirstRunModel
 
     init() {
         #if DEBUG
@@ -11,12 +11,14 @@ struct PaperclipApp: App {
         #else
             let allowInsecureLocal = false
         #endif
-        graph = PaperclipCore.shared.createGraph(allowInsecureLocal: allowInsecureLocal)
+        let graph = PaperclipCore.shared.createGraph(allowInsecureLocal: allowInsecureLocal)
+        // Created once for the life of the app, not each time SwiftUI evaluates the scene.
+        _model = State(initialValue: FirstRunModel(holder: graph.createFirstRunStateHolder()))
     }
 
     var body: some Scene {
         WindowGroup {
-            FirstRunView(model: FirstRunModel(holder: graph.createFirstRunStateHolder()))
+            FirstRunView(model: model)
         }
     }
 }

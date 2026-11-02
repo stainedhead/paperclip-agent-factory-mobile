@@ -3,21 +3,17 @@ import SwiftUI
 
 /// Screen 15, first step: the factory address. Renders `FirstRunState`; every rule lives in shared Kotlin.
 struct FirstRunView: View {
-    @State var model: FirstRunModel
-    @State private var address = ""
+    let model: FirstRunModel
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Factory address", text: $address)
+                    TextField("Factory address", text: addressBinding)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
                         .accessibilityIdentifier("address-field")
-                        .onChange(of: address) { _, newValue in
-                            model.addressChanged(newValue)
-                        }
                 } footer: {
                     footer
                 }
@@ -29,6 +25,14 @@ struct FirstRunView: View {
             }
             .navigationTitle("Add your first factory")
         }
+        .task { await model.observe() }
+    }
+
+    /// The text field shows the shared state and sends every edit as an intent: one source of truth.
+    private var addressBinding: Binding<String> {
+        Binding(
+            get: { model.state.address },
+            set: { model.addressChanged($0) })
     }
 
     @ViewBuilder

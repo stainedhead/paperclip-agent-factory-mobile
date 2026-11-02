@@ -39,4 +39,51 @@ struct FirstRunModelTests {
         #expect(release.state.issue == .mustUseHttps)
         #expect(debug.state.canContinue)
     }
+
+    @Test func cancellingTheObservationClosesTheModel() async {
+        let model = makeModel()
+        let observing = Task { await model.observe() }
+        await Task.yield()
+        #expect(model.isClosed == false)
+
+        observing.cancel()
+        await observing.value
+
+        #expect(model.isClosed)
+    }
+
+    @Test func observingMirrorsStateChangesMadeOnTheHolder() async {
+        let holder = PaperclipCore.shared.createGraph(allowInsecureLocal: false).createFirstRunStateHolder()
+        let model = FirstRunModel(holder: holder)
+        let observing = Task { await model.observe() }
+
+        holder.onIntent(intent: FirstRunIntentAddressChanged(text: "https://paperclip.example.com"))
+
+        #expect(await eventually { model.state.canContinue })
+        observing.cancel()
+        await observing.value
+    }
+
+    @Test func closingTheModelClosesTheHolder() async {
+        let graph = PaperclipCore.shared.createDemoGraph()
+        let open = graph.createFirstRunStateHolder()
+        let closing = graph.createFirstRunStateHolder()
+        let model = FirstRunModel(holder: closing)
+        for holder in [open, closing] {
+            holder.onIntent(intent: FirstRunIntentAddressChanged(text: "https://paperclip.example.com"))
+        }
+
+        model.close()
+        model.close()  // closing twice is harmless
+        for holder in [open, closing] {
+            holder.onIntent(intent: FirstRunIntentProbeRequested.shared)
+        }
+
+        // A holder that is still open finishes its probe; the closed one has no scope left to run it in.
+        #expect(await eventually { open.state.value.probe != .probing })
+        #expect(closing.state.value.probe == .probing)
+        try? await Task.sleep(for: .milliseconds(300))
+        #expect(closing.state.value.probe == .probing)
+        #expect(model.isClosed)
+    }
 }
