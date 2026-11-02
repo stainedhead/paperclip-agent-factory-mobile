@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.issue
 
+import com.stainedhead.paperclipmobile.application.RetryBudget
 import com.stainedhead.paperclipmobile.application.retryingRead
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.Attachment
@@ -13,6 +14,7 @@ import com.stainedhead.paperclipmobile.domain.IssueId
 import com.stainedhead.paperclipmobile.domain.IssueQuery
 import com.stainedhead.paperclipmobile.domain.PlanDocument
 import com.stainedhead.paperclipmobile.domain.port.AgentGateway
+import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import com.stainedhead.paperclipmobile.domain.port.IssueGateway
 import com.stainedhead.paperclipmobile.domain.valueOrNull
 
@@ -70,23 +72,25 @@ data class IssueView(
 class LoadIssue(
     private val issues: IssueGateway,
     private val agents: AgentGateway,
+    private val connectivity: Connectivity,
 ) {
     suspend operator fun invoke(
         scope: CompanyScope,
         id: IssueId,
     ): DomainResult<IssueView> {
+        val budget = RetryBudget(connectivity)
         val detail =
-            when (val read = retryingRead { issues.get(scope, id) }) {
+            when (val read = retryingRead(budget) { issues.get(scope, id) }) {
                 is DomainResult.Failure -> return read
                 is DomainResult.Success -> read.value
             }
         val comments =
-            when (val read = retryingRead { issues.comments(scope, id) }) {
+            when (val read = retryingRead(budget) { issues.comments(scope, id) }) {
                 is DomainResult.Failure -> return read
                 is DomainResult.Success -> read.value
             }
         val names =
-            retryingRead { agents.list(scope) }.valueOrNull().orEmpty().associate { it.id to it.name }
+            retryingRead(budget) { agents.list(scope) }.valueOrNull().orEmpty().associate { it.id to it.name }
         val thread =
             comments.sortedBy { it.createdAt }.map { comment ->
                 comment.copy(authorName = comment.authorAgentId?.let { names[it] })

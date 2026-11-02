@@ -23,6 +23,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeAuthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBudgetGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
+import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDecisionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDeviceTimeZone
@@ -41,6 +42,7 @@ class Env(
     clockElapsed: () -> Long = { 0L },
 ) {
     val clock = FakeClock(elapsedMillis = clockElapsed)
+    val connectivity = FakeConnectivity()
     val repository = FakeInstanceRepository(instances)
     val secrets = FakeSecretStore()
     val settings = FakeAppSettingsStore(AppSettings(deviceName = "Alex's iPhone"))

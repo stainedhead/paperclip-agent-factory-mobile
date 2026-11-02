@@ -122,6 +122,11 @@ Fix: the 14 ordinal/valueOf one-liners became exhaustive 'when (this)' without e
 Red evidence: forbiddenMutationReResolvesTheRole failed in all 8 holder families (Approval, Decision, Budget, Agent detail, Agents, Run viewer, Issue, Work list) with 'expected:<2> but was:<1>' (auth.me was called once; the role stayed Operator and actions stayed enabled); the Inbox variant was added after the fix and passes.
 Fix: a Forbidden mutation result triggers ONE resolveContext call (ContextSource.reResolve for the work screens, refreshContext for the screens that keep the context in their model); the mutation is not repeated, the old role is kept if the read fails, and the holder re-renders with the new role (ActionResult.role carries it). Reads that answer Forbidden are not handled; the finding only asked for mutations to refresh the role.
 
+### 2026-11-01 F-A-11 retry budget, offline and certificate failures (Group 2)
+
+Red evidence: load_approval_offline_fails_without_backoff 'expected:<0L> but was:<3500L>'; multi_read_use_case_total_wait_is_bounded 'expected:<true> but was:<false>' (a read that recovers after 1.5 s plus a read that never answers waited 5 s). certificate_failure_is_not_retried passes once DomainError.CertificateInvalid exists: with the case split, isTransientFailure() already excludes it, so that test guards the split rather than turning red.
+Fix: ADR-034. RetryBudget (3.5 s per use case), connectivity check, DomainError.CertificateInvalid with ErrorKey.CertificateInvalid, LoadApproval/LoadIssue/LoadInstanceAccess take Connectivity. Phase 1b adapters must map TLS failures to CertificateInvalid.
+
 ## Edge cases and solutions
 
 (none yet)

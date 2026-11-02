@@ -21,7 +21,7 @@ import kotlin.time.Duration.Companion.hours
 class AccessAndExpiryTest {
     private val instance = TestData.instance()
 
-    private fun Env.load() = LoadInstanceAccess(repository, auth, signedOut, clock)
+    private fun Env.load() = LoadInstanceAccess(repository, auth, signedOut, clock, connectivity)
 
     @Test
     fun `FR-022 access lists the companies with the role in each`() =

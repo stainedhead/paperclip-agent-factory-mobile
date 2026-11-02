@@ -3,6 +3,7 @@ package com.stainedhead.paperclipmobile.application.approval
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
 import com.stainedhead.paperclipmobile.application.InvalidInput
 import com.stainedhead.paperclipmobile.application.MutationResult
+import com.stainedhead.paperclipmobile.application.RetryBudget
 import com.stainedhead.paperclipmobile.application.failed
 import com.stainedhead.paperclipmobile.application.needsReread
 import com.stainedhead.paperclipmobile.application.retryingRead
@@ -19,26 +20,29 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Permissions
 import com.stainedhead.paperclipmobile.domain.port.ApprovalGateway
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
+import com.stainedhead.paperclipmobile.domain.port.Connectivity
 
 /** Loads an approval with its linked issues and comments (PRD FR-050). Reads are retried (FR-096). */
 class LoadApproval(
     private val gateway: ApprovalGateway,
+    private val connectivity: Connectivity,
 ) {
     suspend operator fun invoke(
         scope: CompanyScope,
         id: ApprovalId,
     ): DomainResult<ApprovalDetail> {
+        val budget = RetryBudget(connectivity)
         val approval =
-            when (val read = retryingRead { gateway.get(scope, id) }) {
+            when (val read = retryingRead(budget) { gateway.get(scope, id) }) {
                 is DomainResult.Success -> read.value
                 is DomainResult.Failure -> return read
             }
         val issues =
-            when (val read = retryingRead { gateway.linkedIssues(scope, id) }) {
+            when (val read = retryingRead(budget) { gateway.linkedIssues(scope, id) }) {
                 is DomainResult.Success -> read.value
                 is DomainResult.Failure -> return read
             }
-        return when (val read = retryingRead { gateway.comments(scope, id) }) {
+        return when (val read = retryingRead(budget) { gateway.comments(scope, id) }) {
             is DomainResult.Success -> DomainResult.Success(ApprovalDetail(approval, issues, read.value))
             is DomainResult.Failure -> read
         }

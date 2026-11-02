@@ -2,8 +2,11 @@ package com.stainedhead.paperclipmobile.domain
 
 /** Why a call to a Paperclip instance failed (PRD FR-095 to FR-097). Raw server bodies never cross this type. */
 sealed interface DomainError {
-    /** No network path to the host, or its certificate or name could not be verified. */
+    /** No network path to the host. A read may be tried again; the phone may be offline or the server restarting. */
     data object Unreachable : DomainError
+
+    /** The host's certificate or name could not be verified. Trying again cannot help, so reads do not retry it. */
+    data object CertificateInvalid : DomainError
 
     data object Timeout : DomainError
 

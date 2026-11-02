@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.auth
 
+import com.stainedhead.paperclipmobile.application.RetryBudget
 import com.stainedhead.paperclipmobile.application.retryingRead
 import com.stainedhead.paperclipmobile.domain.Company
 import com.stainedhead.paperclipmobile.domain.DomainResult
@@ -8,6 +9,7 @@ import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.UserProfile
 import com.stainedhead.paperclipmobile.domain.port.AuthGateway
 import com.stainedhead.paperclipmobile.domain.port.Clock
+import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 
 /** Who the key belongs to and which companies it can open, each with the person's role (PRD FR-022, ADR-011). */
@@ -25,12 +27,14 @@ class LoadInstanceAccess(
     private val auth: AuthGateway,
     private val signedOut: SignedOutMarker,
     private val clock: Clock,
+    private val connectivity: Connectivity,
 ) {
     suspend operator fun invoke(instanceId: InstanceId): DomainResult<InstanceAccess> {
-        val me = retryingRead { auth.me(instanceId) }
+        val budget = RetryBudget(connectivity)
+        val me = retryingRead(budget) { auth.me(instanceId) }
         signedOut.noteIfUnauthorized(instanceId, me)
         if (me is DomainResult.Failure) return me
-        val companies = retryingRead { auth.listCompanies(instanceId) }
+        val companies = retryingRead(budget) { auth.listCompanies(instanceId) }
         signedOut.noteIfUnauthorized(instanceId, companies)
         if (companies is DomainResult.Failure) return companies
         val access = (me as DomainResult.Success).value

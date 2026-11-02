@@ -224,3 +224,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `InstanceLocks` (application) hands out one `Mutex` per `InstanceId`. `UpdateInstance`, `KeyEnrollment` (put, re-read and update), the local half of sign out and remove (`deleteCredentialsLocally`, taken inside `NonCancellable`) and `SignedOutMarker` run their read-modify-write under it. A lock is never held across a server call. The composition root creates one `InstanceLocks` and passes it to those use cases; there is no global state, so tests build their own.
 
 **Consequences.** A concurrent edit waits for an enrollment to finish and then wins or loses cleanly: either the new key on the old address is kept, or the address changes and the key is removed with the namespace. The use case constructors take the lock as an argument.
+
+## ADR-034: Read retries share a per-use-case budget, stop when offline, and never repeat a certificate failure
+
+**Status:** Accepted (2026-11-01, review fix F-A-11)
+
+**Context.** Every read retried on its own (500 ms, 1 s, 2 s), so a use case with three reads waited up to 10 s before showing a failure, an offline phone waited the full series, and a certificate or name failure, which can never succeed, was retried as if it were a dropped connection.
+
+**Decision.** `RetryBudget` holds the 3.5 s a use case may spend waiting across ALL its reads; `retryingRead(budget)` stops retrying when the budget is spent or `Connectivity` says offline. `LoadApproval`, `LoadIssue` and `LoadInstanceAccess` (the multi-read use cases) take `Connectivity` and share one budget per call; single-read use cases keep a fresh budget. `DomainError.CertificateInvalid` is split from `Unreachable` and is not transient, so it reaches the screen at once (`ErrorKey.CertificateInvalid`).
+
+**Consequences.** Phase 1b adapters must map TLS and name-verification failures to `CertificateInvalid` and plain connection failures to `Unreachable`. Mutations are still never retried.

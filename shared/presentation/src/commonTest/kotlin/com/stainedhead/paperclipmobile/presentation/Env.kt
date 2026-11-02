@@ -148,7 +148,7 @@ class Env(
     val get = GetInstance(repository)
     val pair = PairInstance(repository, auth, browser, clock, settings, enrollment)
     val saveKey = SaveManualBoardKey(repository, auth, enrollment)
-    val loadAccess = LoadInstanceAccess(repository, auth, signedOutMarker, clock)
+    val loadAccess = LoadInstanceAccess(repository, auth, signedOutMarker, clock, connectivity)
     val updateSettings = UpdateAppSettings(settings)
     val switchInstance = SwitchInstance(repository, settings)
     val switchCompany = SwitchCompany(repository)
@@ -201,7 +201,7 @@ class Env(
     val approval =
         ApprovalUseCases(
             resolveContext,
-            LoadApproval(approvals),
+            LoadApproval(approvals, connectivity),
             ApproveApproval(approvals),
             RejectApproval(approvals, deviceAuth),
             RequestRevision(approvals),
@@ -249,7 +249,7 @@ class Env(
         IssueUseCases(
             resolveContext,
             get,
-            LoadIssue(issues, agents),
+            LoadIssue(issues, agents, connectivity),
             LoadIssuePlan(issues),
             ListIssueRuns(runs),
             ListIssueAttachments(issues),

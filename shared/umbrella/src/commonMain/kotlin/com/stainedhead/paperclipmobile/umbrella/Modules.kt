@@ -163,7 +163,7 @@ private fun org.koin.core.module.Module.instanceUseCases() {
 private fun org.koin.core.module.Module.authUseCases() {
     single { PairInstance(get(), get(), get(), get(), get(), get()) }
     single { SaveManualBoardKey(get(), get(), get()) }
-    single { LoadInstanceAccess(get(), get(), get(), get()) }
+    single { LoadInstanceAccess(get(), get(), get(), get(), get()) }
     single { SignOutInstance(get(), get(), get(), get()) }
     single { SignOutEverywhere(get(), get()) }
     single { ListBoardKeys(get(), get(), get()) }

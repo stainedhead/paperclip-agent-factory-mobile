@@ -26,7 +26,7 @@ class LoadApprovalTest {
         runTest {
             val env = Env()
 
-            val result = LoadApproval(env.approvals)(env.scope, id)
+            val result = LoadApproval(env.approvals, env.connectivity)(env.scope, id)
 
             val detail = (result as DomainResult.Success).value
             detail.approval.id shouldBe id
@@ -40,7 +40,7 @@ class LoadApprovalTest {
             val env = Env()
             env.approvals.failures["get"] = DomainError.Unreachable
 
-            LoadApproval(env.approvals)(env.scope, id)
+            LoadApproval(env.approvals, env.connectivity)(env.scope, id)
 
             env.approvals.count("get") shouldBe 4
         }
@@ -50,7 +50,7 @@ class LoadApprovalTest {
         runTest {
             val env = Env()
 
-            val result = LoadApproval(env.approvals)(env.scope, ApprovalId("nope"))
+            val result = LoadApproval(env.approvals, env.connectivity)(env.scope, ApprovalId("nope"))
 
             (result as DomainResult.Failure).error shouldBe DomainError.NotFound
             env.approvals.count("get") shouldBe 1
@@ -63,7 +63,8 @@ class LoadApprovalTest {
             val env = Env()
             env.approvals.failures["comments"] = DomainError.Forbidden
 
-            (LoadApproval(env.approvals)(env.scope, id) as DomainResult.Failure).error shouldBe DomainError.Forbidden
+            (LoadApproval(env.approvals, env.connectivity)(env.scope, id) as DomainResult.Failure).error shouldBe
+                DomainError.Forbidden
         }
 }
 

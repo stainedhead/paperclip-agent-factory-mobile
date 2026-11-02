@@ -80,7 +80,7 @@ internal fun Module.sliceThreeUseCases() {
 private fun Module.workUseCases() {
     single { ListIssues(get()) }
     single { SearchIssues(get()) }
-    single { LoadIssue(get(), get()) }
+    single { LoadIssue(get(), get(), get()) }
     single { LoadIssuePlan(get()) }
     single { ListIssueAttachments(get()) }
     single { CommentOnIssue(get()) }

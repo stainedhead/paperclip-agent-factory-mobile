@@ -40,6 +40,9 @@ internal fun BaseUriError.toIssue(): AddressIssue? =
 /** Keys for the messages of PRD FR-097. The platform UI owns the wording. */
 enum class ErrorKey {
     Unreachable,
+
+    /** The server's certificate or name could not be verified. */
+    CertificateInvalid,
     Timeout,
     SignedOut,
     NoPermission,
@@ -66,6 +69,7 @@ data class ErrorUi(
 internal fun DomainError.toErrorUi(): ErrorUi =
     when (this) {
         DomainError.Unreachable -> ErrorUi(ErrorKey.Unreachable)
+        DomainError.CertificateInvalid -> ErrorUi(ErrorKey.CertificateInvalid)
         DomainError.Timeout -> ErrorUi(ErrorKey.Timeout)
         DomainError.Unauthorized -> ErrorUi(ErrorKey.SignedOut)
         DomainError.Forbidden -> ErrorUi(ErrorKey.NoPermission)

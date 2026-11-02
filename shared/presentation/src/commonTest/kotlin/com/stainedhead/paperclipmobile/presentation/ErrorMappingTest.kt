@@ -11,6 +11,7 @@ class ErrorMappingTest {
         val table =
             mapOf(
                 DomainError.Unreachable to ErrorKey.Unreachable,
+                DomainError.CertificateInvalid to ErrorKey.CertificateInvalid,
                 DomainError.Timeout to ErrorKey.Timeout,
                 DomainError.Unauthorized to ErrorKey.SignedOut,
                 DomainError.Forbidden to ErrorKey.NoPermission,

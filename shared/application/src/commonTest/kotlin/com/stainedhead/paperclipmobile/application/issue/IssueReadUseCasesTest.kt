@@ -104,7 +104,7 @@ class LoadIssueTest {
         runTest {
             val env = Env()
 
-            val view = LoadIssue(env.issues, env.agents)(env.scope, WorkFixtures.pap1182).value()
+            val view = LoadIssue(env.issues, env.agents, env.connectivity)(env.scope, WorkFixtures.pap1182).value()
 
             view.detail.issue.identifier shouldBe "PAP-1182"
             view.detail.subtasks.size shouldBe 2
@@ -122,7 +122,7 @@ class LoadIssueTest {
             val env = Env()
             env.agents.failures["list"] = DomainError.Forbidden
 
-            val view = LoadIssue(env.issues, env.agents)(env.scope, WorkFixtures.pap1182).value()
+            val view = LoadIssue(env.issues, env.agents, env.connectivity)(env.scope, WorkFixtures.pap1182).value()
 
             view.agentNames shouldBe emptyMap()
             view.comments.size shouldBe 2
@@ -133,7 +133,7 @@ class LoadIssueTest {
         runTest {
             val env = Env()
 
-            val result = LoadIssue(env.issues, env.agents)(env.scope, IssueId("nope"))
+            val result = LoadIssue(env.issues, env.agents, env.connectivity)(env.scope, IssueId("nope"))
 
             (result as DomainResult.Failure).error shouldBe DomainError.NotFound
             env.issues.count("get") shouldBe 1
@@ -145,7 +145,7 @@ class LoadIssueTest {
             val env = Env()
             env.issues.failures["comments"] = DomainError.ServerError
 
-            val result = LoadIssue(env.issues, env.agents)(env.scope, WorkFixtures.pap1182)
+            val result = LoadIssue(env.issues, env.agents, env.connectivity)(env.scope, WorkFixtures.pap1182)
 
             (result is DomainResult.Failure) shouldBe true
         }
