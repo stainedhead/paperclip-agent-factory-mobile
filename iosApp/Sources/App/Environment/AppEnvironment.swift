@@ -13,7 +13,7 @@ enum ScreenKey: Hashable {
         switch route {
         case .manageFactories: self = .manageFactories
         case .editFactory(let id): self = .editFactory(id: id)
-        case .settings: self = .settings
+        case .settings, .pairedDevices: self = .settings
         default: return nil
         }
     }

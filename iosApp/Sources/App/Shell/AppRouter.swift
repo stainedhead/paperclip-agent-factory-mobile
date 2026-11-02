@@ -28,6 +28,7 @@ enum AppRoute: Hashable {
     /// `nil` is the add-a-factory form.
     case editFactory(id: String?)
     case settings
+    case pairedDevices
 }
 
 enum AppSheet: Hashable, Identifiable {

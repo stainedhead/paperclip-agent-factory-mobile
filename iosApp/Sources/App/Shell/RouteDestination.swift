@@ -8,6 +8,8 @@ struct RouteDestination: View {
     var body: some View {
         switch route {
         case .editFactory(let id): EditFactoryView(environment: environment, instanceId: id)
+        case .settings: SettingsView(environment: environment)
+        case .pairedDevices: PairedDevicesView(environment: environment)
         case .manageFactories: ManageFactoriesView(environment: environment)
         default: RoutePlaceholderView(route: route)
         }
