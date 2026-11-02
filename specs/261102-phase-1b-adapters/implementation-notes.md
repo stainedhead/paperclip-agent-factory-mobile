@@ -61,3 +61,11 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 - `delete` removes the cache rows of the instance in the same transaction; no foreign keys or cascade are relied on.
 - Red evidence: `SqlInstanceRepositoryTest` failed to compile with `Unresolved reference 'SqlInstanceRepository'` before
   the class and queries existed.
+
+## Group 2: SqlAppSettingsStore
+
+- One row (`id = 1` enforced by CHECK). With no row the store emits `AppSettings(DEFAULT_DEVICE_NAME)` at once (a `first()`
+  on an empty database would otherwise hang); the shared contract never covers that case, so a persistence test does.
+- An unknown idle period name reads as the domain default. `selectedInstanceId` is not cleared when its instance is
+  deleted (the domain use cases do not do it either; the reader falls back); noted, not changed.
+- Red evidence: `Unresolved reference 'SqlAppSettingsStore'` before the class existed.
