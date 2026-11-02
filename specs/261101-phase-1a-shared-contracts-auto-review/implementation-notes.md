@@ -55,6 +55,22 @@ Phase 1b adapters must map HTTP 429 to DomainError.RateLimited.
 
 (none yet)
 
+## Group 1 commit hashes
+
+| Finding | Commit |
+|---|---|
+| F-C-8 prerequisite (host and token recording fake) | 510a01f |
+| F-A-1 | 1ca031a |
+| F-B-1 | cc404bd (plus the follow-up test commit after eb1afad) |
+| F-A-4 | 05624e0 |
+| F-A-5 | 4ad957d |
+| F-A-2 cancellation half | 2663f69 |
+| F-A-2 SignOutEverywhere half | e67e22c |
+| F-A-7 | eb1afad |
+
+F-C-8 (FR-R21) stays open in status.md: the host-recording fake is in, but the contract case "a challenge created for server A polled against server B is NotFound" belongs to Group 3.
+Group 1 coverage (fresh Kover run): core 97.67% (was 97.58%), presentation 97.70% (was 97.96%, -0.26): the drop is Kover counting the header lines of when-branches that stopped being last plus the unreachable-by-design ProbeRequired defence branches in four holder results.
+
 ## Lessons learned
 
 (none yet)
