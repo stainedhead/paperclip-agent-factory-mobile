@@ -68,7 +68,7 @@ internal class ApiBytes(
  * set it receives one line per call with the method, host, path and status, and never a query, header or body.
  */
 class PaperclipHttpClient(
-    engine: HttpClientEngine,
+    private val engine: HttpClientEngine,
     private val allowInsecureLocal: Boolean,
     private val pinsEnforced: Boolean = false,
     private val trace: ((String) -> Unit)? = null,
@@ -84,7 +84,11 @@ class PaperclipHttpClient(
             }
         }
 
-    fun close() = http.close()
+    /** Closes the client and the engine under it: Ktor does not close an engine it was handed (AD-040). */
+    fun close() {
+        http.close()
+        engine.close()
+    }
 
     internal suspend fun send(request: ApiRequest): DomainResult<ApiResponse> = call(request, null, ::interpret)
 
