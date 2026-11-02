@@ -19,7 +19,6 @@ struct InboxView: View {
             }
         }
         .navigationTitle(ShellLabel.tabInbox.text)
-        .toolbar { ToolbarItem(placement: .topBarLeading) { FactorySwitcher(environment: environment) } }
         .accessibilityIdentifier("inbox-root")
     }
 }
@@ -31,8 +30,9 @@ private struct FactorySwitcher: View {
 
     var body: some View {
         let state = environment.app.state
+        let factories = environment.factoriesModel()
         let factory = state.selectedInstanceName
-        let company = environment.factoriesModel().state.rows
+        let company = factories.state.rows
             .first { $0.id == state.selectedInstanceId }
             .flatMap { row in row.companies.first { $0.id == row.selectedCompanyId }?.name }
         let label = InboxHeader.factoryLabel(factory: factory, company: company)
@@ -41,14 +41,21 @@ private struct FactorySwitcher: View {
         } label: {
             HStack(spacing: Spacing.small) {
                 Circle().fill(Palette.success.color).frame(width: 8, height: 8).accessibilityHidden(true)
-                Text(label).font(Typography.secondary).lineLimit(1)
+                Text(label).font(Typography.secondary).multilineTextAlignment(.leading)
                 Image(systemName: "chevron.down").font(Typography.micro).accessibilityHidden(true)
             }
-            .frame(minHeight: Spacing.minimumTarget)
+            .frame(maxWidth: .infinity, minHeight: Spacing.minimumTarget, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(Palette.textPrimary.color)
         .accessibilityLabel(label)
         .accessibilityHint(InboxLabel.switcherHint.text)
         .accessibilityIdentifier("inbox-switcher")
+        .task {
+            factories.refresh()
+            await factories.observe()
+        }
     }
 }
 
@@ -101,13 +108,16 @@ private struct InboxScreen: View {
 
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: Spacing.extraLarge) {
+            FactorySwitcher(environment: environment)
             if state.isOffline {
                 OfflineBanner(updatedAtEpochMillis: state.updatedAtEpochMillis?.int64Value)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
                 countLine
             }
             if let reason = state.actionsDisabledReason, state.phase == .content {
                 DisabledReasonView(reason: reason)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if let feedback = state.feedback, !(feedback.kind == .deviceAuth && state.rejectPrompt != nil) {
                 FeedbackBanner(feedback: feedback) { model.dismissMessage() }
@@ -131,7 +141,7 @@ private struct InboxScreen: View {
     }
 
     private var countLine: some View {
-        AdaptiveStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
+        FlowLayout(spacing: Spacing.small) {
             Text(
                 state.badgeCount > 0
                     ? InboxLabel.dueToday.text(Int(state.badgeCount)) : InboxLabel.dueTodayNone.text
