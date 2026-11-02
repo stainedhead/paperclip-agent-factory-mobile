@@ -131,3 +131,22 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
   database and is not counted as a recreation. A version 1 file on disk is migrated at open.
 - Red evidence: `Unresolved reference 'openJvmPersistence'`. The parallel-writers test through the production wiring
   was written after the serial executor and passed at once; it guards the wiring, not a new behaviour.
+
+## Group 7: iOS factory (`openIosPersistence`) and backup exclusion
+
+- Location: `Application Support/PaperclipData/paperclip.db` (`iosDataDirectory()`, asserted by a test). Not `Caches`
+  (iOS may purge it) and not `Documents` (visible in Files). The native driver's own default base path could not be
+  located from a Kotlin/Native test host (the file written without a `basePath` was in neither the simulator data
+  container nor the project), which is one more reason the path is always explicit.
+- Backup: `NSURLIsExcludedFromBackupKey` on the folder (covers the `-wal`/`-shm` sidecars SQLite creates later; the key is
+  not inherited in `resourceValues`, so each file that exists is also flagged) and file protection class
+  `CompleteUntilFirstUserAuthentication`. Failing to set the backup flag throws.
+- Verified on the simulator by reading the resource values back: folder and database file are excluded after a normal
+  open and after a recreation from a corrupt file, and after later writes and close.
+- Surprise recorded: on a database that was just recreated (the first open threw on a garbage file) the file flag set
+  immediately after open was gone after the first write in `PaperclipPersistence`'s constructor; applying the flags after
+  the constructor fixed it, and the folder flag, which never changes, is the primary guard. The cause was not found.
+- Not verifiable: the file protection class (the simulator returns no `NSFileProtectionKey` attribute: a test asserting it
+  failed with null and was removed) and real iCloud/iTunes backups.
+- Red evidence: `Unresolved reference 'openIosPersistence'`; the recreation test then failed with the flag false until
+  the order of protect and construct was changed.
