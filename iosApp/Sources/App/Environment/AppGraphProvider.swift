@@ -27,13 +27,31 @@ struct DemoGraphProvider: AppGraphProvider {
     }
 }
 
+/// Demo ports with no factory yet and a person who approves every pairing at once: the first-run flow on fakes, for
+/// demo launches and UI tests.
+struct FirstRunDemoGraphProvider: AppGraphProvider {
+    let mode = GraphMode.demo
+    let isAvailable = true
+
+    func makeGraph() -> PaperclipGraph {
+        PaperclipCore.shared.createFirstRunDemoGraph()
+    }
+}
+
 /// PLACEHOLDER until Phase 1b merges: the real-factory graph does not exist yet. This provider is marked unavailable
 /// and hands back the shared graph that today runs on in-memory fakes (ADR-037), which starts with no factory, so the
-/// first-run flow is what a launch without `-demo` shows. Phase 1b's `createLiveGraph(...)` replaces the body of
-/// `makeGraph()` and flips `isAvailable`; no view changes.
+/// first-run flow is what a launch without `-demo` shows.
+///
+/// It already takes the Swift side of pairing, so Phase 1b changes only the factory call in `makeGraph()` (to
+/// `createLiveGraph(allowInsecureLocal:pairingBrowser:)`, passing `pairingBrowser`) and flips `isAvailable`; no view
+/// changes. Until then the fakes graph keeps its own scripted browser and `pairingBrowser` is built but not used.
 struct LiveGraphProvider: AppGraphProvider {
     let mode = GraphMode.live
     let isAvailable = false
+    let opener: any ApprovalPageOpener
+
+    /// The shared port the live graph will be given: the approval link goes from the shared `Secret` to the opener.
+    var pairingBrowser: any PairingBrowser { OpenerPairingBrowser(opener: opener) }
 
     func makeGraph() -> PaperclipGraph {
         #if DEBUG

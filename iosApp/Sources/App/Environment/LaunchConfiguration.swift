@@ -4,17 +4,20 @@ import PaperclipKit
 /// factory behaves.
 ///
 /// - `-demo`: run on the demo graph (the design mocks' data) instead of the live seam.
+/// - `-demo-first-run`: run on fakes that start with no factory and approve every pairing (the first-run flow).
 /// - `-demo-biometrics cancelled,failed,approved`: script the device-owner prompt for the demo graph, in order.
 /// - `-demo-idle immediately`: set the app lock's idle period at launch (so one background trip re-locks).
 /// - `-demo-diagnostics`: show a small read-only counter overlay (prompt count) that UI tests can read.
 struct LaunchConfiguration {
     let useDemo: Bool
+    let useFirstRunDemo: Bool
     let scriptedBiometrics: [BiometricResult]
     let demoIdlePeriod: IdlePeriod?
     let showsDiagnostics: Bool
 
     init(arguments: [String]) {
         useDemo = arguments.contains("-demo")
+        useFirstRunDemo = arguments.contains("-demo-first-run")
         showsDiagnostics = arguments.contains("-demo-diagnostics")
         scriptedBiometrics =
             (Self.value(after: "-demo-biometrics", in: arguments) ?? "")

@@ -40,3 +40,12 @@ struct LaunchConfigurationTests {
         #expect(config.scriptedBiometrics.isEmpty)
     }
 }
+
+struct FirstRunDemoLaunchTests {
+    @Test func theFirstRunDemoFlagSelectsTheEmptyScriptedGraphAndNotTheFullDemo() {
+        let config = LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"])
+        #expect(config.useFirstRunDemo)
+        #expect(config.useDemo == false)
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).useFirstRunDemo == false)
+    }
+}

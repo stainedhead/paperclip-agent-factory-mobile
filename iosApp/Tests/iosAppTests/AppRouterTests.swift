@@ -75,3 +75,28 @@ struct AppRouterTests {
         #expect(router.activeRoutes == [.decision(id: "a"), .agent(id: "b")])
     }
 }
+
+@MainActor
+struct FactoriesRoutesTests {
+    @Test func manageEditAndSettingsArePushesInTheFactoriesStack() {
+        let router = AppRouter()
+        router.push(.settings, in: .factories)
+        router.push(.editFactory(id: nil))
+        #expect(router.selectedTab == .factories)
+        #expect(router.path(for: .factories) == [.settings, .editFactory(id: nil)])
+        #expect(router.path(for: .factories) != [.settings, .editFactory(id: "a")])
+        router.push(.manageFactories)
+        #expect(router.activeRoutes.count == 3)
+    }
+
+    @Test func everyNavigationChangeIsAnnouncedSoModelsCanBeReleased() {
+        let router = AppRouter()
+        var count = 0
+        router.onChange = { count += 1 }
+        router.push(.settings)
+        router.setPath([], for: .inbox)
+        router.popToRoot(.inbox)
+        router.select(.work)
+        #expect(count >= 3)
+    }
+}

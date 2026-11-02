@@ -98,6 +98,9 @@ final class ModelStore<Key: Hashable> {
 
     var keys: Set<Key> { Set(entries.keys) }
 
+    /// Every live model, for the owner to address them all (for example to cancel a pairing).
+    var allModels: [AnyObject] { entries.values.map(\.model) }
+
     func model<Holder: StateHolderProtocol>(for key: Key, make: () -> Holder) -> HolderModel<Holder> {
         if let existing = entries[key]?.model as? HolderModel<Holder> { return existing }
         let model = HolderModel(holder: make())

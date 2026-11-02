@@ -59,7 +59,7 @@ struct AppEnvironmentTests {
     }
 
     @Test func theLiveProviderIsAPlaceholderThatIsMarkedUnavailable() {
-        let provider: any AppGraphProvider = LiveGraphProvider()
+        let provider: any AppGraphProvider = LiveGraphProvider(opener: ASWebAuthSessionPairingBrowser())
         #expect(provider.mode == .live)
         #expect(provider.isAvailable == false)
         // The seam compiles today: it still hands back a graph (the fake-backed one, ADR-037) so first run works.

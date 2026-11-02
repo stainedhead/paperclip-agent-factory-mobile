@@ -24,6 +24,10 @@ enum AppRoute: Hashable {
     case issue(id: String)
     case agent(id: String)
     case run(id: String)
+    case manageFactories
+    /// `nil` is the add-a-factory form.
+    case editFactory(id: String?)
+    case settings
 }
 
 enum AppSheet: Hashable, Identifiable {
@@ -41,6 +45,9 @@ final class AppRouter {
     private(set) var sheet: AppSheet?
     private var paths: [AppTab: [AppRoute]] = [:]
 
+    /// Called after every change to the stacks, so the owner can release models whose route is gone.
+    @ObservationIgnored var onChange: (() -> Void)?
+
     var activeRoutes: [AppRoute] {
         AppTab.allCases.flatMap { paths[$0] ?? [] }
     }
@@ -53,20 +60,24 @@ final class AppRouter {
     func select(_ tab: AppTab) {
         if tab == selectedTab { paths[tab] = [] }
         selectedTab = tab
+        onChange?()
     }
 
     func push(_ route: AppRoute, in tab: AppTab? = nil) {
         let target = tab ?? selectedTab
         selectedTab = target
         paths[target, default: []].append(route)
+        onChange?()
     }
 
     func setPath(_ path: [AppRoute], for tab: AppTab) {
         paths[tab] = path
+        onChange?()
     }
 
     func popToRoot(_ tab: AppTab) {
         paths[tab] = []
+        onChange?()
     }
 
     func present(_ sheet: AppSheet) {

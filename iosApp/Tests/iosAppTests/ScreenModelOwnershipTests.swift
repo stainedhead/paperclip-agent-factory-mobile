@@ -1,0 +1,98 @@
+import PaperclipKit
+import SwiftUI
+import Testing
+
+@testable import iosApp
+
+/// The lifecycle rule: a screen model is owned by the environment, kept while its route is on a navigation stack and
+/// closed once the route leaves it, never because a view task ended.
+@MainActor
+struct ScreenModelOwnershipTests {
+    private func demo(_ arguments: [String] = []) -> AppEnvironment {
+        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp", "-demo"] + arguments))
+        environment.start()
+        return environment
+    }
+
+    @Test func theFactoriesRootModelIsCreatedOnceAndSurvivesNavigation() async {
+        let environment = demo()
+        let first = environment.factoriesModel()
+        environment.router.push(.settings, in: .factories)
+        environment.router.popToRoot(.factories)
+        #expect(environment.factoriesModel() === first)
+        #expect(first.isClosed == false)
+        environment.shutdown()
+        #expect(first.isClosed)
+    }
+
+    @Test func aPushedScreensModelIsClosedExactlyWhenItsRouteLeavesTheStack() async {
+        let environment = demo()
+        environment.router.push(.manageFactories, in: .factories)
+        let manage = environment.manageModel()
+        #expect(environment.manageModel() === manage)
+        #expect(manage.isClosed == false)
+
+        environment.router.setPath([], for: .factories)  // the system back gesture writes the path back
+        #expect(manage.isClosed)
+        environment.shutdown()
+    }
+
+    @Test func editModelsAreKeyedByFactoryAndAddIsItsOwnKey() async {
+        let environment = demo()
+        environment.router.push(.editFactory(id: "demo-home"), in: .factories)
+        let home = environment.editModel(id: "demo-home")
+        let add = environment.editModel(id: nil)
+        #expect(home !== add)
+
+        environment.router.setPath([.editFactory(id: "demo-home")], for: .factories)
+        #expect(home.isClosed == false)
+        #expect(add.isClosed, "no route asks for the add screen any more")
+        environment.shutdown()
+    }
+
+    @Test func leavingTheGraphClosesEveryScreenModel() async {
+        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
+        environment.start()
+        let factories = environment.factoriesModel()
+        environment.useDemo()
+        #expect(factories.isClosed)
+        environment.shutdown()
+    }
+
+    @Test func aPairingPageThatCouldNotOpenCancelsThePairingOnScreen() async {
+        let environment = AppEnvironment(
+            configuration: LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"]))
+        environment.start()
+        #expect(await eventually { environment.app.state.isLoaded })
+        let observing = Task { await environment.firstRun.observe() }
+        environment.firstRun.send(FirstRunIntentAddressChanged(text: "https://paperclip.example.org"))
+        environment.firstRun.send(FirstRunIntentProbeRequested.shared)
+        #expect(await eventually { environment.firstRun.state.probe == .accepted })
+        environment.firstRun.send(FirstRunIntentContinueRequested.shared)
+        #expect(await eventually { environment.firstRun.state.step == .pair })
+        environment.firstRun.send(FirstRunIntentPairRequested.shared)
+        #expect(environment.firstRun.state.pairing == .waiting)
+
+        environment.pairingPageEvent(.couldNotPresent)
+        #expect(await eventually { environment.firstRun.state.pairing == .cancelled })
+        observing.cancel()
+        environment.shutdown()
+    }
+
+    @Test func theFirstRunDemoGraphStartsEmptyAndShowsDemoTimeAsTheReferenceDate() async {
+        let environment = AppEnvironment(
+            configuration: LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"]))
+        environment.start()
+        #expect(environment.mode == .demo)
+        #expect(await eventually { environment.app.state.isLoaded })
+        #expect(environment.app.state.hasFactories == false)
+        #expect(environment.referenceDate != nil)
+        environment.shutdown()
+    }
+
+    @Test func aLiveGraphUsesTheWallClockForUpdatedLabels() {
+        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
+        #expect(environment.referenceDate == nil)
+        environment.shutdown()
+    }
+}
