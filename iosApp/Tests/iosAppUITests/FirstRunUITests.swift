@@ -17,8 +17,7 @@ final class FirstRunUITests: XCTestCase {
     private func typeAddress(_ address: String, in app: XCUIApplication) {
         let field = app.textFields["address-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 15))
-        field.focus()
-        field.typeText(address)
+        field.enterText(address)
     }
 
     @MainActor
@@ -29,8 +28,7 @@ final class FirstRunUITests: XCTestCase {
         XCTAssertFalse(app.buttons["continue-button"].isEnabled)
         XCTAssertFalse(app.buttons["check-address-button"].isEnabled)
 
-        field.focus()
-        field.typeText("paperclip.example.com")
+        field.enterText("paperclip.example.com")
         XCTAssertTrue(app.staticTexts["address-field-issue"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["check-address-button"].isEnabled)
 
@@ -97,33 +95,5 @@ final class FirstRunUITests: XCTestCase {
         // else, contrast above all, fails the test.
         let others = findings.filter { !$0.contains("Text clipped") }
         XCTAssertTrue(others.isEmpty, others.joined(separator: "\n"))
-    }
-}
-
-extension XCUIElement {
-    /// Taps until the element really has keyboard focus. On a slow or freshly booted CI simulator the first tap can
-    /// land before the field is ready, and `typeText` then fails with "Neither element nor any descendant has keyboard
-    /// focus".
-    func focus(attempts: Int = 5) {
-        for _ in 0..<attempts {
-            tap()
-            if hasKeyboardFocus { return }
-            _ = XCUIApplication().keyboards.firstMatch.waitForExistence(timeout: 2)
-            if hasKeyboardFocus { return }
-        }
-        XCTFail("The element never received keyboard focus after \(attempts) taps")
-    }
-
-    var hasKeyboardFocus: Bool {
-        (value(forKey: "hasKeyboardFocus") as? Bool) ?? false
-    }
-
-    func clearAndTypeText(_ text: String) {
-        guard let current = value as? String else { return }
-        focus()
-        // The first tap may land mid-text; the delete keys below remove what is before the cursor.
-        coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5)).tap()
-        typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count))
-        typeText(text)
     }
 }

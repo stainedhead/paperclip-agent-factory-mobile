@@ -109,10 +109,8 @@ final class EditFactoryUITests: XCTestCase {
         XCTAssertFalse(app.buttons["edit-save-button"].isEnabled)
         XCTAssertFalse(app.buttons["edit-pair-again"].exists, "nothing to pair before the factory is saved")
 
-        app.textFields["edit-name"].focus()
-        app.textFields["edit-name"].typeText("Studio")
-        app.textFields["edit-address"].focus()
-        app.textFields["edit-address"].typeText("https://studio.example.org")
+        app.textFields["edit-name"].enterText("Studio")
+        app.textFields["edit-address"].enterText("https://studio.example.org")
         app.buttons["edit-check-address"].tap()
         XCTAssertTrue(app.element("edit-probe-result").waitForExistence(timeout: 10))
         let save = app.buttons["edit-save-button"]

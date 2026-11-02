@@ -27,6 +27,15 @@ for runtime in sorted(devices, reverse=True):
 sys.exit("no available iPhone simulator found")
 ')}"
 
+# UI tests type through the on-screen keyboard. A connected hardware keyboard hides it and makes focus and caret
+# handling vary between machines and CI, so turn it off before the simulator boots, and keep autocorrection and
+# predictions from rewriting what the tests type.
+defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+xcrun simctl bootstatus "$device_id" -b >/dev/null
+xcrun simctl spawn "$device_id" defaults write com.apple.Preferences KeyboardAutocorrection -bool false || true
+xcrun simctl spawn "$device_id" defaults write com.apple.Preferences KeyboardPrediction -bool false || true
+xcrun simctl spawn "$device_id" defaults write com.apple.Preferences KeyboardAutocapitalization -bool false || true
+
 echo "Testing on simulator $device_id"
 xcodebuild test \
   -project iosApp/iosApp.xcodeproj \
