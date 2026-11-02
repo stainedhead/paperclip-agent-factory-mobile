@@ -29,8 +29,9 @@ sealed interface BaseUriResult {
  *
  * Rules (PRD FR-003): scheme must be `https`; `http` is accepted only for `localhost` and `10.0.2.2` and only when the
  * caller says insecure local addresses are allowed (debug builds); a host is required; user info, query strings and
- * fragments are rejected; an explicit port and a path prefix are kept; scheme and host are lower-cased and a trailing
- * slash is removed.
+ * fragments are rejected; a non-default port and a path prefix are kept; scheme and host are lower-cased, a trailing
+ * slash is removed, and the default port of the scheme (443 for https, 80 for http) is dropped, so `https://h:443` and
+ * `https://h` are one address (pins, uniqueness and every stored address use this form; rereview1b F-R-3).
  *
  * Hardening (review F-A-10), because the value is concatenated into every request URL:
  * - the path must be made of non-empty segments with no whitespace, control characters or backslashes, no `.` or `..`
@@ -60,6 +61,7 @@ class BaseUri private constructor(
         private const val SCHEME_SEPARATOR = "://"
         private const val MAX_PORT = 65_535
         private const val MAX_PORT_DIGITS = 5
+        private val DEFAULT_PORTS = mapOf("https" to 443, "http" to 80)
         private val INSECURE_LOCAL_HOSTS = setOf("localhost", "10.0.2.2")
 
         fun parse(
@@ -129,6 +131,16 @@ class BaseUri private constructor(
             }
         }
 
+        /** Drops the default port of the scheme and any leading zeros, so one address has one spelling (F-R-3). */
+        private fun canonicalAuthority(
+            scheme: String,
+            authority: String,
+        ): String {
+            val (host, port) = splitHostAndPort(authority)
+            val number = port?.toInt() ?: return authority
+            return if (number == DEFAULT_PORTS.getValue(scheme)) host else "$host:$number"
+        }
+
         private fun isValidPort(port: String): Boolean =
             port.isNotEmpty() && port.all { it in '0'..'9' } &&
                 port.length <= MAX_PORT_DIGITS && port.toInt() in 1..MAX_PORT
@@ -137,7 +149,7 @@ class BaseUri private constructor(
             val schemeEnd = text.indexOf(SCHEME_SEPARATOR)
             val scheme = text.substring(0, schemeEnd).lowercase()
             val rest = text.substring(schemeEnd + SCHEME_SEPARATOR.length)
-            val authority = rest.substringBefore('/').lowercase()
+            val authority = canonicalAuthority(scheme, rest.substringBefore('/').lowercase())
             val path = rest.removePrefix(rest.substringBefore('/')).trimEnd('/')
             return "$scheme://$authority$path"
         }

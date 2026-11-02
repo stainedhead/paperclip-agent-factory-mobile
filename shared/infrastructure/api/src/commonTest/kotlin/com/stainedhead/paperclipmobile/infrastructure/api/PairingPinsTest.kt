@@ -1,5 +1,7 @@
 package com.stainedhead.paperclipmobile.infrastructure.api
 
+import com.stainedhead.paperclipmobile.domain.BaseUri
+import com.stainedhead.paperclipmobile.domain.BaseUriResult
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
@@ -47,6 +49,16 @@ class PairingPinsTest {
             failedClosed(auth().meWithKey(home, key))
             failedClosed(auth().listBoardKeysWithKey(home, key))
             failedClosed(HealthGatewayAdapter(client, world.instances).probe(home))
+            assertEquals(emptyList(), requests)
+        }
+
+    @Test
+    fun `F-R-3 the explicit default port spelling of a pinned factory still fails closed`() =
+        runTest {
+            pinnedFactory()
+            val spelled = (BaseUri.parse("${home.value}:443") as BaseUriResult.Valid).uri
+            failedClosed(HealthGatewayAdapter(client, world.instances).probe(spelled))
+            failedClosed(auth().createChallenge(spelled, "Phone", null))
             assertEquals(emptyList(), requests)
         }
 
