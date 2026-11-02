@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Not Started |
 | Phase 2 Architecture and plan | Not Started |
 | Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation | In Progress (1b-1 to 1b-5 done, closing review pending) |
+| Phase 4 Implementation | In Progress (1b-1 to 1b-5 done, review1b group F1 fixed, further review groups pending) |
 | Phase 5 Completion and archive | Not Started |
 
 ## Phase 0 checklist
@@ -50,3 +50,5 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: milestone 1b-4b done (AD-013, AD-014 for five gateways), after TASK 0 (1b-4a re-verified against the pinned dist: exponent number literals fixed in `ceilToCents` (c762ed9), five stub differences fixed (265738a)): `DashboardGatewayAdapter` (da28e82), `AgentGatewayAdapter` (ff96f3f), `RunGatewayAdapter` (fe91181, byte reads with Range in the client 149ba34), `IssueGatewayAdapter` (5ede000), `InteractionGatewayAdapter` (a95095b), audits (9a4714c). The Dashboard, Agent, Run read and write, Issue read and write, and Interaction contract suites run unchanged through thin subclasses on JVM, Android host and iOS simulator. ADR-060 to ADR-066. Container contract run still CI only (1b-5).
 - 2026-11-02: milestone 1b-5a done (AD-040, AD-041): `PaperclipCore.createLiveGraph` on an internal `LivePlatform` (iOS device services, fail-closed JVM, Android refused), `PaperclipGraph.close()`, `LiveIosGraph`, `PairingBrowsers.fromCallback`, a Konsist rule against fakes in `Live*.kt`, JVM end-to-end flows through state holders on the stub server and a real SQLite file, iOS simulator and Android host tests, and a Swift Testing suite with a real loopback health probe. Engine-closing fix in `PaperclipHttpClient`. ADR-067 to ADR-070. The container contract run (1b-5b) is still to do.
 - 2026-11-02: 1b-5b done. `contractTest` source set in `shared/infrastructure/api`, `ServerBootstrap` (sign-up, bootstrap invite, pairing approval), `scripts/paperclip-test-server.sh invite`, `contract.yml` runs it after the smoke script on pull requests touching `shared/infrastructure/**` and nightly against `latest`. Green in CI: run 41513381521 (pinned, all 16 live tests and 3 offline helper tests). Found and fixed: Better Auth origin, HTTP/1.1, resume mid-transition (ADR-074), two stub malformed-id answers. Six port operations stay MockEngine-only (research C7).
+- 2026-11-02: review1b group F1 (security Must Fix and related Warnings) fixed, one commit per finding: A-1 pins on pairing, A-2 declined or invalidated key, A-3 approvalUrl origin, B-1 wipe only on proof, B-2 recreated notice and orphan sweep, C-1 refused unprotectable Keychain write, B-3 atomic Keychain replace, B-4 graph close order, A-4 ack, A-5 outcome unknown, A-6 mid-transition agent. ADR-075 to ADR-079. Table in implementation-notes.md.
+

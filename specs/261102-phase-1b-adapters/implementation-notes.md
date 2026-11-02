@@ -430,3 +430,32 @@ Not covered live even among the verified operations: pagination of the attention
 ### Tests and gates (from generated artifacts after the final `check lint`)
 
 `shared/infrastructure/api`: 305 on each of JVM, Android host and iOS simulator (303 before; +1 malformed ids, +1 resume mid-transition); `contractTest`: 19 in CI (3 offline, 16 live), skipped (16) without a server. `shared/application`: two new tests (mid-transition resume, failed follow-up read). All shared modules: JVM 1231, Android host 1207, iOS simulator 1242, Konsist 58. Kover from a fresh XML: Core 97.98% (2568 of 2621 lines), Presentation 98.02% (4217 of 4302).
+
+## Review 1b, group F1 (security Must Fix and related Warnings), 2026-11-02
+
+Method: a failing test first for every finding; the red evidence is the assertion message seen before the fix. Where a test could not compile without a new type, the type alone was added first and the red is the assertion that followed. Hashes are the commits on `feat/phase-1b-adapters`.
+
+| Finding | Result | Commit | Red evidence |
+|---|---|---|---|
+| A-1 pins bypassed on pairing | reproduced | ef4acde | `createChallenge` expected `Failure(CertificateInvalid)` but was `Failure(Malformed)` (the request went out); `HealthGatewayAdapter` needed the repository first (compile) |
+| A-2 Denied/Invalidated read as 401 | reproduced | bf1a7ed | `StoredCredentialsTest`: expected `DeviceAuthDeclined` but was `Unauthorized`, expected `KeyInvalidated` but was `Unauthorized`; application: revoke expected `Declined` but was `Unconfirmed`, sign out expected `Declined` but was `SignedOut(Unconfirmed)`, remove expected `NotAuthorized(Cancelled)` but was `Removed(Unconfirmed)`; presentation: `Expected ErrorUi(AuthDeclined) but actual was null`. The existing test `no usable stored secret is Unauthorized` encoded the bug and was changed in the same commit |
+| A-3 approvalUrl opened unchecked | reproduced | 11962f2, 613eabc | `http://localhost:3100` instance accepted `http://localhost:9999`; `http://home.example.com` accepted for an https instance; token not percent-encoded. The loop test stops at the first offender, so the userinfo, backslash, javascript:, file: and intent: rows were checked green after the fix, not individually red. 613eabc names a constant after detekt (11962f2 was pushed with that one detekt finding, my chaining error) |
+| B-1 wipe on any exception | reproduced | 89f55f5 | 4 unit tests expected `StorageUnavailableException` but a different exception or none; JVM real file: a version 1 file whose migration throws was replaced (`no exception was thrown`). Found on the iOS simulator that sqliter says `Database version 3 newer than config version 2`, so `newer than` is a wipe sign |
+| B-2 `recreated` unread, orphan Keychain items | reproduced | 7b687fa | contract: `namespaces must list each instance once`; Keychain scripted: `expected [a, ab] but was []`; `SecretStore.namespaces()` is a new port method with fake, Keychain, unavailable store and contract. The graph test was written with the wiring (compile red only) |
+| C-1 protect() null access control | reproduced | 07dde17 | restoring the fall-through gives `expected:<-50> but was:<-25291>` for both protections (the add reached SecItemAdd). Not exercised on a real Keychain: a Swift host test would need the injection exposed through `PlatformServices`, which I did not do |
+| B-3 delete-then-add | reproduced | 3e1c344 | `expected Failed but was Stored` (new add failure ignored), `add spare before delete old` not true, and a failed protected replacement read as `Invalidated` (ClassCastException on `SecretReadResult.Invalidated`). The fake backend now reports a duplicate before other failures, as the Keychain does |
+| B-4 close order and leaks | reproduced (order, construction leak); race not reproduced | 6d3f2ba | `[resources, container]` instead of `[container, resources]`; `releases expected 1 but was 0`. The claimed race between `persistence.close()` and an in-flight query did not fail in 50 parallel reads, so no change was made to `PaperclipPersistence.close()`; the iOS platform order test only shows no monitor is started, it was a compile red |
+| A-4 ack accepts HTML 200 | reproduced | 7c01f47 | `text/html expected Failure(Malformed) but was Success(Unit)` |
+| A-5 unknown outcome shown as failure | reproduced | 6c546de | pause with `ConnectionLost` was `Failed`; invoke with `Malformed` was `Failed` not `Unknown`; 502 was `ServerError`; `SocketException` was `Unreachable`; read retried once not four times |
+| A-6 Resume stays live | reproduced | a218d52 | `agent.canResume` true after a failed follow-up read and after a follow-up that still shows `resuming` |
+
+### Deviations and limits
+
+- A-5: a 500 or 503 stays `ServerError` (the decision use case test pins "reported once, no reconcile"); only 502 and 504 and transport failures become `ConnectionLost`. 5xx from a proxy other than those is not covered.
+- A-1: a factory is found by exact `BaseUri` equality; pins of two factories at one address are merged.
+- B-1: wipe decisions use message text because the drivers raise untyped exceptions; a reworded driver message fails safe (storage unavailable, nothing deleted).
+- B-2: the notice is per launch and not stored; the SwiftUI banner and handling of `StorageUnavailableException` at launch (B-5, `@Throws`) belong to the iOS stream and are not done.
+- Not touched in this group: B-5 to B-12, A-7 to A-12, C-2 to C-13, the `NSFaceIDUsageDescription` (group F2).
+- Swift-facing additions the iOS stream will see: `ErrorKey.AuthDeclined`, `ErrorKey.KeyInvalidated`, `ServerKeyOutcome.Declined`, `PaperclipGraph.startupNotice` (`StartupNotice`), `Agent.isResuming/isPausing` (via presentation action lists only).
+- `SecretStore.namespaces()` was added to the port; the live `contractTest` `MemorySecretStore` was updated, the contract workflow was not re-run locally (no Docker).
+
