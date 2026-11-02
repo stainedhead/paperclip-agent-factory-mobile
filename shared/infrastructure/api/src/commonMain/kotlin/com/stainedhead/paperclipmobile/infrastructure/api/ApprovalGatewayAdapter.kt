@@ -41,7 +41,9 @@ class ApprovalGatewayAdapter(
     ): DomainResult<List<LinkedIssue>> {
         if (!isServerId(id.value)) return DomainResult.Failure(DomainError.NotFound)
         val rows = calls.send(scope.instanceId, HttpMethod.Get, path(id, "issues")).decode<List<LinkedIssueDto>>()
-        return rows.noneOfOtherCompanies(scope) { it.companyId }.map { list -> list.map { it.toDomain() }.allOrNull() }
+        return provingOwned(rows.noneOfOtherCompanies(scope) { it.companyId }, { fetch(scope, id) }) { list ->
+            list.map { it.toDomain() }.allOrNull()
+        }
     }
 
     override suspend fun comments(
@@ -50,7 +52,9 @@ class ApprovalGatewayAdapter(
     ): DomainResult<List<ApprovalComment>> {
         if (!isServerId(id.value)) return DomainResult.Failure(DomainError.NotFound)
         val rows = calls.send(scope.instanceId, HttpMethod.Get, path(id, "comments")).decode<List<ApprovalCommentDto>>()
-        return rows.noneOfOtherCompanies(scope) { it.companyId }.map { list -> list.map { it.toDomain() }.allOrNull() }
+        return provingOwned(rows.noneOfOtherCompanies(scope) { it.companyId }, { fetch(scope, id) }) { list ->
+            list.map { it.toDomain() }.allOrNull()
+        }
     }
 
     override suspend fun approve(
@@ -131,3 +135,19 @@ internal fun <T> DomainResult<List<T>>.noneOfOtherCompanies(
 
 /** The mapped rows, or null (so Malformed) when any one could not be mapped. */
 internal fun <T> List<T?>.allOrNull(): List<T>? = if (any { it == null }) null else map { it!! }
+
+/**
+ * Rows that name their company prove whose approval it is; an empty list proves nothing, so the approval itself is
+ * read once through [owned]: another company's approval is NotFound here, as an issue's empty thread is (review1b
+ * F-A-10).
+ */
+private suspend fun <D, T> provingOwned(
+    rows: DomainResult<List<D>>,
+    owned: suspend () -> DomainResult<*>,
+    map: (List<D>) -> List<T>?,
+): DomainResult<List<T>> {
+    val mapped = rows.map(map)
+    if (mapped !is DomainResult.Success || mapped.value.isNotEmpty()) return mapped
+    val read = owned()
+    return if (read is DomainResult.Failure) read else mapped
+}

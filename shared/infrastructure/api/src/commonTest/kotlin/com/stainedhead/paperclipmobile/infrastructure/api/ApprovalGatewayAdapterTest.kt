@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.infrastructure.api
 
 import com.stainedhead.paperclipmobile.domain.Approval
+import com.stainedhead.paperclipmobile.domain.ApprovalComment
 import com.stainedhead.paperclipmobile.domain.ApprovalId
 import com.stainedhead.paperclipmobile.domain.ApprovalPayload
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
@@ -238,10 +239,6 @@ class ApprovalGatewayAdapterTest {
                 gatewayAnswering("""[{"id":"i-1"}]""").linkedIssues(world.acme, ap1),
             )
             assertEquals(fail(DomainError.Malformed), gatewayAnswering("{}").linkedIssues(world.acme, ap1))
-            assertEquals(
-                DomainResult.Success(emptyList<LinkedIssue>()),
-                gatewayAnswering("[]").linkedIssues(world.acme, ap1),
-            )
         }
 
     @Test
@@ -360,5 +357,31 @@ class ApprovalGatewayAdapterTest {
             assertEquals(fail(DomainError.Unauthorized), world.approvals.get(world.signedOut, ap1))
             assertEquals(fail(DomainError.NotFound), world.approvals.get(world.unknownFactory, ap1))
             assertTrue(world.server.requests.isEmpty())
+        }
+
+    @Test
+    fun `F-A-10 an approval of another company is NotFound for linked issues and comments even if empty`() =
+        runTest {
+            world.home.seed(StubApproval(AP1, ServerFixtures.COMPANY_GLOBEX))
+            // The scope is Acme; the approval is Globex's and has no issues and no comments to prove ownership.
+            assertEquals(fail(DomainError.NotFound), world.approvals.linkedIssues(world.acme, ap1))
+            assertEquals(fail(DomainError.NotFound), world.approvals.comments(world.acme, ap1))
+        }
+
+    @Test
+    fun `F-A-10 an own approval with nothing linked is an empty list after one ownership read`() =
+        runTest {
+            world.home.seed(StubApproval(AP1, acme))
+            assertEquals(DomainResult.Success(emptyList<LinkedIssue>()), world.approvals.linkedIssues(world.acme, ap1))
+            assertEquals(DomainResult.Success(emptyList<ApprovalComment>()), world.approvals.comments(world.acme, ap1))
+            assertEquals(
+                listOf(
+                    "/api/approvals/$AP1/issues",
+                    "/api/approvals/$AP1",
+                    "/api/approvals/$AP1/comments",
+                    "/api/approvals/$AP1",
+                ),
+                world.server.requests.map { it.path },
+            )
         }
 }
