@@ -13,12 +13,26 @@ import org.junit.jupiter.api.Test
 class UseCaseBoundaryRulesTest {
     private val gatewayPattern = Regex("""\.domain\.port\.\w+(Gateway|Cache)$""")
 
+    /** A named gateway import, or a wildcard import of the whole port package (F-C-9). */
+    private fun reachesAGateway(
+        importName: String,
+        isWildcard: Boolean,
+    ): Boolean = gatewayPattern.containsMatchIn(importName) || (isWildcard && importName.endsWith(".domain.port"))
+
+    @Test
+    fun `the gateway import check flags named and wildcard imports`() {
+        Assertions.assertTrue(reachesAGateway("$APP_PACKAGE.domain.port.DecisionGateway", false))
+        Assertions.assertTrue(reachesAGateway("$APP_PACKAGE.domain.port", true))
+        Assertions.assertFalse(reachesAGateway("$APP_PACKAGE.domain.port.Clock", false))
+        Assertions.assertFalse(reachesAGateway("$APP_PACKAGE.domain.port.BiometricResult", false))
+    }
+
     @Test
     fun `presentation never imports a gateway or the attention cache`() {
         val files = scope("presentation").files
         Assertions.assertTrue(files.isNotEmpty(), "No presentation files found: the rule would pass vacuously")
         files.assertTrue(additionalMessage = "State holders must call use cases, never gateway ports") { file ->
-            file.imports.none { gatewayPattern.containsMatchIn(it.name) }
+            file.imports.none { reachesAGateway(it.name, it.isWildcard) }
         }
     }
 
