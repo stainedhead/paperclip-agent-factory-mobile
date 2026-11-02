@@ -91,9 +91,11 @@ final class AppRouter {
 
     func present(_ sheet: AppSheet) {
         self.sheet = sheet
+        onChange?()
     }
 
     func dismissSheet() {
         sheet = nil
+        onChange?()
     }
 }
