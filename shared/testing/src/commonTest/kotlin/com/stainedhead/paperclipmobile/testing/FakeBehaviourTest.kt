@@ -135,8 +135,26 @@ class FakeAuthApprovalTest {
             gateway.revokeCurrentKey(id)
             gateway.me(id) shouldBe DomainResult.Failure(DomainError.Unauthorized)
 
-            gateway.createChallenge(uri, "Phone", null)
+            val challenge = (gateway.createChallenge(uri, "Phone", null) as DomainResult.Success).value
+            gateway.me(id) shouldBe DomainResult.Failure(DomainError.Unauthorized)
+            gateway.pollChallenge(uri, challenge.id, challenge.challengeToken)
             (gateway.me(id) is DomainResult.Success) shouldBe true
+        }
+
+    @Test
+    fun `a cancelled pairing leaves a revoked factory revoked`() =
+        runTest {
+            val gateway = FakeAuthGateway()
+            val uri = TestData.uri()
+            val id = InstanceId("cloud")
+            gateway.hostOf = { uri }
+            gateway.pollResults.addLast(DomainResult.Success(ChallengeStatus.Cancelled))
+            gateway.revokeCurrentKey(id)
+
+            val challenge = (gateway.createChallenge(uri, "Phone", null) as DomainResult.Success).value
+            gateway.pollChallenge(uri, challenge.id, challenge.challengeToken)
+
+            gateway.me(id) shouldBe DomainResult.Failure(DomainError.Unauthorized)
         }
 
     @Test
@@ -148,7 +166,9 @@ class FakeAuthApprovalTest {
             gateway.approvePairings(from = { Instant.fromEpochSeconds(2_000_000_000) })
             gateway.revokeCurrentKey(id)
 
-            gateway.createChallenge(TestData.uri("https://other.example.com"), "Phone", null)
+            val other = TestData.uri("https://other.example.com")
+            val challenge = (gateway.createChallenge(other, "Phone", null) as DomainResult.Success).value
+            gateway.pollChallenge(other, challenge.id, challenge.challengeToken)
 
             gateway.me(id) shouldBe DomainResult.Failure(DomainError.Unauthorized)
         }

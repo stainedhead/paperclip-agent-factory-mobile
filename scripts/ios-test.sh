@@ -2,6 +2,7 @@
 # Generates the Xcode project and runs the iOS unit and UI tests on an installed iPhone simulator.
 # Needs PaperclipKit.xcframework first: scripts/build-kit.sh
 #   IOS_SIMULATOR_ID=<udid>  pick a specific simulator (default: first available iPhone on the newest iOS runtime)
+#   RESULT_BUNDLE=<path>     also write the .xcresult (failure screenshots and element hierarchies) there
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -37,8 +38,14 @@ xcrun simctl spawn "$device_id" defaults write com.apple.Preferences KeyboardPre
 xcrun simctl spawn "$device_id" defaults write com.apple.Preferences KeyboardAutocapitalization -bool false || true
 
 echo "Testing on simulator $device_id"
+result_bundle_args=()
+if [ -n "${RESULT_BUNDLE:-}" ]; then
+  rm -rf "$RESULT_BUNDLE"
+  result_bundle_args=(-resultBundlePath "$RESULT_BUNDLE")
+fi
 xcodebuild test \
   -project iosApp/iosApp.xcodeproj \
   -scheme iosApp \
   -destination "id=${device_id}" \
+  ${result_bundle_args[@]+"${result_bundle_args[@]}"} \
   CODE_SIGNING_ALLOWED=NO

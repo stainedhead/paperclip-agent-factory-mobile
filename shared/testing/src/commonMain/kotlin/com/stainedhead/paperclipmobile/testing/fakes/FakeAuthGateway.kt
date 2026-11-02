@@ -69,8 +69,6 @@ class FakeAuthGateway :
         requestedCompanyId: CompanyId?,
     ): DomainResult<PairingChallenge> {
         record("createChallenge", baseUri)
-        // A pairing issues a new key: a factory revoked on this host (or on an unknown one) can sign in again.
-        revokedInstances.entries.removeAll { it.value == null || it.value == baseUri }
         val result = createResult ?: DomainResult.Success(challengeSource?.invoke() ?: TestData.challenge())
         val created = (result as? DomainResult.Success)?.value
         lastPendingToken = created?.pendingBoardToken
@@ -93,7 +91,12 @@ class FakeAuthGateway :
             return DomainResult.Failure(DomainError.NotFound)
         }
         val next = if (pollResults.size > 1) pollResults.removeFirst() else pollResults.firstOrNull()
-        return next ?: DomainResult.Success(ChallengeStatus.Pending)
+        val answer = next ?: DomainResult.Success(ChallengeStatus.Pending)
+        // An approved pairing issues a new key: a factory revoked on this host (or on an unknown one) signs in again.
+        if (answer == DomainResult.Success(ChallengeStatus.Approved)) {
+            revokedInstances.entries.removeAll { it.value == null || it.value == baseUri }
+        }
+        return answer
     }
 
     override suspend fun meWithKey(

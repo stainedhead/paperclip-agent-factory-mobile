@@ -42,6 +42,8 @@ jobs:
       - name: swift-format
         run: xcrun swift-format lint --recursive --strict iosApp/Sources iosApp/Tests iosApp/Packages/PaperclipKit/Package.swift
       - name: Xcode unit and UI tests
+        env:
+          RESULT_BUNDLE: build/ios-ui.xcresult
         run: ./scripts/ios-test.sh
       - name: Upload reports
         if: failure()
@@ -51,4 +53,5 @@ jobs:
           path: |
             **/build/reports/**
             **/build/test-results/**
+            build/ios-ui.xcresult
           retention-days: 7
