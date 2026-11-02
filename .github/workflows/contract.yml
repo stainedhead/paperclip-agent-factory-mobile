@@ -47,7 +47,7 @@ jobs:
           token="$(./scripts/paperclip-test-server.sh invite)"
           echo "::add-mask::${token}"
           echo "PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE=${token}" >> "$GITHUB_ENV"
-      - name: Contract test (the real adapters against the live server)
+      - name: "Contract test (the real adapters against the live server)"
         env:
           # localhost, not 127.0.0.1: plain http is allowed for localhost and 10.0.2.2 only.
           PAPERCLIP_CONTRACT_BASE_URL: http://localhost:3199
@@ -97,7 +97,7 @@ jobs:
           token="$(./scripts/paperclip-test-server.sh invite)"
           echo "::add-mask::${token}"
           echo "PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE=${token}" >> "$GITHUB_ENV"
-      - name: Contract test (the real adapters against the live server, latest: a failure means the API drifted)
+      - name: "Contract test against latest (a failure here means the API drifted)"
         env:
           # localhost, not 127.0.0.1: plain http is allowed for localhost and 10.0.2.2 only.
           PAPERCLIP_CONTRACT_BASE_URL: http://localhost:3199
