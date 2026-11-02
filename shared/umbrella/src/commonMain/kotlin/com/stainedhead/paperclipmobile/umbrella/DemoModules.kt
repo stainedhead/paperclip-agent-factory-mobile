@@ -57,26 +57,28 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakePairingBrowser
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
+import com.stainedhead.paperclipmobile.testing.fakes.approvePairings
 import org.koin.dsl.module
 
 /**
  * Every port backed by the shared fakes, seeded with the demo data set of the design mocks (ADR-026). The clock is
  * frozen at a mid-week instant; the Home factory holds a fake board key and every company-scoped read sees Acme Labs.
  */
-internal fun demoPortsModule() =
+internal fun demoPortsModule(seeded: Boolean = true) =
     module {
         single<Clock> { FakeClock(DemoFactories.now) }
         single<IdGenerator> { FakeIdGenerator("demo-") }
-        single<InstanceRepository> { FakeInstanceRepository(DemoFactories.instances()) }
+        single<InstanceRepository> { FakeInstanceRepository(if (seeded) DemoFactories.instances() else emptyList()) }
         single<SecretStore> {
             FakeSecretStore().apply {
-                seed(SecretKey(InstanceId(DemoIds.HOME_FACTORY), SecretName.BoardToken), DemoFactories.HOME_TOKEN)
+                if (seeded) {
+                    seed(SecretKey(InstanceId(DemoIds.HOME_FACTORY), SecretName.BoardToken), DemoFactories.HOME_TOKEN)
+                }
             }
         }
         single<AppSettingsStore> {
-            FakeAppSettingsStore(
-                AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = InstanceId(DemoIds.HOME_FACTORY)),
-            )
+            val selected = if (seeded) InstanceId(DemoIds.HOME_FACTORY) else null
+            FakeAppSettingsStore(AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = selected))
         }
         single { FakeBiometrics() }
         single<Biometrics> { get<FakeBiometrics>() }
@@ -103,6 +105,8 @@ internal fun demoPortsModule() =
                 meWithKeyResult = DomainResult.Success(DemoFactories.access())
                 companiesResult = DomainResult.Success(DemoFactories.companies())
                 keysResult = DomainResult.Success(DemoFactories.boardKeys())
+                val clock = get<Clock>()
+                approvePairings(from = { clock.now() })
             }
         }
         demoAttentionPorts()

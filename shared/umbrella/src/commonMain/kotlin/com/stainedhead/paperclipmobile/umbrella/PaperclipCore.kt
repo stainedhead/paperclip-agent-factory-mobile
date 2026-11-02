@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.umbrella
 
+import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.presentation.AppStateHolder
 import com.stainedhead.paperclipmobile.presentation.ApprovalStateHolder
 import com.stainedhead.paperclipmobile.presentation.BudgetIncidentStateHolder
@@ -53,6 +54,9 @@ class PaperclipGraph internal constructor(
     /** Steering and counters for UI tests; present on the demo graph only, null on every other graph. */
     val demoControls: DemoControls? = koin.getOrNull()
 
+    /** "Now" as this graph's `Clock` reports it, so a screen measures "Updated 12s ago" against the same instant. */
+    fun nowEpochMillis(): Long = koin.get<Clock>().now().toEpochMilliseconds()
+
     internal inline fun <reified T : Any> resolve(): T = koin.get()
 
     /** A gateway as the adapter (or fake) provides it, before the signed-out decorator. For tests of the wiring. */
@@ -83,6 +87,21 @@ object PaperclipCore {
     fun createDemoGraph(): PaperclipGraph =
         PaperclipGraph(
             koinApplication { modules(demoPortsModule(), useCaseModule(false), presentationModule()) }.koin,
+        )
+
+    /**
+     * Demo ports with no factory yet, so the first-run flow runs on fakes: the person approves every pairing at once
+     * and the Factories list starts empty. For demo mode's "first run" launch and UI tests; not a real factory.
+     */
+    fun createFirstRunDemoGraph(): PaperclipGraph =
+        PaperclipGraph(
+            koinApplication {
+                modules(
+                    demoPortsModule(seeded = false),
+                    useCaseModule(false),
+                    presentationModule(),
+                )
+            }.koin,
         )
 
     /**

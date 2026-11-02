@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.testing
 
+import com.stainedhead.paperclipmobile.domain.ChallengeStatus
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -15,11 +16,13 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
 import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIdGenerator
 import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
+import com.stainedhead.paperclipmobile.testing.fakes.approvePairings
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FakeBehaviourTest {
@@ -96,5 +99,25 @@ class FakeBehaviourTest {
                 DomainResult.Success(Unit)
             gateway.count("revokeCurrentKey") shouldBe 1
             gateway.count("me") shouldBe 0
+        }
+}
+
+class FakeAuthApprovalTest {
+    @Test
+    fun `approvePairings hands out a fresh unwiped challenge each time and approves every poll`() =
+        runTest {
+            val gateway = FakeAuthGateway()
+            val now = Instant.fromEpochSeconds(2_000_000_000)
+            gateway.approvePairings(from = { now })
+            val uri = TestData.uri()
+
+            val first = (gateway.createChallenge(uri, "Phone", null) as DomainResult.Success).value
+            first.wipe()
+            val second = (gateway.createChallenge(uri, "Phone", null) as DomainResult.Success).value
+
+            second.pendingBoardToken.isWiped shouldBe false
+            (second.expiresAt > now) shouldBe true
+            val poll = gateway.pollChallenge(uri, second.id, second.challengeToken)
+            (poll as DomainResult.Success).value shouldBe ChallengeStatus.Approved
         }
 }

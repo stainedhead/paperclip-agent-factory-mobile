@@ -62,4 +62,11 @@ class DemoControlsTest {
             controls.biometricPromptCount shouldBe 1
             app.close()
         }
+
+    @Test
+    fun `the graph reports its clock so an Updated label is measured against the same now`() {
+        PaperclipCore.createDemoGraph().nowEpochMillis() shouldBe
+            com.stainedhead.paperclipmobile.testing.demo.DemoFactories.now
+                .toEpochMilliseconds()
+    }
 }
