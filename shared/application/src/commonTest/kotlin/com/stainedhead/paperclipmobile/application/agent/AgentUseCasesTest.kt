@@ -7,13 +7,16 @@ import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGroup
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.AgentStatus
+import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.ResolutionIssue
 import com.stainedhead.paperclipmobile.domain.Role
+import com.stainedhead.paperclipmobile.domain.port.AgentGateway
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -152,7 +155,37 @@ class PauseAgentTest {
         }
 }
 
+/**
+ * What the pinned server does (live contract run 41511756580): the resume reply is the row mid-transition
+ * (`paused`, no reason, `lifecycleState: "resuming"`), and the next read already shows `idle`.
+ */
+private class ResumingAgents(
+    private val inner: FakeAgentGateway,
+) : AgentGateway by inner {
+    override suspend fun resume(
+        scope: CompanyScope,
+        id: AgentId,
+    ): DomainResult<Agent> {
+        inner.resume(scope, id)
+        val settled = inner.store.getValue(id)
+        return DomainResult.Success(
+            settled.copy(status = AgentStatus.Paused, pauseReason = null, lifecycleState = "resuming"),
+        )
+    }
+}
+
 class ResumeAndRunNowTest {
+    @Test
+    fun `a resume answered mid-transition is followed by one read so the person sees the settled agent`() =
+        runTest {
+            val env = Env()
+
+            val result = ResumeAgent(ResumingAgents(env.agents))(env.context(Role.Operator), env.agent("agent-design"))
+
+            (result as MutationResult.Done).value.status shouldBe AgentStatus.Idle
+            env.agents.count("get") shouldBe 1
+        }
+
     @Test
     fun `FR-071 a manually paused agent resumes without device authentication`() =
         runTest {
@@ -162,6 +195,18 @@ class ResumeAndRunNowTest {
 
             (result as MutationResult.Done).value.status shouldBe AgentStatus.Idle
             env.biometrics.calls shouldBe 0
+        }
+
+    @Test
+    fun `a failed read after a mid-transition resume leaves the server's answer in place`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["get"] = DomainError.ServerError
+
+            val result = ResumeAgent(ResumingAgents(env.agents))(env.context(Role.Operator), env.agent("agent-design"))
+
+            (result as MutationResult.Done).value.lifecycleState shouldBe "resuming"
+            env.agents.count("resume") shouldBe 1
         }
 
     @Test
