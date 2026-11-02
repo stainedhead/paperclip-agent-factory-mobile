@@ -59,9 +59,25 @@ internal fun parseInstantOrNull(text: String?): Instant? =
         }
     }
 
-/** A 2xx reply whose body the caller does not need (a 204, or a row the port does not return): success is success. */
+private const val NO_CONTENT = 204
+private const val RESET_CONTENT = 205
+
+/**
+ * A 2xx reply whose body the caller does not need. It is a success for a 204 or 205, or for a JSON body. Any other 2xx
+ * (an HTML 200 from a proxy's login or fallback page, an empty 200 with no content type) did not come from Paperclip's
+ * API and is [DomainError.Malformed] (review1b F-A-4).
+ */
 internal fun DomainResult<ApiResponse>.ack(): DomainResult<Unit> =
     when (this) {
-        is DomainResult.Failure -> this
-        is DomainResult.Success -> DomainResult.Success(Unit)
+        is DomainResult.Failure -> {
+            this
+        }
+
+        is DomainResult.Success -> {
+            if (value.status == NO_CONTENT || value.status == RESET_CONTENT || value.isJson) {
+                DomainResult.Success(Unit)
+            } else {
+                DomainResult.Failure(DomainError.Malformed)
+            }
+        }
     }

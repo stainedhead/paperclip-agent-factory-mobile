@@ -339,6 +339,32 @@ class AttentionGatewayAdapterTest {
         }
 
     @Test
+    fun `F-A-4 an HTML or empty 200 is Malformed for restore and for setDecideBy`() =
+        runTest {
+            val approval = AttentionSourceKind.Approval
+            listOf("<html>login</html>" to "text/html", "" to "text/plain").forEach { (body, type) ->
+                val gateway = gatewayAnswering(body, HttpStatusCode.OK, type)
+                assertEquals(fail(DomainError.Malformed), gateway.restore(world.acme, "attention:x"), type)
+                assertEquals(
+                    fail(DomainError.Malformed),
+                    gateway.setDecideBy(world.acme, approval, "ap-1", DecideBy.Today),
+                    type,
+                )
+            }
+        }
+
+    @Test
+    fun `F-A-4 a JSON 200 or a 204 is a success for restore and for setDecideBy`() =
+        runTest {
+            val approval = AttentionSourceKind.Approval
+            val json = gatewayAnswering("""{"ok":true}""", HttpStatusCode.OK)
+            assertEquals(DomainResult.Success(Unit), json.restore(world.acme, "attention:x"))
+            assertEquals(DomainResult.Success(Unit), json.setDecideBy(world.acme, approval, "ap-1", DecideBy.Today))
+            val none = gatewayAnswering("", HttpStatusCode.NoContent, "text/plain")
+            assertEquals(DomainResult.Success(Unit), none.setDecideBy(world.acme, approval, "ap-1", DecideBy.Today))
+        }
+
+    @Test
     fun `AD-012 a restore whose reply has no body is a success and a dismiss reply without a time is Malformed`() =
         runTest {
             val noBody = gatewayAnswering("", HttpStatusCode.NoContent)
