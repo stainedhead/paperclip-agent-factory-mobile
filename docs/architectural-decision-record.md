@@ -243,7 +243,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** Accepted for Phase 1a because demo mode is a product feature of the walking skeleton and the screens are built against it. The fake keys are obviously fake (`pcp_board_TESTONLY...`), no real secret can be in them, and `createGraph` (the real graph) does not reference them. Splitting the demo graph into its own artifact, or stripping it from release builds, is decided with F-D-12 before a store build exists.
 
-**Consequences.** Release size includes the fakes until that split. Konsist keeps `Secret.reveal()` out of everything except infrastructure and `shared/testing`, so shipping the fakes does not widen where a secret can be read.
+**Consequences.** Release size includes the fakes until that split. Konsist keeps `Secret.reveal()` out of everything except infrastructure and `shared/testing`, so shipping the fakes does not widen where a secret can be read. `FakePairingBrowser` records the approval URLs it is asked to open (the pairing contract needs to read them back), so the shipped fake holds whatever link the demo graph gives it; the demo set contains only test-only values, and the real graph wires the real browser bridge in Phase 1b.
 
 ## ADR-036: A test claims only what it exercises
 

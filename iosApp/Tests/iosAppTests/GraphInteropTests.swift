@@ -43,7 +43,6 @@ struct GraphInteropTests {
         #expect(await eventually { holder.state.value.phase != .loading })
         holder.onIntent(intent: InboxIntentFilterSelected(kind: SourceKindUi.approval))
         #expect(await eventually { holder.state.value.selectedFilter == .approval })
-        holder.onIntent(intent: InboxIntentRefresh.shared)
         holder.close()
     }
 
@@ -126,8 +125,7 @@ struct GraphInteropTests {
         let factory = demo.factory.createFactoryHomeStateHolder(instanceId: home, companyId: acme)
         #expect(await eventually { factory.state.value.phase == .content })
         #expect(factory.state.value.refreshIntervalSeconds == 15)
-        factory.onIntent(intent: FactoryHomeIntentRefresh.shared)
-        #expect(await eventually { factory.state.value.phase == .content })
+        #expect(factory.state.value.tiles?.pendingApprovals == 2)
         factory.close()
     }
 

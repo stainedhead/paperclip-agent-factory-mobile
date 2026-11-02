@@ -79,7 +79,7 @@ See the compiled walkthrough in [usage-examples.md](./usage-examples.md#7-write-
 
 ## Konsist rules: what they enforce, how to extend
 
-The 23 rules are listed in [technical-details.md](../docs/technical-details.md#layering-rules-and-how-they-are-enforced). They live in `shared/umbrella/src/konsistTest/kotlin/…/architecture/` and run with `./gradlew :shared:umbrella:konsistTest`. Every rule scans real files and also has a "can see the code it guards" assertion, so a rule never passes by scanning nothing. To add one, write the rule, break the code on purpose to watch it fail, then fix the code. Never silence a rule inline; if a rule is wrong, change it in its own commit and explain why.
+The 23 rules are listed in [technical-details.md](../docs/technical-details.md#layering-rules-and-how-they-are-enforced). They live in `shared/umbrella/src/konsistTest/kotlin/…/architecture/` and run with `./gradlew :shared:umbrella:konsistTest`. Every rule scans real files and, where it can, asserts that it found some, so it does not pass by scanning nothing. The exception is the infrastructure rule: the five infrastructure modules are stubs, so on the real tree it checks nothing yet, and a fixture test (a module with only `iosMain` and `androidMain` files) proves it reports a violation once they have code. To add one, write the rule, break the code on purpose to watch it fail, then fix the code. Never silence a rule inline; if a rule is wrong, change it in its own commit and explain why.
 
 ## Coverage gates
 
