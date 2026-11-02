@@ -56,6 +56,18 @@ struct PrivacyShield: View {
 struct DiagnosticsOverlay: View {
     let environment: AppEnvironment
 
+    /// Seconds since the overlay was created, then the lock, the load and the Inbox as the shell sees them: a failing
+    /// UI test's hierarchy shows how far a slow cold start had got.
+    private static let started = ProcessInfo.processInfo.systemUptime
+
+    private var trace: String {
+        let app = environment.app.state
+        let inbox = environment.inbox?.state
+        let seconds = Int(ProcessInfo.processInfo.systemUptime - Self.started)
+        return "t\(seconds)s lock=\(app.lock) loaded=\(app.isLoaded) factories=\(app.hasFactories) "
+            + "inbox=\(inbox.map { "\($0.phase) badge=\($0.badgeCount) total=\($0.totalCount)" } ?? "none")"
+    }
+
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.25)) { _ in
             VStack {
@@ -66,6 +78,13 @@ struct DiagnosticsOverlay: View {
                     .accessibilityIdentifier("diagnostics-biometric-prompts")
                     .accessibilityLabel("Biometric prompts")
                     .accessibilityValue("\(environment.biometricPromptCount)")
+                Text(trace)
+                    .font(Typography.micro)
+                    .padding(Spacing.extraSmall)
+                    .background(.thinMaterial)
+                    .accessibilityIdentifier("diagnostics-trace")
+                    .accessibilityLabel("Trace")
+                    .accessibilityValue(trace)
                 Spacer()
             }
         }

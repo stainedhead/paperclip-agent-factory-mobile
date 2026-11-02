@@ -25,7 +25,8 @@ final class ShellUITests: XCTestCase {
 
     @MainActor
     func testDemoLaunchShowsFiveTabsAndTheInboxBadgeFromTheDemoData() {
-        let app = launch()
+        // The diagnostics trace (lock, load, Inbox phase and badge) lands in the failure hierarchy of a slow start.
+        let app = launch(["-demo-diagnostics"])
         waitForShell(app)
         app.waitUntilUnlocked()
 

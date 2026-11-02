@@ -321,3 +321,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Nothing claims a prompt that does not happen. If the owner wants these gated, that is a shared change (use case plus tests) first; the sheets then switch.
 
+
+## ADR-080: The system accessibility audits must pass locally and report, without blocking, in CI
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+
+**Context.** `performAccessibilityAudit` samples screenshots, and its findings depend on the OS: local development runs Xcode 27.2 on the iOS 27.2 simulator, the macOS runner image stops at Xcode 26.6 and the iOS 26.5 runtime (checked with a diagnostics step; no newer Xcode is installed). Across five CI runs of the same product code the audit tests failed differently each time: "Contrast failed" on black text on a white card (Edit form, Settings rows, Manage's "3 factories" caption, Settings' "Paired devices and keys"), "Hit area is too small | Device name" on a field that already has a 44 pt minimum height, and "Audit failed to complete in time" (error -56). Several of those passed on the next run, and none reproduced locally, where all six audits pass on the iPhone Air. The palette's secondary text is about 5.7:1 on its background, so the contrast findings are not a palette defect.
+
+**Decision.** The audits stay real tests, are not deleted and get no new allow-list entries for the label-based known findings. They must pass locally. `ios.yml` runs the functional UI tests and Swift Testing as the blocking step (`TEST_SET=functional`) and the audits as a separate step (`TEST_SET=audits`, `continue-on-error: true`) with a summary and the xcresult uploaded. The audit helper ignores only findings whose element lies under the floating tab bar, because the bar's glass is what the audit measures there; those are printed as `ACCESSIBILITY-AUDIT-UNDER-TAB-BAR`.
+
+**Consequences.** A real accessibility regression shows in the audit step's summary and locally, not as a red check, until the runner has an Xcode whose audit agrees with local development. Revisit when the runner image gains Xcode 27.
