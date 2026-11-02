@@ -1,90 +1,127 @@
 package com.stainedhead.paperclipmobile.infrastructure.api.contract
 
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Collects which gateway operations the contract run exercised against the live server (AD-050). Every port method
- * is listed in [OPERATIONS]; one that is not marked [verified] is covered only by the MockEngine tests, and the run
- * prints that gap list at the end.
- */
-internal object LiveReport {
-    val OPERATIONS: List<String> =
-        listOf(
-            "HealthGateway.probe",
-            "AuthGateway.createChallenge",
-            "AuthGateway.pollChallenge",
-            "AuthGateway.meWithKey",
-            "AuthGateway.me",
-            "AuthGateway.listCompanies",
-            "AuthGateway.listBoardKeys",
-            "AuthGateway.listBoardKeysWithKey",
-            "AuthGateway.revokeBoardKey",
-            "AuthGateway.revokeCurrentKey",
-            "AttentionGateway.feed",
-            "AttentionGateway.dismiss",
-            "AttentionGateway.snooze",
-            "AttentionGateway.restore",
-            "AttentionGateway.setDecideBy",
-            "DecisionGateway.get",
-            "DecisionGateway.decide",
-            "DecisionGateway.dismiss",
-            "ApprovalGateway.get",
-            "ApprovalGateway.linkedIssues",
-            "ApprovalGateway.comments",
-            "ApprovalGateway.approve",
-            "ApprovalGateway.reject",
-            "ApprovalGateway.requestRevision",
-            "ApprovalGateway.addComment",
-            "BudgetGateway.incident",
-            "BudgetGateway.resolve",
-            "IssueGateway.list",
-            "IssueGateway.get",
-            "IssueGateway.comments",
-            "IssueGateway.addComment",
-            "IssueGateway.setStatus",
-            "IssueGateway.assign",
-            "IssueGateway.create",
-            "IssueGateway.attachments",
-            "InteractionGateway.list",
-            "InteractionGateway.answer",
-            "AgentGateway.list",
-            "AgentGateway.get",
-            "AgentGateway.pause",
-            "AgentGateway.resume",
-            "AgentGateway.invokeHeartbeat",
-            "AgentGateway.setBudget",
-            "RunGateway.get",
-            "RunGateway.events",
-            "RunGateway.log",
-            "RunGateway.cancel",
-            "RunGateway.forIssue",
-            "RunGateway.forAgent",
-            "RunGateway.live",
-            "DashboardGateway.dashboard",
-            "DashboardGateway.windowSpend",
-        )
+/** The outcome of a run: empty [problems] is a pass. */
+internal class LiveVerdict(
+    val problems: List<String>,
+) {
+    val passed: Boolean get() = problems.isEmpty()
+}
 
-    private val verified = ConcurrentHashMap<String, String>()
-    private val attemptsFailed = ConcurrentHashMap<String, String>()
-    private val notes = ConcurrentHashMap<String, String>()
+/** What the run did, by outcome (operation or label to detail). */
+internal class LiveRecords(
+    val data: Map<String, String>,
+    val empty: Map<String, String>,
+    val errorPaths: Map<String, String>,
+    val failures: Map<String, String>,
+    val skips: Map<String, String>,
+    val mismatches: Map<String, String>,
+)
 
-    fun verified(
-        operation: String,
-        detail: String = "",
-    ) {
-        require(OPERATIONS.contains(operation)) { "Unknown operation $operation" }
-        verified[operation] = detail
-        attemptsFailed.remove(operation)
+/** A frozen copy of what the run did, with the allow lists it is judged against. */
+internal class LiveSnapshot(
+    val operations: List<String>,
+    val skipAllowed: Map<String, String>,
+    val emptyAllowed: Map<String, String>,
+    private val records: LiveRecords,
+    val notes: Map<String, String>,
+) {
+    val data: Map<String, String> get() = records.data
+    val empty: Map<String, String> get() = records.empty
+    val errorPaths: Map<String, String> get() = records.errorPaths
+    val failures: Map<String, String> get() = records.failures
+    val skips: Map<String, String> get() = records.skips
+    val mismatches: Map<String, String> get() = records.mismatches
+
+    fun used(): Boolean = listOf(data, empty, errorPaths, failures, skips, mismatches).any { it.isNotEmpty() }
+
+    fun verdict(): LiveVerdict {
+        if (!used()) return LiveVerdict(emptyList())
+        val problems = operations.mapNotNull { problemOf(it) }.toMutableList()
+        mismatches.toSortedMap().forEach { (label, text) -> problems += "MISMATCH $label: $text" }
+        return LiveVerdict(problems)
     }
 
-    /** An operation that was tried against the live server and did not behave as the adapter assumes. */
+    private fun problemOf(operation: String): String? =
+        when {
+            failures.containsKey(operation) -> "$operation failed: ${failures[operation]}"
+            data.containsKey(operation) || skipAllowed.containsKey(operation) -> null
+            empty.containsKey(operation) && emptyAllowed.containsKey(operation) -> null
+            skips.containsKey(operation) -> "$operation was SKIPPED (${skips[operation]}) and is not on the allow list"
+            empty.containsKey(operation) -> "$operation decoded only an empty reply and is not on the empty allow list"
+            errorPaths.containsKey(operation) -> "$operation only ran its error path, never a successful reply"
+            else -> "$operation never ran against the live server"
+        }
+}
+
+/**
+ * Collects what the contract run did to every gateway operation (AD-050, F-C-2, F-C-3). An operation is verified
+ * live only when a call returned a successful, decoded, NON-EMPTY result; a reply that decoded to an empty list or
+ * text is reported as "reachable but empty" and is not verification. Every other state is a problem that fails the
+ * run, unless the operation is on an explicit allow list with a written reason: a failure, a mismatch with what the
+ * adapter assumes, a skip, an operation that never ran, a reply that was only ever empty, or an error path alone.
+ */
+internal open class LiveLedger(
+    private val operations: List<String>,
+    private val skipAllowed: Map<String, String>,
+    private val emptyAllowed: Map<String, String>,
+) {
+    private val data = ConcurrentHashMap<String, String>()
+    private val empty = ConcurrentHashMap<String, String>()
+    private val errorPaths = ConcurrentHashMap<String, String>()
+    private val failures = ConcurrentHashMap<String, String>()
+    private val skips = ConcurrentHashMap<String, String>()
+    private val mismatches = ConcurrentHashMap<String, String>()
+    private val notes = ConcurrentHashMap<String, String>()
+
+    /** A successful call. [hasData] false means the reply decoded but was empty. Data is sticky over empty. */
+    fun record(
+        operation: String,
+        detail: String,
+        hasData: Boolean,
+    ) {
+        known(operation)
+        if (hasData) {
+            data[operation] = detail
+            empty.remove(operation)
+        } else if (!data.containsKey(operation)) {
+            empty[operation] = detail
+        }
+    }
+
+    fun errorPath(
+        operation: String,
+        detail: String,
+    ) {
+        known(operation)
+        errorPaths[operation] = detail
+    }
+
+    /** An operation that was tried against the live server and did not behave as the adapter assumes. Sticky. */
     fun failed(
         operation: String,
         reason: String,
     ) {
-        require(OPERATIONS.contains(operation)) { "Unknown operation $operation" }
-        if (!verified.containsKey(operation)) attemptsFailed[operation] = reason
+        known(operation)
+        failures[operation] = reason
+    }
+
+    /** A step the run could not perform. It fails the run unless the operation is on the skip allow list. */
+    fun skipped(
+        operation: String,
+        reason: String,
+    ) {
+        known(operation)
+        skips[operation] = reason
+    }
+
+    /** A fact about the live server that differs from what the adapters assume. Counted, printed, fails the run. */
+    fun mismatch(
+        label: String,
+        text: String,
+    ) {
+        mismatches[label] = text
     }
 
     /** A fact about the live server worth keeping in the run output (what the stub did not know). */
@@ -95,34 +132,26 @@ internal object LiveReport {
         notes[topic] = text
     }
 
-    fun render(): String {
-        if (verified.isEmpty() &&
-            attemptsFailed.isEmpty()
-        ) {
-            return "\nPaperclip live contract run: no server was used.\n"
-        }
-        val out = StringBuilder("\n===== Paperclip live contract run: operations =====\n")
-        out.append("Verified against the live server: ${verified.size} of ${OPERATIONS.size}\n")
-        OPERATIONS.filter { verified.containsKey(it) }.forEach {
-            out.append("  [live]  $it ${verified[it].orEmpty()}\n".trimEnd() + "\n")
-        }
-        val tried = OPERATIONS.filter { attemptsFailed.containsKey(it) }
-        if (tried.isNotEmpty()) out.append("Tried live and failed (adapter or seed differs from the server):\n")
-        tried.forEach { out.append("  [FAIL]  $it: ${attemptsFailed[it]}\n") }
-        val rest = OPERATIONS.filter { !verified.containsKey(it) && !attemptsFailed.containsKey(it) }
-        out.append("MockEngine only (not exercised live in this run):\n")
-        rest.forEach { out.append("  [mock]  $it\n") }
-        if (notes.isNotEmpty()) out.append("Observed on the live server:\n")
-        notes.toSortedMap().forEach { (topic, text) -> out.append("  - $topic: $text\n") }
-        return out.toString()
-    }
+    fun verdict(): LiveVerdict = snapshot().verdict()
 
-    fun write(reportDir: String?) {
-        val text = render()
-        println(text)
-        reportDir?.let { dir ->
-            File(dir).mkdirs()
-            File(dir, "live-operations.txt").writeText(text)
-        }
-    }
+    fun snapshot(): LiveSnapshot =
+        LiveSnapshot(
+            operations,
+            skipAllowed,
+            emptyAllowed,
+            LiveRecords(
+                data.toMap(),
+                empty.toMap(),
+                errorPaths.toMap(),
+                failures.toMap(),
+                skips.toMap(),
+                mismatches.toMap(),
+            ),
+            notes.toMap(),
+        )
+
+    private fun known(operation: String) = require(operations.contains(operation)) { "Unknown operation $operation" }
 }
+
+/** Every port method of the gateways, judged against [SKIP_ALLOWED] and [EMPTY_ALLOWED]. */
+internal object LiveReport : LiveLedger(OPERATIONS, SKIP_ALLOWED, EMPTY_ALLOWED)

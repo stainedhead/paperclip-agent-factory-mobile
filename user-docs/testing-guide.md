@@ -96,7 +96,7 @@ Both need 90% line coverage and both run in `check`. Do not reduce coverage when
 
 ```bash
 export PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE="$(./scripts/paperclip-test-server.sh invite)"
-PAPERCLIP_CONTRACT_BASE_URL=http://localhost:3199 ./gradlew :shared:infrastructure:api:contractTest
+PAPERCLIP_CONTRACT_I_KNOW_THIS_MUTATES=true PAPERCLIP_CONTRACT_BASE_URL=http://localhost:3199 ./gradlew :shared:infrastructure:api:contractTest
 ```
 
 It signs up a test user, pairs through the real challenge flow, seeds a company, issues, approvals and an agent, exercises every gateway it can, and prints which operations were verified live and which only through MockEngine (`shared/infrastructure/api/build/reports/contract/live-operations.txt`). Paperclip's version pin is `paperclip-server` in the version catalog.

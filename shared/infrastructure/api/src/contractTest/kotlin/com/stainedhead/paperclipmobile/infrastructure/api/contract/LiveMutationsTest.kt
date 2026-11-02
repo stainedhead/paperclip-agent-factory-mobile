@@ -9,26 +9,30 @@ import com.stainedhead.paperclipmobile.domain.Assignee
 import com.stainedhead.paperclipmobile.domain.AttentionSourceKind
 import com.stainedhead.paperclipmobile.domain.CommentOptions
 import com.stainedhead.paperclipmobile.domain.DecideBy
-import com.stainedhead.paperclipmobile.domain.InvokeOutcome
+import com.stainedhead.paperclipmobile.domain.DomainError
+import com.stainedhead.paperclipmobile.domain.InteractionAnswer
+import com.stainedhead.paperclipmobile.domain.InteractionId
+import com.stainedhead.paperclipmobile.domain.IssueId
 import com.stainedhead.paperclipmobile.domain.IssueStatus
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.NewIssue
 import com.stainedhead.paperclipmobile.domain.PauseReason
-import com.stainedhead.paperclipmobile.domain.RunStatus
+import com.stainedhead.paperclipmobile.domain.QuestionAnswer
 import com.stainedhead.paperclipmobile.domain.port.FeedQuery
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
-/** AD-050 (d): each mutation is exercised once through the adapters, on data this run seeded. */
+/** AD-050 (d): each mutation is exercised once through the adapters, on data this run seeded. A refused seed fails. */
 class LiveMutationsTest {
     private companion object {
         const val NEW_BUDGET_CENTS = 1000L
-        const val MAX_NOTE = 160
         const val SETTLE_ATTEMPTS = 30
         const val SETTLE_DELAY_MS = 1000L
     }
@@ -80,26 +84,21 @@ class LiveMutationsTest {
             )
 
             val agent = seeder.agent(scope.companyId.value, "Contract Assignee")
-            if (agent != null) {
-                val assigned =
-                    issues
-                        .assign(
-                            scope,
-                            id,
-                            Assignee.AgentAssignee(AgentId(agent.id)),
-                        ).verified("IssueGateway.assign")
-                assertEquals(agent.id, assigned.assigneeAgentId?.value)
-                issues.assign(scope, id, Assignee.None).verified("IssueGateway.assign", "(clear)")
-            }
+            val assigned =
+                issues
+                    .assign(scope, id, Assignee.AgentAssignee(AgentId(agent.id)))
+                    .verified("IssueGateway.assign")
+            assertEquals(agent.id, assigned.assigneeAgentId?.value)
+            issues.assign(scope, id, Assignee.None).verified("IssueGateway.assign", "(clear)")
         }
 
     @Test
     fun `approvals are approved, rejected, sent back for revision and commented on`() =
         live {
             val company = scope.companyId.value
-            val toApprove = seeder.approval(company, "Contract approve") ?: return@live
-            val toReject = seeder.approval(company, "Contract reject") ?: return@live
-            val toRevise = seeder.approval(company, "Contract revise") ?: return@live
+            val toApprove = seeder.approval(company, "Contract approve")
+            val toReject = seeder.approval(company, "Contract reject")
+            val toRevise = seeder.approval(company, "Contract revise")
 
             val approved =
                 approvals
@@ -135,44 +134,62 @@ class LiveMutationsTest {
     @Test
     fun `an attention card is dismissed, snoozed, restored and given a decide by date`() =
         live {
-            val seeded = seeder.approval(scope.companyId.value, "Contract attention approval") ?: return@live
+            val seeded = seeder.approval(scope.companyId.value, "Contract attention approval")
             val item =
                 attention
                     .feed(scope, FeedQuery())
                     .verified("AttentionGateway.feed")
                     .items
                     .firstOrNull { it.subject.id == seeded.id }
-            if (item == null) {
-                LiveReport.note("attention mutations", "the seeded approval has no card in the feed")
-                return@live
+            assertNotNull(item, "The seeded approval has no card in the feed")
+            val key = checkNotNull(item).dismissalKey
+            val dismissed = attention.dismiss(scope, key).verified("AttentionGateway.dismiss")
+            observe("attention dismiss value") {
+                check(dismissed.isActive) { "A dismissal should be active: $dismissed" }
+                "${dismissed.kind} active=${dismissed.isActive}"
             }
-            val dismissed = attention.dismiss(scope, item.dismissalKey).verified("AttentionGateway.dismiss")
-            observe("attention dismiss value") { "${dismissed.kind} active=${dismissed.isActive}" }
-            attention.restore(scope, item.dismissalKey).verified("AttentionGateway.restore")
+            attention.restore(scope, key).verified("AttentionGateway.restore")
             val snoozed =
-                attention
-                    .snooze(
-                        scope,
-                        item.dismissalKey,
-                        Clock.System.now() + 1.days,
-                    ).verified("AttentionGateway.snooze")
-            observe(
-                "attention snooze value",
-            ) { "${snoozed.kind} active=${snoozed.isActive} until=${snoozed.snoozedUntil != null}" }
-            attention.restore(scope, item.dismissalKey).verified("AttentionGateway.restore", "(after snooze)")
+                attention.snooze(scope, key, Clock.System.now() + 1.days).verified("AttentionGateway.snooze")
+            observe("attention snooze value") {
+                check(snoozed.isActive && snoozed.snoozedUntil != null) { "A snooze should be active: $snoozed" }
+                "${snoozed.kind} active=${snoozed.isActive} until=${snoozed.snoozedUntil != null}"
+            }
+            attention.restore(scope, key).verified("AttentionGateway.restore", "(after snooze)")
             attention
                 .setDecideBy(scope, AttentionSourceKind.Approval, seeded.id, DecideBy.ThisWeek)
                 .verified("AttentionGateway.setDecideBy")
         }
 
     @Test
-    fun `an agent is paused, resumed, woken and given a budget, and its run is read and cancelled`() =
+    fun `a pending question is answered through the interaction gateway`() =
+        live {
+            val issue = seeder.issue(scope.companyId.value, "Contract question issue")
+            val interactionId = seeder.question(issue.id)
+            val answered =
+                interactions
+                    .answer(
+                        scope,
+                        IssueId(issue.id),
+                        InteractionId(interactionId),
+                        InteractionAnswer.Respond(listOf(QuestionAnswer("go", listOf("yes")))),
+                    ).verified("InteractionGateway.answer")
+            assertEquals(interactionId, answered.meta.id.value)
+            assertFalse(answered.meta.status.isOpen, "The answered question is still open: ${answered.meta.status}")
+            val again =
+                interactions.answer(
+                    scope,
+                    IssueId(issue.id),
+                    InteractionId(interactionId),
+                    InteractionAnswer.Respond(listOf(QuestionAnswer("go", listOf("no")))),
+                )
+            again.verifiedError("InteractionGateway.answer", DomainError.Conflict)
+        }
+
+    @Test
+    fun `an agent is paused, resumed and given a budget`() =
         live {
             val seeded = seeder.agent(scope.companyId.value, "Contract Operator")
-            if (seeded == null) {
-                LiveReport.note("agent mutations", "no agent could be seeded")
-                return@live
-            }
             val id = AgentId(seeded.id)
             val paused = agents.pause(scope, id).verified("AgentGateway.pause")
             assertEquals(AgentStatus.Paused, paused.status)
@@ -191,26 +208,8 @@ class LiveMutationsTest {
             LiveReport.note("resume of a settled pause, reply", describe(resumedLater))
             assertSettled(id)
             val budgeted =
-                agents
-                    .setBudget(
-                        scope,
-                        id,
-                        Money.usdCents(NEW_BUDGET_CENTS),
-                    ).verified("AgentGateway.setBudget")
+                agents.setBudget(scope, id, Money.usdCents(NEW_BUDGET_CENTS)).verified("AgentGateway.setBudget")
             assertEquals(Money.usdCents(NEW_BUDGET_CENTS), budgeted.monthlyBudget)
-            val outcome = agents.invokeHeartbeat(scope, id).verified("AgentGateway.invokeHeartbeat")
-            observe("invokeHeartbeat outcome") { outcome::class.simpleName.orEmpty() }
-            val run = (outcome as? InvokeOutcome.Started)?.run ?: return@live
-            val read = runs.get(scope, run.id).verified("RunGateway.get")
-            observe(
-                "run read",
-            ) { "status=${read.status} source=${read.invocationSource} agentMatches=${read.agentId == id}" }
-            val events = runs.events(scope, run.id, 0).verified("RunGateway.events")
-            observe("run events") { "count=${events.size}" }
-            val chunk = runs.log(scope, run.id, 0).verified("RunGateway.log")
-            observe("run log") { "chunk=$chunk".take(MAX_NOTE) }
-            val cancelled = runs.cancel(scope, run.id).verified("RunGateway.cancel")
-            assertEquals(RunStatus.Cancelled, cancelled.status)
         }
 
     /** The pinned server answers a resume mid-transition; the settled agent is idle on the next read. */

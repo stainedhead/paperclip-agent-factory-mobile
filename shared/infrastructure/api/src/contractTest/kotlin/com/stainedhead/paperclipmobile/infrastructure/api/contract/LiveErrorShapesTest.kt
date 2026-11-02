@@ -51,7 +51,7 @@ class LiveErrorShapesTest {
         }
 
     @Test
-    fun `a malformed id answers the status the stubs assume, recorded for each route`() =
+    fun `a malformed id answers exactly the status the stubs assume for each route`() =
         live {
             val routes =
                 listOf(
@@ -65,11 +65,16 @@ class LiveErrorShapesTest {
             val seen = replies.mapValues { it.value.status }
             LiveReport.note("malformed id statuses", seen.toString())
             replies.forEach { (name, reply) -> LiveReport.note("malformed id body $name", reply.body.take(MAX_BODY)) }
-            assertTrue(seen.values.all { it in CLIENT_OR_SERVER_ERROR }, "A malformed id succeeded: $seen")
+            // The stub answers exactly these (PinnedStubFidelityTest); a drift of the live server fails the run.
             assertEquals(
-                BAD_REQUEST,
-                seen["runs"],
-                "A malformed run id is 400 Invalid heartbeat run ID in the pinned source",
+                mapOf(
+                    "issues" to NOT_FOUND,
+                    "approvals" to SERVER_ERROR,
+                    "agents" to UNPROCESSABLE,
+                    "runs" to BAD_REQUEST,
+                    "decisions" to SERVER_ERROR,
+                ),
+                seen,
             )
         }
 
@@ -99,6 +104,5 @@ class LiveErrorShapesTest {
         const val NOT_FOUND = 404
         const val UNPROCESSABLE = 422
         const val SERVER_ERROR = 500
-        val CLIENT_OR_SERVER_ERROR = 400..599
     }
 }

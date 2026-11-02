@@ -88,6 +88,39 @@ internal class RawServer(
         return RawResponse(response.statusCode(), response.body(), response.headers().allValues("set-cookie"))
     }
 
+    /** `multipart/form-data` with one file in the field `file`, the way the web app uploads an attachment. */
+    fun upload(
+        path: String,
+        fileName: String,
+        contentType: String,
+        content: ByteArray,
+        bearer: String,
+    ): RawResponse {
+        val boundary = "----pafmcontract${System.nanoTime()}"
+        val head =
+            "--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n" +
+                "Content-Type: $contentType\r\n\r\n"
+        val tail = "\r\n--$boundary--\r\n"
+        val body = head.toByteArray() + content + tail.toByteArray()
+        val request =
+            HttpRequest
+                .newBuilder(URI.create(baseUrl + path))
+                .timeout(Duration.ofSeconds(REQUEST_SECONDS))
+                .header("Accept", "application/json")
+                .header("Origin", baseUrl)
+                .header("Content-Type", "multipart/form-data; boundary=$boundary")
+                .header("Authorization", "Bearer $bearer")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                .build()
+        val response =
+            try {
+                http.send(request, HttpResponse.BodyHandlers.ofString())
+            } catch (failure: IOException) {
+                throw IllegalStateException("POST $path failed before a reply: ${failure.message}", failure)
+            }
+        return RawResponse(response.statusCode(), response.body(), response.headers().allValues("set-cookie"))
+    }
+
     private companion object {
         const val CONNECT_SECONDS = 10L
         const val REQUEST_SECONDS = 60L

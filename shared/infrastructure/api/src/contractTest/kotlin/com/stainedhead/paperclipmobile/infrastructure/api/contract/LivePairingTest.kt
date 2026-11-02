@@ -13,8 +13,8 @@ class LivePairingTest {
     fun `a device pairs, reads its account, and revokes another key and then its own`() =
         live {
             val device = Pairing.pair(auth, raw, session, base, "pafm contract device")
-            LiveReport.verified("AuthGateway.createChallenge")
-            LiveReport.verified("AuthGateway.pollChallenge", "(pending then approved)")
+            LiveReport.record("AuthGateway.createChallenge", "", hasData = true)
+            LiveReport.record("AuthGateway.pollChallenge", "(pending then approved)", hasData = true)
 
             val access = auth.meWithKey(base, Secret.of(device.key)).verified("AuthGateway.meWithKey")
             assertEquals(ServerBootstrap.EMAIL, access.profile.email)
