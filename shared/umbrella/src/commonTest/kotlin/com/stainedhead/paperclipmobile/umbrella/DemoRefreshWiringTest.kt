@@ -31,7 +31,7 @@ class DemoRefreshWiringTest {
             val session = graph.refresh.start(agents.refreshTarget)
             withContext(Dispatchers.Default) {
                 withTimeout(10.seconds) { agents.state.first { it.phase == DetailPhase.Content } }
-                val gateway = graph.resolve<AgentGateway>() as FakeAgentGateway
+                val gateway = graph.resolveRaw<AgentGateway>() as FakeAgentGateway
                 val ceo = AgentId(DemoIds.AGENT_CEO)
                 gateway.store[ceo] = gateway.store.getValue(ceo).copy(status = AgentStatus.Running)
 
@@ -64,7 +64,7 @@ class DemoRefreshWiringTest {
             withContext(Dispatchers.Default) {
                 withTimeout(10.seconds) { agents.state.first { it.phase == DetailPhase.Content } }
                 session.stop()
-                val gateway = graph.resolve<AgentGateway>() as FakeAgentGateway
+                val gateway = graph.resolveRaw<AgentGateway>() as FakeAgentGateway
                 val before = gateway.count("list")
 
                 (graph.resolve<LiveEvents>() as FakeLiveEvents).emit(

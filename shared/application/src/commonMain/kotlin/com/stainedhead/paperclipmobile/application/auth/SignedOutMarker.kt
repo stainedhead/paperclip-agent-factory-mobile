@@ -15,7 +15,10 @@ class SignedOutMarker(
         result: DomainResult<T>,
     ) {
         if (result is DomainResult.Failure && result.error == DomainError.Unauthorized) {
-            repository.get(id)?.let { repository.update(it.copy(status = InstanceStatus.SignedOut)) }
+            // Only a factory still marked Signed in is written, so repeated 401s cost one status write (FR-023).
+            repository.get(id)?.takeIf { it.status != InstanceStatus.SignedOut }?.let {
+                repository.update(it.copy(status = InstanceStatus.SignedOut))
+            }
         }
     }
 }

@@ -52,6 +52,9 @@ class PaperclipGraph internal constructor(
 
     internal inline fun <reified T : Any> resolve(): T = koin.get()
 
+    /** A gateway as the adapter (or fake) provides it, before the signed-out decorator. For tests of the wiring. */
+    internal inline fun <reified T : Any> resolveRaw(): T = koin.get(RawPort)
+
     fun createFirstRunStateHolder(): FirstRunStateHolder = koin.get { parametersOf(newScope()) }
 
     fun createAppStateHolder(): AppStateHolder = koin.get { parametersOf(newScope()) }

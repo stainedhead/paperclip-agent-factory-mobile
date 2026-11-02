@@ -112,6 +112,8 @@ Reads go through `retryingRead`: up to three retries with 500 ms, 1 s and 2 s ba
 | Presentation | `ErrorKey` | `Unreachable`, `Timeout`, `SignedOut` (from `Unauthorized`), `NoPermission` (from `Forbidden`), `NotFound`, `Conflict`, `Rejected` (with the server's reason as `detail`), `ServerError`, `Malformed` |
 | Presentation | `DeviceAuthIssue`, `AddressIssue`, `ActionsDisabledReason` (`Offline`, `ViewerRole`) | |
 
+A 401 from any company-scoped call marks the factory Signed out through `SignedOutAware<X>Gateway` decorators bound by the umbrella (ADR-031). Phase 1b adapters must map HTTP 401 to `DomainError.Unauthorized` so the decorators see it.
+
 All text a screen shows is a key; the platform UI owns the wording and the localisation. Raw server JSON never crosses the adapter boundary.
 
 ## Refresh policy

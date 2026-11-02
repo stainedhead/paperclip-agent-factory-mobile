@@ -109,17 +109,17 @@ internal fun demoPortsModule() =
     }
 
 private fun org.koin.core.module.Module.demoAttentionPorts() {
-    single<AttentionGateway> { FakeAttentionGateway(get(), DemoInbox.items()) }
+    single<AttentionGateway>(RawPort) { FakeAttentionGateway(get(), DemoInbox.items()) }
     single<AttentionCache> { FakeAttentionCache() }
-    single<DecisionGateway> { FakeDecisionGateway(DemoAttentionDetails.decisions()) }
-    single<ApprovalGateway> {
+    single<DecisionGateway>(RawPort) { FakeDecisionGateway(DemoAttentionDetails.decisions()) }
+    single<ApprovalGateway>(RawPort) {
         FakeApprovalGateway(DemoAttentionDetails.approvals()).apply { issues = DemoAttentionDetails.linkedIssues() }
     }
-    single<BudgetGateway> { FakeBudgetGateway(DemoAttentionDetails.incidents()) }
+    single<BudgetGateway>(RawPort) { FakeBudgetGateway(DemoAttentionDetails.incidents()) }
 }
 
 private fun org.koin.core.module.Module.demoWorkPorts() {
-    single<IssueGateway> {
+    single<IssueGateway>(RawPort) {
         FakeIssueGateway(
             DemoWork.issues(),
             DemoFactories.USER_ID,
@@ -129,10 +129,12 @@ private fun org.koin.core.module.Module.demoWorkPorts() {
             "Billing v2",
         )
     }
-    single<InteractionGateway> {
+    single<InteractionGateway>(RawPort) {
         FakeInteractionGateway(listOf(DemoWork.confirmation()), DemoWork.interactionsByIssue())
     }
-    single<AgentGateway> { FakeAgentGateway(DemoAgents.agents()) }
-    single<RunGateway> { FakeRunGateway(DemoAgents.runs(), events = DemoAgents.events(), log = DemoAgents.LOG) }
-    single<DashboardGateway> { FakeDashboardGateway(DemoAgents.summary(), DemoAgents.spendRows()) }
+    single<AgentGateway>(RawPort) { FakeAgentGateway(DemoAgents.agents()) }
+    single<RunGateway>(
+        RawPort,
+    ) { FakeRunGateway(DemoAgents.runs(), events = DemoAgents.events(), log = DemoAgents.LOG) }
+    single<DashboardGateway>(RawPort) { FakeDashboardGateway(DemoAgents.summary(), DemoAgents.spendRows()) }
 }

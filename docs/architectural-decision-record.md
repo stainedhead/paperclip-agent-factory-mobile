@@ -192,3 +192,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Duplicate addresses.** The same address is allowed more than once. Names are unique (ignoring case), but two factories may point at one server, for example two accounts or a work and a personal board key on one instance; each has its own `InstanceId`, secret namespace and key. Rejecting a repeated address would block that and protect nothing, because the key, not the address, is the credential.
 
 **Consequences.** A late probe can no longer be applied elsewhere; the check costs one value comparison. Wrapping a bare `HealthReport` for `AddInstance` is no longer possible outside tests.
+
+## ADR-031: A 401 marks the factory Signed out in one place: decorators over the company-scoped gateways
+
+**Status:** Accepted (2026-11-01, review fix F-A-3)
+
+**Context.** PRD FR-023 says a 401 marks the factory Signed out and keeps its configuration. Only the access and key-list use cases did it; the other ~30 use cases returned `Unauthorized` and left `Instance.status` at `SignedIn`.
+
+**Decision.** `SignedOutAware<X>Gateway` decorators (application layer) wrap the nine company-scoped gateways and call `SignedOutMarker` on every `DomainError.Unauthorized`, so no use case repeats the check. The composition root binds adapters (or fakes) under the `RawPort` qualifier and gives use cases the decorated bindings. The marker writes only when the factory is not already Signed out, so repeated 401s cost one status write. The access and key-list use cases keep their explicit calls (they also go through `AuthGateway`, which is not company-scoped and is not decorated).
+
+**Consequences.** Real Phase 1b adapters must map HTTP 401 to `DomainError.Unauthorized` (and 429 to `RateLimited`); the decorator only sees domain results. A new company-scoped gateway needs a decorator and a `RawPort` binding.

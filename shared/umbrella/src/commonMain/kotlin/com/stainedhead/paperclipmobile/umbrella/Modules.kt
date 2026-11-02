@@ -119,11 +119,11 @@ internal fun portsModule() =
         single<PairingBrowser> { FakePairingBrowser() }
         single<HealthGateway> { FakeHealthGateway() }
         single<AuthGateway> { FakeAuthGateway() }
-        single<AttentionGateway> { FakeAttentionGateway(get()) }
+        single<AttentionGateway>(RawPort) { FakeAttentionGateway(get()) }
         single<AttentionCache> { FakeAttentionCache() }
-        single<DecisionGateway> { FakeDecisionGateway() }
-        single<ApprovalGateway> { FakeApprovalGateway() }
-        single<BudgetGateway> { FakeBudgetGateway() }
+        single<DecisionGateway>(RawPort) { FakeDecisionGateway() }
+        single<ApprovalGateway>(RawPort) { FakeApprovalGateway() }
+        single<BudgetGateway>(RawPort) { FakeBudgetGateway() }
         single<DeviceTimeZone> { FakeDeviceTimeZone() }
         sliceThreePorts()
         signalPorts()
@@ -135,6 +135,7 @@ internal fun useCaseModule(allowInsecureLocal: Boolean) =
         single { DeviceAuthGuard(get()) }
         single { KeyRevoker(get()) }
         single { SignedOutMarker(get()) }
+        guardedGateways()
         single { KeyEnrollment(get(), get(), get(), get(), get()) }
         instanceUseCases()
         authUseCases()

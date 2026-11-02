@@ -47,6 +47,12 @@ Red evidence: huge interval 'expected:<Cancelled> but was:<Expired>' (waited 2 x
 Fix: interval clamped 250 ms to 10 s; the wait is withTimeoutOrNull(min(expiresAt - now, 15 min)) around the polling only (approval is stored after the timed section so a timeout can never discard a key); DomainError.RateLimited (429) added with ErrorKey.RateLimited and tolerated while waiting. Existing test 'an expired challenge stops polling once the clock passes its expiry' expected 5 polls; the wait now ends at the expiry instant, so 4 polls happen (the 5th would only answer 'expired'); the test was changed with that comment, not weakened (it still asserts Expired, no secret, token wiped).
 Phase 1b adapters must map HTTP 429 to DomainError.RateLimited.
 
+### 2026-11-01 F-A-3 401 marks Signed out in one choke point (Group 2)
+
+Red evidence: 'inbox refresh | expected:<SignedOut> but was:<SignedIn>' (all ten use-case cases) and 'expected:<1> but was:<0>' (exactly once), taken with the decorators absent.
+Fix: ADR-031. SignedOutAware<X>Gateway decorators over the nine company-scoped gateways (research Q2 answered: decorator at the port, not 30 use cases and not retryingRead, which has no scope). The umbrella binds adapters under RawPort and hands use cases the decorated bindings; a graph test proves the wiring (SignedOutWiringTest). SignedOutMarker now writes only when the factory is not already Signed out. Phase 1b adapters must map 401 to Unauthorized.
+Not done: the PRD fix also suggested making RevokeBoardKey refuse the revoke-other path when boardKeyId is null; left for Group 4 (needs a product decision on what the screen shows).
+
 ## Edge cases and solutions
 
 (none yet)

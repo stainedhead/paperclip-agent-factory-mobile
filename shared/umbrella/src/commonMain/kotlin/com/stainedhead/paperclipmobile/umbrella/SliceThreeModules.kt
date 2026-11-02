@@ -56,11 +56,11 @@ import org.koin.core.module.Module
 
 /** The slice 1a-3 gateways, backed by the shared fakes until the Phase 1b adapters exist. */
 internal fun Module.sliceThreePorts() {
-    single<IssueGateway> { FakeIssueGateway() }
-    single<InteractionGateway> { FakeInteractionGateway() }
-    single<AgentGateway> { FakeAgentGateway() }
-    single<RunGateway> { FakeRunGateway() }
-    single<DashboardGateway> { FakeDashboardGateway() }
+    single<IssueGateway>(RawPort) { FakeIssueGateway() }
+    single<InteractionGateway>(RawPort) { FakeInteractionGateway() }
+    single<AgentGateway>(RawPort) { FakeAgentGateway() }
+    single<RunGateway>(RawPort) { FakeRunGateway() }
+    single<DashboardGateway>(RawPort) { FakeDashboardGateway() }
 }
 
 /** Live events and the app lifecycle (slice 1a-4). The WebSocket has no real adapter: board keys fail on it. */
