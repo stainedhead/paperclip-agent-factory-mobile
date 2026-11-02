@@ -39,7 +39,7 @@ private struct FactorySwitcher: View {
         Button {
             environment.router.select(.factories)
         } label: {
-            HStack(spacing: Spacing.small) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
                 Circle().fill(Palette.success.color).frame(width: 8, height: 8).accessibilityHidden(true)
                 Text(label).font(Typography.secondary).multilineTextAlignment(.leading)
                 Image(systemName: "chevron.down").font(Typography.micro).accessibilityHidden(true)

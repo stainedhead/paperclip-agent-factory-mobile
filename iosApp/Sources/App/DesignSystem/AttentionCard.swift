@@ -75,8 +75,12 @@ struct AttentionCard<Actions: View>: View {
         let layout =
             typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading)) : AnyLayout(HStackLayout())
         layout {
-            HStack(spacing: Spacing.medium) {
-                if let severity { SeverityLabel(severity: severity) }
+            let inner =
+                typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.extraSmall))
+                : AnyLayout(HStackLayout(spacing: Spacing.medium))
+            inner {
+                if let severity { SeverityLabel(severity: severity).fixedSize(horizontal: false, vertical: true) }
                 Text("\u{00B7} \(kind)")
                     .font(Typography.label)
                     .foregroundStyle(Palette.textSecondary.color)

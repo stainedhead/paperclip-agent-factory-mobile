@@ -321,3 +321,31 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Nothing claims a prompt that does not happen. If the owner wants these gated, that is a shared change (use case plus tests) first; the sheets then switch.
 
+
+## ADR-090: The Inbox screen shows the one app-wide Inbox holder; the refresh session stays with the environment
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+
+**Context.** The Inbox feeds the tab badge, so its holder must exist whenever a factory and company are selected, not only while the tab is visible. A second holder (or a second `RefreshSession`) created by the view would double the polling and an approve on screen would not move the badge.
+
+**Decision.** `InboxView` renders `AppEnvironment.inbox` (the same `HolderModel` that feeds the badge). The environment owns the single refresh session; foreground, background and offline are the shared policy's (`lifecycle.setForeground`). The screen only asks for one more refresh when it comes back into view (a tab re-selected, a pushed screen popped), never on first appearance.
+
+**Consequences.** The refresh timer runs while the app is in the foreground on any tab, which keeps the badge current (ADR-010). Pull to refresh sends `Refresh` and waits for `isRefreshing` to end.
+
+## ADR-091: The demo Inbox behaves like a server: resolving removes the card, the first read is 12 s old, Side Project is empty, and the phone can go offline
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+
+**Context.** UI tests and screenshots need the Inbox to react to approve, keep paused and refresh the way the real feed does, and to show empty and offline states.
+
+**Decision.** `FakeApprovalGateway` and `FakeBudgetGateway` call an `onResolved` hook; the demo wires it to `FakeAttentionGateway.resolveSubject`, so the feed (and the badge, computed by the fake from its items) stops returning the card. The first feed read reports `generatedAt` 12 s before the frozen demo clock, later reads are current, so "Updated 12s ago" becomes "Updated 0s ago" on a refresh. Company `company-side` has an empty feed. `DemoControls.setOnline` drives `FakeConnectivity`; the app's `-demo-offline` launch option applies it once the Inbox has content, so the cached cards are kept (going offline at launch would show the offline-empty state).
+
+**Consequences.** Decisions are not wired the same way (the Decision screen arrives in 2i-3). All of it is in shared fakes and covered by `DemoInboxFlowTest`.
+
+## ADR-092: The Inbox renders the state's order and kinds; cards are a List with swipe actions and a combined text block
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+
+**Decision.** Sections, cards and chips are shown in the order the state gives (shared grouping sorts Critical first, so the budget alert precedes the HIGH approval, unlike the mock; chips are in kind order). The state has no sub-kind ("Plans queue", "Hire agent"), so the kind line is the kind and identifier. A `List` is used because only list rows support swipe actions; Snooze opens a confirmation dialog listing `snoozeOptions`. The card's text block is one button with a combined spoken label; the action buttons stay separate elements. Kinds the app cannot show open `item.webUrl` in `SFSafariViewController`, only for http(s). Decision, approval, budget-incident, issue, run and agent targets map to routes or a sheet that are labelled placeholders until later milestones.
+
+**Consequences.** Mock-fidelity gaps (order, sub-kind) are shared-state decisions; changing them is a shared change.

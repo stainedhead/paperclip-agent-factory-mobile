@@ -203,6 +203,24 @@ final class InboxUITests: XCTestCase {
     }
 
     @MainActor
+    func testChoosingTheSideProjectCompanyShowsTheEmptyInbox() throws {
+        let app = launchInbox()
+        app.tabBars.firstMatch.buttons["Factories"].tap()
+        let side = app.buttons["company-chip-demo-home-company-side"]
+        XCTAssertTrue(side.waitForExistence(timeout: 15))
+        side.tap()
+        waitUntil(side, "isSelected == true")
+        app.tabBars.firstMatch.buttons["Inbox"].tap()
+
+        XCTAssertTrue(app.element("empty-state").waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Nothing needs you"].exists)
+        XCTAssertFalse(app.card(InboxIds.decision).exists)
+        XCTAssertEqual(app.element("inbox-due-count").label, "Nothing new or due today")
+        let findings = try auditInboxScreen(app, screen: "inbox-empty")
+        XCTAssertTrue(unexplained(findings).isEmpty, unexplained(findings).joined(separator: "\n"))
+    }
+
+    @MainActor
     func testAccessibilityAuditOfTheInbox() throws {
         let app = launchInbox()
         let findings = try auditInboxScreen(app, screen: "inbox")
