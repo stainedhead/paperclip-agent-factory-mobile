@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -45,6 +46,8 @@ internal class RawServer(
     private val http =
         HttpClient
             .newBuilder()
+            // Plain HTTP/1.1: the JDK's h2c upgrade header makes the Node server drop the connection.
+            .version(HttpClient.Version.HTTP_1_1)
             .followRedirects(HttpClient.Redirect.NEVER)
             .connectTimeout(Duration.ofSeconds(CONNECT_SECONDS))
             .build()
@@ -75,7 +78,13 @@ internal class RawServer(
         if (body != null) builder.header("Content-Type", "application/json")
         bearer?.let { builder.header("Authorization", "Bearer $it") }
         cookie?.takeIf { it.isNotEmpty() }?.let { builder.header("Cookie", it) }
-        val response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString())
+        val response =
+            try {
+                http.send(builder.build(), HttpResponse.BodyHandlers.ofString())
+            } catch (failure: IOException) {
+                // Name the call, never the body: the body of an auth route can hold a token.
+                throw IllegalStateException("$method $path failed before a reply: ${failure.message}", failure)
+            }
         return RawResponse(response.statusCode(), response.body(), response.headers().allValues("set-cookie"))
     }
 

@@ -92,4 +92,11 @@ Both need 90% line coverage and both run in `check`. Do not reduce coverage when
 
 ## Contract tests against a real server
 
-`scripts/paperclip-test-server.sh up` starts the pinned Paperclip (authenticated mode, `http://127.0.0.1:3199`) in Docker, and `contract.yml` does the same in CI. No contract tests exist yet: they arrive with the Phase 1b adapters, which will subclass the port contract suites. Paperclip's version pin is `paperclip-server` in the version catalog.
+`scripts/paperclip-test-server.sh up` starts the pinned Paperclip (authenticated mode, `http://localhost:3199`) in Docker, and `contract.yml` does the same in CI and then runs the live contract test. The adapters also run the shared port contract suites through a MockEngine stub server in `commonTest`. The live test is separate (it needs a server): after `up`, create the bootstrap invite and run it with
+
+```bash
+export PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE="$(./scripts/paperclip-test-server.sh invite)"
+PAPERCLIP_CONTRACT_BASE_URL=http://localhost:3199 ./gradlew :shared:infrastructure:api:contractTest
+```
+
+It signs up a test user, pairs through the real challenge flow, seeds a company, issues, approvals and an agent, exercises every gateway it can, and prints which operations were verified live and which only through MockEngine (`shared/infrastructure/api/build/reports/contract/live-operations.txt`). Paperclip's version pin is `paperclip-server` in the version catalog.

@@ -174,7 +174,7 @@ The tests in `DemoGraphTest.kt` and `DemoGraphDeviceTest.kt` (umbrella) drive ev
 
 ## Contract suites
 
-Every port except `Connectivity` and `AppLifecycle` (a `StateFlow` already guarantees what they would assert; ADR-036) has a contract suite in `shared/testing/contract` (26 suites): a plain abstract class with abstract hooks (`create()`, and scripting hooks such as `willAnswer`) and `suspend fun runAll()` that uses `check` (ADR-014). The fake passes it through a thin `@Test` subclass in `shared/testing/src/commonTest` (26 subclasses, one per suite, in `FakeContractTest.kt` and `FakeGatewayContractTest.kt`; the suites assert obligations a real adapter could break, ADR-036). Phase 1b adapters subclass the same suites in their own test source sets. Suites use only port calls and handles the subclass guarantees, never a fake's `calls` or `store` (ADR-028). The Docker-based `contractTest` (Kotlin, against a real Paperclip) does not exist yet; what exists is `scripts/contract-smoke.sh`, run by `contract.yml` against the pinned server (see CI).
+Every port except `Connectivity` and `AppLifecycle` (a `StateFlow` already guarantees what they would assert; ADR-036) has a contract suite in `shared/testing/contract` (26 suites): a plain abstract class with abstract hooks (`create()`, and scripting hooks such as `willAnswer`) and `suspend fun runAll()` that uses `check` (ADR-014). The fake passes it through a thin `@Test` subclass in `shared/testing/src/commonTest` (26 subclasses, one per suite, in `FakeContractTest.kt` and `FakeGatewayContractTest.kt`; the suites assert obligations a real adapter could break, ADR-036). Phase 1b adapters subclass the same suites in their own test source sets. Suites use only port calls and handles the subclass guarantees, never a fake's `calls` or `store` (ADR-028). The shared suites assume stub-shaped data (fixed ids, a closed issue, a scripted expiry), so the live `contractTest` does not reuse them wholesale; it has its own tests on seeded data (see the next section) and `scripts/contract-smoke.sh` stays the first check in `contract.yml`.
 
 ## Tests and coverage
 
@@ -244,7 +244,7 @@ The Swift interop review (acceptance criterion 6, in the spec's implementation n
 |---|---|---|
 | `shared.yml` | ubuntu | `./gradlew check lint --continue` |
 | `ios.yml` | macOS | `iosSimulatorArm64Test`, XCFramework, SwiftLint, swift-format, Xcode unit and UI tests |
-| `contract.yml` | ubuntu | starts the pinned Paperclip in Docker and runs `scripts/contract-smoke.sh` (the anonymous `/api/health` fields and the pairing challenge create and poll shapes); nightly and on manual dispatch the same script runs against `latest`, in a job with no `continue-on-error`, so API drift turns it red. There are no Kotlin contract tests yet. Drift detection on `/api/openapi.json` is not done: the pinned server source has no such route. |
+| `contract.yml` | ubuntu | starts the pinned Paperclip in Docker and runs `scripts/contract-smoke.sh` (the anonymous `/api/health` fields and the pairing challenge create and poll shapes); nightly and on manual dispatch the same script runs against `latest`, in a job with no `continue-on-error`, so API drift turns it red. After the smoke script the job creates a bootstrap invite in the container, runs `./gradlew :shared:infrastructure:api:contractTest` (the real adapters against the live server) and uploads its report. Drift detection on `/api/openapi.json` is not done: the pinned server source has no such route. |
 | `security.yml` | ubuntu | gitleaks (built from `docker/gitleaks/Dockerfile`, v8.30.1 pinned by digest) on the full history |
 
 The files are `.github/workflows/{shared,ios,contract,security}.yml`. AGENTS.md also lists an `android.yml`; it does not exist because there is no `androidApp/` yet. Every action is pinned to a full commit SHA with its version in a comment, and the gitleaks image to a digest (`CiPinningRulesTest`). Deferred: pinning the `brew install` tools and the Xcode version (brew cannot pin by hash), narrowing the gitleaks `TESTONLY` allowlist, and a Gradle dependency-vulnerability job. Dependabot (`.github/dependabot.yml`) proposes weekly grouped updates for Gradle dependencies, GitHub Actions and the gitleaks Dockerfile. Dependabot alerts and dependency review need the repository's Dependency graph switched on in GitHub settings, which is not done yet. The workflows run on pull requests (draft PR #5 for this branch); `contract.yml` only when the paths it lists change, and on a nightly schedule.
@@ -258,7 +258,7 @@ The files are `.github/workflows/{shared,ios,contract,security}.yml`. AGENTS.md 
 - Board keys are rejected on the live-events WebSocket (`/api/companies/{id}/events/ws` accepts agent keys and browser sessions), so the app polls (ADR-004).
 - `/api/health` returns `deploymentMode` and `deploymentExposure` to anyone; the server `version` is in the response to signed-in callers and in the 503 `unhealthy` response (`health.ts`), but not in the anonymous 200 response, so the app cannot show the server version before pairing (PRD FR-005). The `!db` branch omits the exposure and the 503 branch omits the mode, so the probe fails closed.
 - The board API token is returned when a pairing challenge is created, before the person approves; the app holds it in memory and stores it only on approval (ADR-012). The company role comes from `GET /api/cli-auth/me` `memberships[].membershipRole`; `viewer` is enforced by the server (ADR-011).
-- A fresh authenticated server reports `bootstrapStatus: bootstrap_pending` (no users yet). Phase 1b contract tests must complete the bootstrap invite to create the first board user before they can pair.
+- A fresh authenticated server reports `bootstrapStatus: bootstrap_pending` (no users yet). The contract test completes the bootstrap invite to create the first board user before it pairs (see the contract test section).
 - `inlineResolvable` is true for eight source kinds but the app has inline actions only for approvals and hard-stop budget alerts; `subject.href` is a relative path and can be null; `POST /decisions/{id}/decide` runs the effects inside the request; decision inputs belong to the decision; there is no single-incident budget endpoint; approving or rejecting an already resolved approval to the other status is a 422, not a 409. Evidence by file and line is in [`research.md`](../specs/archive/261101-phase-1a-shared-contracts/research.md).
 
 ## Behaviour added by the Phase 1a review fixes
@@ -341,3 +341,19 @@ Process:
 - **Interactions.** Five kinds are answerable; the rest are `UnsupportedInteraction` and never sent anything (ADR-065).
 - **Tests.** Stubs per domain extend `StubPaperclipServer` through `StubWork`: `StubDashboard`, `StubAgents`, `StubRuns` + `StubRunHandlers`, `StubIssues` + `StubIssueList` + `StubThread`, `StubInteractions`; fixtures `DashboardFixtures`, `AgentRowFixtures`, `RunFixtures`, `IssueRowFixtures`, `InteractionFixtures`, each naming the dist file it follows. The existing shared suites (`DashboardContract`, `AgentContract`, `RunReadContract`, `RunWriteContract`, `IssueReadContract`, `IssueWriteContract`, `InteractionContract`) run unchanged through thin `*GatewayContractTest` subclasses on JVM, Android host and iOS simulator. `CompanyScopedAuditTest` calls every method of every company gateway for two factories and against a foreign company.
 
+
+
+## The live contract test (`contractTest`, AD-050, AD-051)
+
+`shared/infrastructure/api` has a JVM-only `contract` compilation (`src/contractTest`, associated with `main`) and a Gradle task `contractTest`. It is **not** part of `check` or `allTests` (it needs a server); `check` only compiles it. It runs the production adapters (`HealthGatewayAdapter`, `AuthGatewayAdapter`, the company gateways) on the real OkHttp engine with a test-only in-memory `SecretStore`, and `allowInsecureLocal = true` for `http://localhost:3199` (`127.0.0.1` is not on the allow-list; the test rewrites it).
+
+Run it locally against the pinned container:
+
+```bash
+./scripts/paperclip-test-server.sh up
+export PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE="$(./scripts/paperclip-test-server.sh invite)"
+PAPERCLIP_CONTRACT_BASE_URL=http://localhost:3199 ./gradlew :shared:infrastructure:api:contractTest
+./scripts/paperclip-test-server.sh down
+```
+
+Without `PAPERCLIP_CONTRACT_BASE_URL` the live tests are skipped with a message (CI sets `PAPERCLIP_CONTRACT_REQUIRED=true`, which makes a missing server a failure). What the run does: `ServerBootstrap` signs up the fixed test user and accepts the bootstrap invite (idempotent: an existing user signs in, an already bootstrapped server skips the invite); `Pairing` creates a challenge through the adapter, approves it with the session cookie and polls to approved; a company, issues, approvals and an agent are seeded with the paired key; the tests read through every gateway, mutate each seeded object once and compare the error shapes. At the end the run prints, and writes to `shared/infrastructure/api/build/reports/contract/live-operations.txt`, which port operations were verified live and which are covered only by MockEngine. Decisions, interaction answers and budget incidents cannot be created with a board key and stay MockEngine-only (research C7). ADR-071 to ADR-073 explain the choices.
