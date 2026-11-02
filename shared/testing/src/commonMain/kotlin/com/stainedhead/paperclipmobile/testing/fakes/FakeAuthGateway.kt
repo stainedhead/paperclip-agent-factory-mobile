@@ -45,6 +45,8 @@ class FakeAuthGateway :
 
     /** Factories the device holds no usable key for: `me` answers 401 for them. */
     val signedOutInstances = mutableSetOf<InstanceId>()
+    private val challengeServers = mutableMapOf<String, BaseUri>()
+    private val pendingKeyServers = mutableMapOf<String, BaseUri>()
     private val revokedKeyIds = mutableSetOf<String>()
     private val revokedInstances = mutableSetOf<InstanceId>()
 
@@ -59,7 +61,12 @@ class FakeAuthGateway :
     ): DomainResult<PairingChallenge> {
         record("createChallenge", baseUri)
         val result = createResult ?: DomainResult.Success(TestData.challenge())
-        lastPendingToken = (result as? DomainResult.Success)?.value?.pendingBoardToken
+        val created = (result as? DomainResult.Success)?.value
+        lastPendingToken = created?.pendingBoardToken
+        if (created != null) {
+            challengeServers[created.id] = baseUri
+            pendingKeyServers[created.pendingBoardToken.reveal()] = baseUri
+        }
         return result
     }
 
@@ -69,6 +76,11 @@ class FakeAuthGateway :
         challengeToken: Secret,
     ): DomainResult<ChallengeStatus> {
         record("pollChallenge", baseUri, challengeToken.reveal())
+        if (challengeServers[challengeId]?.let { it != baseUri } ==
+            true
+        ) {
+            return DomainResult.Failure(DomainError.NotFound)
+        }
         val next = if (pollResults.size > 1) pollResults.removeFirst() else pollResults.firstOrNull()
         return next ?: DomainResult.Success(ChallengeStatus.Pending)
     }
@@ -78,10 +90,17 @@ class FakeAuthGateway :
         key: Secret,
     ): DomainResult<BoardAccess> {
         record("meWithKey", baseUri, key.reveal())
+        if (isIssuedElsewhere(baseUri, key)) return DomainResult.Failure(DomainError.Unauthorized)
         val accepted = validKeys
         if (accepted != null && key.reveal() !in accepted) return DomainResult.Failure(DomainError.Unauthorized)
         return meWithKeyResult
     }
+
+    /** A key is a row in the issuing server's table: another server answers 401 (a known pending key only). */
+    private fun isIssuedElsewhere(
+        baseUri: BaseUri,
+        key: Secret,
+    ): Boolean = pendingKeyServers[key.reveal()]?.let { it != baseUri } == true
 
     override suspend fun me(instanceId: InstanceId): DomainResult<BoardAccess> {
         record("me", hostOf(instanceId), tokenOf(instanceId))
@@ -113,6 +132,7 @@ class FakeAuthGateway :
         key: Secret,
     ): DomainResult<List<BoardKey>> {
         record("listBoardKeysWithKey", baseUri, key.reveal())
+        if (isIssuedElsewhere(baseUri, key)) return DomainResult.Failure(DomainError.Unauthorized)
         val accepted = validKeys
         if (accepted != null && key.reveal() !in accepted) return DomainResult.Failure(DomainError.Unauthorized)
         val keys = keysResult

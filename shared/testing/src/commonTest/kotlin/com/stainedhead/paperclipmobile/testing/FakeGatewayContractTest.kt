@@ -45,6 +45,7 @@ import com.stainedhead.paperclipmobile.testing.contract.AttentionFeedContract
 import com.stainedhead.paperclipmobile.testing.contract.AttentionTriageContract
 import com.stainedhead.paperclipmobile.testing.contract.AuthAccountContract
 import com.stainedhead.paperclipmobile.testing.contract.AuthPairingContract
+import com.stainedhead.paperclipmobile.testing.contract.AuthWrongServerContract
 import com.stainedhead.paperclipmobile.testing.contract.BiometricsContract
 import com.stainedhead.paperclipmobile.testing.contract.BudgetContract
 import com.stainedhead.paperclipmobile.testing.contract.ClockContract
@@ -138,6 +139,16 @@ class FakeAuthPairingContractTest : AuthPairingContract() {
 
     @Test
     fun `the fake passes the pairing contract`() = runTest { runAll() }
+}
+
+class FakeAuthWrongServerContractTest : AuthWrongServerContract() {
+    override val server: BaseUri = TestData.uri()
+    override val otherServer: BaseUri = TestData.uri("https://other.example.com")
+
+    override fun create(): AuthGateway = FakeAuthGateway()
+
+    @Test
+    fun `the fake passes the wrong server contract`() = runTest { runAll() }
 }
 
 class FakeAuthAccountContractTest : AuthAccountContract() {

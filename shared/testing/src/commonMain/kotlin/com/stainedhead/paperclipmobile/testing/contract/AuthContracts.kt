@@ -87,6 +87,48 @@ abstract class AuthPairingContract {
 }
 
 /**
+ * No credential or challenge crosses to another server (INTENT principle 1, F-C-8): what [AuthGateway] created on
+ * [server] means nothing on [otherServer].
+ */
+abstract class AuthWrongServerContract {
+    abstract fun create(): AuthGateway
+
+    abstract val server: BaseUri
+    abstract val otherServer: BaseUri
+
+    suspend fun runAll() {
+        aChallengeCreatedOnOneServerIsNotFoundOnAnother()
+        aPendingKeyIssuedByOneServerIsUnauthorizedOnAnother()
+    }
+
+    /** `GET /cli-auth/challenges/{id}` looks the challenge up in that server's own table. */
+    private suspend fun aChallengeCreatedOnOneServerIsNotFoundOnAnother() {
+        val gateway = create()
+        val challenge = newChallenge(gateway)
+        gateway
+            .pollChallenge(otherServer, challenge.id, challenge.challengeToken)
+            .mustFailWith(DomainError.NotFound, "polling a challenge on a server that never created it")
+        val status = gateway.pollChallenge(server, challenge.id, challenge.challengeToken).mustSucceed("poll")
+        check(status == ChallengeStatus.Pending) { "the challenge still polls on its own server but was $status" }
+    }
+
+    /** A board key is a row in the issuing server's table, so another server answers 401 (never 200). */
+    private suspend fun aPendingKeyIssuedByOneServerIsUnauthorizedOnAnother() {
+        val gateway = create()
+        val challenge = newChallenge(gateway)
+        gateway
+            .meWithKey(otherServer, challenge.pendingBoardToken)
+            .mustFailWith(DomainError.Unauthorized, "me with a key issued by another server")
+        gateway
+            .listBoardKeysWithKey(otherServer, challenge.pendingBoardToken)
+            .mustFailWith(DomainError.Unauthorized, "keys with a key issued by another server")
+    }
+
+    private suspend fun newChallenge(gateway: AuthGateway): PairingChallenge =
+        gateway.createChallenge(server, "Alex's phone", null).mustSucceed("creating a challenge")
+}
+
+/**
  * The signed-in half of [AuthGateway]: me, companies, board keys and revocation (research, `access.ts:2885-2980`).
  * [instance] is a paired factory whose key is the one in [currentKeyId] (listed with at least one other key).
  */
