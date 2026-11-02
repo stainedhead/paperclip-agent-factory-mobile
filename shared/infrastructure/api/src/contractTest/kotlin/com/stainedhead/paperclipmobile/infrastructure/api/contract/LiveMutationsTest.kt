@@ -13,6 +13,8 @@ import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.IssueStatus
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.NewIssue
+import com.stainedhead.paperclipmobile.domain.PauseReason
+import com.stainedhead.paperclipmobile.domain.RunStatus
 import com.stainedhead.paperclipmobile.domain.port.FeedQuery
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -173,20 +175,21 @@ class LiveMutationsTest {
             }
             val id = AgentId(seeded.id)
             val paused = agents.pause(scope, id).verified("AgentGateway.pause")
-            observe("pause reply") {
-                assertEquals(AgentStatus.Paused, paused.status)
-                describe(paused)
-            }
+            assertEquals(AgentStatus.Paused, paused.status)
+            assertEquals(PauseReason.Manual, paused.pauseReason)
+            LiveReport.note("pause reply", describe(paused))
             // A resume right after a pause meets a pause that is still being applied (lifecycle "pausing").
             val resumed = agents.resume(scope, id).verified("AgentGateway.resume")
-            observe("resume right after pause, reply") { describe(resumed) }
-            observe("resume right after pause, settled") { settled(id, "after resume") }
+            assertMidTransition(resumed)
+            LiveReport.note("resume right after pause, reply", describe(resumed))
+            assertSettled(id)
             // A resume of an agent whose pause has settled.
             agents.pause(scope, id).verified("AgentGateway.pause", "(again)")
-            observe("pause settled") { settledWhile(id) { it.lifecycleState != "paused" } }
+            LiveReport.note("pause settled", settledWhile(id) { it.lifecycleState != "paused" })
             val resumedLater = agents.resume(scope, id).verified("AgentGateway.resume", "(after the pause settled)")
-            observe("resume of a settled pause, reply") { describe(resumedLater) }
-            observe("resume of a settled pause, settled") { settled(id, "after second resume") }
+            assertMidTransition(resumedLater)
+            LiveReport.note("resume of a settled pause, reply", describe(resumedLater))
+            assertSettled(id)
             val budgeted =
                 agents
                     .setBudget(
@@ -194,10 +197,7 @@ class LiveMutationsTest {
                         id,
                         Money.usdCents(NEW_BUDGET_CENTS),
                     ).verified("AgentGateway.setBudget")
-            observe("setBudget reply") {
-                assertEquals(Money.usdCents(NEW_BUDGET_CENTS), budgeted.monthlyBudget)
-                "budget=${budgeted.monthlyBudget} spend=${budgeted.monthSpend}"
-            }
+            assertEquals(Money.usdCents(NEW_BUDGET_CENTS), budgeted.monthlyBudget)
             val outcome = agents.invokeHeartbeat(scope, id).verified("AgentGateway.invokeHeartbeat")
             observe("invokeHeartbeat outcome") { outcome::class.simpleName.orEmpty() }
             val run = (outcome as? InvokeOutcome.Started)?.run ?: return@live
@@ -210,8 +210,21 @@ class LiveMutationsTest {
             val chunk = runs.log(scope, run.id, 0).verified("RunGateway.log")
             observe("run log") { "chunk=$chunk".take(MAX_NOTE) }
             val cancelled = runs.cancel(scope, run.id).verified("RunGateway.cancel")
-            observe("run cancel") { "status=${cancelled.status}" }
+            assertEquals(RunStatus.Cancelled, cancelled.status)
         }
+
+    /** The pinned server answers a resume mid-transition; the settled agent is idle on the next read. */
+    private fun assertMidTransition(reply: Agent) {
+        assertEquals(AgentStatus.Paused, reply.status)
+        assertEquals(null, reply.pauseReason)
+        assertEquals("resuming", reply.lifecycleState)
+    }
+
+    private fun LiveContext.assertSettled(id: AgentId) {
+        val outcome = settledWhile(id) { it.status == AgentStatus.Paused }
+        LiveReport.note("agent after resume", outcome)
+        assertTrue(outcome.contains("status=Idle"), "The agent did not settle to idle: $outcome")
+    }
 
     private fun describe(agent: Agent): String =
         "status=${agent.status} reason=${agent.pauseReason} lifecycle=${agent.lifecycleState}"
@@ -235,9 +248,4 @@ class LiveMutationsTest {
             }
             "not settled after ${SETTLE_ATTEMPTS}s: ${last?.let(::describe)}"
         }
-
-    private fun LiveContext.settled(
-        id: AgentId,
-        label: String,
-    ): String = "$label: " + settledWhile(id) { it.status == AgentStatus.Paused }
 }

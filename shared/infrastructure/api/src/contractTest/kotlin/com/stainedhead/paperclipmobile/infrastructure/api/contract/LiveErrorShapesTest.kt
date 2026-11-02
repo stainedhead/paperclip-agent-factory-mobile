@@ -87,7 +87,8 @@ class LiveErrorShapesTest {
             val reply = raw.call("GET", "/api/companies/${stranger.companyId.value}/issues", bearer = key)
             LiveReport.note("unknown company status", "${reply.status} -> ${(result as DomainResult.Failure).error}")
             LiveReport.note("unknown company body", reply.body.take(MAX_BODY))
-            assertTrue(reply.status in listOf(FORBIDDEN, NOT_FOUND), reply.describe())
+            assertEquals(FORBIDDEN, reply.status, reply.describe())
+            assertEquals(DomainError.Forbidden, result.error)
         }
 
     private companion object {
@@ -96,6 +97,8 @@ class LiveErrorShapesTest {
         const val UNAUTHORIZED = 401
         const val FORBIDDEN = 403
         const val NOT_FOUND = 404
+        const val UNPROCESSABLE = 422
+        const val SERVER_ERROR = 500
         val CLIENT_OR_SERVER_ERROR = 400..599
     }
 }
