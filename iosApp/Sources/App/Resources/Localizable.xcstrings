@@ -1086,7 +1086,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chosen"
+            "value": "Decided"
           }
         }
       }
@@ -1108,7 +1108,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm with Face ID"
+            "value": "Confirm choice"
           }
         }
       }

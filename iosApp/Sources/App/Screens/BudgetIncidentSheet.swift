@@ -38,25 +38,34 @@ private struct BudgetScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.roomy) {
-                    if state.isOffline && state.phase == .content {
-                        OfflineBanner(updatedAtEpochMillis: state.updatedAtEpochMillis?.int64Value)
+            ScrollViewReader { proxy in
+                scroll
+                    .onChange(of: amountText) { _, _ in
+                        withAnimation { proxy.scrollTo("budget-amount-anchor", anchor: .bottom) }
                     }
-                    if state.phase == .content { content } else { unavailable }
-                }
-                .padding(.horizontal, Spacing.page)
-                .padding(.vertical, Spacing.roomy)
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("budget-screen")
             }
-            .scrollDismissesKeyboard(.interactively)
             submitBar
         }
         .background(Palette.background.color)
         .sensoryFeedback(.success, trigger: state.outcome)
         .task { await model.observe() }
         .refreshWhileVisible(graph: environment.graph, target: model.holder.refreshTarget)
+    }
+
+    private var scroll: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.roomy) {
+                if state.isOffline && state.phase == .content {
+                    OfflineBanner(updatedAtEpochMillis: state.updatedAtEpochMillis?.int64Value)
+                }
+                if state.phase == .content { content } else { unavailable }
+            }
+            .padding(.horizontal, Spacing.page)
+            .padding(.vertical, Spacing.roomy)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("budget-screen")
+        }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: - Content
@@ -77,7 +86,7 @@ private struct BudgetScreen: View {
             }
         } else {
             choices
-            if state.choice == .raiseAndResume { amountField }
+            if state.choice == .raiseAndResume { amountField.id("budget-amount-anchor") }
         }
     }
 

@@ -187,6 +187,12 @@ private struct DecisionScreen: View {
         }
     }
 
+    private var confirmSpokenLabel: String {
+        if state.isSubmitting { return DecisionLabel.working.text }
+        let base = DecisionLabel.confirm.text
+        return state.confirmNeedsDeviceAuth ? "\(base). \(DecisionLabel.asksFaceID.text)" : base
+    }
+
     @ViewBuilder private var actionBar: some View {
         if state.phase == .content && state.finalState == nil {
             VStack(spacing: Spacing.large) {
@@ -211,6 +217,7 @@ private struct DecisionScreen: View {
                     }
                     .buttonStyle(.app(.primary))
                     .disabled(!state.canConfirm)
+                    .accessibilityLabel(confirmSpokenLabel)
                     .accessibilityIdentifier("decision-confirm")
                 }
             }
