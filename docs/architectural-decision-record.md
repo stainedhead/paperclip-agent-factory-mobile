@@ -261,7 +261,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** A build that reaches `createGraph` with the fakes still bound must not be released: Phase 1b's first acceptance criterion is a test that the graph binds no `FakeBiometrics` and no `FakeSecretStore`. Time-dependent rules are tested at the state-holder and use-case level with an advanceable `FakeClock` (the app lock re-engaging after the idle period is covered through the graph in `DemoGraphDeviceTest`), not by waiting in either graph.
 
-## ADR-038: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
+## ADR-042: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-001/UI-002)
 
@@ -271,7 +271,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** A screen model is `HolderModel<XStateHolder>` plus an extension of typed intent helpers. Tests cover mirroring, no stale read, cancel and restart, and exactly-once close.
 
-## ADR-039: A launch without `-demo` starts at first run on the live seam; the demo graph is opt-in, with scripted Face ID through `DemoControls`
+## ADR-043: A launch without `-demo` starts at first run on the live seam; the demo graph is opt-in, with scripted Face ID through `DemoControls`
 
 **Status:** Accepted (2026-11-02, UI-001/UI-004)
 
@@ -281,7 +281,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Real Face ID (LocalAuthentication) arrives with Phase 1b's adapter; until then the graph's `Biometrics` is the fake.
 
-## ADR-040: Destructive Face ID gating stays inside the shared use case; the Swift sheet only forwards and reports
+## ADR-044: Destructive Face ID gating stays inside the shared use case; the Swift sheet only forwards and reports
 
 **Status:** Accepted (2026-11-02, UI-004)
 
@@ -290,3 +290,34 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `ConfirmDestructiveSheet` shows the lock glyph, calls `onConfirm` (the screen's confirm intent) and displays the holder's `DeviceAuthIssue`. A Swift test proves that a cancelled scripted prompt leaves the agent unpaused.
 
 **Consequences.** One gate for every platform. Catalog keys are `<namespace>.<caseName>` for each exported key enum, verified by a completeness test (ADR for localisation scheme: this one).
+
+## ADR-045: A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-010)
+
+**Context.** `PairingBrowser.open(approvalUrl: Secret)` needs the link, but `Secret.reveal` is hidden from Objective-C on purpose and a Konsist rule limits it to infrastructure and fakes. A Swift conformance to a Kotlin `suspend` interface also needs a `__open` name that SwiftLint and swift-format reject, and an error thrown from Swift into the holder's coroutine would end the app.
+
+**Decision.** `shared/infrastructure/platform` offers `ApprovalPageOpener.open(url: String, onShown: () -> Unit)` (implemented by the shell, never throws) and `OpenerPairingBrowser`, the only place the link leaves its `Secret`. The Swift `ASWebAuthSessionPairingBrowser` opens only `https` links (plain `http` to a local host in debug builds), never logs or keeps the link, and calls back once the page is on screen. Closing the sheet is not a failure: it is how a person finishes approving, and the shared use case finds out by polling.
+
+**Consequences.** Phase 1b passes `OpenerPairingBrowser(opener)` to `createLiveGraph`; only the factory call changes. A sheet that could not be shown cancels the pairing on screen. Real `ASWebAuthenticationSession` behaviour is not exercised on CI.
+
+## ADR-046: Pairing completes on fakes through `approvePairings`, a first-run demo graph, and the graph clock
+
+**Status:** Accepted (2026-11-02, UI-010)
+
+**Context.** On the demo graph a pairing could never finish: the challenge expired at a 2026-11-01 instant while the demo clock was 2026-11-04, polls answered Pending forever, and a used challenge is wiped so it cannot be reused. Updated labels were measured against the wall clock.
+
+**Decision.** `FakeAuthGateway.approvePairings(from)` hands out a fresh challenge per call that expires relative to the graph clock and approves every poll. `PaperclipCore.createFirstRunDemoGraph()` starts with no factory. `PaperclipGraph.nowEpochMillis()` lets the app measure "Updated" against the graph clock. `-demo-first-run` selects that graph in the app.
+
+**Consequences.** First-run, pairing and re-pair flows run in demo mode and UI tests with no server. The live graph uses the wall clock.
+
+## ADR-047: Sign out, revoke and sign out everywhere ask for confirmation but not Face ID
+
+**Status:** Accepted (2026-11-02, UI-010)
+
+**Context.** The Settings mock shows a lock glyph on Sign out everywhere. FR-014 lists the actions that always need the device owner (pause, cancel, destructive decisions, reject, budget raise), and AGENTS.md adds removing a factory; the shared use cases gate exactly those.
+
+**Decision.** The Swift screens ask for a plain confirmation (`ConfirmSheet`, no lock glyph) for sign out, revoke and sign out everywhere, and the lock glyph appears only where the use case prompts (`ConfirmDestructiveSheet`, remove factory).
+
+**Consequences.** Nothing claims a prompt that does not happen. If the owner wants these gated, that is a shared change (use case plus tests) first; the sheets then switch.
+

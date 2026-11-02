@@ -25,7 +25,7 @@ Update this file after every task and phase. It is the single source of progress
 ## Milestones
 
 - [x] 2i-0 Shell: environment switch, StateHolderModel pattern, design system, String Catalog, tab shell, app lock and Face ID gating (UI-001 to UI-007)
-- [ ] 2i-1 First run, Factories, Add/edit factory, Manage factories, Settings with pairing browser (UI-010)
+- [x] 2i-1 First run, Factories, Add/edit factory, Manage factories, Settings with pairing browser (UI-010)
 - [ ] 2i-2 Inbox (UI-020)
 - [ ] 2i-3 Decision, Approval, Budget incident sheet (UI-030)
 - [ ] 2i-4 Factory home, Agents, Agent detail, Run viewer (UI-040)
@@ -35,6 +35,7 @@ Update this file after every task and phase. It is the single source of progress
 ## Notes
 
 2i-0 done: 84 Swift Testing cases, 7 XCUITests (see implementation-notes.md).
+2i-1 done: see implementation-notes.md (ADR-045 to 047); counts are in the milestone report.
 
 ## Blockers
 
@@ -44,3 +45,4 @@ Update this file after every task and phase. It is the single source of progress
 
 - 2026-11-02: spec created from the PRD.
 - 2026-11-02: milestone 2i-0 (shell, design system, catalog, lock) implemented.
+- 2026-11-02: milestone 2i-1 (First run, Factories, Manage, Edit/Add, Settings, pairing browser) implemented.
