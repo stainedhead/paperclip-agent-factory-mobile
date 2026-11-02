@@ -28,7 +28,7 @@ class PortAndSecretRulesTest {
                 .filter { it.extension == "kt" && it.parentFile.name == "contract" }
                 .joinToString("\n") { it.readText() }
         Assertions.assertTrue(contracts.isNotBlank(), "No contract suites found: the rule would pass vacuously")
-        val missing = ports.filter { "[$it]" !in contracts }
+        val missing = ports.filter { "[$it]" !in contracts && it !in NO_CONTRACT }
         Assertions.assertTrue(missing.isEmpty(), "Ports without a contract suite in shared/testing/contract: $missing")
     }
 
@@ -61,5 +61,16 @@ class PortAndSecretRulesTest {
 
     private companion object {
         const val PORTS_EXPECTED = 10
+
+        /**
+         * Ports with no contract suite, each with the reason. They expose only a `StateFlow` that the platform
+         * adapter feeds; the type already guarantees what a suite could check, and the only other property (that it
+         * follows the real network or the real lifecycle) cannot be driven from common code (F-C-4).
+         */
+        val NO_CONTRACT =
+            mapOf(
+                "Connectivity" to "StateFlow of the platform network state",
+                "AppLifecycle" to "StateFlow of the platform foreground state",
+            ).keys
     }
 }

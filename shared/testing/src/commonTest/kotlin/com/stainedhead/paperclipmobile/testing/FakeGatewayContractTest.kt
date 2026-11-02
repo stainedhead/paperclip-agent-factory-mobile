@@ -22,7 +22,6 @@ import com.stainedhead.paperclipmobile.domain.PairingChallenge
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.ServerStatus
 import com.stainedhead.paperclipmobile.domain.port.AgentGateway
-import com.stainedhead.paperclipmobile.domain.port.AppLifecycle
 import com.stainedhead.paperclipmobile.domain.port.ApprovalGateway
 import com.stainedhead.paperclipmobile.domain.port.AttentionGateway
 import com.stainedhead.paperclipmobile.domain.port.AuthGateway
@@ -30,7 +29,6 @@ import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.Biometrics
 import com.stainedhead.paperclipmobile.domain.port.BudgetGateway
 import com.stainedhead.paperclipmobile.domain.port.Clock
-import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import com.stainedhead.paperclipmobile.domain.port.DashboardGateway
 import com.stainedhead.paperclipmobile.domain.port.DecisionGateway
 import com.stainedhead.paperclipmobile.domain.port.DeviceTimeZone
@@ -42,7 +40,6 @@ import com.stainedhead.paperclipmobile.domain.port.LiveEvents
 import com.stainedhead.paperclipmobile.domain.port.PairingBrowser
 import com.stainedhead.paperclipmobile.domain.port.RunGateway
 import com.stainedhead.paperclipmobile.testing.contract.AgentContract
-import com.stainedhead.paperclipmobile.testing.contract.AppLifecycleContract
 import com.stainedhead.paperclipmobile.testing.contract.ApprovalContract
 import com.stainedhead.paperclipmobile.testing.contract.AttentionFeedContract
 import com.stainedhead.paperclipmobile.testing.contract.AttentionTriageContract
@@ -51,7 +48,6 @@ import com.stainedhead.paperclipmobile.testing.contract.AuthPairingContract
 import com.stainedhead.paperclipmobile.testing.contract.BiometricsContract
 import com.stainedhead.paperclipmobile.testing.contract.BudgetContract
 import com.stainedhead.paperclipmobile.testing.contract.ClockContract
-import com.stainedhead.paperclipmobile.testing.contract.ConnectivityContract
 import com.stainedhead.paperclipmobile.testing.contract.DashboardContract
 import com.stainedhead.paperclipmobile.testing.contract.DecisionContract
 import com.stainedhead.paperclipmobile.testing.contract.DeviceTimeZoneContract
@@ -65,14 +61,12 @@ import com.stainedhead.paperclipmobile.testing.contract.PairingBrowserContract
 import com.stainedhead.paperclipmobile.testing.contract.RunReadContract
 import com.stainedhead.paperclipmobile.testing.contract.RunWriteContract
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
-import com.stainedhead.paperclipmobile.testing.fakes.FakeAppLifecycle
 import com.stainedhead.paperclipmobile.testing.fakes.FakeApprovalGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAttentionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAuthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBudgetGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
-import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDecisionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDeviceTimeZone
@@ -350,20 +344,6 @@ class FakeClockContractTest : ClockContract() {
     fun `the fake passes the clock contract`() = runTest { runAll() }
 }
 
-class FakeConnectivityContractTest : ConnectivityContract() {
-    override fun create(): Connectivity = FakeConnectivity()
-
-    override fun setOnline(
-        connectivity: Connectivity,
-        online: Boolean,
-    ) {
-        (connectivity as FakeConnectivity).setOnline(online)
-    }
-
-    @Test
-    fun `the fake passes the connectivity contract`() = runAll()
-}
-
 class FakeIdGeneratorContractTest : IdGeneratorContract() {
     override fun create(): IdGenerator = FakeIdGenerator("id-")
 
@@ -381,22 +361,10 @@ class FakeDeviceTimeZoneContractTest : DeviceTimeZoneContract() {
 class FakePairingBrowserContractTest : PairingBrowserContract() {
     override fun create(): PairingBrowser = FakePairingBrowser()
 
+    override fun openedUrls(browser: PairingBrowser): List<String> = (browser as FakePairingBrowser).openedUrls
+
     @Test
     fun `the fake passes the pairing browser contract`() = runTest { runAll() }
-}
-
-class FakeAppLifecycleContractTest : AppLifecycleContract() {
-    override fun create(): AppLifecycle = FakeAppLifecycle()
-
-    override fun setForeground(
-        lifecycle: AppLifecycle,
-        foreground: Boolean,
-    ) {
-        (lifecycle as FakeAppLifecycle).setForeground(foreground)
-    }
-
-    @Test
-    fun `the fake passes the app lifecycle contract`() = runAll()
 }
 
 class FakeLiveEventsContractTest : LiveEventsContract() {

@@ -43,7 +43,13 @@ abstract class AuthPairingContract {
         val challenge = newChallenge(gateway)
         check(challenge.id.isNotBlank()) { "a challenge has an id" }
         check(challenge.suggestedPollIntervalMs > 0) { "a challenge suggests a poll interval" }
-        check(!challenge.toString().contains("pcp_")) { "a challenge must not print a token" }
+        listOf(challenge.challengeToken, challenge.pendingBoardToken, challenge.approvalUrl).forEach { secret ->
+            val raw = secret.reveal()
+            check(raw.isNotEmpty()) { "a challenge carries its secrets" }
+            check(!challenge.toString().contains(raw) && !secret.toString().contains(raw)) {
+                "a challenge and its secrets must not print their values"
+            }
+        }
         val status = gateway.pollChallenge(server, challenge.id, challenge.challengeToken).mustSucceed("first poll")
         check(status == ChallengeStatus.Pending) { "a new challenge is pending but was $status" }
     }

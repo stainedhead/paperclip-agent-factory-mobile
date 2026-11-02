@@ -3,12 +3,15 @@ package com.stainedhead.paperclipmobile.testing.fakes
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.port.PairingBrowser
 
-/** Counts how often the approval page was opened. It never keeps the URL, which is a secret. */
+/** Records each approval URL it is asked to open. Fixtures use test-only tokens; never put a real link in one. */
 class FakePairingBrowser : PairingBrowser {
-    var opened = 0
-        private set
+    private val urls = mutableListOf<String>()
+
+    val openedUrls: List<String> get() = urls.toList()
+
+    val opened: Int get() = urls.size
 
     override suspend fun open(approvalUrl: Secret) {
-        opened += 1
+        urls += approvalUrl.reveal()
     }
 }
