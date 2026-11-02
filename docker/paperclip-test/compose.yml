@@ -13,6 +13,11 @@ services:
       PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
       PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
       PAPERCLIP_PUBLIC_URL: "http://localhost:${PAPERCLIP_TEST_PORT:-3199}"
+      # Better Auth rejects a sign-up or sign-in whose Origin it does not trust (403 INVALID_ORIGIN); in the default
+      # auto base-URL mode the trusted list is empty. The contract test posts from this origin like the web app does.
+      BETTER_AUTH_TRUSTED_ORIGINS: "http://localhost:${PAPERCLIP_TEST_PORT:-3199}"
+      # The contract test signs up, signs in and pairs several times in seconds; the auth rate limit is not under test.
+      PAPERCLIP_AUTH_RATE_LIMIT_ENABLED: "false"
       # Obviously fake, test-only values. Never reuse them anywhere real.
       BETTER_AUTH_SECRET: "TESTONLY-better-auth-secret-not-for-real-use-0000000000000000"
       PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: "TESTONLY-tool-action-secret-not-for-real-use-00000000000000"
