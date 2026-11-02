@@ -12,7 +12,6 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeLiveEvents
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -24,32 +23,36 @@ import kotlin.time.Duration.Companion.seconds
 class DemoRefreshWiringTest {
     private val graph = PaperclipCore.createDemoGraph()
 
+    /** The session subscribes on another thread: wait for that signal instead of re-sending on a timer. */
+    private suspend fun FakeLiveEvents.awaitSubscribers(count: Int) {
+        withTimeout(10.seconds) { subscriberCount.first { it == count } }
+    }
+
     @Test
     fun `FR-091 a live agent status event refreshes the Agents screen through the graph`() =
         runTest {
             val agents = graph.agents.createAgentsStateHolder(DemoIds.HOME_FACTORY, DemoIds.ACME)
             val session = graph.refresh.start(agents.refreshTarget)
+            val events = graph.resolve<LiveEvents>() as FakeLiveEvents
             withContext(Dispatchers.Default) {
                 withTimeout(10.seconds) { agents.state.first { it.phase == DetailPhase.Content } }
+                events.awaitSubscribers(1)
                 val gateway = graph.resolveRaw<AgentGateway>() as FakeAgentGateway
                 val ceo = AgentId(DemoIds.AGENT_CEO)
                 gateway.store[ceo] = gateway.store.getValue(ceo).copy(status = AgentStatus.Running)
 
-                // The session subscribes asynchronously and events sent before that are not replayed: send until seen.
-                val events = graph.resolve<LiveEvents>() as FakeLiveEvents
-                var state = agents.state.value
-                withTimeout(10.seconds) {
-                    while (state.sections
-                            .flatMap { it.rows }
-                            .first { it.id == DemoIds.AGENT_CEO }
-                            .status !=
-                        AgentStatusUi.Running
-                    ) {
-                        events.emit(LiveEvent("agent.status", DemoIds.AGENT_CEO, null, null))
-                        delay(100)
-                        state = agents.state.value
+                events.emit(LiveEvent("agent.status", DemoIds.AGENT_CEO, null, null))
+
+                val state =
+                    withTimeout(10.seconds) {
+                        agents.state.first { state ->
+                            state.sections
+                                .flatMap { it.rows }
+                                .first { it.id == DemoIds.AGENT_CEO }
+                                .status ==
+                                AgentStatusUi.Running
+                        }
                     }
-                }
                 state.phase shouldBe DetailPhase.Content
             }
             session.stop()
@@ -57,22 +60,17 @@ class DemoRefreshWiringTest {
         }
 
     @Test
-    fun `a stopped session no longer refreshes on live events`() =
+    fun `a stopped session holds no live event subscription`() =
         runTest {
             val agents = graph.agents.createAgentsStateHolder(DemoIds.HOME_FACTORY, DemoIds.ACME)
             val session = graph.refresh.start(agents.refreshTarget)
+            val events = graph.resolve<LiveEvents>() as FakeLiveEvents
             withContext(Dispatchers.Default) {
-                withTimeout(10.seconds) { agents.state.first { it.phase == DetailPhase.Content } }
+                events.awaitSubscribers(1)
+
                 session.stop()
-                val gateway = graph.resolveRaw<AgentGateway>() as FakeAgentGateway
-                val before = gateway.count("list")
 
-                (graph.resolve<LiveEvents>() as FakeLiveEvents).emit(
-                    LiveEvent("agent.status", DemoIds.AGENT_CEO, null, null),
-                )
-                delay(300)
-
-                gateway.count("list") shouldBe before
+                events.awaitSubscribers(0)
             }
             agents.close()
         }

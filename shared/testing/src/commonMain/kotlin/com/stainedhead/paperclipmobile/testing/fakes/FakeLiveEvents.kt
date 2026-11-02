@@ -14,6 +14,9 @@ class FakeLiveEvents : LiveEvents {
 
     override val events: Flow<LiveEvent> = shared
 
+    /** How many collectors are subscribed right now: tests wait for it to rise and prove teardown when it falls. */
+    val subscriberCount: StateFlow<Int> get() = shared.subscriptionCount
+
     suspend fun emit(event: LiveEvent) {
         shared.emit(event)
     }

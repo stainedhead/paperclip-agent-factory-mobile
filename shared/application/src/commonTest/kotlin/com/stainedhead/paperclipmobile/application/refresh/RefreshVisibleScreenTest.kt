@@ -174,6 +174,28 @@ class RefreshVisibleScreenTest {
         }
 }
 
+class RefreshTeardownTest {
+    @Test
+    fun `stopping a session unsubscribes from live events`() =
+        runTest {
+            val rig = Rig(this, CountingTarget(15))
+            rig.events.subscriberCount.value shouldBe 1
+
+            rig.session.stop()
+            runCurrent()
+
+            rig.events.subscriberCount.value shouldBe 0
+        }
+
+    @Test
+    fun `an inactive screen holds no live event subscription`() =
+        runTest {
+            val rig = Rig(this, CountingTarget(15), foreground = false)
+
+            rig.events.subscriberCount.value shouldBe 0
+        }
+}
+
 class RefreshOnLiveEventsTest {
     private val agentStatus = LiveEvent("agent.status", "a1", null, null)
 
