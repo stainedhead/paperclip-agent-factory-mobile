@@ -151,21 +151,38 @@ struct ResultCard<Detail: View>: View {
     }
 }
 
+/// Side by side at normal sizes; stacked at accessibility text sizes so nothing is squeezed to a letter per line.
+struct AdaptiveStack<Content: View>: View {
+    var alignment: VerticalAlignment = .center
+    var spacing: CGFloat = Spacing.extraLarge
+    @ViewBuilder var content: Content
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        let layout =
+            typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
+            : AnyLayout(HStackLayout(alignment: alignment, spacing: spacing))
+        layout { content }
+    }
+}
+
 /// A row of a grouped card: leading text (title and optional help), trailing content.
 struct CardRow<Trailing: View>: View {
     let title: String
     var help: String?
     @ViewBuilder var trailing: Trailing
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(alignment: .center, spacing: Spacing.extraLarge) {
+        AdaptiveStack {
             VStack(alignment: .leading, spacing: Spacing.hairline) {
                 Text(title).font(Typography.cardTitle).foregroundStyle(Palette.textPrimary.color)
                 if let help {
                     Text(help).font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
                 }
             }
-            Spacer(minLength: Spacing.medium)
+            if !typeSize.isAccessibilitySize { Spacer(minLength: Spacing.medium) }
             trailing
         }
         .frame(minHeight: Spacing.minimumTarget)

@@ -77,7 +77,7 @@ struct FactoryCard: View {
         let status = FactoryStatusPresentation(status: row.status, expiry: row.expiry)
         let expiry = ExpiryPresentation(row.expiry)
         VStack(alignment: .leading, spacing: Spacing.large) {
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.medium) {
+            AdaptiveStack(alignment: .firstTextBaseline, spacing: Spacing.medium) {
                 Circle().fill(status.tone.foreground.color).frame(width: 10, height: 10).accessibilityHidden(true)
                 Text(row.name)
                     .font(Typography.cardTitle)
