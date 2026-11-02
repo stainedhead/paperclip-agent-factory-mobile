@@ -81,3 +81,17 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
   `SqlAppSettingsStore`. It runs on JVM, the Android host test and the iOS simulator (native driver on a temp file).
 - `verifyCommonMainPaperclipDatabaseMigration` is wired into `check`; `1.db` and `2.db` are committed snapshots.
 - Red evidence: the schema-version and `format` tests failed (`Schema.version` was 1; no `format` column) before `1.sqm`.
+
+## Group 4: SqlAttentionCache
+
+- The page is one JSON row written through persistence-internal payload classes (`payload/`), not through the domain
+  types, so the domain stays free of serialization annotations and a domain edit cannot silently reinterpret old rows.
+  `RichFeed` (test fixture) carries every `AttentionDetail` variant, `DecideBy.OnDate`, the `Unsupported` source kind,
+  approval type, interaction kind and detail, `Dismissal`, `ResolverAudience`, `relatedIssue`, and a nanosecond `Instant`.
+- 200-item cap: when a longer page is cut the stored `nextCursor` is cleared (the original would point past the dropped
+  items and a reader paging on would skip them); `totalCount` and the company-wide counts are kept so a screen can see
+  that the cached page is partial. A page of exactly 200 keeps its cursor.
+- A row with a damaged payload or an unknown `format` is a miss and is deleted on read.
+- `updatedAt(scope)` is a public method of `SqlAttentionCache` outside the port (the Clock reading of the write).
+- Red evidence: `Unresolved reference 'SqlAttentionCache'` before the class existed; detekt then flagged
+  `LongParameterList` on the payload classes, which became data classes (the domain does the same).
