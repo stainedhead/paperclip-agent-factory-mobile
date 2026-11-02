@@ -36,6 +36,8 @@ private fun StubWork.seed() {
         )
 }
 
+private fun com.stainedhead.paperclipmobile.domain.Agent.transition() = Triple(status, pauseReason, lifecycleState)
+
 /** AD-013: agents through `agents`, `agents/{id}`, `pause`, `resume`, `heartbeat/invoke` and `budgets`. */
 class AgentGatewayAdapterTest {
     private val world = WorkWorld().also { it.home.seed() }
@@ -45,6 +47,22 @@ class AgentGatewayAdapterTest {
         status: HttpStatusCode = HttpStatusCode.OK,
         contentType: String = "application/json",
     ) = AgentGatewayAdapter(answeringClient(body, status, contentType), world.instances, world.secrets)
+
+    @Test
+    fun `AD-013 on the pinned server a resume answers mid-transition and the next read shows the agent idle`() =
+        runTest {
+            // Observed in the live contract run 41511756580 (pinned 2026.1023.0).
+            world.home.agents.agents
+                .first { it.id == ENG }
+                .transitions = true
+
+            val paused = (world.agents.pause(world.acme, eng) as DomainResult.Success).value
+            assertEquals(Triple(AgentStatus.Paused, PauseReason.Manual, "pausing"), paused.transition())
+            val resumed = (world.agents.resume(world.acme, eng) as DomainResult.Success).value
+            assertEquals(Triple(AgentStatus.Paused, null, "resuming"), resumed.transition())
+            val read = (world.agents.get(world.acme, eng) as DomainResult.Success).value
+            assertEquals(Triple(AgentStatus.Idle, null, "ready"), read.transition())
+        }
 
     @Test
     fun `AD-013 list reads the company agents with the stored key and no query`() =

@@ -19,6 +19,14 @@ internal class StubAgent(
     var pauseReason: String? = null
     var lastHeartbeat = "2026-11-01T11:00:00.000Z"
     var invalidOrgChain = false
+
+    /**
+     * The pinned server applies a pause or resume in steps: the reply shows the lifecycle mid-transition and the next
+     * read the settled agent (live contract run 41511756580). Off by default, so the shared contract suites keep their
+     * simple world.
+     */
+    var transitions = false
+    var settlesOnRead = false
 }
 
 /**
@@ -64,6 +72,7 @@ internal class StubAgents(
         if (!isStubUuid(s[1])) return StubReply.error(422, "Agent shortname lookup requires companyId query parameter")
         val agent = agents.firstOrNull { it.id == s[1] } ?: return StubReply.notFound(NOT_FOUND)
         request.resourceRefusal(agent.company, NOT_FOUND)?.let { return it }
+        if (agent.settlesOnRead && request.method == HttpMethod.Get) settle(agent)
         return if (s.size == 2) {
             if (request.method == HttpMethod.Get) StubReply.ok(AgentRowFixtures.agent(agent)) else null
         } else {
@@ -84,17 +93,30 @@ internal class StubAgents(
             else -> null
         }
 
+    private fun settle(agent: StubAgent) {
+        agent.settlesOnRead = false
+        agent.lifecycle = "ready"
+        agent.status = "idle"
+    }
+
     private fun pause(agent: StubAgent): StubReply {
         agent.status = "paused"
         agent.pauseReason = "manual"
+        if (agent.transitions) agent.lifecycle = "pausing"
         runs.runs.filter { it.agentId == agent.id && it.status in ACTIVE }.forEach { it.status = "cancelled" }
         return StubReply.ok(AgentRowFixtures.agent(agent))
     }
 
     private fun resume(agent: StubAgent): StubReply {
         if (agent.invalidOrgChain) return StubReply.error(409, "Repair this agent's reporting chain before resuming it")
-        agent.status = "idle"
         agent.pauseReason = null
+        if (agent.transitions) {
+            agent.status = "paused"
+            agent.lifecycle = "resuming"
+            agent.settlesOnRead = true
+        } else {
+            agent.status = "idle"
+        }
         return StubReply.ok(AgentRowFixtures.agent(agent))
     }
 
