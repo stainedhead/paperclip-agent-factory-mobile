@@ -49,6 +49,12 @@ enum class ErrorKey {
     ServerError,
     RateLimited,
     Malformed,
+
+    /** A pasted key does not look like a board key. Nothing was sent. */
+    InvalidKey,
+
+    /** The phone's secure store refused to keep the key. */
+    StorageFailed,
 }
 
 /** An error to show. [detail] is the server's own reason for [ErrorKey.Rejected]; it is never raw JSON. */

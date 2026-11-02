@@ -509,4 +509,19 @@ class EditInstanceStateHolderTest {
             holder.state.value.probe shouldBe ProbeStatus.Idle
             holder.state.value.canSave shouldBe false
         }
+
+    @Test
+    fun `storageFailureIsNotReportedAsMalformed or not found in a re-pair`() =
+        runTest {
+            val env = Env(listOf(home.copy(status = InstanceStatus.SignedOut)))
+            val (holder, _) = loaded(env)
+            env.secrets.failWrites = true
+            env.auth.pollResults.add(DomainResult.Success(ChallengeStatus.Approved))
+
+            holder.onIntent(EditInstanceIntent.RePairRequested)
+            advanceUntilIdle()
+
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.StorageFailed)
+            holder.state.value.pairing shouldBe PairingStatus.Failed
+        }
 }

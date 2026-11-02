@@ -488,47 +488,7 @@ internal class FirstRunPairing(
     }
 
     private fun FirstRunState.withSignInFailure(result: SignInResult): FirstRunState =
-        when (result) {
-            SignInResult.Cancelled -> {
-                copy(pairing = PairingStatus.Cancelled, isBusy = false)
-            }
-
-            SignInResult.Expired -> {
-                copy(pairing = PairingStatus.Expired, isBusy = false)
-            }
-
-            is SignInResult.Failed -> {
-                copy(
-                    pairing = PairingStatus.Failed,
-                    isBusy = false,
-                    error = result.error.toErrorUi(),
-                )
-            }
-
-            SignInResult.InvalidKey -> {
-                copy(isBusy = false, error = ErrorUi(ErrorKey.Malformed))
-            }
-
-            SignInResult.NotFound -> {
-                copy(
-                    pairing = PairingStatus.Failed,
-                    isBusy = false,
-                    error = ErrorUi(ErrorKey.NotFound),
-                )
-            }
-
-            SignInResult.StorageFailed -> {
-                copy(
-                    pairing = PairingStatus.Failed,
-                    isBusy = false,
-                    error = ErrorUi(ErrorKey.Malformed),
-                )
-            }
-
-            is SignInResult.SignedIn -> {
-                this
-            }
-        }
+        result.toFailure()?.let { copy(pairing = it.pairing, isBusy = false, error = it.error) } ?: this
 
     private suspend fun loadCompanies(id: InstanceId) {
         when (val access = useCases.loadAccess(id)) {

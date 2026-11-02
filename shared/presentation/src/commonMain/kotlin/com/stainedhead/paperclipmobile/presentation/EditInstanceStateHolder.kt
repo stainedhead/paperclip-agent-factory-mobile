@@ -577,12 +577,7 @@ internal class EditInstancePairing(
     }
 
     private fun EditInstanceState.withSignInFailure(result: SignInResult): EditInstanceState =
-        when (result) {
-            SignInResult.Cancelled -> copy(pairing = PairingStatus.Cancelled)
-            SignInResult.Expired -> copy(pairing = PairingStatus.Expired)
-            is SignInResult.Failed -> copy(pairing = PairingStatus.Failed, error = result.error.toErrorUi())
-            else -> copy(pairing = PairingStatus.Failed, error = ErrorUi(ErrorKey.NotFound))
-        }
+        result.toFailure()?.let { copy(pairing = it.pairing, error = it.error) } ?: this
 
     fun cancel() {
         val job = pairJob ?: return

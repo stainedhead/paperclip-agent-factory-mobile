@@ -32,7 +32,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] FR-R07 (P1) F-A-6: Reconciled results for heartbeat and comments do not say whether the mutation took effect
 - [x] FR-R08 (P1) F-A-8: Stale-snapshot writes and unvalidated caller-supplied entities in use cases
 - [x] FR-R09 (P1) F-B-2: Decision screen can run two execution pollers at once; `polling` flag is shared
-- [ ] FR-R10 (P1) F-B-3: Sign-in outcomes map to wrong or inconsistent error keys
+- [x] FR-R10 (P1) F-B-3: Sign-in outcomes map to wrong or inconsistent error keys
 - [ ] FR-R11 (P1) F-B-4: Inbox inline Approve/Reject do not check the card type or the inline-action policy
 - [ ] FR-R12 (P1) F-B-6: Holders run on `Dispatchers.Default` but guards and fields are plain check-then-set
 - [ ] FR-R13 (P1) F-B-7: Approval comment append uses a stale snapshot; a refresh can overwrite a just-finished action
@@ -94,3 +94,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-A-8 done (decide re-reads the decision before device auth).
 - 2026-11-01: F-A-1 residual done (per-factory lock (ADR-033)).
 - 2026-11-01: F-B-2 done (one execution poller per Decision screen).
+- 2026-11-01: F-B-3 done (sign-in outcomes map to one consistent set of keys).

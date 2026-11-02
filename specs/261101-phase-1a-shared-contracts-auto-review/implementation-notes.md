@@ -75,6 +75,12 @@ Fix: InstanceLocks, ADR-033; UpdateInstance, KeyEnrollment, deleteCredentialsLoc
 Red evidence: refreshDuringExecutionPollDoesNotStartSecondPoll 'expected:<4> but was:<8>' (a Refresh during the poll started a second poller; pollingFlagStaysTrue... passed on the old code at 1.5 s, kept as a regression).
 Fix: show() no longer suspends; startPoll() claims the polling flag atomically (new claim() helper in Guards.kt, compareAndSet loop) and launches the single poller as its own job, so the load that triggered it no longer holds 'loading' for the whole poll. Only the poller clears the flag, in finally.
 
+### 2026-11-01 F-B-3 sign-in outcomes map to one consistent set of keys (Group 2)
+
+Red evidence: 'key: expected:<InvalidKey> but was:<Malformed>' (first run, pasted bad key) and 'expected:<StorageFailed> but was:<NotFound>' (edit re-pair with a failing secure store). First run showed a failed secure store as Malformed.
+Fix: ErrorKey.InvalidKey and ErrorKey.StorageFailed; one SignInResult.toFailure() (SignInFailure.kt, no else branch) used by both holders; a pasted bad key now sets pairing Failed in first run like every other failure (it stayed Idle). Existing FR-021 test asserted Malformed for the bad key and was changed to InvalidKey.
+Swift: ErrorKey gained two cases; no Swift source switches over it (checked iosApp/Sources and Tests).
+
 ## Edge cases and solutions
 
 (none yet)

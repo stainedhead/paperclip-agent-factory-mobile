@@ -322,7 +322,7 @@ class FirstRunStateHolderTest {
 
             holder.onIntent(FirstRunIntent.ManualKeySubmitted("nonsense"))
             advanceUntilIdle()
-            holder.state.value.error shouldBe ErrorUi(ErrorKey.Malformed)
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.InvalidKey)
             env.secrets.putCalls shouldBe 0
 
             env.auth.meWithKeyResult = DomainResult.Failure(DomainError.Unauthorized)
@@ -439,5 +439,28 @@ class FirstRunStateHolderTest {
 
             holder.state.value.probe shouldBe ProbeStatus.Idle
             env.repository.addCalls shouldBe 0
+        }
+
+    @Test
+    fun `storageFailureIsNotReportedAsMalformed in first run for a pairing and an invalid pasted key`() =
+        runTest {
+            val (holder, env) = holderWithEnv()
+            holder.type(TestData.HOME_URI)
+            holder.onIntent(FirstRunIntent.ProbeRequested)
+            advanceUntilIdle()
+            holder.onIntent(FirstRunIntent.ContinueRequested)
+            advanceUntilIdle()
+
+            holder.onIntent(FirstRunIntent.ManualKeySubmitted("nonsense"))
+            advanceUntilIdle()
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.InvalidKey)
+            holder.state.value.pairing shouldBe PairingStatus.Failed
+
+            env.secrets.failWrites = true
+            env.auth.meWithKeyResult = DomainResult.Success(TestData.access(Role.Operator))
+            holder.onIntent(FirstRunIntent.ManualKeySubmitted(TestData.TOKEN))
+            advanceUntilIdle()
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.StorageFailed)
+            holder.state.value.pairing shouldBe PairingStatus.Failed
         }
 }
