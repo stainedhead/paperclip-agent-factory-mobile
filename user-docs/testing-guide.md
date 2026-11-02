@@ -2,7 +2,7 @@
 
 How test-driven development, fakes, contract suites, Konsist architecture rules and Kover coverage gates fit together in this repository, and how to add a use case or a screen's state holder end to end. The rules are in [AGENTS.md](../AGENTS.md); the structure is in [technical-details.md](../docs/technical-details.md).
 
-Verified against commit `3533a16`. Paths below are relative to the repository root; `…` stands for `com/stainedhead/paperclipmobile`.
+Verified against commit `26f4e1c`. Paths below are relative to the repository root; `…` stands for `com/stainedhead/paperclipmobile`.
 
 ## The loop
 
@@ -22,8 +22,8 @@ Red, green, refactor is the only accepted workflow. Write the test, run it, see 
 |---|---|---|
 | Unit tests | `shared/<module>/src/commonTest` (kotlin.test, Kotest `shouldBe`, Turbine, coroutines-test) | Behaviour of one layer, against fakes |
 | Fakes | `shared/testing/src/commonMain/kotlin/…/testing/fakes` | A complete, behaviourally honest stand-in for each of the 23 ports; also what demo mode runs on |
-| Contract suites | `shared/testing/src/commonMain/kotlin/…/testing/contract` | One suite per port. The same assertions run against the fake now and against the real adapter in Phase 1b |
-| Fake behaviour tests | `shared/testing/src/commonTest` | The fakes themselves (27 `Fake…ContractTest` subclasses plus behaviour tests) |
+| Contract suites | `shared/testing/src/commonMain/kotlin/…/testing/contract` | One suite for each port a real adapter could break (21 of 23; `Connectivity` and `AppLifecycle` are `StateFlow`s and exempt, ADR-036). The same assertions run against the fake now and against the real adapter in Phase 1b |
+| Fake behaviour tests | `shared/testing/src/commonTest` | The fakes themselves (26 contract subclasses, one per suite, plus behaviour tests) |
 | Demo graph tests | `shared/umbrella/src/commonTest` | Every screen's state holder, driven through `createDemoGraph()`, shows the design mocks' facts |
 | Konsist rules | `shared/umbrella/src/konsistTest` | Layering, conventions, one fake and suite per port, device-auth set, requirement traceability |
 | Kover gates | root `build.gradle.kts` | At least 90% line coverage: `koverVerifyCore` (domain + application) and `koverVerifyPresentation` |
@@ -37,7 +37,7 @@ Rules of thumb:
 - **Assert zero calls.** Fakes count calls (`gateway.count("decide")`). A viewer, a missing note or a cancelled biometric prompt must leave the count at 0; a timeout must leave it at 1 (never retried).
 - **Time only through `Clock`.** Use `FakeClock(elapsedMillis = { testScheduler.currentTime })` so `delay` and `now()` agree.
 - **Secrets in fixtures** are obviously fake (`pcp_board_TESTONLY…`).
-- **Tag tests with the requirement id** in the name (for example `FR-043 a plain option is decided once…`). `RequirementsTraceabilityTest` fails if a Phase 1a id appears in no `commonTest` source.
+- **Tag tests with the requirement id** in the name (for example `FR-043 a plain option is decided once…`). `RequirementsTraceabilityTest` fails if a Phase 1a id is in no `@Test` function name of a `commonTest` source (a comment does not count).
 
 ## Add a use case, end to end
 
@@ -79,7 +79,7 @@ See the compiled walkthrough in [usage-examples.md](./usage-examples.md#7-write-
 
 ## Konsist rules: what they enforce, how to extend
 
-The 23 rules are listed in [technical-details.md](../docs/technical-details.md#layering-rules-and-how-they-are-enforced). They live in `shared/umbrella/src/konsistTest/kotlin/…/architecture/` and run with `./gradlew :shared:umbrella:konsistTest`. Every rule scans real files and, where it can, asserts that it found some, so it does not pass by scanning nothing. The exception is the infrastructure rule: the five infrastructure modules are stubs, so on the real tree it checks nothing yet, and a fixture test (a module with only `iosMain` and `androidMain` files) proves it reports a violation once they have code. To add one, write the rule, break the code on purpose to watch it fail, then fix the code. Never silence a rule inline; if a rule is wrong, change it in its own commit and explain why.
+The 37 architecture tests are listed in [technical-details.md](../docs/technical-details.md#layering-rules-and-how-they-are-enforced). They live in `shared/umbrella/src/konsistTest/kotlin/…/architecture/` and run with `./gradlew :shared:umbrella:konsistTest`. Every rule scans real files and, where it can, asserts that it found some, so it does not pass by scanning nothing. The exception is the infrastructure rule: the five infrastructure modules are stubs, so on the real tree it checks nothing yet, and a fixture test (a module with only `iosMain` and `androidMain` files) proves it reports a violation once they have code. A new rule needs a negative case: a fixture or a deliberate break that makes it fail (the contract-per-port, `Secret.reveal`, traceability and CI pinning rules each have one). Write the rule, watch it fail, then fix the code. Never silence a rule inline; if a rule is wrong, change it in its own commit and explain why.
 
 ## Coverage gates
 
@@ -88,7 +88,7 @@ The 23 rules are listed in [technical-details.md](../docs/technical-details.md#l
 | Core | `./gradlew koverVerifyCore` | one aggregate over `domain` and `application` |
 | Presentation | `./gradlew koverVerifyPresentation` | `presentation` |
 
-Both need 90% line coverage and both run in `check`. Do not reduce coverage when adding code. To see numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q` and read `build/reports/kover/*.xml` (97.58% and 97.96% at the verified commit). `testing`, `umbrella` and (later) infrastructure are outside the gates.
+Both need 90% line coverage and both run in `check`. Do not reduce coverage when adding code. To see numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q` and read `build/reports/kover/*.xml` (97.97% and 98.02% at the verified commit). `testing`, `umbrella` and (later) infrastructure are outside the gates.
 
 ## Contract tests against a real server
 

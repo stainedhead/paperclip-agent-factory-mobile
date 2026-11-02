@@ -11,8 +11,8 @@ Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent
 | Rule | Behaviour |
 |---|---|
 | Roles | Per company: Owner, Operator, Viewer, mapped fail-closed from the server's membership role (ADR-011). A Viewer sees everything and can change nothing. Owner and Operator differ only on raising a budget and setting an agent's monthly budget, both Owner only. Local actions (add, edit, remove, sign out a factory, settings) are open to every role. |
-| Device authentication | Face ID, fingerprint or device PIN, asked inside the use case before the server call, for: reject an approval, pause an agent, cancel a run, a destructive decision option, raise and resume a budget, remove a factory. Cannot be turned off. If it is cancelled, fails, is locked out or is unavailable, nothing is sent. |
-| Mutations | Sent once, never retried. A second tap while an action runs is ignored. After a timeout or a conflict the screen reads the item again and shows what really happened. |
+| Device authentication | Face ID, fingerprint or device PIN, asked inside the use case before the server call, for: reject an approval, pause an agent, cancel a run, a destructive decision option, raise and resume a budget, remove a factory. Cannot be turned off. For a decision the app first reads the decision again, so what it asks about is the server's current copy. If it is cancelled, fails, is locked out or is unavailable, nothing is sent. |
+| Mutations | Sent once, never retried. A second tap while an action runs is ignored. After a timeout or a conflict the screen reads the item again and shows what really happened; when the app cannot tell (run now, comments) it says the outcome is unknown and reloads, never "done" or "skipped". A "no permission" answer makes the screen read your role again and show only what that role may do. |
 | Offline | A screen keeps what it last showed with its "Updated" time and every action is disabled with a reason (`ActionsDisabledReason.Offline`). Nothing refreshes in the background or offline. The Inbox shows its cached first page, or an explanation when there is no cache. |
 | Text | State holders emit keys (enums), not sentences; the UI owns wording and localisation. |
 | Refresh | 15 s while visible, 5 s for a live run, none when the item is final (see [technical-details.md](./technical-details.md#refresh-policy)). |
@@ -25,7 +25,8 @@ State holder `FirstRunStateHolder`. FR-003 and FR-009. The address of the Paperc
 
 - it must start with `https://`; `http://` is accepted only for `localhost` and `10.0.2.2` in debug builds;
 - scheme and host are lower-cased and a trailing `/` is removed; a path prefix such as `/paperclip` and an explicit port are kept;
-- user names and passwords, query strings and fragments are refused, with a message saying what to remove.
+- user names and passwords, query strings and fragments are refused, with a message saying what to remove;
+- a path with spaces, control characters, `..`, empty parts (`//`) or a broken `%` escape, and a host with an empty part, a trailing dot, non-ASCII letters (use the punycode form) or a malformed IP address are refused too.
 
 "Continue to pairing" is enabled for a valid address and does nothing yet. The rest of the flow (name, server check, pairing, company, app lock) is in the state holder and tested, with no view.
 
@@ -45,7 +46,7 @@ Each screen below is a `StateFlow<State>` plus `onIntent(Intent)` in `shared/pre
 | 8 | Factories | `FactoriesStateHolder` | Your factories in order with status (signed in, signed out, needs re-pairing), key expiry (valid, expiring soon, expired, none), reachable companies with your role; select a factory and company. | `isOffline`, `canRefresh`. No device authentication. |
 | 16 | Manage factories | `ManageFactoriesStateHolder` | Reorder; remove a factory after a confirmation that lists what goes (configuration, cached data, stored key, server key). | Remove needs device authentication. |
 | 9 | Add / edit factory | `EditInstanceStateHolder` | Name, address, server check, default company, your roles, certificate pins (SHA-256 SPKI, base64), re-pair, sign out, remove. Changing the address drops the stored key and leaves the factory signed out (ADR-012). | Remove needs device authentication; sign out always deletes local secrets and reports whether the server revoke was confirmed. |
-| 13 | Settings and profile | `SettingsStateHolder` | Device name (1 to 60 characters), app lock on or off, idle period (immediately, 1, 5, 15, 30 minutes or 1 hour), the factories with status, the signed-in person, paired devices and board keys with revoke, sign out of one factory or everywhere. "Destructive actions always ask" is always on. | Revoke and sign out need no authentication. |
+| 13 | Settings and profile | `SettingsStateHolder` | Device name (1 to 60 characters), app lock on or off, idle period (immediately, 1, 5, 15, 30 minutes or 1 hour), the factories with status, the signed-in person, paired devices and board keys with revoke, sign out of one factory or everywhere. "Destructive actions always ask" is always on. | Revoke and sign out need no authentication. Revoking a key is refused ("this phone does not know which key is its own") when the factory has no stored key id. |
 | - | App shell | `AppStateHolder` | Lock state (locked on a cold launch when app lock is on; relocks after the idle period), whether to show setup or the tabs, the selected factory and company. | Unlock asks the device owner. |
 
 ### Decide and intervene

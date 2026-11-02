@@ -2,7 +2,7 @@
 
 Every build and configuration knob that exists today. There is no end-user configuration file: the app's own settings live in the `AppSettings` and `Instance` types and are persisted by adapters that Phase 1b adds. Until then they live in memory in the fakes.
 
-Verified against commit `3533a16`.
+Verified against commit `26f4e1c`.
 
 ## Build
 
@@ -59,9 +59,12 @@ Defined in the root `build.gradle.kts`: variants `core` (packages `domain` + `ap
 
 | Script | Arguments | Environment | Does |
 |---|---|---|---|
-| `scripts/build-kit.sh` | `debug` (default) or `release` | none | Runs `:shared:umbrella:assemblePaperclipKit<Debug\|Release>XCFramework` and copies the result to `iosApp/Frameworks/`. |
-| `scripts/ios-test.sh` | none | `IOS_SIMULATOR_ID` (a simulator UDID; default: first available iPhone on the newest iOS runtime) | `xcodegen generate`, then `xcodebuild test` for the `iosApp` scheme with `CODE_SIGNING_ALLOWED=NO`. Needs the XCFramework first. |
+| `scripts/build-kit.sh` | `debug` (default) or `release` | none | Runs `:shared:umbrella:assemblePaperclipKit<Debug\|Release>XCFramework`, checks the output exists, and swaps it into `iosApp/Frameworks/` only when the copy is complete (the old framework survives a failure); writes `PaperclipKit.configuration` next to it. Exits 1 with a message when Gradle fails or the output is missing. |
+| `scripts/ios-test.sh` | none | `IOS_SIMULATOR_ID` (a simulator UDID; default: first available iPhone on the newest iOS runtime) | `xcodegen generate`, then `xcodebuild test` for the `iosApp` scheme with `CODE_SIGNING_ALLOWED=NO`. Needs the XCFramework first (exits 1 with "run scripts/build-kit.sh first" otherwise). |
 | `scripts/paperclip-test-server.sh` | `up`, `down`, `logs`, `dump`, `health` | `PAPERCLIP_SERVER_VERSION` (overrides the catalog pin, used for the nightly `latest` job); `PAPERCLIP_TEST_PORT` (default `3199`) | Starts or stops `docker/paperclip-test/compose.yml`: Paperclip in `authenticated` mode, exposure `private`, bound to `127.0.0.1`, no LLM keys. `up` fails unless `/api/health` reports `authenticated`. `down` deletes its data. |
+| `scripts/contract-smoke.sh` | optional base URL (default the test server) | `PAPERCLIP_TEST_PORT` (default `3199`) | Checks the pinned server's anonymous `/api/health` fields and the pairing challenge create and poll shapes. Run by `contract.yml`. |
+| `scripts/test-build-kit.sh` | none | none | Checks the failure modes of `build-kit.sh` and `ios-test.sh` without Gradle or Xcode. |
+| `scripts/check-adr-identifiers.py` | optional ADR numbers (default 18 22 23 24) | none | Fails when a backticked identifier in those ADRs' Decision paragraph is not in `shared/`. |
 
 ## Graph creation
 
@@ -110,10 +113,11 @@ Non-secret configuration of one Paperclip instance. It holds no secret.
 | `://` must be present | `MissingScheme` |
 | Scheme must be `http` or `https` | `UnsupportedScheme` |
 | `http` is allowed only when `allowInsecureLocal` is true **and** the host is `localhost` or `10.0.2.2` | `InsecureHttp` |
-| A host is required; letters, digits, dots and hyphens, or a bracketed IPv6 literal | `MissingHost`, `InvalidHost` |
+| A host is required: dot-separated labels of 1 to 63 ASCII letters, digits and hyphens (no leading or trailing hyphen, no empty label, no trailing dot, at most 253 characters); punycode (`xn--`) is accepted, Unicode is not; a host ending in digits must be a canonical IPv4 address (four parts 0 to 255, no leading zeros); a bracketed IPv6 literal must be well formed | `MissingHost`, `InvalidHost` |
 | A port, if present, is 1 to 65535 | `InvalidPort` |
 | No user name or password (`@`) | `UserInfoNotAllowed` |
 | No query string or fragment | `QueryOrFragmentNotAllowed` |
+| The path (after the host) has no whitespace, control character or backslash, no empty segment (`//`), no `.` or `..` segment (also as `%2e`), and every `%` is a valid two-digit escape that does not hide a control character, `/` or `\` | `InvalidPath` |
 
 Normalisation: scheme and host lower-cased, trailing `/` removed; an explicit port and a path prefix are kept. The REST API root is `{baseUri}/api`.
 

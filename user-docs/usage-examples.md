@@ -1,6 +1,6 @@
 # Usage examples
 
-Working snippets for the shared core. Each Kotlin snippet was compiled and run as a temporary test in `shared/umbrella/src/commonTest` against commit `3533a16` (Kotlin 2.4.21, JVM target, 8 tests assembled from the blocks below, all passing); the temporary files were then deleted. To try one, paste it into a test class in that source set, add the imports shown, and run `./gradlew :shared:umbrella:jvmTest --tests '*YourTest*'`. The Swift snippets are verbatim excerpts of tests that pass under `./scripts/ios-test.sh`; they are cited by file.
+Working snippets for the shared core. Each Kotlin snippet was compiled and run as a temporary test in `shared/umbrella/src/commonTest` against commit `26f4e1c` (Kotlin 2.4.21, JVM target, 8 tests assembled from the blocks below, all passing); the temporary files were then deleted. To try one, paste it into a test class in that source set, add the imports shown, and run `./gradlew :shared:umbrella:jvmTest --tests '*YourTest*'`. The Swift snippets are verbatim excerpts of tests that pass under `./scripts/ios-test.sh`; they are cited by file.
 
 Build errors to expect: warnings are errors in this repository (for example a redundant cast), and test names must not contain commas on Kotlin/Native.
 
@@ -121,13 +121,16 @@ firstRun.state.await { it.step == FirstRunStep.Pair }
 firstRun.close()
 ```
 
-Or at use-case level, with an explicit server report. The factory starts signed out, and the same rules refuse a duplicate name and a `local_trusted` server:
+Or at use-case level. `AddInstance` needs a probe result taken for exactly that address (a result for another address is refused with `ProbeRequired`), the factory starts signed out, and the same rules refuse a duplicate name and a `local_trusted` server:
 
 ```kotlin
 import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
 import com.stainedhead.paperclipmobile.application.instance.AddInstance
 import com.stainedhead.paperclipmobile.application.instance.AddInstanceResult
 import com.stainedhead.paperclipmobile.application.instance.InstanceNameIssue
+import com.stainedhead.paperclipmobile.application.instance.ProbeResult
+import com.stainedhead.paperclipmobile.domain.BaseUri
+import com.stainedhead.paperclipmobile.domain.BaseUriResult
 import com.stainedhead.paperclipmobile.domain.DeploymentMode
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
@@ -135,23 +138,30 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeHealthGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIdGenerator
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInstanceRepository
 
-val add = AddInstance(FakeInstanceRepository(), FakeClock(), FakeIdGenerator("factory-"), ValidateInstanceAddress(false))
-val healthy = FakeHealthGateway.healthy()                                        // authenticated, private, ok
+fun probed(address: String, mode: DeploymentMode = DeploymentMode.Authenticated) =
+    ProbeResult.Accepted(
+        (BaseUri.parse(address) as BaseUriResult.Valid).uri,                       // the address the probe was taken for
+        FakeHealthGateway.healthy(mode = mode),                                    // authenticated, private, ok
+    )
 
-val added = add("Home factory", "https://paperclip.example.com/", healthy)
+val add = AddInstance(FakeInstanceRepository(), FakeClock(), FakeIdGenerator("factory-"), ValidateInstanceAddress(false))
+
+val added = add("Home factory", "https://paperclip.example.com/", probed("https://paperclip.example.com"))
 added.shouldBeInstanceOf<AddInstanceResult.Added>()
 added.instance.baseUri.toString() shouldBe "https://paperclip.example.com"       // trailing slash removed
 added.instance.status                                                            // InstanceStatus.SignedOut
 
-add("home factory", "https://other.example.com", healthy) shouldBe
+add("home factory", "https://other.example.com", probed("https://other.example.com")) shouldBe
     AddInstanceResult.InvalidName(InstanceNameIssue.Taken)                       // names are unique ignoring case
-add("Other", "https://other.example.com", FakeHealthGateway.healthy(mode = DeploymentMode.LocalTrusted)) shouldBe
+add("Other", "https://other.example.com", probed("https://other.example.com", DeploymentMode.LocalTrusted)) shouldBe
     AddInstanceResult.Refused(ProbeRefusal.LocalTrusted)                         // local_trusted is always refused
+add("Third", "https://third.example.com", probed("https://other.example.com")) shouldBe
+    AddInstanceResult.ProbeRequired                                              // the probe was for another address
 ```
 
 ## 5. Decide a decision: device authentication cancelled versus approved
 
-The graph hides its fakes (`PaperclipGraph.resolve` is internal), so to script the biometric prompt build the use case from fakes. `AttentionFixtures.decision()` has three options; `"cancel"` is destructive.
+The graph hides its fakes (`PaperclipGraph.resolve` is internal), so to script the biometric prompt build the use case from fakes. `AttentionFixtures.decision()` has three options; `"cancel"` is destructive. `DecideDecision` takes the decision's id and reads the decision itself before asking the device, so the gateway fake must hold it (it does by default); a decision that is no longer open comes back as `Reconciled` with no call.
 
 ```kotlin
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
@@ -175,22 +185,22 @@ fun decideWithDeviceAuth() =
         val biometrics = FakeBiometrics(BiometricResult.Cancelled)
         val decide = DecideDecision(gateway, DeviceAuthGuard(biometrics), FakeIdGenerator("key-"))
         val context = CompanyContext(CompanyScope(InstanceId("home"), CompanyId("acme")), Role.Operator)
-        val decision = AttentionFixtures.decision()
+        val decision = AttentionFixtures.decision()                          // the fake's store holds it; the use case reads it by id
 
         // Cancelled: the use case stops before the gateway.
-        decide(context, decision, "cancel", emptyMap()) shouldBe MutationResult.NotAuthorized(BiometricResult.Cancelled)
+        decide(context, decision.id, "cancel", emptyMap()) shouldBe MutationResult.NotAuthorized(BiometricResult.Cancelled)
         gateway.count("decide") shouldBe 0
 
         // Approved: exactly one gateway call, carrying an idempotency key.
         biometrics.result = BiometricResult.Approved
-        val done = decide(context, decision, "cancel", emptyMap())
+        val done = decide(context, decision.id, "cancel", emptyMap())
         done.shouldBeInstanceOf<MutationResult.Done<*>>()
         gateway.count("decide") shouldBe 1
         biometrics.calls shouldBe 2                  // one prompt per attempt
 
         // A viewer is denied before anything else, with no prompt and no call.
         val viewer = CompanyContext(context.scope, Role.Viewer)
-        decide(viewer, AttentionFixtures.decision(), "ship", emptyMap()) shouldBe MutationResult.Denied
+        decide(viewer, decision.id, "ship", emptyMap()) shouldBe MutationResult.Denied
     }
 ```
 
@@ -205,8 +215,8 @@ val graph = PaperclipCore.createDemoGraph()
 val agents = graph.agents.createAgentsStateHolder(DemoIds.HOME_FACTORY, DemoIds.ACME)
 val session = graph.refresh.start(agents.refreshTarget)   // screen appeared
 
-graph.lifecycle.enterBackground()                          // the shell: scene went to the background, refreshing pauses
-graph.lifecycle.enterForeground()                          // and resumes with an immediate refresh
+graph.lifecycle.setForeground(false)                       // the shell: scene went to the background, refreshing pauses
+graph.lifecycle.setForeground(true)                        // and resumes with an immediate refresh
 
 session.stop()                                             // screen went away
 agents.close()
@@ -219,9 +229,11 @@ let session = graph.refresh.start(target: agents.refreshTarget)
 session.stop()
 agents.close()
 // ...
-graph.lifecycle.enterBackground()
-graph.lifecycle.enterForeground()
+graph.lifecycle.setForeground(isForeground: false)
+graph.lifecycle.setForeground(isForeground: true)
 ```
+
+One call per scene change does both jobs: it pauses or resumes the refresh policy and, for the holder made by `graph.createAppStateHolder()`, tells the app lock (`WentToBackground` or `CameToForeground`). `enterBackground()` and `enterForeground()` are the same calls.
 
 To see the timer itself, run the policy in virtual time with your own `RefreshTarget`. Refreshing every 15 s while active, stopping in the background, and refreshing at once on return:
 
@@ -259,11 +271,11 @@ fun refreshPolicyInVirtualTime() =
         testScheduler.advanceTimeBy(46.seconds); testScheduler.runCurrent()
         target.refreshes shouldBe 3                                  // at 15 s, 30 s, 45 s; not at start
 
-        lifecycle.enterBackground()
+        lifecycle.setForeground(false)
         testScheduler.advanceTimeBy(60.seconds); testScheduler.runCurrent()
         target.refreshes shouldBe 3                                  // nothing in the background
 
-        lifecycle.enterForeground(); testScheduler.runCurrent()
+        lifecycle.setForeground(true); testScheduler.runCurrent()
         target.refreshes shouldBe 4                                  // immediate refresh on return
         session.stop()
     }

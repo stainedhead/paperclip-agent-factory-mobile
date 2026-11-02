@@ -9,6 +9,7 @@ A **factory** is one Paperclip server. The app asks for its address first. This 
    - **Start the address with https://** : there is no `https://` or `http://` at the start.
    - **Use a secure https:// address** : plain `http://` is refused. In debug builds only, `http://localhost` and `http://10.0.2.2` (the Android emulator's name for the host machine) are accepted.
    - **Add the server name after https://**, **The server name has characters that are not allowed**, **The port must be a number from 1 to 65535** : fix the host or the port.
+   - **The part of the address after the server name has characters that are not allowed** : spaces, `..`, a doubled `//` or a broken `%` escape in the path. A server name with a trailing dot, non-English letters (use its `xn--` form) or an invalid IP address gives the server-name message above.
    - **Remove the user name and password from the address**, or **Remove everything after the server address** : keep only the server address and an optional path. Query strings (`?…`) and fragments (`#…`) are refused.
 3. When the address is valid the app shows "Will connect to" followed by the cleaned-up address (scheme and host in lower case, no trailing `/`; a port and a path such as `/paperclip` are kept) and enables **Continue to pairing**.
 

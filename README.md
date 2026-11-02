@@ -2,7 +2,7 @@
 
 Native iPhone and Android apps for deciding, monitoring and intervening in one or more [Paperclip](https://docs.paperclip.ing) AI-agent instances from anywhere, through the Paperclip REST API. All non-UI code is one shared Kotlin Multiplatform core; the iPhone UI is SwiftUI and the Android UI will be Jetpack Compose.
 
-**Status:** Phase 1a (shared contracts) is built on the branch `feat/phase-1a-shared-contracts`, awaiting pull requests. The shared Kotlin core is complete for 15 screens and runs entirely on fakes (demo mode): domain, 71 `operator fun invoke` entry points (use cases and policies), 16 state holders, a fake and a contract suite for each of the 23 ports, the refresh policy and 23 architecture rules. The iPhone app has **one screen**, the first-run address check; the other screens, the Android app and the real adapters (HTTP client, SQLDelight, Keychain and Keystore) are not built. No Paperclip server is contacted yet. Details: [docs/technical-details.md](./docs/technical-details.md) and [specs/archive/261101-phase-1a-shared-contracts/status.md](./specs/archive/261101-phase-1a-shared-contracts/status.md).
+**Status:** Phase 1a (shared contracts) is built on the branch `feat/phase-1a-shared-contracts`, awaiting review in draft pull request #5 (stacked on #4). The shared Kotlin core is complete for 15 screens and runs entirely on fakes (demo mode): domain, 71 `operator fun invoke` entry points (use cases and policies), 16 state holders, a fake for each of the 23 ports, contract suites for the 21 that a real adapter could break, the refresh policy and 37 architecture tests. The iPhone app has **one screen**, the first-run address check; the other screens, the Android app and the real adapters (HTTP client, SQLDelight, Keychain and Keystore) are not built. No Paperclip server is contacted yet. Details: [docs/technical-details.md](./docs/technical-details.md) and [specs/archive/261101-phase-1a-shared-contracts/status.md](./specs/archive/261101-phase-1a-shared-contracts/status.md).
 
 | | Built (iPhone, running) | Design mock (target) |
 |---|---|---|
@@ -18,7 +18,7 @@ Native iPhone and Android apps for deciding, monitoring and intervening in one o
 | [docs/product-summary.md](./docs/product-summary.md) | What the app does, in plain words, and where it stands |
 | [docs/product-details.md](./docs/product-details.md) | The 16 screens: state holder, behaviour by role, device authentication, offline; mocks versus built |
 | [docs/technical-details.md](./docs/technical-details.md) | Modules, graph API, layering rules, mutation order, refresh policy, errors, tests and coverage, iOS interop, known limitations |
-| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-029: why we chose what we chose |
+| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-037: why we chose what we chose |
 | [user-docs/README.md](./user-docs/README.md) | Index of the guides below |
 | [user-docs/getting-started.md](./user-docs/getting-started.md) | Prerequisites, build, gates, XCFramework, iOS tests, demo graph |
 | [user-docs/configuration-reference.md](./user-docs/configuration-reference.md) | Every build and configuration knob and validation rule |
@@ -35,14 +35,14 @@ Needs a current Xcode (developed with 27.2), JDK 21 (Gradle finds or downloads i
 ```bash
 ./gradlew spotlessApply              # fix formatting
 ./gradlew check lint                 # format, static analysis, architecture rules, tests (JVM, Android host, iOS simulator), coverage
-./scripts/build-kit.sh               # builds PaperclipKit.xcframework into iosApp/Frameworks
+./scripts/build-kit.sh               # builds PaperclipKit.xcframework into iosApp/Frameworks (keeps the old one if the build fails)
 ./scripts/ios-test.sh                # generates the Xcode project, runs the iOS unit and UI tests
 open iosApp/iosApp.xcodeproj         # after ./scripts/ios-test.sh, run the "iosApp" scheme on a simulator
 ```
 
 ### Demo graph (the whole core on fakes, no server)
 
-`PaperclipCore.createDemoGraph()` builds the graph on fakes seeded with the design mocks' data (Home factory, Acme Labs, PAP-1182, Engineer 1; ADR-026) and every screen's state holder can be driven from it: `graph.attention`, `graph.work`, `graph.agents`, `graph.runs`, `graph.factory`, `graph.createFactoriesStateHolder()` and the other setup holders, `graph.refresh` for the refresh policy and `graph.lifecycle` for background and foreground. `PaperclipCore.createGraph(allowInsecureLocal)` is the same wiring on empty fakes; it is what the iPhone app calls. Kotlin and Swift examples, all verified: [user-docs/usage-examples.md](./user-docs/usage-examples.md). The Swift tests that do this are `DemoGraphInteropTests.swift`.
+`PaperclipCore.createDemoGraph()` builds the graph on fakes seeded with the design mocks' data (Home factory, Acme Labs, PAP-1182, Engineer 1; ADR-026) and every screen's state holder can be driven from it: `graph.attention`, `graph.work`, `graph.agents`, `graph.runs`, `graph.factory`, `graph.createFactoriesStateHolder()` and the other setup holders, `graph.refresh` for the refresh policy and `graph.lifecycle.setForeground(Bool)` for background and foreground (one call: refresh policy and app lock). `PaperclipCore.createGraph(allowInsecureLocal)` is the same wiring on empty fakes (auto-approving biometrics, a clock that does not move; ADR-037); it is what the iPhone app calls until Phase 1b brings real adapters. Kotlin and Swift examples, all verified: [user-docs/usage-examples.md](./user-docs/usage-examples.md). The Swift tests that do this are `DemoGraphInteropTests.swift`.
 
 ### A Paperclip server for contract tests
 
@@ -51,7 +51,7 @@ open iosApp/iosApp.xcodeproj         # after ./scripts/ios-test.sh, run the "ios
 ./scripts/paperclip-test-server.sh down   # stop and delete its data
 ```
 
-It uses host port 3199, so your own Paperclip on 3100 is untouched. The app refuses servers in `local_trusted` mode by design. No contract tests exist yet; they arrive with the Phase 1b adapters.
+It uses host port 3199, so your own Paperclip on 3100 is untouched. The app refuses servers in `local_trusted` mode by design. `scripts/contract-smoke.sh` checks the pinned server's health and pairing shapes in CI; the Kotlin contract tests arrive with the Phase 1b adapters.
 
 ## Contributing
 
