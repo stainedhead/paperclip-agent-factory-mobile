@@ -36,6 +36,8 @@ struct TabShellView: View {
         switch tab {
         case .inbox: InboxView(environment: environment)
         case .factories: FactoriesView(environment: environment)
+        case .factory: FactoryHomeView(environment: environment)
+        case .agents: AgentsView(environment: environment)
         default: PlaceholderRootView(tab: tab, environment: environment)
         }
     }

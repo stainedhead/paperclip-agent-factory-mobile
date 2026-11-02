@@ -101,20 +101,7 @@ struct InboxFilterChips: View {
     }
 
     private func chip(_ text: String, isSelected: Bool, id: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(text)
-                .font(Typography.body.weight(isSelected ? .semibold : .regular))
-                .padding(.horizontal, Spacing.roomy)
-                .frame(minHeight: Spacing.minimumTarget)
-                .foregroundStyle((isSelected ? Palette.background : Palette.textPrimary).color)
-                .background(
-                    (isSelected ? Palette.textPrimary : Palette.surface).color, in: Capsule()
-                )
-                .overlay(Capsule().strokeBorder(Palette.border.color))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityIdentifier(id)
+        FilterChip(text: text, isSelected: isSelected, identifier: id, action: action)
     }
 }
 

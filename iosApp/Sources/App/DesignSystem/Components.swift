@@ -210,3 +210,27 @@ struct HairlineDivider: View {
         Rectangle().fill(Palette.hairline.color).frame(height: 1).accessibilityHidden(true)
     }
 }
+
+/// A pill that selects one filter (Inbox kinds, Agents groups). The selected pill is filled and carries the selected
+/// trait, so the choice is not colour alone.
+struct FilterChip: View {
+    let text: String
+    let isSelected: Bool
+    let identifier: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(text)
+                .font(Typography.body.weight(isSelected ? .semibold : .regular))
+                .padding(.horizontal, Spacing.roomy)
+                .frame(minHeight: Spacing.minimumTarget)
+                .foregroundStyle((isSelected ? Palette.background : Palette.textPrimary).color)
+                .background((isSelected ? Palette.textPrimary : Palette.surface).color, in: Capsule())
+                .overlay(Capsule().strokeBorder(Palette.border.color))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier(identifier)
+    }
+}

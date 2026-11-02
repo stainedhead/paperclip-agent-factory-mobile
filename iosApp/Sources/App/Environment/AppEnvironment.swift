@@ -11,6 +11,11 @@ enum ScreenKey: Hashable {
     case decision(id: String)
     case approval(id: String)
     case budget(id: String)
+    /// The Factory and Agents tab roots belong to one company of one factory; another company is another model.
+    case factoryHome(instance: String, company: String)
+    case agents(instance: String, company: String)
+    case agent(id: String)
+    case run(id: String)
 
     init?(_ sheet: AppSheet) {
         switch sheet {
@@ -26,6 +31,8 @@ enum ScreenKey: Hashable {
         case .settings, .pairedDevices: self = .settings
         case .decision(let id): self = .decision(id: id)
         case .approval(let id): self = .approval(id: id)
+        case .agent(let id): self = .agent(id: id)
+        case .run(let id): self = .run(id: id)
         default: return nil
         }
     }
@@ -225,11 +232,11 @@ final class AppEnvironment {
         return model
     }
 
-    private var selectedInstance: String { app.state.selectedInstanceId ?? "" }
-    private var selectedCompany: String { app.state.selectedCompanyId ?? "" }
+    var selectedInstance: String { app.state.selectedInstanceId ?? "" }
+    var selectedCompany: String { app.state.selectedCompanyId ?? "" }
 
     /// `-demo-offline-after-detail`: the phone goes offline once a detail screen shows its content.
-    private func detailLoaded(_ phase: DetailPhase) {
+    func detailLoaded(_ phase: DetailPhase) {
         guard phase == .content, !wentOfflineAfterDetail else { return }
         wentOfflineAfterDetail = true
         graph.demoControls?.setOnline(online: false)
@@ -238,6 +245,10 @@ final class AppEnvironment {
     /// Keeps the tab roots and every model whose route (or sheet) is still showing; closes the rest.
     private func releaseScreenModels() {
         var keep: Set<ScreenKey> = [.factories]
+        if !selectedInstance.isEmpty, !selectedCompany.isEmpty {
+            keep.insert(.factoryHome(instance: selectedInstance, company: selectedCompany))
+            keep.insert(.agents(instance: selectedInstance, company: selectedCompany))
+        }
         for route in router.activeRoutes {
             if let key = ScreenKey(route) { keep.insert(key) }
         }
@@ -277,6 +288,7 @@ final class AppEnvironment {
     // MARK: - Inbox (feeds the tab badge)
 
     private func appStateChanged(_ state: AppState) {
+        releaseScreenModels()
         guard let instance = state.selectedInstanceId, let company = state.selectedCompanyId else {
             stopInbox()
             return
@@ -326,6 +338,7 @@ final class AppEnvironment {
         for result in configuration.scriptedBiometrics {
             controls.scriptBiometrics(result: result)
         }
+        if configuration.failsReads { controls.failReads(enabled: true) }
         if let spend = configuration.budgetServerSpend { controls.setBudgetServerSpend(minorUnits: spend) }
         for kind in configuration.resolvedElsewhere {
             switch kind {

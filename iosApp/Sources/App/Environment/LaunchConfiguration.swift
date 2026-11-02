@@ -14,7 +14,8 @@ import PaperclipKit
 /// - `-demo-budget-server-spend <minor units>`: the server's own figure for the spend is that high (above what the
 ///   incident showed), so a raise that clears the shown spend can still be refused with the server's reason.
 /// - `-demo-offline-after-detail`: go offline once the first Decision, Approval or Budget screen has its content.
-/// - `-demo-open decision:<id>|approval:<id>|budget:<id>`: also open one of those screens.
+/// - `-demo-open decision:<id>|approval:<id>|budget:<id>|run:<id>|agent:<id>`: also open one of those screens.
+/// - `-demo-server-error`: the demo factory answers every Factory home, Agents and Run read with a server error.
 /// - `-demo-diagnostics`: show a small read-only counter overlay (prompt count) that UI tests can read.
 struct LaunchConfiguration {
     let useDemo: Bool
@@ -24,6 +25,7 @@ struct LaunchConfiguration {
     let showsDiagnostics: Bool
     let goesOffline: Bool
     let offlineAfterDetail: Bool
+    let failsReads: Bool
     let budgetServerSpend: Int64?
     let resolvedElsewhere: Set<String>
     let startTab: AppTab?
@@ -35,6 +37,7 @@ struct LaunchConfiguration {
         showsDiagnostics = arguments.contains("-demo-diagnostics")
         goesOffline = arguments.contains("-demo-offline")
         offlineAfterDetail = arguments.contains("-demo-offline-after-detail")
+        failsReads = arguments.contains("-demo-server-error")
         budgetServerSpend = Self.value(after: "-demo-budget-server-spend", in: arguments).flatMap { Int64($0) }
         resolvedElsewhere = Set(
             (Self.value(after: "-demo-resolved-elsewhere", in: arguments) ?? "").split(separator: ",").map(String.init))
@@ -94,12 +97,18 @@ enum StartLocation: Equatable {
         }
         let parts = name.split(separator: ":", maxSplits: 1).map(String.init)
         guard parts.count == 2 else { return nil }
-        switch parts[0] {
-        case "edit": return .route(.editFactory(id: parts[1]))
-        case "decision": return .route(.decision(id: parts[1]))
-        case "approval": return .route(.approval(id: parts[1]))
-        case "budget": return .sheet(.budgetIncident(id: parts[1]))
-        default: return nil
+        if parts[0] == "budget" { return .sheet(.budgetIncident(id: parts[1])) }
+        return route(parts[0], id: parts[1]).map { .route($0) }
+    }
+
+    private static func route(_ kind: String, id: String) -> AppRoute? {
+        switch kind {
+        case "edit": .editFactory(id: id)
+        case "decision": .decision(id: id)
+        case "approval": .approval(id: id)
+        case "run": .run(id: id)
+        case "agent": .agent(id: id)
+        default: nil
         }
     }
 }

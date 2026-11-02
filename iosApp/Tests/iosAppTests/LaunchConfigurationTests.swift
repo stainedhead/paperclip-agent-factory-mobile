@@ -12,6 +12,11 @@ struct LaunchConfigurationTests {
         #expect(config.showsDiagnostics == false)
     }
 
+    @Test func serverErrorBreaksTheFactoryAgentsAndRunReadsOnlyWhenAsked() {
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).failsReads == false)
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo", "-demo-server-error"]).failsReads)
+    }
+
     @Test func demoFlagSelectsTheDemoGraph() {
         #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).useDemo)
     }

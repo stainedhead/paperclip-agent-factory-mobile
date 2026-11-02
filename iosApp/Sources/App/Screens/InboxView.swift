@@ -25,8 +25,9 @@ struct InboxView: View {
 
 /// "Home factory · Acme Labs": which Inbox this is. Tapping goes to the Factories tab, where factories and companies
 /// are chosen.
-private struct FactorySwitcher: View {
+struct FactorySwitcher: View {
     let environment: AppEnvironment
+    var identifier = "inbox-switcher"
 
     var body: some View {
         let state = environment.app.state
@@ -51,7 +52,7 @@ private struct FactorySwitcher: View {
         .foregroundStyle(Palette.textPrimary.color)
         .accessibilityLabel(label)
         .accessibilityHint(InboxLabel.switcherHint.text)
-        .accessibilityIdentifier("inbox-switcher")
+        .accessibilityIdentifier(identifier)
         .task {
             factories.refresh()
             await factories.observe()

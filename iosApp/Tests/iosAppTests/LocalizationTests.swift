@@ -65,6 +65,15 @@ struct LocalizationTests {
     @Test func everyBudgetThresholdHasText() { check(BudgetThresholdUi.allCases) }
     @Test func everyBudgetChoiceHasText() { check(BudgetChoice.allCases) }
     @Test func everyBudgetOutcomeHasText() { check(BudgetOutcomeUi.allCases) }
+    @Test func everyAgentStatusHasText() { check(AgentStatusUi.allCases) }
+    @Test func everyRunStatusHasText() { check(RunStatusUi.allCases) }
+    @Test func everyAgentGroupHasText() { check(AgentGroupUi.allCases) }
+    @Test func everyAgentActionHasText() { check(AgentActionUi.allCases) }
+    @Test func everySpendWindowHasText() { check(SpendWindowUi.allCases) }
+    @Test func everyFactoryLabelHasText() { check(FactoryLabel.allCases) }
+    @Test func everyAgentsLabelHasText() { check(AgentsLabel.allCases) }
+    @Test func everyAgentDetailLabelHasText() { check(AgentDetailLabel.allCases) }
+    @Test func everyRunLabelHasText() { check(RunLabel.allCases) }
     @Test func everyDecideByKindHasText() { check(DecideByKindUi.allCases) }
 
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {
