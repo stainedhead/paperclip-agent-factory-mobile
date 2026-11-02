@@ -1,0 +1,1062 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "address.invalidHost": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server name has characters that are not allowed"
+          }
+        }
+      }
+    },
+    "address.invalidPath": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The path after the server name has characters that are not allowed"
+          }
+        }
+      }
+    },
+    "address.invalidPort": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The port must be a number from 1 to 65535"
+          }
+        }
+      }
+    },
+    "address.missingHost": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the server name after https://"
+          }
+        }
+      }
+    },
+    "address.missingScheme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start the address with https://"
+          }
+        }
+      }
+    },
+    "address.mustUseHttps": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a secure https:// address"
+          }
+        }
+      }
+    },
+    "address.removeCredentials": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove the user name and password from the address"
+          }
+        }
+      }
+    },
+    "address.removeQueryOrFragment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove everything after the server address"
+          }
+        }
+      }
+    },
+    "deviceAuth.cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID was cancelled. Nothing was changed."
+          }
+        }
+      }
+    },
+    "deviceAuth.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID didn't recognise you. Nothing was changed."
+          }
+        }
+      }
+    },
+    "deviceAuth.lockedOut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID is locked. Use your passcode on the lock screen, then try again."
+          }
+        }
+      }
+    },
+    "deviceAuth.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID or a passcode isn't set up on this phone."
+          }
+        }
+      }
+    },
+    "disabled.offline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're offline. Actions are unavailable."
+          }
+        }
+      }
+    },
+    "disabled.ownerRole": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only an owner can do this."
+          }
+        }
+      }
+    },
+    "disabled.viewerRole": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your role is Viewer, so you can look but not change anything."
+          }
+        }
+      }
+    },
+    "effect.assignIssue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assigns the issue to %@"
+          }
+        }
+      }
+    },
+    "effect.cancelIssueTree": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancels the issue and its sub-issues: %@"
+          }
+        }
+      }
+    },
+    "effect.commentOnIssue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posts a comment: %@"
+          }
+        }
+      }
+    },
+    "effect.createIssue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates the issue “%@”"
+          }
+        }
+      }
+    },
+    "effect.resolveBlocker": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resolves %@ blocker(s)"
+          }
+        }
+      }
+    },
+    "effect.unsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Does something this app can't describe (%@). Open it in the web app to see more."
+          }
+        }
+      }
+    },
+    "effect.updateIssueStatus": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets the issue status to %@"
+          }
+        }
+      }
+    },
+    "error.certificateInvalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The factory's security certificate could not be verified."
+          }
+        }
+      }
+    },
+    "error.conflict": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone else changed this first. Refresh to see the latest."
+          }
+        }
+      }
+    },
+    "error.currentKeyUnknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone doesn't know which key is its own, so it won't revoke keys."
+          }
+        }
+      }
+    },
+    "error.invalidKey": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That doesn't look like a board key. Nothing was sent."
+          }
+        }
+      }
+    },
+    "error.malformed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The factory sent something this app can't read."
+          }
+        }
+      }
+    },
+    "error.noPermission": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your role doesn't allow this."
+          }
+        }
+      }
+    },
+    "error.notFound": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That item no longer exists."
+          }
+        }
+      }
+    },
+    "error.rateLimited": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many requests. Wait a moment and try again."
+          }
+        }
+      }
+    },
+    "error.rejected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The factory rejected the request."
+          }
+        }
+      }
+    },
+    "error.serverError": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The factory had a problem. Try again in a moment."
+          }
+        }
+      }
+    },
+    "error.signedOut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're signed out of this factory. Sign in again to continue."
+          }
+        }
+      }
+    },
+    "error.storageFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone's secure storage refused to keep the key."
+          }
+        }
+      }
+    },
+    "error.timeout": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The factory took too long to answer."
+          }
+        }
+      }
+    },
+    "error.unreachable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't reach the factory. Check your connection or VPN."
+          }
+        }
+      }
+    },
+    "feedback.deviceAuth": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm with Face ID to continue."
+          }
+        }
+      }
+    },
+    "feedback.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That didn't go through. It was sent once and not retried."
+          }
+        }
+      }
+    },
+    "feedback.invalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the highlighted field and try again."
+          }
+        }
+      }
+    },
+    "feedback.notAllowed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your role doesn't allow this."
+          }
+        }
+      }
+    },
+    "feedback.reconciled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That didn't go through. Showing the current state."
+          }
+        }
+      }
+    },
+    "feedback.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No answer arrived, so it's unclear whether that took effect. Refresh before trying again."
+          }
+        }
+      }
+    },
+    "invalid.amountMustExceedObserved": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new budget must be higher than what has been spent."
+          }
+        }
+      }
+    },
+    "invalid.answerBlocked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This question is blocked right now."
+          }
+        }
+      }
+    },
+    "invalid.answerNothingSelected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an answer."
+          }
+        }
+      }
+    },
+    "invalid.answerQuestionRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answer every required question."
+          }
+        }
+      }
+    },
+    "invalid.answerReasonRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a reason."
+          }
+        }
+      }
+    },
+    "invalid.answerTooFewSelected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose more answers."
+          }
+        }
+      }
+    },
+    "invalid.answerTooManySelected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose fewer answers."
+          }
+        }
+      }
+    },
+    "invalid.answerUnknownChoice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That choice no longer exists."
+          }
+        }
+      }
+    },
+    "invalid.answerUnsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This kind of question can't be answered here. Open it in the web app."
+          }
+        }
+      }
+    },
+    "invalid.answerVerdictNotEnabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A verdict isn't enabled for this question."
+          }
+        }
+      }
+    },
+    "invalid.answerWrongKind": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That answer doesn't fit this question."
+          }
+        }
+      }
+    },
+    "invalid.bodyRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a comment first."
+          }
+        }
+      }
+    },
+    "invalid.inputRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This answer is required."
+          }
+        }
+      }
+    },
+    "invalid.inputTooLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That answer is too long."
+          }
+        }
+      }
+    },
+    "invalid.notAddressedToYou": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This question is for someone else."
+          }
+        }
+      }
+    },
+    "invalid.noteRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a note first."
+          }
+        }
+      }
+    },
+    "invalid.snoozeNotInFuture": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a time in the future."
+          }
+        }
+      }
+    },
+    "invalid.titleRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a title first."
+          }
+        }
+      }
+    },
+    "invalid.undoWindowClosed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The undo window has closed."
+          }
+        }
+      }
+    },
+    "invalid.unknownOption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That option no longer exists."
+          }
+        }
+      }
+    },
+    "invalid.wrongCurrency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the budget's currency."
+          }
+        }
+      }
+    },
+    "invalid.wrongStatus": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That isn't allowed in the current status."
+          }
+        }
+      }
+    },
+    "label.commonCancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "label.commonEmptyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing here"
+          }
+        }
+      }
+    },
+    "label.commonLoading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading…"
+          }
+        }
+      }
+    },
+    "label.commonOffline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline. Showing saved data."
+          }
+        }
+      }
+    },
+    "label.commonRetry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "label.commonSignInAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in again"
+          }
+        }
+      }
+    },
+    "label.commonUpdatedAgo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updated %@ ago"
+          }
+        }
+      }
+    },
+    "label.confirmDestructiveFaceID": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID is required"
+          }
+        }
+      }
+    },
+    "label.confirmDestructiveTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm"
+          }
+        }
+      }
+    },
+    "label.confirmDestructiveWorking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for Face ID…"
+          }
+        }
+      }
+    },
+    "label.firstRunAddressPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factory address"
+          }
+        }
+      }
+    },
+    "label.firstRunContinue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue to pairing"
+          }
+        }
+      }
+    },
+    "label.firstRunTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your first factory"
+          }
+        }
+      }
+    },
+    "label.firstRunTryDemo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try the demo factory"
+          }
+        }
+      }
+    },
+    "label.firstRunWillConnect": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Will connect to %@"
+          }
+        }
+      }
+    },
+    "label.lockMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock with Face ID to see your factories."
+          }
+        }
+      }
+    },
+    "label.lockTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip is locked"
+          }
+        }
+      }
+    },
+    "label.lockUnlock": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock"
+          }
+        }
+      }
+    },
+    "label.placeholderMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This screen is built in a later milestone of the iPhone UI."
+          }
+        }
+      }
+    },
+    "label.placeholderTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coming soon"
+          }
+        }
+      }
+    },
+    "label.settingsAppLock": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App lock"
+          }
+        }
+      }
+    },
+    "label.settingsIdlePeriod": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock after"
+          }
+        }
+      }
+    },
+    "label.settingsTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "label.severityCritical": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Critical"
+          }
+        }
+      }
+    },
+    "label.severityHigh": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High"
+          }
+        }
+      }
+    },
+    "label.severityLow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low"
+          }
+        }
+      }
+    },
+    "label.severityMedium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        }
+      }
+    },
+    "label.tabAgents": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents"
+          }
+        }
+      }
+    },
+    "label.tabFactories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factories"
+          }
+        }
+      }
+    },
+    "label.tabFactory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factory"
+          }
+        }
+      }
+    },
+    "label.tabInbox": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbox"
+          }
+        }
+      }
+    },
+    "label.tabWork": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work"
+          }
+        }
+      }
+    }
+  }
+}

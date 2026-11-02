@@ -260,3 +260,33 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** This is accepted for Phase 1a, which has no adapters, and is stated where a reader looks: the KDoc of `createGraph`, `docs/technical-details.md` ("The graph") and this ADR. The seam is the Koin module that binds the ports (`portsModule()` for `createGraph`, `demoPortsModule()` for the demo): Phase 1b replaces the bindings there with real adapters, and platform-owned ports (secure store, biometrics, connectivity, pairing browser, time zone, lifecycle) arrive from the app. The shape of that hand-over is decided in Phase 1b; `createGraph` is not renamed now because the Swift app calls it and the name disappears with the fakes.
 
 **Consequences.** A build that reaches `createGraph` with the fakes still bound must not be released: Phase 1b's first acceptance criterion is a test that the graph binds no `FakeBiometrics` and no `FakeSecretStore`. Time-dependent rules are tested at the state-holder and use-case level with an advanceable `FakeClock` (the app lock re-engaging after the idle period is covered through the graph in `DemoGraphDeviceTest`), not by waiting in either graph.
+
+## ADR-038: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-001/UI-002)
+
+**Context.** Every screen needs an `@Observable` adapter over a Kotlin holder's `StateFlow`. Writing one per screen invites stale reads (an intent returns before the flow emits) and holders closed from a view's `.task` ending.
+
+**Decision.** `StateHolderProtocol` (conformed to by all 16 holders in one line each) and `HolderModel<Holder>`: `send` applies `holder.state.value` straight after the intent; `observe()` catches up then follows the `SkieSwiftStateFlow` until its task is cancelled, and can restart; cancelling never closes the holder; `close()` is idempotent and called only by an owner (`AppEnvironment` for the shell models, `ModelStore` keyed by route for screens). Everything is `@MainActor`.
+
+**Consequences.** A screen model is `HolderModel<XStateHolder>` plus an extension of typed intent helpers. Tests cover mirroring, no stale read, cancel and restart, and exactly-once close.
+
+## ADR-039: A launch without `-demo` starts at first run on the live seam; the demo graph is opt-in, with scripted Face ID through `DemoControls`
+
+**Status:** Accepted (2026-11-02, UI-001/UI-004)
+
+**Context.** The brief suggested demo by default, but acceptance criterion 8 and the existing first-run UI test require a launch without arguments to show the empty first-run flow. UI tests also need to script Face ID results and count prompts without a device.
+
+**Decision.** `AppGraphProvider` has `DemoGraphProvider` (`-demo` or "Try the demo factory") and `LiveGraphProvider`, a placeholder marked `isAvailable == false` that returns today's fake-backed `createGraph` (ADR-037) until Phase 1b. `PaperclipGraph.demoControls` (demo graph only, null otherwise) scripts `BiometricResult`s and counts prompts; the app reads launch arguments `-demo-biometrics`, `-demo-idle`, `-demo-diagnostics`.
+
+**Consequences.** Real Face ID (LocalAuthentication) arrives with Phase 1b's adapter; until then the graph's `Biometrics` is the fake.
+
+## ADR-040: Destructive Face ID gating stays inside the shared use case; the Swift sheet only forwards and reports
+
+**Status:** Accepted (2026-11-02, UI-004)
+
+**Context.** AGENTS.md puts the `Biometrics` port inside the use case. A Swift sheet that also prompted would double-prompt and could be skipped by another view.
+
+**Decision.** `ConfirmDestructiveSheet` shows the lock glyph, calls `onConfirm` (the screen's confirm intent) and displays the holder's `DeviceAuthIssue`. A Swift test proves that a cancelled scripted prompt leaves the agent unpaused.
+
+**Consequences.** One gate for every platform. Catalog keys are `<namespace>.<caseName>` for each exported key enum, verified by a completeness test (ADR for localisation scheme: this one).

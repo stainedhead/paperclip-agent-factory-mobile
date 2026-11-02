@@ -11,6 +11,15 @@
 5. What accessibility audit APIs are available in the installed Xcode (`performAccessibilityAudit`) and what issues does it flag on the existing first-run screen as a baseline?
 6. How can UI tests capture screenshots deterministically (fixed device, locale, demo clock) and export them as attachments to docs/images in CI and locally?
 
+## Answers (milestone 2i-0, evidence)
+
+1. **SKIE surface and mirroring.** `holder.state` is `SkieSwiftStateFlow<State>` (class at `PaperclipKit.swiftmodule/arm64-apple-ios-simulator.swiftinterface:352`): `.value`, `AsyncSequence` via `SkieSwiftFlowIterator`; not `Sendable`, so it is only touched on the main actor. Intents are existentials (`any AppIntent`), Kotlin objects are `.shared`, Kotlin enums are Swift enums with `allCases` (used by the completeness test). Nullable numbers are boxed (`daysLeft?.intValue`, DemoGraphInteropTests). Pattern: ADR-038, `Models/HolderModel.swift`; `FirstRunModel` is now a typealias.
+2. **Key scheme.** `<namespace>.<caseName>` (`error.certificateInvalid`, `disabled.viewerRole`, `address.mustUseHttps`, `deviceAuth.cancelled`, `effect.createIssue` with `%@`, `feedback.*`, `invalid.*`, `label.*`). `CatalogKey` protocol + `L10n.text`; `LocalizationTests` enumerates every case of the seven key enums and `ShellLabel` and asserts each resolves to non-empty text that is not the key itself.
+3. **PairingBrowser.** Out of scope for 2i-0; belongs to 2i-1.
+4. **Scripted biometrics.** The graph hid its `Biometrics`; a shared change was needed (commit a9f1135): `FakeBiometrics.script`, `PaperclipGraph.demoControls` (`scriptBiometrics`, `setDefaultBiometricResult`, `biometricPromptCount`). The app turns launch arguments into those calls (ADR-039).
+5. **Accessibility audit.** `performAccessibilityAudit` exists in Xcode 27.2; baseline on the shell (demo launch, placeholder roots): 0 findings (`testAccessibilityAuditBaselineOfTheShell`, log line `ACCESSIBILITY-AUDIT-BASELINE count=0`). The first-run screen was not audited yet.
+6. **Screenshots.** Not in 2i-0.
+
 ## Industry standards
 
 Apple Human Interface Guidelines (large titles, sheets, swipe actions, Dynamic Type), WCAG 2.2 AA contrast as stated in the PRD NFR.
