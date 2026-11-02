@@ -93,8 +93,10 @@ class KeychainSecretStore internal constructor(
     }
 
     private fun deleteNow(account: String) {
-        writer.remove(account)
+        // The marker first: if the second delete fails, the secret is still there and reads as Found, never as an
+        // Invalidated marker without an item (review1b F-B-10).
         writer.remove(account + MARKER_SUFFIX)
+        writer.remove(account)
     }
 
     override fun toString(): String = "KeychainSecretStore"

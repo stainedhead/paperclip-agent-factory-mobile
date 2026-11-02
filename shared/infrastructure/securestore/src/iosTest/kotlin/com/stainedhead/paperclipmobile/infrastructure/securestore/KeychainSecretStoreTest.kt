@@ -204,6 +204,19 @@ class KeychainSecretStoreTest {
         }
 
     @Test
+    fun `F-B-7 a protected item whose read fails authentication stays Denied even though its marker exists`() =
+        runTest {
+            // Decision (ADR-083): only errSecItemNotFound plus the marker means Invalidated. If a device reports a
+            // changed biometric set as errSecAuthFailed instead, the person sees Denied and can retry, never a wrong
+            // "re-pair" and never a deleted key; docs/technical-details.md lists the device check that settles it.
+            store.put(key, Secret.of("v"), protected)
+            backend.readFailure = errSecAuthFailed
+            store.read() shouldBe SecretReadResult.Denied
+            backend.readFailure = null
+            (store.read() as SecretReadResult.Found).secret shouldBe Secret.of("v")
+        }
+
+    @Test
     fun `AD-030 when the invalidation marker cannot be checked the result is Denied never a guess`() =
         runTest {
             backend.existsFailure = errSecInteractionNotAllowed
@@ -217,6 +230,18 @@ class KeychainSecretStoreTest {
             store.delete(key)
             backend.items.isEmpty() shouldBe true
             store.delete(key) // deleting what is not there is fine
+        }
+
+    @Test
+    fun `F-B-10 a delete that fails on the marker leaves the secret and does not read as Invalidated`() =
+        runTest {
+            store.put(key, Secret.of("v"), protected)
+            backend.deleteFailuresByAccount["instance/a/boardToken$MARKER_SUFFIX"] = errSecInteractionNotAllowed
+
+            shouldThrow<IllegalStateException> { store.delete(key) }
+
+            backend.deleteFailuresByAccount.clear()
+            (store.read() as SecretReadResult.Found).secret shouldBe Secret.of("v")
         }
 
     @Test
