@@ -11,10 +11,16 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlin.time.Instant
 
-/** What a work handler answers: a status and a JSON body, or no body (204). */
+/**
+ * What a work handler answers: a status and a JSON body, or no body (204). A reply with [bytes] is a binary body of
+ * [contentType] and carries [headers] such as `Content-Range` (the attachment content route).
+ */
 internal class StubReply(
     val status: Int,
     val body: String?,
+    val bytes: ByteArray? = null,
+    val contentType: String = "application/octet-stream",
+    val headers: Map<String, String> = emptyMap(),
 ) {
     companion object {
         fun ok(body: String) = StubReply(STATUS_OK, body)
@@ -69,6 +75,7 @@ internal class StubRequest(
     val query: Parameters,
     val body: String,
     val access: StubAccess,
+    val range: String? = null,
 ) {
     val segments: List<String> = path.split('/').filter { it.isNotEmpty() }.map { it.decodeURLPart() }
     val isRead: Boolean get() = method == HttpMethod.Get
@@ -111,8 +118,10 @@ internal class StubWork(
     val dashboard = StubDashboard()
     val runs = StubRuns()
     val runHandlers = StubRunHandlers(runs)
-    val issues = StubIssues(runs)
     val agents = StubAgents(runs, clock)
+    val issueStore = StubIssueStore()
+    val issues = StubIssues(issueStore, runs, agents, clock)
+    val thread = StubThread(issueStore, runs, clock)
 
     fun handle(request: StubRequest): StubReply? {
         val segments = request.segments
@@ -121,7 +130,7 @@ internal class StubWork(
         }
         return budgets.handle(request) ?: approvals.handle(request) ?: decisions.handle(request)
             ?: attention.handle(request) ?: dashboard.handle(request) ?: agents.handle(request)
-            ?: runHandlers.handle(request) ?: issues.handle(request)
+            ?: runHandlers.handle(request) ?: issues.handle(request) ?: thread.handle(request)
     }
 
     private companion object {

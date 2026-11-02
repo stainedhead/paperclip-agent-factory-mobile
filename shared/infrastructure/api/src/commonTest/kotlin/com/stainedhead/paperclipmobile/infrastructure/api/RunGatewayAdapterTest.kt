@@ -37,8 +37,8 @@ class RunGatewayAdapterTest {
     private val world =
         WorkWorld().also { w ->
             w.home.agents.agents += StubAgent(ENG, acme)
-            w.home.issues.issues += StubIssue(ISSUE, acme, "PAP-1182", "Ship the billing migration")
-            w.home.issues.issues += StubIssue(GLOBEX_ISSUE, ServerFixtures.COMPANY_GLOBEX, "GLO-1", "Other")
+            w.home.issueStore.issues += StubIssue(ISSUE, acme, "PAP-1182", "Ship the billing migration")
+            w.home.issueStore.issues += StubIssue(GLOBEX_ISSUE, ServerFixtures.COMPANY_GLOBEX, "GLO-1", "Other")
             val running = StubRun(LIVE, acme, ENG, "Engineer 1", ISSUE, "running")
             running.events += StubRunEvent(1, "lifecycle", "system", "info", "Run started")
             running.events += StubRunEvent(2, "adapter.invoke", "stdout", "warn", "Slow")

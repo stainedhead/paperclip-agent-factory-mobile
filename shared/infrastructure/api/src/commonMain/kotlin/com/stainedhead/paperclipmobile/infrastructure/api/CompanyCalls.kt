@@ -28,4 +28,15 @@ internal class CompanyCalls(
             val destination = Destination(instance.baseUri, instance.pins)
             client.send(ApiRequest(destination, method, segments, query, jsonBody, key))
         }
+
+    /** A byte read with a `Range` header; the same address, pins and key rules as [send]. */
+    suspend fun sendBytes(
+        instanceId: InstanceId,
+        segments: List<String>,
+        range: String,
+    ): DomainResult<ApiBytes> =
+        stored.call(instanceId) { instance, key ->
+            val destination = Destination(instance.baseUri, instance.pins)
+            client.sendBytes(ApiRequest(destination, HttpMethod.Get, segments, bearer = key), range)
+        }
 }

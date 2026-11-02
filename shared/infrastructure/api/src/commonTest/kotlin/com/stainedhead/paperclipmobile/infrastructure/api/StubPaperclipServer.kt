@@ -21,6 +21,7 @@ data class RecordedRequest(
     val query: String,
     val authorization: String?,
     val body: String,
+    val range: String? = null,
 )
 
 /** How an address answers `GET /api/health`. */
@@ -97,6 +98,7 @@ class StubPaperclipServer(
                 query = request.url.encodedQuery,
                 authorization = request.headers[HttpHeaders.Authorization],
                 body = body,
+                range = request.headers[HttpHeaders.Range],
             )
         val server = hosts[host] ?: throw IOException("connection refused")
         val path = request.url.encodedPath.substringAfter("/api")
@@ -163,7 +165,17 @@ class StubPaperclipServer(
             }
 
             else -> {
-                companyWork(server, StubRequest(method, path, request.url.parameters, body, StubAccess(key.roles)))
+                companyWork(
+                    server,
+                    StubRequest(
+                        method,
+                        path,
+                        request.url.parameters,
+                        body,
+                        StubAccess(key.roles),
+                        request.headers[HttpHeaders.Range],
+                    ),
+                )
             }
         }
     }
@@ -175,7 +187,14 @@ class StubPaperclipServer(
         server.work.handle(request)?.let { reply(it) } ?: failure(HttpStatusCode.NotFound, "Not found")
 
     private fun MockRequestHandleScope.reply(reply: StubReply): HttpResponseData =
-        if (reply.body == null) {
+        if (reply.bytes != null) {
+            val extra = reply.headers.entries.flatMap { listOf(it.key to listOf(it.value)) }
+            respond(
+                reply.bytes,
+                HttpStatusCode.fromValue(reply.status),
+                headersOf(HttpHeaders.ContentType to listOf(reply.contentType), *extra.toTypedArray()),
+            )
+        } else if (reply.body == null) {
             respond("", HttpStatusCode.fromValue(reply.status))
         } else {
             respond(reply.body, HttpStatusCode.fromValue(reply.status), JSON)

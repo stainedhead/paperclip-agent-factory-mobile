@@ -21,7 +21,7 @@ private fun runsWorld(): WorkWorld {
     val world = WorkWorld()
     val acme = ServerFixtures.COMPANY_ACME
     world.home.agents.agents += StubAgent(ENGINEER, acme)
-    world.home.issues.issues += StubIssue(ISSUE, acme, "PAP-1182", "Ship the billing migration")
+    world.home.issueStore.issues += StubIssue(ISSUE, acme, "PAP-1182", "Ship the billing migration")
     val live = StubRun(LIVE_RUN, acme, ENGINEER, "Engineer 1", ISSUE, "running")
     live.events += StubRunEvent(1, "lifecycle", "system", "info", "Run started")
     live.events += StubRunEvent(2, "adapter.invoke", "stdout", "info", "Ran the schema migration")
