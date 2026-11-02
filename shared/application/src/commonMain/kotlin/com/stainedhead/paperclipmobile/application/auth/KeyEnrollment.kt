@@ -15,7 +15,9 @@ import com.stainedhead.paperclipmobile.domain.port.AuthGateway
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlin.time.Instant
 
 /** How a pairing or a manual key entry ended. */
@@ -76,30 +78,57 @@ class KeyEnrollment(
         return store(instance, token, method, keyId, expiresAt)
     }
 
+    /**
+     * Writes the key and then the status. Neither a cancellation nor a failing repository may leave the two out of
+     * agreement, so this runs shielded from cancellation and, unless the status was committed, removes the new key and
+     * marks the factory Signed out.
+     */
     private suspend fun store(
         instance: Instance,
         token: Secret,
         method: AuthMethod,
         keyId: String?,
         expiresAt: Instant?,
-    ): SignInResult {
-        val policy = SecretPolicy(requireUserPresence = settings.observe().first().appLockEnabled)
-        val key = SecretKey(instance.id, SecretName.BoardToken)
-        if (secrets.put(key, token, policy) != SecretWriteResult.Stored) return SignInResult.StorageFailed
-        val fresh = repository.get(instance.id)
-        if (fresh == null || fresh.baseUri != instance.baseUri) {
-            secrets.delete(key)
-            return SignInResult.Failed(DomainError.Conflict)
+    ): SignInResult =
+        withContext(NonCancellable) {
+            val policy = SecretPolicy(requireUserPresence = settings.observe().first().appLockEnabled)
+            val key = SecretKey(instance.id, SecretName.BoardToken)
+            if (secrets.put(key, token, policy) !=
+                SecretWriteResult.Stored
+            ) {
+                return@withContext SignInResult.StorageFailed
+            }
+            var committed = false
+            try {
+                val fresh = repository.get(instance.id)
+                if (fresh == null || fresh.baseUri != instance.baseUri) {
+                    return@withContext SignInResult.Failed(DomainError.Conflict)
+                }
+                repository.update(
+                    fresh.copy(
+                        authMethod = method,
+                        boardKeyId = keyId,
+                        keyExpiresAt = expiresAt,
+                        status = InstanceStatus.SignedIn,
+                        lastConnectedAt = clock.now(),
+                    ),
+                )
+                committed = true
+                SignInResult.SignedIn(keyId, expiresAt)
+            } finally {
+                if (!committed) discard(instance, key)
+            }
         }
-        repository.update(
-            fresh.copy(
-                authMethod = method,
-                boardKeyId = keyId,
-                keyExpiresAt = expiresAt,
-                status = InstanceStatus.SignedIn,
-                lastConnectedAt = clock.now(),
-            ),
-        )
-        return SignInResult.SignedIn(keyId, expiresAt)
+
+    /** Removes an uncommitted key, and marks the factory Signed out if it is still at its address. */
+    private suspend fun discard(
+        instance: Instance,
+        key: SecretKey,
+    ) {
+        secrets.delete(key)
+        val current = repository.get(instance.id)
+        if (current != null && current.baseUri == instance.baseUri && current.status == InstanceStatus.SignedIn) {
+            repository.update(current.copy(boardKeyId = null, keyExpiresAt = null, status = InstanceStatus.SignedOut))
+        }
     }
 }
