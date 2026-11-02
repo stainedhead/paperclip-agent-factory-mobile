@@ -112,6 +112,7 @@ final class EditFactoryUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-demo-tab", "factories"]
         app.launch()
+        app.waitUntilUnlocked()
         XCTAssertTrue(app.buttons["add-factory-button"].waitForExistence(timeout: 30))
         app.buttons["add-factory-button"].tap()
         XCTAssertTrue(app.element("edit-factory").waitForExistence(timeout: 10))

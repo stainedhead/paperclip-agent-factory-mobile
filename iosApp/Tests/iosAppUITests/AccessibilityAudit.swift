@@ -28,3 +28,18 @@ extension XCUIApplication {
         descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 }
+
+extension XCUIApplication {
+    /// Waits until the lock screen is gone. The demo graph unlocks itself once when the lock appears; on a slow runner
+    /// the screen has been seen to stay up, so after a grace period the person's own route (the Unlock button) is used.
+    @MainActor
+    func waitUntilUnlocked(file: StaticString = #filePath, line: UInt = #line) {
+        let lock = element("lock-screen")
+        guard lock.waitForExistence(timeout: 3) else { return }
+        let cleared = NSPredicate(format: "exists == false")
+        let grace = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: cleared, object: lock)], timeout: 8)
+        if grace != .completed, buttons["unlock-button"].exists { buttons["unlock-button"].tap() }
+        let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: cleared, object: lock)], timeout: 20)
+        XCTAssertEqual(result, .completed, "The lock screen never cleared", file: file, line: line)
+    }
+}

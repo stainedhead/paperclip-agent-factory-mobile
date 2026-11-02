@@ -27,6 +27,7 @@ final class ShellUITests: XCTestCase {
     func testDemoLaunchShowsFiveTabsAndTheInboxBadgeFromTheDemoData() {
         let app = launch()
         waitForShell(app)
+        app.waitUntilUnlocked()
 
         let tabs = app.tabBars.firstMatch.buttons
         XCTAssertEqual(tabs.count, 5)
