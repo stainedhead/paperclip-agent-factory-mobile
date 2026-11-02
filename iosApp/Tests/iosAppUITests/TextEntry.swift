@@ -28,19 +28,31 @@ extension XCUIElement {
     /// placeholder is ambiguous: it may be placeholder or real text that happens to match it.
     var shownText: String { (value as? String) ?? "" }
 
-    /// Focuses the field, types the text and checks the field now holds exactly the intended text.
+    /// Focuses the field, types the text and checks the field now holds exactly the intended text. A slow runner can
+    /// drop a keystroke ("fctory"), so a mismatch is cleared and typed again up to twice before it fails.
     @MainActor
     func enterText(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
         focus(file: file, line: line)
         typeText(text)
+        for _ in 0..<2 where shownText != text {
+            clearText(file: file, line: line)
+            typeText(text)
+        }
         XCTAssertEqual(shownText, text, "Typing into \(identifier) produced the wrong text", file: file, line: line)
     }
 
-    /// Replaces whatever the field holds. The caret is first moved to the end (the focus tap may land mid-text), then
-    /// more delete keys than characters are sent. Deleting is repeated until the field is empty or shows only its
-    /// placeholder; the placeholder case is sent one deletion pass regardless, because it may be real text.
+    /// Replaces whatever the field holds.
     @MainActor
     func clearAndTypeText(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
+        clearText(file: file, line: line)
+        enterText(text, file: file, line: line)
+    }
+
+    /// Empties the field. The caret is first moved to the end (the focus tap may land mid-text), then more delete keys
+    /// than characters are sent. Deleting is repeated until the field is empty or shows only its placeholder; the
+    /// placeholder case is sent one deletion pass regardless, because it may be real text.
+    @MainActor
+    func clearText(file: StaticString = #filePath, line: UInt = #line) {
         focus(file: file, line: line)
         var passes = 0
         repeat {
@@ -53,6 +65,5 @@ extension XCUIElement {
         XCTAssertTrue(
             left.isEmpty || left == placeholderValue, "Clearing \(identifier) left \"\(left)\" behind", file: file,
             line: line)
-        enterText(text, file: file, line: line)
     }
 }

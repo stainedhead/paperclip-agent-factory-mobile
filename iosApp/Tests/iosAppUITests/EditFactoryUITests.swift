@@ -65,13 +65,16 @@ final class EditFactoryUITests: XCTestCase {
         XCTAssertTrue(toggle.waitForExistence(timeout: 10))
         XCTAssertEqual(toggle.value as? String, "0")
         XCTAssertFalse(app.textFields["edit-pin-field"].exists)
-        // On a 874 pt tall screen (the CI simulator) the row starts below the fold: scroll it into view first.
+        // On a 874 pt tall screen (the CI simulator) the row sits under the floating tab bar although the system calls
+        // it hittable: scroll until it is clear of the bottom 120 pt first.
+        let window = app.windows.firstMatch
         var swipes = 0
-        while !toggle.isHittable && swipes < 5 {
+        while (!toggle.isHittable || toggle.frame.maxY > window.frame.maxY - 120) && swipes < 5 {
             app.swipeUp()
             swipes += 1
         }
         XCTAssertTrue(toggle.isHittable, "The pin toggle never scrolled into view")
+        XCTAssertLessThan(toggle.frame.maxY, window.frame.maxY - 120, "The pin toggle is still under the tab bar")
         toggle.tap()
         XCTAssertTrue(app.textFields["edit-pin-field"].waitForExistence(timeout: 10))
         XCTAssertEqual(toggle.value as? String, "1")

@@ -119,4 +119,26 @@ struct ModelStoreTests {
         #expect(one.isClosed && two.isClosed)
         #expect(store.keys.isEmpty)
     }
+
+    @Test func typingWhileObservingNeverShowsAnOlderStateAfterANewerOne() async {
+        let holder = graph.createEditInstanceStateHolder(instanceId: "demo-home")
+        let model = HolderModel(holder: holder)
+        let observing = Task { await model.observe() }
+        #expect(await eventually { model.state.name == "Home factory" })
+        var applied: [String] = []
+        model.didUpdate = { applied.append($0.name) }
+        let typed = (1...14).map { String("Studio factory".prefix($0)) }
+        for text in typed {
+            model.send(EditInstanceIntentNameChanged(text: text))
+            try? await Task.sleep(for: .milliseconds(3))
+        }
+        #expect(await eventually { model.state.name == "Studio factory" })
+        observing.cancel()
+
+        var longest = 0
+        for name in applied where typed.contains(name) {
+            #expect(name.count >= longest, "the field went back from \(longest) to \(name.count) characters")
+            longest = max(longest, name.count)
+        }
+    }
 }

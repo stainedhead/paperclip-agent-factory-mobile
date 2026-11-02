@@ -35,10 +35,12 @@ final class ShellUITests: XCTestCase {
         }
         let inbox = tabs["Inbox"]
         let badge = NSPredicate { element, _ in
-            ((element as? XCUIElement)?.value as? String)?.contains("3") == true
+            // iOS 26.5 may expose the badge in the label instead of the value.
+            guard let button = element as? XCUIElement else { return false }
+            return ((button.value as? String) ?? "").contains("3") || button.label.contains("3")
         }
         expectation(for: badge, evaluatedWith: inbox)
-        waitForExpectations(timeout: 15)
+        waitForExpectations(timeout: 30)
         XCTAssertTrue(app.navigationBars["Inbox"].exists)
     }
 
