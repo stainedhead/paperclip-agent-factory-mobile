@@ -74,7 +74,7 @@ internal class LiveContext private constructor(
     ): InstanceId {
         val instanceId = InstanceId(id)
         world.instances.add(
-            TestData.instance(id = id, uri = base.value).copy(boardKeyId = keyId, defaultCompanyId = scope.companyId),
+            TestData.instance(id = id).copy(baseUri = base, boardKeyId = keyId, defaultCompanyId = scope.companyId),
         )
         world.secrets.put(
             SecretKey(instanceId, SecretName.BoardToken),
@@ -121,7 +121,8 @@ internal class LiveContext private constructor(
             val company = Seeder(raw, paired.key).company("Contract Co")
             val instanceId = InstanceId("contract-instance")
             val instance =
-                TestData.instance(id = instanceId.value, uri = base.value).copy(
+                TestData.instance(id = instanceId.value).copy(
+                    baseUri = base,
                     boardKeyId = null,
                     defaultCompanyId = CompanyId(company.id),
                 )
