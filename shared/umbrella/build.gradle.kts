@@ -15,6 +15,7 @@ kotlin {
             export(project(":shared:presentation"))
             export(project(":shared:application"))
             export(project(":shared:domain"))
+            export(project(":shared:infrastructure:platform"))
             xcframework.add(this)
         }
     }
@@ -53,6 +54,7 @@ kotlin {
         api(project(":shared:presentation"))
         api(project(":shared:application"))
         api(project(":shared:domain"))
+        api(project(":shared:infrastructure:platform"))
         implementation(project(":shared:testing"))
         implementation(libs.koin.core)
     }
