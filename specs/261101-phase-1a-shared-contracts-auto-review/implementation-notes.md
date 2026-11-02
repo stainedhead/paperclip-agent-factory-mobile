@@ -156,6 +156,30 @@ Fix: ListIssues reads server pages (up to 10) until the page holds the limit of 
 F-C-8 (FR-R21) stays open in status.md: the host-recording fake is in, but the contract case "a challenge created for server A polled against server B is NotFound" belongs to Group 3.
 Group 1 coverage (fresh Kover run): core 97.67% (was 97.58%), presentation 97.70% (was 97.96%, -0.26): the drop is Kover counting the header lines of when-branches that stopped being last plus the unreachable-by-design ProbeRequired defence branches in four holder results.
 
+## Group 2 commit hashes
+
+| Finding | Commit |
+|---|---|
+| F-A-3 | 1737df4 |
+| F-A-6 | 8ed50dc (+ 1c2a2ac detekt follow-up) |
+| F-A-8 | 210b02a |
+| F-A-1 residual (per-factory lock) | f6e1d5d |
+| F-B-2 | 7099838 |
+| F-B-3 | 734ee6e |
+| F-B-4 | d84eb48 |
+| F-B-5 | 4e23ba4 |
+| F-B-6 | fb0b167 |
+| F-B-7 | bc2966a |
+| F-B-8 | 88d1d9f |
+| F-B-9 | a5940a2 |
+| F-B-11 | 9ee7576 |
+| F-D-2 | 047568d |
+| F-A-11 | e145f9a |
+| F-A-12 | f9155c5 |
+
+Group 2 coverage (fresh Kover run): core 97.89%, presentation 98.01%.
+Process note: the first full `check` failed only on Kotlin/Native (a test name containing a comma, String.format in common code); fixed in 968bdc6. The commit for F-A-6 was pushed with a detekt failure and fixed in 1c2a2ac.
+
 ## Lessons learned
 
 (none yet)
