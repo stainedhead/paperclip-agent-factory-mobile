@@ -340,3 +340,49 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** `SystemClock` (`kotlin.time.Clock.System`), `UuidIdGenerator` (`kotlin.uuid.Uuid.random()`, lower-case v4) and `SystemDeviceTimeZone` (`TimeZone.currentSystemDefault()`, which on Darwin resets and re-reads `NSTimeZone.systemTimeZone` on every call, so a zone change is seen) are plain common classes, proven by the shared `ClockContract`, `IdGeneratorContract` and `DeviceTimeZoneContract` on JVM, Android host and iOS. `UnavailableSecretStore` (writes `Failed`, reads `Missing`, holds nothing) and `UnavailableBiometrics` (always `Unavailable`) are common classes used on Android and the JVM, where no Keystore or BiometricPrompt bridge exists yet; a test pins that nothing is retained, not even by a second instance. They deliberately do not satisfy `SecretStoreContract`. They are plain classes rather than `expect`/`actual` pairs because there is nothing platform-specific in them.
 **Consequences.** An Android build of the app cannot store a board key until the Keystore adapter exists (a later phase), which is the safe default.
+
+## ADR-054: Server money is read as an exact decimal literal and rounded up to whole cents
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** Budget amounts are cents, but `amountObserved` is a `numeric(24,7)` column read as a JS number (`packages/db/src/schema/budget_incidents.ts:21`), so the JSON can be `9999.0000001`. Approval payloads and feed metadata carry the same numbers. A `Double` cannot hold a cent-exact comparison.
+**Decision.** DTOs keep amounts as `JsonPrimitive` and `ceilToCents(literal)` parses the text: digits, an optional `.digits` fraction, at most 15 whole digits; a sign, an exponent, a second dot or no digits is null. Any non-zero fraction rounds up (ADR-016), so the app never shows less spend than the server holds. The currency is always `USD`: no server type has a currency field. A raise is refused locally (`Rejected`, nothing sent) for another currency or for more than 2,147,483,647 cents, the schema's maximum (`validators/budget.ts:24`).
+**Consequences.** The domain's "must exceed observed" pre-check is conservative by up to one cent; the server stays the authority. A literal in exponent form (JS prints numbers of 1e21 and above that way) is Malformed or an absent payload field, never a wrong amount.
+
+## ADR-055: Open-ended parts of a reply are read by hand and never fail the whole reply
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** Detail kinds, effect types, approval payloads and subject metadata are polymorphic, redacted by the server, and extended by newer servers. A kotlinx sealed discriminator throws on an unknown type; a typed payload DTO fails on one wrongly typed field.
+**Decision.** Those parts are `JsonObject`s read by the small helpers in `dto/JsonReading.kt` (`text`, `cents`, `whole`, `texts`, `obj`, ...): a field of the wrong type is null. Known types are always mapped even with fields missing (a `cancel_issue_tree` can never degrade to an unknown effect and escape the destructive check); unknown types become `Unsupported`; unknown enum values use the domain's `fromServer` (Medium, Unknown, ...). A response that is not JSON, is empty, is not the expected top-level shape, or lacks the identity of the thing asked for is `Malformed`.
+**Consequences.** A redacted hire payload shows fewer fields instead of an error. The cost is that a server renaming a field silently shows less; the contract test in CI against the pinned container (1b-5) is where that is caught.
+
+## ADR-056: A budget incident is resolved only while it is still active
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** `resolveIncident` (`services/budgets.ts:951-1052`) looks the incident up by id with no status filter: `keep_paused` updates it again and a raise re-runs against the policy, so resolving twice answers 200. The port and the shared contract say a second resolve is `NotFound`, because the incident is "no longer active". There is no single-incident endpoint.
+**Decision.** `resolve` reads `budgets/overview` first and returns `NotFound`, with no mutation sent, when the id is not in `activeIncidents`; only then does it post once. `incident` is the same read. The stub deliberately models the permissive server so the test proves the guard.
+**Consequences.** One extra read per resolve, and a race window of one round trip in which another operator can resolve it first (the server then answers 200 again, which is harmless: keep paused is idempotent and a raise to the same amount is rejected as not exceeding spend).
+
+## ADR-057: Id-addressed approvals and decisions are checked against the scope's company
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** `/api/approvals/{id}` and `/api/decisions/{id}` carry no company in the path. A key with access to two companies could be handed company B's id under company A's scope, and the server would answer it. A company with no membership answers 404 there (`getAccessibleResource`, `authz.ts:182-195`) but 403 on company paths (`assertCompanyAccess`). Server ids are UUID columns, so a non-UUID id is a database error on the server, not a 404.
+**Decision.** Every read checks the `companyId` of the row it got: another company is `NotFound`, a missing `companyId` is `Malformed` (tenancy is not guessed). Every write reads the resource first, checks it, and only then posts, once. An id that is not a UUID is `NotFound` without a request (like board key ids in 1b-1, see implementation-notes). Lists (comments, linked issues) are `NotFound` when any row names another company.
+**Consequences.** A write costs a read. An empty list cannot prove ownership; the id is checked by the preceding use-case read.
+
+## ADR-058: Port gaps are recorded, not patched in the adapter
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Decision.** Four things the port or the wire cannot express are left as they are and listed as deviations: (1) `AttentionGateway` has no list-dismissals method although `GET inbox-dismissals` exists, so it is not called; (2) there is no poll method: polling is the use case calling `DecisionGateway.get` again; (3) `get` returns `originAgentName = null` and `decideBy = None`, because the decision row has neither and filling them would cost a second and third request; the use case takes them from the feed card; (4) an `assign_issue` effect names the assignee by id only, so `assigneeName` is null until a later phase resolves names from the agent list.
+**Consequences.** None of these changes a domain port, which this stream does not own.
+
+## ADR-059: One unreadable feed card fails the page
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Decision.** A card without an id, source kind, dismissal key, subject id or readable `activityAt`/`createdAt` makes the whole page `Malformed`. Skipping it would hide something that needs a decision and make the page disagree with its own `totalCount`; the Inbox shows its error state and the cached first page. Missing optional parts (verbs, detail, dismissal, resolver audience) never fail a card. `countsBySourceKind` keeps unknown kinds as `Unsupported` keys. The cursor is never inspected or validated: it is passed back as received and the server's rejection arrives as `Rejected` with its own reason.
+**Consequences.** A server that adds a required-looking field breaks nothing; a server that drops an identity field breaks the Inbox loudly instead of quietly.

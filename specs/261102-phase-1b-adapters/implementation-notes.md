@@ -238,3 +238,41 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
   (locked device `errSecInteractionNotAllowed`, `.biometryCurrentSet` invalidation after an enrollment change, StrongBox),
   iCloud Keychain sync (only the `sync = 0` attribute and the empty synchronizable query are checked), and ad-hoc signing on
   the CI runner until the PR workflow runs.
+
+---
+
+# 1b-4a Attention, decision, approval, budget gateways (2026-11-02)
+
+## Order and commits
+
+Budget first (smallest; it established the company-scoped stub, `WorkWorld` and the guard pattern), then approvals, decisions, attention. `70652a5` budget, `8ccea04` approvals, `ab05f55` decisions, `9a83e13` attention, `49afae2` audits. Docs: ADR-054 to ADR-059, research answers, technical details.
+
+## Decisions (see the ADRs for the reasons)
+
+- Money from the number's literal, rounded up to cents, USD only (ADR-054). Open parts of replies are read by hand (ADR-055). Budget resolve reads the overview first because the real server resolves twice with 200 (ADR-056). Approvals and decisions are checked against the scope's company and non-UUID ids are NotFound without a request (ADR-057). Port gaps recorded as deviations (ADR-058). One unreadable feed card fails the page (ADR-059).
+- `CompanyCalls` is the one place that turns a `CompanyScope` into a request: the instance (address, pins) and key come from the scope's instance only. The three id-addressed gateways and the budget gateway do a GET before every mutation; the attention writes do not (the company is in their path).
+- The stub follows the server's permissiveness, not the port's strictness: a second budget resolve answers 200 in the stub, so the adapter's guard is what turns it into `NotFound` (the mutation check below proves the test would notice).
+- Fixtures sit in `BudgetFixtures`, `ApprovalFixtures`, `DecisionFixtures`, `FeedFixtures` instead of growing `ServerFixtures`: detekt's 11-function limit applies to test objects too, and each object states the server file and line it follows.
+- `StubRequest` percent-decodes path segments, so dismissal keys (`attention:budget:...:2026-11-01T00:00:00.000Z:hard`) arrive as written.
+
+## Deviations from the brief
+
+- `AttentionGateway` has no list-dismissals method, so `GET inbox-dismissals` is not implemented; "poll" is `get` again; `get` fills neither `originAgentName` nor `decideBy`; `assign_issue` has no assignee name (ADR-058). No domain port was changed.
+- Not done in this milestone: issues, interactions, agents, runs, dashboard (1b-4b); the live graph and contract test against the pinned container (1b-5).
+- The existing shared contract suites were not changed; ids in the real-adapter subclasses are UUIDs (the adapter refuses non-UUID ids, ADR-057), while the suites' own unknown ids (`no-such-approval`, `no-such-decision`) are NotFound through that same rule.
+- Attention mappers were first drafted before their tests; I moved the files away, wrote the tests, saw them fail to compile (`Unresolved reference 'AttentionGatewayAdapter'`), and put the files back. That is compile-red only, not behaviour-red for the mappers; the mapper behaviour is covered by tests that passed on first run (so they prove the code, not that they can fail). Mutation checks were done for the budget guard only.
+
+## Red evidence
+
+- Budget: `BudgetGatewayAdapterTest`, `BudgetMapperTest`, `BudgetGatewayContractTest` failed to compile (`Unresolved reference 'BudgetGatewayAdapter'`, `ceilToCents`). All 18 then passed. Mutation: removing the "still active" guard made 2 tests fail (the adapter test and the shared contract's "resolving twice"), then reverted.
+- Approvals: `Unresolved reference 'ApprovalGatewayAdapter'`; then green (`ApprovalGatewayAdapterTest` 19, contract 1). Detekt then flagged `TooManyFunctions` (11) and `MayBeConst`; fixed.
+- Decisions: `Unresolved reference 'DecisionGatewayAdapter'`; one build error (`Elvis operator always returns the left operand`) and one type error before green; detekt `LongParameterList`, `ComplexCondition`, `MatchingDeclarationName`, line length, then fixed.
+- Attention: `Unresolved reference 'AttentionGatewayAdapter'`; after the adapter existed the shared feed contract failed at "counts are computed before paging" because my stub computed the counts over the page instead of the whole feed (a stub defect found by the contract). Fixed in `FeedFixtures.page` and the stub.
+
+## Edge cases
+
+- `DELETE .../inbox-dismissals/{key}` answers 204 with no body; `decodeAs` would call that Malformed, so unit-valued calls use `ack()`, which checks only the status. The triage PUT is the same: its reply row is not read.
+- Clearing decide-by must send `{"decideBy":null}`; the shared `ApiJson` has `explicitNulls = false`, so request bodies are built with `buildJsonObject` (a test pins the exact bytes and the stub rejects `{}`).
+- The attention stub's cursor is base64url `{v:1,sort,id}` like the server's and is bound to the sort mode; the adapter never inspects it.
+- `Money` cannot hold a negative or a non-USD value; both a `RaiseAndResume` in another currency and one over 2,147,483,647 cents are refused before any request.
+- A key that is not wiped on failure: `StoredCredentials.call` wipes in `finally`; the hostile-engine audit covers error and trace lines.
