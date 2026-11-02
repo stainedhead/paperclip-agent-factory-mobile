@@ -21,3 +21,6 @@ DELETE FROM attention_cache WHERE instance_id = ? AND company_id = ?;
 
 deleteForInstance:
 DELETE FROM attention_cache WHERE instance_id = ?;
+
+deleteOrphans:
+DELETE FROM attention_cache WHERE instance_id NOT IN (SELECT id FROM instance_config);

@@ -13,6 +13,9 @@ class TestDatabase(
 ) {
     val db = PaperclipDatabase(driver)
 
+    /** One serial executor for the database, as production builds it: all classes of one database share it. */
+    val dispatcher = serialDispatcher()
+
     fun scalar(sql: String): Long =
         driver
             .executeQuery(null, sql, { cursor ->

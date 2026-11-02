@@ -95,3 +95,28 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 - `updatedAt(scope)` is a public method of `SqlAttentionCache` outside the port (the Clock reading of the write).
 - Red evidence: `Unresolved reference 'SqlAttentionCache'` before the class existed; detekt then flagged
   `LongParameterList` on the payload classes, which became data classes (the domain does the same).
+
+## Group 5: recovery, serial executor, secrets audit, orphan pruning
+
+- Recovery decision (ADR-042): an unusable database is recreated empty, not failed closed. It holds only non-secret
+  configuration and a cache. Recreating orphans the Keychain/Keystore items under `instance/{id}/` because `SecretStore`
+  cannot list them; the person adds the factories again and the new pairing writes new keys. `PaperclipPersistence.recreated`
+  tells the composition root so it can say so on first screen.
+- "Unusable" = open or first statement throws, `user_version` newer than this build, or a table is missing. SQLite opens
+  a garbage file without complaint and fails on the first statement; a 0-byte file is a valid empty database.
+- detekt `TooGenericExceptionCaught` does not flag `catch (_: Exception)` (its default allows `_`), so no config change.
+- Concurrency: the JDBC in-memory driver shares one connection and a parallel transaction failed with `cannot start a
+  transaction within a transaction` (red). All three ports now run on ONE `Dispatchers.Default.limitedParallelism(1)` per
+  database (`PaperclipPersistence` makes it; tests share `TestDatabase.dispatcher`). Reads and writes of a database are
+  therefore ordered, whatever the driver does with its connections.
+- A cache write that lands after its factory was deleted (refresh in flight) would leave an orphan row, and the cache
+  contract requires writes for factories with no config row, so a guard in `write` is not possible. Instead opening the
+  database prunes cache rows with no factory (`deleteOrphans`), tested.
+- `update` replaces the whole row including `sort_order` (same as the fake): a caller holding a stale `Instance` undoes a
+  reorder. Port semantics, not changed.
+- Secrets audit (`SecretsAuditTest`): the exact table/column list is asserted (a new column fails until reviewed), no
+  column is named like a secret, and every value of a populated database (RichFeed included) is scanned for
+  `pcp_board_`. It passed on first run; its detector is proven by a fourth test that stores `TestData.TOKEN` in a column
+  and shows the scan finds it (this is the mutation check, kept as a test).
+- Red evidence: `DatabaseRecoveryTest` failed `Unresolved reference 'openRecovering'`; `ConcurrencyTest` failed with the
+  SQLite nested-transaction error; the orphan test failed on the leftover row before `deleteOrphans`.
