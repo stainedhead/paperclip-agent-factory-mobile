@@ -2,6 +2,8 @@ package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.presentation.ApprovalIntent
 import com.stainedhead.paperclipmobile.presentation.ApprovalStatusUi
+import com.stainedhead.paperclipmobile.presentation.BudgetChoice
+import com.stainedhead.paperclipmobile.presentation.BudgetIntent
 import com.stainedhead.paperclipmobile.presentation.BudgetOutcomeUi
 import com.stainedhead.paperclipmobile.presentation.DecisionFinalKind
 import com.stainedhead.paperclipmobile.presentation.DecisionIntent
@@ -104,5 +106,23 @@ class DemoDecisionFlowTest {
                 .body
                 .startsWith("Refund regressions slipped twice") shouldBe true
             approval.close()
+        }
+
+    @Test
+    fun `a raise that passes the shown spend but not the server's is refused with the server's reason`() =
+        runTest {
+            checkNotNull(graph.demoControls).setBudgetServerSpend(21_000)
+            val budget = graph.attention.createBudgetIncidentStateHolder("demo-home", "company-acme", "inc-eng-2")
+            budget.state.await { it.phase == DetailPhase.Content }
+            budget.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
+            budget.onIntent(BudgetIntent.AmountChanged(20_500))
+            budget.state.await { it.canSubmit }
+
+            budget.onIntent(BudgetIntent.SubmitTapped)
+
+            val state = budget.state.await { it.feedback != null }
+            state.feedback?.error?.detail shouldBe "New budget must exceed current observed spend"
+            state.outcome shouldBe null
+            budget.close()
         }
 }

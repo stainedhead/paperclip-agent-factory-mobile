@@ -53,6 +53,11 @@ class DemoControls internal constructor(
         approvals.store[id]?.let { approvals.store[id] = it.copy(status = ApprovalStatus.Approved) }
     }
 
+    /** The server's own figure for the spend, which can be higher than the one the incident showed (PRD FR-052). */
+    fun setBudgetServerSpend(minorUnits: Long) {
+        budgets.serverObservedMinor = minorUnits
+    }
+
     /** The budget incident was resolved elsewhere, so it is no longer active. */
     fun resolveIncidentElsewhere(incidentId: String) = budgets.resolveElsewhere(BudgetIncidentId(incidentId))
 }
