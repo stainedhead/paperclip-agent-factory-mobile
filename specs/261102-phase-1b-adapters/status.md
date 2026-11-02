@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Not Started |
 | Phase 2 Architecture and plan | Not Started |
 | Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation | Not Started |
+| Phase 4 Implementation | In Progress (1b-1 done) |
 | Phase 5 Completion and archive | Not Started |
 
 ## Phase 0 checklist
@@ -24,7 +24,7 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Milestones
 
-- [ ] 1b-1 Ktor client, error mapping, health and auth/pairing gateways (AD-001 to AD-005, AD-010, AD-011)
+- [x] 1b-1 Ktor client, error mapping, health and auth/pairing gateways (AD-001 to AD-005, AD-010, AD-011)
 - [ ] 1b-2 SQLDelight persistence and repositories (AD-020 to AD-022)
 - [ ] 1b-3 iOS Keychain, biometrics, connectivity and system services; Android/JVM fail-closed actuals (AD-030 to AD-033)
 - [ ] 1b-4 Attention, decision, approval, budget, issue, interaction, agent, run and dashboard gateway adapters (AD-012 to AD-014)
@@ -37,3 +37,4 @@ Update this file after every task and phase. It is the single source of progress
 ## Recent activity
 
 - 2026-11-02: spec created from the PRD.
+- 2026-11-02: milestone 1b-1 done (AD-001 to AD-005, AD-010, AD-011): Ktor and serialization in the catalog; `ErrorMapper` with platform TLS/timeout classification (4ee0d10); `PaperclipHttpClient` (fca20cb); `HealthGatewayAdapter` and `StubPaperclipServer` (16b6113); `AuthGatewayAdapter`, secrets audit and Konsist rules (d5d5a97, 2414a94). Health, pairing, wrong-server and account contract suites pass on the real adapters through the stub. Full `check lint` green; CI results recorded below when read.

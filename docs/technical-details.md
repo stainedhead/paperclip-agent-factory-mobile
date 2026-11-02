@@ -7,7 +7,7 @@ How the code is organised and built, as it exists on the branch `feat/phase-1a-s
 | Area | State |
 |---|---|
 | Shared core: domain, application, presentation, testing fakes, umbrella | Built (Phase 1a). Runs entirely on fakes. |
-| Real adapters (`shared/infrastructure/*`) | Not built. The five modules exist as Gradle stubs with no source. Phase 1b. |
+| Real adapters (`shared/infrastructure/*`) | `api` has the HTTP client, `ErrorMapper`, and the health and auth gateways (Phase 1b-1); the other four modules are stubs. |
 | iPhone app | One screen: the first-run address check. Every other screen has a tested state holder and no UI. |
 | Android app | Not started. There is no `androidApp/` directory. The shared modules do build an Android library target. |
 | Push relay | Not started. |
@@ -31,7 +31,8 @@ iosApp (SwiftUI)  ──imports only──►  shared/umbrella  (Koin graph, Pap
 | `shared/presentation` | 16 state holders (one per screen plus `AppStateHolder`), their `State` and `Intent` types, UI models, renderers. Depends on application and domain. | Built |
 | `shared/testing` | 23 fakes (one per port), 26 contract suites for the 21 ports a real adapter could break (`Connectivity` and `AppLifecycle` are exempt, ADR-036), fixtures (`TestData`, `AttentionFixtures`, `WorkFixtures`, `AgentFixtures`) and the demo data set (`testing/demo`). Depends on domain. Ships inside the XCFramework, so it uses no test framework. | Built |
 | `shared/umbrella` | `PaperclipCore`, `PaperclipGraph`, the Koin modules (adapters bound under `RawPort`, use cases get the decorated bindings), `AppLifecycleBridge`, `RefreshScreens`, the XCFramework `PaperclipKit` and SKIE setup; the Konsist rules (`src/konsistTest`). | Built |
-| `shared/infrastructure/{api,realtime,persistence,securestore,platform}` | Only a `build.gradle.kts` each (`api` and `testing` depend on `domain`). | Stubs |
+| `shared/infrastructure/api` | `PaperclipHttpClient` (Ktor; Darwin on iOS, OkHttp on Android and JVM), `ErrorMapper`, `HealthGatewayAdapter`, `AuthGatewayAdapter`, internal `dto` package. Tests run the shared contract suites through a MockEngine-backed `StubPaperclipServer`. | Health and auth |
+| `shared/infrastructure/{realtime,persistence,securestore,platform}` | Only a `build.gradle.kts` each. | Stubs |
 
 Every module is a Kotlin Multiplatform library with the targets `jvm` (fast tests, the future push relay), `android` (AGP's KMP library plugin, minSdk 28, compileSdk 37, host tests) and `iosArm64` / `iosSimulatorArm64`. Targets, the JDK 21 toolchain, "warnings are errors" and the common test dependencies live in the convention plugin `build-logic/src/main/kotlin/pafm.kmp-library.gradle.kts`.
 

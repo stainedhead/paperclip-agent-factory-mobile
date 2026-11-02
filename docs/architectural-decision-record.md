@@ -260,3 +260,35 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** This is accepted for Phase 1a, which has no adapters, and is stated where a reader looks: the KDoc of `createGraph`, `docs/technical-details.md` ("The graph") and this ADR. The seam is the Koin module that binds the ports (`portsModule()` for `createGraph`, `demoPortsModule()` for the demo): Phase 1b replaces the bindings there with real adapters, and platform-owned ports (secure store, biometrics, connectivity, pairing browser, time zone, lifecycle) arrive from the app. The shape of that hand-over is decided in Phase 1b; `createGraph` is not renamed now because the Swift app calls it and the name disappears with the fakes.
 
 **Consequences.** A build that reaches `createGraph` with the fakes still bound must not be released: Phase 1b's first acceptance criterion is a test that the graph binds no `FakeBiometrics` and no `FakeSecretStore`. Time-dependent rules are tested at the state-holder and use-case level with an advanceable `FakeClock` (the app lock re-engaging after the idle period is covered through the graph in `DemoGraphDeviceTest`), not by waiting in either graph.
+
+## ADR-038: HTTP statuses outside the PRD list map to `Rejected`, `Timeout` or `Malformed`, and the status always wins
+
+**Status:** Accepted (2026-11-02, Phase 1b-1, `specs/261102-phase-1b-adapters`)
+
+**Context.** The server answers 400 for validation failures, malformed ids and a `revoke-current` without a board key (`access.ts:2815, 2852, 2959, 2972`; `error-handler.ts:225-243`), and a reverse proxy can answer anything, including a 200 or 502 HTML page. `DomainError` has no bad-request case and the PRD lists only 401, 403, 404, 409, 422, 429 and 5xx.
+**Decision.** One `ErrorMapper` decides. The status wins over the body: 401 `Unauthorized`, 403 `Forbidden`, 404 `NotFound`, 409 `Conflict`, 429 `RateLimited`, 408 `Timeout`, any other 4xx (including 400 and 422) `Rejected(reason)` with the server's `{"error"}` text cut to 200 characters (`http_<status>` when there is none), every 5xx `ServerError` (so a 502 HTML page is a server error, not Malformed). A 2xx whose body is not JSON, is empty or does not fit the DTO is `Malformed`. 1xx, 3xx and statuses above 599 are `Malformed`. A key id that is not a UUID is `NotFound` without a request, because the server would answer 400 for an id that cannot exist. An unknown challenge `status` is `Malformed`: the app does not guess.
+**Consequences.** The UI shows `Rejected` reasons as the server wrote them and nothing else from a body. The mapping has one test per status and body shape (`ErrorMapperTest`).
+
+## ADR-039: The HTTP client sends once, never caches a key, follows no redirect and never copies an exception message
+
+**Status:** Accepted (2026-11-02, Phase 1b-1)
+
+**Context.** Ktor's `Auth` plugin caches tokens and re-sends after a 401; `HttpRequestRetry` would replay mutations; redirects carry the `Authorization` header to the new location; Ktor exception messages contain the request URL and a pairing poll carries its challenge token in the query (`access.ts:2812`). `retryingRead` is `internal` to `application`, which infrastructure may not import.
+**Decision.** `PaperclipHttpClient` installs only `HttpTimeout` (15 s connect, 30 s read, 60 s request), sets `expectSuccess = false` and `followRedirects = false`, and sets `Authorization` per request from a `Secret` the gateway reads from the `SecretStore` for that call and wipes afterwards. It sends each request exactly once: reads are retried by the use cases through `retryingRead` (they already are), mutations never. Failures become a `DomainError` from the exception type only, never its message; `CancellationException` is rethrown while the caller is active. There is no Ktor `Logging` plugin; an optional trace hook receives method, host, path and status. `http` is allowed only for `localhost` and `10.0.2.2` when `allowInsecureLocal` is set, enforced in the client as well as in `BaseUri`, and a refusal is `CertificateInvalid` with no request sent. The one `catch (Throwable)` of the codebase lives in this class and is allowed by name in `detekt.yml`.
+**Consequences.** "A board key never appears in a URL" is tested; "no secret in any URL" cannot be literally true because the challenge token is a query parameter by the server's design, so the test asserts it reaches only the issuing host and only in the poll query.
+
+## ADR-040: Certificate pins are stored and fail closed until an engine enforces them
+
+**Status:** Accepted (2026-11-02, Phase 1b-1). Enforcement deferred (spec stretch goal).
+
+**Context.** Ktor's Darwin engine has a `CertificatePinner` (SPKI sha256 per host pattern, installed through `handleChallenge`, `ktor-client-darwin-3.6.1` sources) and OkHttp has `CertificatePinner`, but both are configured per engine for a list of hosts, while pins belong to instances that can be added and edited while the app runs. Wiring them needs the live graph (1b-5) and a TLS test server on the simulator.
+**Decision.** `PaperclipHttpClient` takes `pinsEnforced` (false for now). A request to an instance whose `pins` list is not empty fails with `CertificateInvalid` and sends nothing while no engine enforces pins, so a stored pin can never silently be ignored. Turning enforcement on is one constructor argument plus the engine configuration.
+**Consequences.** No UI sets pins yet, so no user is affected. Real enforcement and its simulator test are listed as deferred.
+
+## ADR-041: Server fixtures are Kotlin strings, not resource files
+
+**Status:** Accepted (2026-11-02, Phase 1b-1)
+
+**Context.** The spec asks for fixtures under `src/commonTest/resources`. A Kotlin/Native test has no classpath, so a resource file cannot be read by `iosSimulatorArm64Test`, and the adapter tests must run on JVM, Android host and iOS simulator.
+**Decision.** `ServerFixtures` builds the JSON bodies of the pinned server's routes as Kotlin raw strings, each commented with the server file and line it follows; `StubPaperclipServer` serves them. The CI contract test (1b-5) checks the same shapes against the real container.
+**Consequences.** Fixtures run on every target. They are derived from server source, not recorded, until the contract test exists.
