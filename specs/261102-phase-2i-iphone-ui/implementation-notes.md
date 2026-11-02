@@ -82,3 +82,8 @@ Accessibility audit (performAccessibilityAudit, each screen asserts nothing beyo
   (`simctl bootstatus -b`) and switches off autocorrect, prediction and auto-capitalisation. The workflow runs that
   script, so it needed no change.
 - Evidence: see the commit message / PR for the run counts.
+
+## 2026-11-02 CI flake: DemoPairingTest "pairing the signed out Cloud factory again works twice"
+
+Root cause (a fake defect, not wall-clock speed): `FakeAuthGateway.revokeCurrentKey` put the instance in a permanent revoked set, so after the first sign out every `me` call answered 401 even after a new pairing issued a new key. In the second cycle the post-pair access load (`LoadInstanceAccess`) got a 401 and marked the factory Signed out right after the holder published `Idle` + `SignedIn`. `StateFlow` is conflated, so the test's `await { Idle && SignedIn }` passed only when its collector woke inside that tiny window (always locally, not on the 3-core CI runner), otherwise it timed out. Red evidence: with the new wait for loaded companies and the fix stashed the test times out deterministically.
+Fix (test first): `FakeBehaviourTest` gained two tests (a new pairing on the same host re-enables a revoked factory; another host does not). The fake records the host at revoke time and `createChallenge` clears revocations for that host (or an unknown host); the demo graph wires `hostOf`. `DemoPairingTest` now waits for the loaded companies before signing out (no stale access load racing the sign out), and every umbrella test safety-net timeout is 60 s (they wait for states, not durations).

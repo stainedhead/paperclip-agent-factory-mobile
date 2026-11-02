@@ -77,7 +77,7 @@ class PaperclipGraphSliceTwoWiringTest {
 
     private suspend fun <T> eventually(block: suspend () -> T): T =
         withContext(Dispatchers.Default) {
-            withTimeout(10.seconds) { block() }
+            withTimeout(60.seconds) { block() }
         }
 
     @Test
@@ -124,7 +124,7 @@ class PaperclipGraphSliceThreeWiringTest {
 
     private suspend fun <T> eventually(block: suspend () -> T): T =
         withContext(Dispatchers.Default) {
-            withTimeout(10.seconds) { block() }
+            withTimeout(60.seconds) { block() }
         }
 
     @Test

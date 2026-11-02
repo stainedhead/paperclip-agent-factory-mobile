@@ -1,7 +1,9 @@
 package com.stainedhead.paperclipmobile.testing
 
 import com.stainedhead.paperclipmobile.domain.ChallengeStatus
+import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
@@ -119,5 +121,35 @@ class FakeAuthApprovalTest {
             (second.expiresAt > now) shouldBe true
             val poll = gateway.pollChallenge(uri, second.id, second.challengeToken)
             (poll as DomainResult.Success).value shouldBe ChallengeStatus.Approved
+        }
+
+    @Test
+    fun `a new pairing issues a new key so a revoked factory can sign in again`() =
+        runTest {
+            val gateway = FakeAuthGateway()
+            val uri = TestData.uri()
+            val id = InstanceId("cloud")
+            gateway.hostOf = { uri }
+            gateway.approvePairings(from = { Instant.fromEpochSeconds(2_000_000_000) })
+
+            gateway.revokeCurrentKey(id)
+            gateway.me(id) shouldBe DomainResult.Failure(DomainError.Unauthorized)
+
+            gateway.createChallenge(uri, "Phone", null)
+            (gateway.me(id) is DomainResult.Success) shouldBe true
+        }
+
+    @Test
+    fun `a new pairing on another host leaves a revoked factory revoked`() =
+        runTest {
+            val gateway = FakeAuthGateway()
+            val id = InstanceId("cloud")
+            gateway.hostOf = { TestData.uri() }
+            gateway.approvePairings(from = { Instant.fromEpochSeconds(2_000_000_000) })
+            gateway.revokeCurrentKey(id)
+
+            gateway.createChallenge(TestData.uri("https://other.example.com"), "Phone", null)
+
+            gateway.me(id) shouldBe DomainResult.Failure(DomainError.Unauthorized)
         }
 }

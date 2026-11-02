@@ -106,6 +106,8 @@ internal fun demoPortsModule(seeded: Boolean = true) =
                 companiesResult = DomainResult.Success(DemoFactories.companies())
                 keysResult = DomainResult.Success(DemoFactories.boardKeys())
                 val clock = get<Clock>()
+                val repository = get<InstanceRepository>() as FakeInstanceRepository
+                hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }
                 approvePairings(from = { clock.now() })
             }
         }

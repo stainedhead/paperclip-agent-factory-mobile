@@ -15,7 +15,7 @@ import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
 private suspend fun <S> StateFlow<S>.await(predicate: (S) -> Boolean): S =
-    withContext(Dispatchers.Default) { withTimeout(10.seconds) { first(predicate) } }
+    withContext(Dispatchers.Default) { withTimeout(60.seconds) { first(predicate) } }
 
 /** The demo graph lets a shell (and its UI tests) script the device-owner prompt and count the prompts (UI-004). */
 class DemoControlsTest {

@@ -57,7 +57,7 @@ class FakeAuthGateway :
     private val challengeServers = mutableMapOf<String, BaseUri>()
     private val pendingKeyServers = mutableMapOf<String, BaseUri>()
     private val revokedKeyIds = mutableSetOf<String>()
-    private val revokedInstances = mutableSetOf<InstanceId>()
+    private val revokedInstances = mutableMapOf<InstanceId, BaseUri?>()
 
     /** The pending token handed out by the last created challenge, so tests can check it was wiped. */
     var lastPendingToken: Secret? = null
@@ -69,6 +69,8 @@ class FakeAuthGateway :
         requestedCompanyId: CompanyId?,
     ): DomainResult<PairingChallenge> {
         record("createChallenge", baseUri)
+        // A pairing issues a new key: a factory revoked on this host (or on an unknown one) can sign in again.
+        revokedInstances.entries.removeAll { it.value == null || it.value == baseUri }
         val result = createResult ?: DomainResult.Success(challengeSource?.invoke() ?: TestData.challenge())
         val created = (result as? DomainResult.Success)?.value
         lastPendingToken = created?.pendingBoardToken
@@ -113,7 +115,7 @@ class FakeAuthGateway :
 
     override suspend fun me(instanceId: InstanceId): DomainResult<BoardAccess> {
         record("me", hostOf(instanceId), tokenOf(instanceId))
-        if (instanceId in revokedInstances ||
+        if (instanceId in revokedInstances.keys ||
             instanceId in signedOutInstances
         ) {
             return DomainResult.Failure(DomainError.Unauthorized)
@@ -171,7 +173,7 @@ class FakeAuthGateway :
 
     override suspend fun revokeCurrentKey(instanceId: InstanceId): DomainResult<Unit> {
         record("revokeCurrentKey", hostOf(instanceId), tokenOf(instanceId))
-        if (revokeCurrentResult is DomainResult.Success) revokedInstances += instanceId
+        if (revokeCurrentResult is DomainResult.Success) revokedInstances[instanceId] = hostOf(instanceId)
         return revokeCurrentResult
     }
 }

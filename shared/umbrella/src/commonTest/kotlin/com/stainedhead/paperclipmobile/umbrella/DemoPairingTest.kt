@@ -17,8 +17,11 @@ import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
+/** Only a safety net: every wait is for a state, never for a duration. */
+private val SAFETY_NET = 60.seconds
+
 private suspend fun <S> StateFlow<S>.await(predicate: (S) -> Boolean): S =
-    withContext(Dispatchers.Default) { withTimeout(10.seconds) { first(predicate) } }
+    withContext(Dispatchers.Default) { withTimeout(SAFETY_NET) { first(predicate) } }
 
 /** Pairing works on graphs made of fakes: the scripted browser approval (UI-010, demo mode and UI tests). */
 class DemoPairingTest {
@@ -61,6 +64,9 @@ class DemoPairingTest {
                         it.pairing == PairingStatus.Idle && it.status == FactoryStatusUi.SignedIn
                     }
                 state.error shouldBe null
+                // The access load after pairing must finish (and succeed) before the next sign out starts.
+                edit.state.await { it.companies.isNotEmpty() && it.status == FactoryStatusUi.SignedIn }.error shouldBe
+                    null
                 edit.onIntent(EditInstanceIntent.SignOutRequested)
                 edit.onIntent(EditInstanceIntent.ConfirmationAccepted)
                 edit.state.await { it.status != FactoryStatusUi.SignedIn }
