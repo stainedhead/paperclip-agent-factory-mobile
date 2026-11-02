@@ -40,16 +40,28 @@ struct FirstRunModelTests {
         #expect(debug.state.canContinue)
     }
 
-    @Test func cancellingTheObservationClosesTheModel() async {
-        let model = makeModel()
-        let observing = Task { await model.observe() }
+    @Test func cancellingTheObservationLeavesTheModelWorkingAndItCanObserveAgain() async {
+        let holder = PaperclipCore.shared.createGraph(allowInsecureLocal: false).createFirstRunStateHolder()
+        let model = FirstRunModel(holder: holder)
+        let first = Task { await model.observe() }
         await Task.yield()
+
+        first.cancel()
+        await first.value
+
         #expect(model.isClosed == false)
+        model.addressChanged("https://paperclip.example.com")
+        #expect(model.state.canContinue)
 
-        observing.cancel()
-        await observing.value
-
-        #expect(model.isClosed)
+        // Changes made while nobody observed are picked up when the view's task runs again.
+        holder.onIntent(intent: FirstRunIntentAddressChanged(text: "https://other.example.com"))
+        let second = Task { await model.observe() }
+        #expect(await eventually { model.state.normalizedAddress == "https://other.example.com" })
+        holder.onIntent(intent: FirstRunIntentAddressChanged(text: "https://third.example.com"))
+        #expect(await eventually { model.state.normalizedAddress == "https://third.example.com" })
+        second.cancel()
+        await second.value
+        #expect(model.isClosed == false)
     }
 
     @Test func observingMirrorsStateChangesMadeOnTheHolder() async {
