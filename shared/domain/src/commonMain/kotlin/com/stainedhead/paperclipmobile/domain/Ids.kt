@@ -1,11 +1,18 @@
 package com.stainedhead.paperclipmobile.domain
 
-/** App-generated identity of one configured factory (a Paperclip instance). */
+/**
+ * App-generated identity of one configured factory (a Paperclip instance). It is a path segment of every secret
+ * (`instance/{id}/{name}`), so it cannot hold a slash, a backslash or a control character: an id such as `a/b` would
+ * otherwise be listed by the secret store as the namespace `a` (rereview1b F-R-6).
+ */
 data class InstanceId(
     val value: String,
 ) {
     init {
         require(value.isNotBlank()) { "InstanceId must not be blank" }
+        require(value.none { it == '/' || it == '\\' || it.isISOControl() }) {
+            "InstanceId must not hold a separator or a control character"
+        }
     }
 }
 
