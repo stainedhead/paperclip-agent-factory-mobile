@@ -21,6 +21,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
         with:
+          # The runner images stop at Xcode 26.6 and the iOS 26.5 simulator runtime (checked with a diagnostics step):
+          # newer Xcode releases are not installed there, so the UI tests must pass on 26.5 as well as locally.
           xcode-version: latest-stable
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
@@ -31,12 +33,6 @@ jobs:
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
-      - name: Diagnostics (temporary)
-        run: |
-          xcodebuild -version
-          ls /Applications | grep -i xcode || true
-          xcrun simctl list runtimes
-          sw_vers
       - name: Install tools
         run: brew install swiftlint xcodegen
       - name: Kotlin/Native tests (iOS simulator)
