@@ -28,7 +28,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] 2i-1 First run, Factories, Add/edit factory, Manage factories, Settings with pairing browser (UI-010)
 - [x] 2i-2 Inbox (UI-020)
 - [x] 2i-3 Decision, Approval, Budget incident sheet (UI-030)
-- [ ] 2i-4 Factory home, Agents, Agent detail, Run viewer (UI-040)
+- [x] 2i-4 Factory home, Agents, Agent detail, Run viewer (UI-040)
 - [ ] 2i-5 Work list and Issue with interactions (UI-050)
 - [ ] 2i-6 Polish, accessibility, screenshots into docs, live seam, documentation (UI-060, acceptance 5 to 10)
 
@@ -38,6 +38,8 @@ Update this file after every task and phase. It is the single source of progress
 2i-1 done: see implementation-notes.md (ADR-045 to 047); counts are in the milestone report.
 
 2i-3 done: Decision, Approval and Budget incident sheet (ADR-095 to 098); see implementation-notes.md.
+
+2i-4 done: Factory home, Agents, Agent detail, Run viewer (ADR-100 to 103); see implementation-notes.md.
 
 ## Blockers
 
@@ -50,3 +52,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: milestone 2i-1 (First run, Factories, Manage, Edit/Add, Settings, pairing browser) implemented.
 - 2026-11-02: milestone 2i-2 (Inbox screen, demo Inbox behaviour, Inbox UI tests) implemented; ADR-090 to 092.
 - 2026-11-02: milestone 2i-3 (Decision, Approval, Budget incident sheet, shared demo changes, detail UI tests) implemented.
+- 2026-11-02: milestone 2i-4 (Factory home, Agents, Agent detail, Run viewer, shared run/issue enrichment, demo run data) implemented.

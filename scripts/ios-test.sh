@@ -72,6 +72,7 @@ audit_tests=(
   iosAppUITests/ManageFactoriesUITests/testAccessibilityAuditOfManageFactories
   iosAppUITests/SettingsUITests/testAccessibilityAuditOfSettings
   iosAppUITests/ShellUITests/testAccessibilityAuditBaselineOfTheShell
+  iosAppUITests/OperationsAuditUITests
 )
 filter_args=()
 case "${TEST_SET:-all}" in

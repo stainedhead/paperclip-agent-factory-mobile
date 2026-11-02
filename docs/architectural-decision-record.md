@@ -395,3 +395,31 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** No screen asks Face ID itself and none adds a second confirmation sheet for a destructive option or a budget raise: the confirm button (lock glyph only when the state says `confirmNeedsDeviceAuth` or `submitNeedsDeviceAuth`; the mock shows the lock on every Confirm, a deviation) sends the intent, and a cancelled prompt comes back as `feedback.deviceAuth` and is shown, with nothing changed. A reject or revision note is asked in a sheet that stays open after a cancelled prompt (`notePrompt` stays set). Selectable cards use `CardSelectButtonStyle`, which mutes a disabled card with secondary text instead of the system's dimming (which failed the contrast audit offline). Detail screens hide the tab bar and keep their action bar outside the scroll view; the UI audit helper reports elements that reach below the action bar's top as `DETAIL-AUDIT-BEHIND-BAR` (scrolled content the bar hides) and returns every other finding.
 
 **Consequences.** One gate for every platform. A reader of the state can tell why nothing happened.
+
+## ADR-100: Runs and agent rows name their issue through a best-effort shared read, not a Swift guess
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Context.** A run carries only an issue id. The mocks show "PAP-1204" and "Add retries to webhook ingest" on Factory home, Agents rows, Agent detail and the Run viewer. Upper-casing the id would work for the demo and be wrong for a real server.
+
+**Decision.** `LoadIssueRefs` (application) reads each distinct issue once, best effort (an unreadable issue is left out, never fails a screen). `LoadDashboard`, `ListAgents`, `LoadAgent` and `LoadRun` use it; `RunRowUi` gains `issueIdentifier`, `issueTitle`, `finishedAtEpochMillis`; `AgentRowUi` gains `currentRun`; `AgentsState` gains `canSetBudget` and `budgetDisabledReason`. The Agents list reads again after a successful Run now.
+
+**Consequences.** One extra read per distinct live issue (N+1, small N). A cheaper batch read would need an upstream change. Android gets the same fields.
+
+## ADR-101: Agent rows follow the shared rules, not the mock: a budget pause offers Budget, View run replaces Run now, Budget is the owner's
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Decision.** The Agents row offers exactly the state's actions plus two navigation buttons: View run (when the agent has a run in progress; it replaces Run now, as the mock's CTO row) and Budget (only when `canSetBudget`; it opens Agent detail, where "Set monthly budget" lives). A budget-paused agent (Engineer 2) has no Resume because the shared rule says a budget pause is lifted by the budget incident (research A1); the mock's Resume is a deviation. Pause is the only row action with the lock glyph (it is the one that asks Face ID; Resume and Run now do not). The mock's "Next heartbeat in 8m" and "last run timed out" are not in the state; rows show "last heartbeat 2m ago".
+
+## ADR-102: Factory home and Agents models belong to a company; Run viewer and Agent detail to their route
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Decision.** `ScreenKey` gains `factoryHome` and `agents` (keyed by factory and company, kept while selected, closed when the company changes) and `agent(id)`, `run(id)` (closed when the route leaves the stack). Views start the shared refresh policy while visible (`refreshWhileVisible`); the Run viewer's 5 s interval while a run is live is the state's. Auto-scroll is the state's: the log toggle and a drag that leaves the bottom send `UserScrolled`/`JumpToLatest`. The cancelled Face ID result is shown as feedback on the screen (the confirm sheet closes when the intent is sent).
+
+## ADR-103: The demo is honest about runs: Run now starts one, and a launch option breaks the reads
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Decision.** `FakeAgentGateway.invokeHeartbeat` puts the agent to work and reports the run (`onRunStarted`); the demo wiring adds it to the run store. `DemoControls.failReads` makes the Factory, Agents and Run reads fail with a server error; launch options `-demo-server-error` and `-demo-open run:<id>|agent:<id>` expose them. The demo's Running-now data, events and log are the mock's.
