@@ -13,14 +13,24 @@ plugins {
 
 // ---------------------------------------------------------------- formatting (ktlint via Spotless)
 spotless {
+    // Build directories are pruned while the tree is walked (not filtered afterwards): a parallel compile task that
+    // deletes a class file mid-walk otherwise makes spotless fail with "Could not read path".
     kotlin {
-        target("**/*.kt")
-        targetExclude("**/build/**")
+        target(
+            fileTree(rootDir) {
+                include("**/*.kt")
+                exclude("**/build/**", "**/.gradle/**")
+            },
+        )
         ktlint(libs.versions.ktlint.get())
     }
     kotlinGradle {
-        target("**/*.kts")
-        targetExclude("**/build/**")
+        target(
+            fileTree(rootDir) {
+                include("**/*.kts")
+                exclude("**/build/**", "**/.gradle/**")
+            },
+        )
         ktlint(libs.versions.ktlint.get())
     }
 }
