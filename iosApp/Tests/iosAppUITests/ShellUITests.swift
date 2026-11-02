@@ -35,13 +35,13 @@ final class ShellUITests: XCTestCase {
         for title in ["Inbox", "Factory", "Work", "Agents", "Factories"] {
             XCTAssertTrue(tabs[title].exists, "missing tab \(title)")
         }
-        // The shared Inbox state's badge count reaches the screen as the "badge / total" readout of the Inbox root.
+        // The shared Inbox state's badge count reaches the screen as the "N new or due today" line of the Inbox.
         // On iOS 26.5 the tab bar does not expose the badge through the button's label or value (the failure
-        // hierarchies show label "Inbox" only, with the diagnostics trace at badge=3), so the readout is the check;
+        // hierarchies show label "Inbox" only, with the diagnostics trace at badge=3), so that line is the check;
         // when the tab does expose its badge it must agree.
-        let counts = app.element("placeholder-inbox-counts")
-        XCTAssertTrue(counts.waitForExistence(timeout: 30), "the Inbox readout never appeared")
-        XCTAssertTrue(counts.label.hasPrefix("3 /"), "the Inbox badge count is not 3: \(counts.label)")
+        let counts = app.element("inbox-due-count")
+        XCTAssertTrue(counts.waitForExistence(timeout: 30), "the Inbox count line never appeared")
+        XCTAssertTrue(counts.label.hasPrefix("3 "), "the Inbox badge count is not 3: \(counts.label)")
         let inbox = tabs["Inbox"]
         let exposed = ((inbox.value as? String) ?? "") + inbox.label
         if exposed.contains(where: \.isNumber) {
