@@ -33,20 +33,72 @@ class ListIssues(
     suspend operator fun invoke(
         scope: CompanyScope,
         query: IssueQuery,
-        userId: String?,
     ): DomainResult<IssuePage> =
-        when (val result = retryingRead { gateway.list(scope, query) }) {
-            is DomainResult.Failure -> {
-                result
-            }
+        if (query.filter == IssueFilter.CriticalAndHigh) {
+            urgentPage(scope, query)
+        } else {
+            when (val result = retryingRead { gateway.list(scope, query) }) {
+                is DomainResult.Failure -> {
+                    result
+                }
 
-            is DomainResult.Success -> {
-                val rows = result.value
-                val shown =
-                    if (query.filter == IssueFilter.CriticalAndHigh) rows.filter { it.priority.isUrgent } else rows
-                DomainResult.Success(IssuePage(shown, hasMore = rows.size >= query.limit, serverRowCount = rows.size))
+                is DomainResult.Success -> {
+                    DomainResult.Success(
+                        IssuePage(result.value, hasMore = result.value.size >= query.limit, result.value.size),
+                    )
+                }
             }
         }
+
+    /**
+     * Priority cannot be filtered by the server, so server pages are read until [IssueQuery.limit] urgent rows are
+     * found or the server runs out, up to [MAX_SERVER_PAGES] pages (F-A-12). [IssuePage.serverRowCount] is how many
+     * server rows were used, so the next page starts right after the last row shown.
+     */
+    private suspend fun urgentPage(
+        scope: CompanyScope,
+        query: IssueQuery,
+    ): DomainResult<IssuePage> {
+        val shown = mutableListOf<Issue>()
+        var used = 0
+        var hasMore = true
+        var pages = 0
+        while (shown.size < query.limit && hasMore && pages < MAX_SERVER_PAGES) {
+            pages += 1
+            val rows =
+                when (val read = retryingRead { gateway.list(scope, query.copy(offset = query.offset + used)) }) {
+                    is DomainResult.Success -> read.value
+                    is DomainResult.Failure -> return if (shown.isEmpty()) read else partial(shown, used)
+                }
+            val take = rows.indexOfFilledAt(shown.size, query.limit)
+            shown += rows.take(take).filter { it.priority.isUrgent }
+            used += take
+            hasMore = take < rows.size || rows.size >= query.limit
+        }
+        return DomainResult.Success(IssuePage(shown, hasMore, used))
+    }
+
+    private fun partial(
+        shown: List<Issue>,
+        used: Int,
+    ) = DomainResult.Success(IssuePage(shown, hasMore = true, serverRowCount = used))
+
+    /** How many of these server rows to use: all of them, or up to the row that makes the page [limit] long. */
+    private fun List<Issue>.indexOfFilledAt(
+        already: Int,
+        limit: Int,
+    ): Int {
+        var urgent = already
+        forEachIndexed { index, issue ->
+            if (issue.priority.isUrgent) urgent += 1
+            if (urgent >= limit) return index + 1
+        }
+        return size
+    }
+
+    private companion object {
+        const val MAX_SERVER_PAGES = 10
+    }
 }
 
 /** Searches issues by text, keeping the saved filter (PRD FR-060). Blank text is the plain list. */
@@ -57,8 +109,7 @@ class SearchIssues(
         scope: CompanyScope,
         filter: IssueFilter,
         text: String,
-        userId: String?,
-    ): DomainResult<IssuePage> = list(scope, IssueQuery(filter, text.trim().ifEmpty { null }), userId)
+    ): DomainResult<IssuePage> = list(scope, IssueQuery(filter, text.trim().ifEmpty { null }))
 }
 
 /** The issue, its thread and the names the server leaves out (PRD FR-061, ADR-024). */

@@ -51,7 +51,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] FR-R26 (P1) F-D-5: Requirements-traceability rule is satisfied by a comment mention, so "every FR is named by a test" i
 - [ ] FR-R27 (P2) F-A-10: `BaseUri` does not validate the path and accepts odd hosts
 - [x] FR-R28 (P2) F-A-11: Retries stack up and `retryingRead` retries unreachable and certificate failures
-- [ ] FR-R29 (P2) F-A-12: Dead parameters and unused domain functions
+- [x] FR-R29 (P2) F-A-12: Dead parameters and unused domain functions
 - [x] FR-R30 (P1) F-A-7: `PairInstance` polling is unbounded by server-supplied values and ignores rate limiting
 - [ ] FR-R31 (P2) F-A-9: `Secret.startsWith` copies the whole key into an unwipeable String
 - [ ] FR-R32 (P2) F-B-10: `createGraph` and the demo graph hide real behaviour behind fakes with a frozen clock
@@ -104,3 +104,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-B-11 done (UI enum mappings are exhaustive when expressions).
 - 2026-11-01: F-D-2 done (a 403 re-resolves the role once).
 - 2026-11-01: F-A-11 done (retry budget, offline and certificate failures).
+- 2026-11-01: F-A-12 done (dead code removed, CriticalAndHigh fills the page).

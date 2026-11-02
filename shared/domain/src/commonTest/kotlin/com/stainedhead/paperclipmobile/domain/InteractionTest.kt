@@ -77,16 +77,6 @@ class InteractionKindTest {
     }
 
     @Test
-    fun `FR-063 an interaction is open to the user only while pending unblocked and addressed to them`() {
-        confirmation.canBeResolvedBy("user-1") shouldBe true
-        RequestConfirmation(meta(status = InteractionStatus.Accepted), "p").canBeResolvedBy("user-1") shouldBe false
-        RequestConfirmation(meta(blocked = true), "p").canBeResolvedBy("user-1") shouldBe false
-        RequestConfirmation(meta(addresseeUserId = "user-2"), "p").canBeResolvedBy("user-1") shouldBe false
-        RequestConfirmation(meta(addresseeUserId = "user-1"), "p").canBeResolvedBy("user-1") shouldBe true
-        UnsupportedInteraction(meta(), InteractionKind.ConnectionIntent).canBeResolvedBy("user-1") shouldBe false
-    }
-
-    @Test
     fun `an unknown kind from a newer server is unsupported with its raw name`() {
         InteractionKind.fromServer("brand_new") shouldBe InteractionKind.Unsupported("brand_new")
         UnsupportedInteraction(meta(), InteractionKind.fromServer("brand_new")).kind.serverName shouldBe "brand_new"

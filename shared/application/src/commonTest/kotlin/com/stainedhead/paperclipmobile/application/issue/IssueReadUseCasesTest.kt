@@ -4,10 +4,13 @@ import com.stainedhead.paperclipmobile.application.Env
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.Issue
 import com.stainedhead.paperclipmobile.domain.IssueFilter
 import com.stainedhead.paperclipmobile.domain.IssueId
+import com.stainedhead.paperclipmobile.domain.IssuePriority
 import com.stainedhead.paperclipmobile.domain.IssueQuery
 import com.stainedhead.paperclipmobile.testing.WorkFixtures
+import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -23,7 +26,7 @@ class ListIssuesTest {
             val page =
                 ListIssues(
                     env.issues,
-                )(env.scope, IssueQuery(IssueFilter.CriticalAndHigh), WorkFixtures.ME).value()
+                )(env.scope, IssueQuery(IssueFilter.CriticalAndHigh)).value()
 
             page.issues.map { it.identifier } shouldBe listOf("PAP-1160", "PAP-1182", "PAP-1190")
             page.hasMore shouldBe false
@@ -38,9 +41,57 @@ class ListIssuesTest {
             val page =
                 ListIssues(
                     env.issues,
-                )(env.scope, IssueQuery(IssueFilter.CriticalAndHigh, limit = 2), WorkFixtures.ME).value()
+                )(env.scope, IssueQuery(IssueFilter.CriticalAndHigh, limit = 2)).value()
 
             page.hasMore shouldBe true
+        }
+
+    private fun serverPages(): List<Issue> {
+        // Three server pages of five: 1 urgent row, none, then 5 urgent rows.
+        fun row(
+            n: Int,
+            urgent: Boolean,
+        ) = WorkFixtures.issue(
+            "i%02d".format(n),
+            "Row $n",
+            priority = if (urgent) IssuePriority.High else IssuePriority.Low,
+        )
+        return (1..5).map { row(it, urgent = it == 1) } +
+            (6..10).map { row(it, urgent = false) } +
+            (11..15).map { row(it, urgent = true) }
+    }
+
+    @Test
+    fun `critical_and_high_page_fills_across_server_pages`() =
+        runTest {
+            val env = Env()
+            val gateway = FakeIssueGateway(serverPages())
+
+            val page =
+                ListIssues(
+                    gateway,
+                )(env.scope, IssueQuery(IssueFilter.CriticalAndHigh, limit = 5)).value()
+
+            page.issues.map { it.id.value } shouldBe listOf("i01", "i11", "i12", "i13", "i14")
+            page.hasMore shouldBe true
+            page.serverRowCount shouldBe 14
+            gateway.queries.map { it.offset } shouldBe listOf(0, 5, 10)
+        }
+
+    @Test
+    fun `a filtered page that exhausts the server says there is no more`() =
+        runTest {
+            val env = Env()
+            val gateway = FakeIssueGateway(serverPages().take(10))
+
+            val page =
+                ListIssues(
+                    gateway,
+                )(env.scope, IssueQuery(IssueFilter.CriticalAndHigh, limit = 5)).value()
+
+            page.issues.map { it.id.value } shouldBe listOf("i01")
+            page.hasMore shouldBe false
+            page.serverRowCount shouldBe 10
         }
 
     @Test
@@ -48,7 +99,7 @@ class ListIssuesTest {
         runTest {
             val env = Env()
 
-            val page = ListIssues(env.issues)(env.scope, IssueQuery(IssueFilter.AssignedToMe), WorkFixtures.ME).value()
+            val page = ListIssues(env.issues)(env.scope, IssueQuery(IssueFilter.AssignedToMe)).value()
 
             page.issues.map { it.identifier } shouldBe listOf("PAP-1150")
             env.issues.queries
@@ -62,7 +113,7 @@ class ListIssuesTest {
             val env = Env()
             env.issues.failures["list"] = DomainError.Timeout
 
-            val result = ListIssues(env.issues)(env.scope, IssueQuery(), null)
+            val result = ListIssues(env.issues)(env.scope, IssueQuery())
 
             (result as DomainResult.Failure).error shouldBe DomainError.Timeout
             env.issues.count("list") shouldBe 4
@@ -75,7 +126,7 @@ class SearchIssuesTest {
         runTest {
             val env = Env()
 
-            val page = SearchIssues(ListIssues(env.issues))(env.scope, IssueFilter.AllOpen, "  pap1182 ", null).value()
+            val page = SearchIssues(ListIssues(env.issues))(env.scope, IssueFilter.AllOpen, "  pap1182 ").value()
 
             page.issues.map { it.identifier } shouldBe listOf("PAP-1182")
             env.issues.queries
@@ -90,7 +141,7 @@ class SearchIssuesTest {
 
             SearchIssues(
                 ListIssues(env.issues),
-            )(env.scope, IssueFilter.AllOpen, "   ", null).value().issues.size shouldBe
+            )(env.scope, IssueFilter.AllOpen, "   ").value().issues.size shouldBe
                 5
             env.issues.queries
                 .single()

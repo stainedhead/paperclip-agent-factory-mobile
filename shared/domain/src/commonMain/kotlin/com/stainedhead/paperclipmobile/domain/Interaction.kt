@@ -59,10 +59,6 @@ sealed interface Interaction {
     val meta: InteractionMeta
     val kind: InteractionKind
     val isSupported: Boolean get() = this !is UnsupportedInteraction
-
-    /** Pending, unblocked, supported and not addressed to someone else (the creator rule is the server's). */
-    fun canBeResolvedBy(userId: String?): Boolean =
-        isSupported && meta.status.isOpen && !meta.acceptanceBlocked && meta.audience.allowsUser(userId)
 }
 
 data class SuggestTasks(

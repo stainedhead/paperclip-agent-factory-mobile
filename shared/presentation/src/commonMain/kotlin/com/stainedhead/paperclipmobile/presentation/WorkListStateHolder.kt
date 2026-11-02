@@ -120,7 +120,7 @@ class WorkListStateHolder(
                     return@launch
                 }
                 val names = namesOrExisting()
-                val page = useCases.search(companyScope, model.value.filter, model.value.search, userId())
+                val page = useCases.search(companyScope, model.value.filter, model.value.search)
                 when (page) {
                     is DomainResult.Failure -> {
                         model.update { it.copy(error = page.error.toErrorUi(), loading = false) }
@@ -158,7 +158,7 @@ class WorkListStateHolder(
         if (!model.claim({ it.loadingMore }) { it.copy(loadingMore = true) }) return
         scope.launch {
             val next = query(offset = current.serverRows)
-            val page = useCases.list(companyScope, next, userId())
+            val page = useCases.list(companyScope, next)
             model.update {
                 when (page) {
                     is DomainResult.Failure -> {

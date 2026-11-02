@@ -127,6 +127,11 @@ Fix: a Forbidden mutation result triggers ONE resolveContext call (ContextSource
 Red evidence: load_approval_offline_fails_without_backoff 'expected:<0L> but was:<3500L>'; multi_read_use_case_total_wait_is_bounded 'expected:<true> but was:<false>' (a read that recovers after 1.5 s plus a read that never answers waited 5 s). certificate_failure_is_not_retried passes once DomainError.CertificateInvalid exists: with the case split, isTransientFailure() already excludes it, so that test guards the split rather than turning red.
 Fix: ADR-034. RetryBudget (3.5 s per use case), connectivity check, DomainError.CertificateInvalid with ErrorKey.CertificateInvalid, LoadApproval/LoadIssue/LoadInstanceAccess take Connectivity. Phase 1b adapters must map TLS failures to CertificateInvalid.
 
+### 2026-11-01 F-A-12 dead code removed, CriticalAndHigh fills the page (Group 2)
+
+Red evidence: critical_and_high_page_fills_across_server_pages 'Missing elements from index 1: expected [i01, i11, i12, i13, i14] but was [i01]' and the exhausted-server case 'expected:<false> but was:<true>'.
+Fix: ListIssues reads server pages (up to 10) until the page holds the limit of urgent rows or the server runs out; serverRowCount is the number of server rows used so the next page starts right after the last row shown; a later page that fails returns the rows already found with hasMore. Removed the unused userId parameter of ListIssues and SearchIssues (and their callers), the unused DayOfWeek and atStartOfDayIn imports of SnoozeTimes, and the domain function Interaction.canBeResolvedBy with its test (production uses InteractionRenderer.readOnlyReason, which has its own tests). Kept on purpose: DecideBy.toServer (the Phase 1b request mapping), IssueQuery.nextPage (used by the Issue contract), IssueFilter.matches and matchesSearch (the rule the fake shares with tests).
+
 ## Edge cases and solutions
 
 (none yet)
