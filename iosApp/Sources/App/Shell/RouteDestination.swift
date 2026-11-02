@@ -7,6 +7,7 @@ struct RouteDestination: View {
 
     var body: some View {
         switch route {
+        case .manageFactories: ManageFactoriesView(environment: environment)
         default: RoutePlaceholderView(route: route)
         }
     }

@@ -14,6 +14,7 @@ struct ConfirmDestructiveSheet: View {
     let confirmTitle: String
     var issue: DeviceAuthIssue?
     var isWorking = false
+    var cancelTitle = ShellLabel.commonCancel.text
     let onConfirm: () -> Void
     let onCancel: () -> Void
 
@@ -47,7 +48,7 @@ struct ConfirmDestructiveSheet: View {
             .buttonStyle(.app(.destructive))
             .disabled(isWorking)
             .accessibilityIdentifier("confirm-destructive-confirm")
-            Button(ShellLabel.commonCancel.text, action: onCancel)
+            Button(cancelTitle, action: onCancel)
                 .buttonStyle(.app(.secondary))
                 .accessibilityIdentifier("confirm-destructive-cancel")
         }
