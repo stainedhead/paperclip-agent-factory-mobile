@@ -15,7 +15,7 @@ class ResolveCompanyContextTest {
     private val instance = TestData.instance()
 
     private fun Env.resolve() =
-        ResolveCompanyContext(LoadInstanceAccess(repository, auth, signedOut, clock, connectivity))
+        ResolveCompanyContext(LoadInstanceAccess(repository, auth, signedOut, clock, connectivity, locks))
 
     @Test
     fun `the person's role and user id in the chosen company become the context`() =

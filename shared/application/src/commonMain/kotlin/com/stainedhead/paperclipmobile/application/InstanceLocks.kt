@@ -1,6 +1,8 @@
 package com.stainedhead.paperclipmobile.application
 
+import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -21,4 +23,19 @@ class InstanceLocks {
         val lock = registry.withLock { locks.getOrPut(id) { Mutex() } }
         return lock.withLock { block() }
     }
+
+    /**
+     * Changes fields of a factory without writing back a stale copy: under its lock the factory is read again and
+     * [change] is applied to that fresh read, so an address edit or sign out that landed meanwhile survives (F-R-1).
+     * Returns the stored factory, or null when it is gone or [change] returned null (nothing is written then).
+     */
+    suspend fun modify(
+        repository: InstanceRepository,
+        id: InstanceId,
+        change: (Instance) -> Instance?,
+    ): Instance? =
+        withLock(id) {
+            val changed = repository.get(id)?.let(change)
+            changed?.also { repository.update(it) }
+        }
 }

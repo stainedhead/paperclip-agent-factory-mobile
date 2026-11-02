@@ -155,7 +155,7 @@ private fun org.koin.core.module.Module.instanceUseCases() {
     single { RemoveInstance(get(), get(), get(), get(), get()) }
     single { ObserveInstances(get()) }
     single { SwitchInstance(get(), get()) }
-    single { SwitchCompany(get()) }
+    single { SwitchCompany(get(), get()) }
     single { BuildInstanceLink() }
     single { ParseAddLink() }
 }
@@ -163,13 +163,13 @@ private fun org.koin.core.module.Module.instanceUseCases() {
 private fun org.koin.core.module.Module.authUseCases() {
     single { PairInstance(get(), get(), get(), get(), get(), get()) }
     single { SaveManualBoardKey(get(), get(), get()) }
-    single { LoadInstanceAccess(get(), get(), get(), get(), get()) }
+    single { LoadInstanceAccess(get(), get(), get(), get(), get(), get()) }
     single { SignOutInstance(get(), get(), get(), get()) }
     single { SignOutEverywhere(get(), get()) }
     single { ListBoardKeys(get(), get(), get()) }
     single { RevokeBoardKey(get(), get(), get(), get()) }
     single { KeyExpiryStatus(get()) }
-    single { CheckCredentials(get(), get()) }
+    single { CheckCredentials(get(), get(), get()) }
 }
 
 private fun org.koin.core.module.Module.settingsUseCases() {

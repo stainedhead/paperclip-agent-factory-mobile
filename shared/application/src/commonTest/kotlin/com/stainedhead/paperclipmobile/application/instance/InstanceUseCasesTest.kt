@@ -320,9 +320,9 @@ class InstanceUseCasesTest {
             env.settings.current.selectedInstanceId shouldBe InstanceId("a")
             SwitchInstance(env.repository, env.settings)(InstanceId("zzz")) shouldBe SwitchResult.NotFound
 
-            SwitchCompany(env.repository)(InstanceId("a"), CompanyId("c2")) shouldBe SwitchResult.Switched
+            SwitchCompany(env.repository, env.locks)(InstanceId("a"), CompanyId("c2")) shouldBe SwitchResult.Switched
             env.repository.get(InstanceId("a"))?.lastCompanyId shouldBe CompanyId("c2")
-            SwitchCompany(env.repository)(InstanceId("zzz"), CompanyId("c2")) shouldBe SwitchResult.NotFound
+            SwitchCompany(env.repository, env.locks)(InstanceId("zzz"), CompanyId("c2")) shouldBe SwitchResult.NotFound
         }
 
     @Test

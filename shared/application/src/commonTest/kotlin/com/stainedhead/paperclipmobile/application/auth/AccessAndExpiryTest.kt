@@ -21,7 +21,7 @@ import kotlin.time.Duration.Companion.hours
 class AccessAndExpiryTest {
     private val instance = TestData.instance()
 
-    private fun Env.load() = LoadInstanceAccess(repository, auth, signedOut, clock, connectivity)
+    private fun Env.load() = LoadInstanceAccess(repository, auth, signedOut, clock, connectivity, locks)
 
     @Test
     fun `FR-022 access lists the companies with the role in each`() =
@@ -102,7 +102,7 @@ class AccessAndExpiryTest {
         runTest {
             val env = Env(listOf(instance))
             env.storeToken()
-            val check = CheckCredentials(env.repository, env.secrets)
+            val check = CheckCredentials(env.repository, env.secrets, env.locks)
 
             check(instance.id) shouldBe CredentialState.Usable
             env.secrets.denyReads = true
@@ -119,8 +119,8 @@ class AccessAndExpiryTest {
         runTest {
             val env = Env(listOf(instance))
 
-            CheckCredentials(env.repository, env.secrets)(instance.id) shouldBe CredentialState.Missing
+            CheckCredentials(env.repository, env.secrets, env.locks)(instance.id) shouldBe CredentialState.Missing
             env.secrets.put(SecretKey(instance.id, SecretName.BoardToken), Secret.of("x"), SecretPolicy(false))
-            CheckCredentials(env.repository, env.secrets)(instance.id) shouldBe CredentialState.Usable
+            CheckCredentials(env.repository, env.secrets, env.locks)(instance.id) shouldBe CredentialState.Usable
         }
 }

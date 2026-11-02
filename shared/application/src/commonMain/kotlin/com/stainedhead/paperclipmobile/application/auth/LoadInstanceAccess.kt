@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.auth
 
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.RetryBudget
 import com.stainedhead.paperclipmobile.application.retryingRead
 import com.stainedhead.paperclipmobile.domain.Company
@@ -28,6 +29,7 @@ class LoadInstanceAccess(
     private val signedOut: SignedOutMarker,
     private val clock: Clock,
     private val connectivity: Connectivity,
+    private val locks: InstanceLocks,
 ) {
     suspend operator fun invoke(instanceId: InstanceId): DomainResult<InstanceAccess> {
         val budget = RetryBudget(connectivity)
@@ -40,7 +42,7 @@ class LoadInstanceAccess(
         val access = (me as DomainResult.Success).value
         val roles = access.memberships.associate { it.companyId to it.role }
         val fallback = if (access.profile.isInstanceAdmin) Role.Owner else Role.Viewer
-        repository.get(instanceId)?.let { repository.update(it.copy(lastConnectedAt = clock.now())) }
+        locks.modify(repository, instanceId) { it.copy(lastConnectedAt = clock.now()) }
         return DomainResult.Success(
             InstanceAccess(
                 profile = access.profile,

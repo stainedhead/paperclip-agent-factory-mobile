@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.instance
 
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
@@ -53,13 +54,13 @@ class SwitchInstance(
 /** Remembers which company was last open in a factory (PRD FR-007). */
 class SwitchCompany(
     private val repository: InstanceRepository,
+    private val locks: InstanceLocks,
 ) {
     suspend operator fun invoke(
         instanceId: InstanceId,
         companyId: CompanyId,
     ): SwitchResult {
-        val instance = repository.get(instanceId) ?: return SwitchResult.NotFound
-        repository.update(instance.copy(lastCompanyId = companyId))
-        return SwitchResult.Switched
+        val stored = locks.modify(repository, instanceId) { it.copy(lastCompanyId = companyId) }
+        return if (stored == null) SwitchResult.NotFound else SwitchResult.Switched
     }
 }
