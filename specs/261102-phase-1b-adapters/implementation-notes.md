@@ -334,3 +334,52 @@ The previous milestone read `~/Code/Test/paperclip` (a newer dev tree). Everythi
 ## Tests
 
 JUnit XML of the final run (see the report for the module by target table); module `shared/infrastructure/api`: 299 tests on each of JVM, Android host and iOS simulator (0 failed, 0 skipped); Konsist 55 (all modules); Swift Testing in the app host 44 tests in 8 suites (including the 8 Keychain and 3 device-service tests) plus 1 XCUITest, all passed. New or changed this milestone: Dashboard 11, Agent 18, Run 17, Issue reads 14, writes 15, attachments 9, Interaction 21, binary client 5, stub fidelity 5, audit 5 (was 4), mapper 3 (was 2). Kover from a fresh XML: Core 97.98% (2568 of 2621 lines), Presentation 98.02%; the infrastructure modules are outside the gates.
+
+## 1b-5a live graph (AD-040, AD-041)
+
+### Order and commits
+
+bb6a689 engine closed with the client (red first) · 085ba3c live graph core, `LivePlatform`, first-launch and lifecycle tests · 4355d48 end-to-end flows through state holders · a187291 Konsist rule (reached the remote with one detekt line-length failure, fixed by f3ce846; the commit was made after a failing gate because the gate command was piped into `tail`, whose exit code hid the failure) · 1e6dc7f public `createLiveGraph`, iOS/JVM/Android platforms, iOS and Android tests · 684ab90 `CallbackPairingBrowser` and `PairingBrowsers` · d8fb5ce Swift Testing suite (cross-ownership edit: a new test file under `iosApp/Tests/iosAppTests`, nothing in `iosApp/Sources`).
+
+### Decisions (reasons in ADR-067 to ADR-070)
+
+- Internal `LivePlatform` seam plus `expect fun defaultLivePlatform()`; the public member sits first in `PaperclipCore` to keep the diff away from where the 2i stream appends; `PaperclipGraph` got an optional resource closer and `close()`.
+- The live flows are JVM tests only (the stub is copied into the umbrella's `jvmTest` compilation, not into the other targets); iOS gets a simulator test of the wiring and the Swift suite; Android host gets the refusal test.
+- `LiveIosGraph` takes an `IosLiveSettings` data class (detekt allows 6 parameters; Swift-facing API avoids default arguments).
+- The sqlite3 link flag is needed (research L4).
+- `CallbackPairingBrowser` lives in `infrastructure/api` because the Konsist rule restricts `Secret.reveal()` to infrastructure; the first attempt in the umbrella failed that rule and the first attempt to pass the `Secret` to Swift failed to compile (`reveal` is hidden from Objective-C).
+
+### Deviations from the brief
+
+- The brief's `createLiveGraph(...)` "in iosMain": the public two-argument member is in common code (same surface on every platform, platform chosen by `defaultLivePlatform()`); the iOS-only entry for a chosen folder and Keychain service is `LiveIosGraph`.
+- The Swift test probes `http://localhost:<port>`, not `127.0.0.1`: the allow-list (security rule) does not include the numeric address and was not widened.
+- The Swift test does not drive pairing, inbox or decide (the loopback server answers only `GET /api/health`); those flows are proven on the JVM stub. "Sign out removes the Keychain item" is proven on `FakeSecretStore`, not on a scripted Keychain backend, which is internal to `securestore` (research L7).
+- Added beyond the brief: the engine-closing fix in `PaperclipHttpClient`, `CallbackPairingBrowser` / `PairingBrowsers`, `newEngine()` and `isStubUuid` in the stub, and the `lifecyclePorts()` split in `SliceThreeModules.kt` (small edits outside the live files).
+
+### Red evidence (honest)
+
+- Engine close: `PaperclipHttpClientCloseTest.closing the client closes the engine it was built on` failed (the engine's `Job` stayed active), then `engine.close()` made it pass.
+- Live graph: the first run of `LiveGraphTest` failed to compile (`Unresolved reference 'LivePlatform'`, `'createLiveGraph'`: compile-red). With `signalPorts()` wired into the live module, `every port the graph resolves is a real adapter...` failed (1 of 3 failed: `FakeLiveEvents` was bound); replacing it made it pass. `AD-041 an empty database yields an empty factory list` and `closing the graph twice...` passed on the first run once the code compiled; the first-launch test was strengthened afterwards because the holders' default state is already "empty" (it now waits for the device name, which only a database answer provides).
+- Flows: `LiveFlowsTest` failures during development were all test-side (a holder that had not loaded when an intent was sent, a flow awaited under virtual time, a closed shared engine: which led to `StubPaperclipServer.newEngine()`); production code did not change for them. Probe, journey, relaunch, moved address and insecure-local tests passed once written correctly, so they were not individually shown to fail against a missing feature.
+- Konsist: the rule failed on its first run for a real finding (`PlatformServices.kt` imports the testing module), then the file set was narrowed and documented. Mutation: binding `signalPorts()` in `LiveModules.kt` made the rule fail (reverted).
+- Mutation checks on the graph: skipping `platform.release()` (2 tests failed), skipping `persistence.close()` (1 failed), removing the idempotence guard (2 failed); each reverted.
+- iOS: `LiveIosGraphTest` first failed to compile (`Unresolved reference`, then a comma in a test name); the Swift suite failed to compile three times (protocol conformance of `PairingBrowser`, `Secret.reveal`, an enum case spelling) before passing. These are compile-reds; the Swift tests were not run against a deliberately broken implementation, except that the loopback test would fail if `local_trusted` were not refused (not mutated).
+- Linking: removing `-lsqlite3` made the umbrella test link fail (research L4).
+
+### Edge cases
+
+- Closing a graph while screens are live throws in teardown; tests close holders first.
+- A shared MockEngine cannot be reused by a second graph once the first closed its client; the stub hands out a new engine per client.
+- A Kotlin/Native test name cannot contain a comma.
+- `FactoriesStateHolder` loads companies only on `Refresh`; the first-run flow does not trigger it.
+
+### Not covered / not verified
+
+- No real server; no real TLS through Darwin or OkHttp; no pairing or sign-out through the real Keychain via the live graph; no device; Face ID and the passcode prompt (simulator offers no enrolment); the release-mode framework size.
+- The live flows (pair, inbox, decide, relaunch) are not repeated on Android host or the iOS simulator; the Swift suite covers probe and creation on the simulator.
+- Android has no live platform (ADR-069).
+
+### Tests (from JUnit XML after the final `check lint`)
+
+`shared/umbrella`: JVM 46, Android host 34, iOS simulator 34, Konsist 58 (all modules' rules; was 55), 0 failed, 0 skipped. `shared/infrastructure/api`: 303 on each of JVM, Android host and iOS simulator (299 before). All shared modules together: JVM 1227, Android host 1203, iOS simulator 1238, Konsist 58. Kover from a fresh XML: Core 97.98% (2568 of 2621 lines, unchanged), Presentation 98.02% (4217 of 4302). Swift Testing in the app host: 48 tests in 9 suites (was 44), plus 1 XCUITest; all passed. Framework size: research L9.
+

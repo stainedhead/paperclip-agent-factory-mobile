@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Not Started |
 | Phase 2 Architecture and plan | Not Started |
 | Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation | In Progress (1b-1, 1b-2, 1b-3, 1b-4 done) |
+| Phase 4 Implementation | In Progress (1b-1, 1b-2, 1b-3, 1b-4, 1b-5a done) |
 | Phase 5 Completion and archive | Not Started |
 
 ## Phase 0 checklist
@@ -31,6 +31,8 @@ Update this file after every task and phase. It is the single source of progress
   - [x] 1b-4a Attention, decision, approval, budget (AD-012, AD-014 for these four)
   - [x] 1b-4b Issue, interaction, agent, run, dashboard (AD-013, AD-014), after re-verifying 1b-4a against the pinned dist (TASK 0)
 - [ ] 1b-5 Live graph, contract test against the pinned server in CI, documentation (AD-040, AD-041, AD-050, AD-051)
+  - [x] 1b-5a Live graph (AD-040, AD-041)
+  - [ ] 1b-5b Contract test source set and CI (AD-050, AD-051), documentation closing
 
 
 
@@ -46,4 +48,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: milestone 1b-3 done (AD-030 to AD-033): `KeychainSecretStore` (decisions tested with a scripted backend and the shared contract; the real Keychain tested in the iOS app test host), `LocalAuthenticationBiometrics`, `NwConnectivity`, `SystemClock`, `UuidIdGenerator`, `SystemDeviceTimeZone`, `UnavailableSecretStore`/`UnavailableBiometrics`/`OptimisticConnectivity` for Android and the JVM, Konsist rules, ADR-050 to ADR-053. `scripts/ios-test.sh` signs ad hoc (the Keychain needs it). Commits are listed in implementation-notes.md.
 - 2026-11-02: milestone 1b-4a done (AD-012, AD-014 for four gateways): `BudgetGatewayAdapter` (70652a5), `ApprovalGatewayAdapter` (8ccea04), `DecisionGatewayAdapter` (ab05f55), `AttentionGatewayAdapter` (9a83e13), company-scoped audits (49afae2). The Budget, Approval, Decision, Attention feed and triage contract suites run unchanged through thin subclasses on JVM, Android host and iOS simulator. ADR-054 to ADR-059. Fixtures are written from server source, not recorded.
 - 2026-11-02: milestone 1b-4b done (AD-013, AD-014 for five gateways), after TASK 0 (1b-4a re-verified against the pinned dist: exponent number literals fixed in `ceilToCents` (c762ed9), five stub differences fixed (265738a)): `DashboardGatewayAdapter` (da28e82), `AgentGatewayAdapter` (ff96f3f), `RunGatewayAdapter` (fe91181, byte reads with Range in the client 149ba34), `IssueGatewayAdapter` (5ede000), `InteractionGatewayAdapter` (a95095b), audits (9a4714c). The Dashboard, Agent, Run read and write, Issue read and write, and Interaction contract suites run unchanged through thin subclasses on JVM, Android host and iOS simulator. ADR-060 to ADR-066. Container contract run still CI only (1b-5).
-
+- 2026-11-02: milestone 1b-5a done (AD-040, AD-041): `PaperclipCore.createLiveGraph` on an internal `LivePlatform` (iOS device services, fail-closed JVM, Android refused), `PaperclipGraph.close()`, `LiveIosGraph`, `PairingBrowsers.fromCallback`, a Konsist rule against fakes in `Live*.kt`, JVM end-to-end flows through state holders on the stub server and a real SQLite file, iOS simulator and Android host tests, and a Swift Testing suite with a real loopback health probe. Engine-closing fix in `PaperclipHttpClient`. ADR-067 to ADR-070. The container contract run (1b-5b) is still to do.

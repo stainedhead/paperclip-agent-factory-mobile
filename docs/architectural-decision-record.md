@@ -435,3 +435,32 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** A dashboard with a missing, negative or non-integer count, or money that is not a number, is Malformed, not a tile of zeros. Window spend prefers `costCentsExact` (text) over the double next to it, rounds each row up to whole cents, and keeps rows of windows the app does not know for the domain to ignore. The agent list sends no query (the server answers 400 to any), maps an unknown status to `Unknown`, and fails as a whole if one row is unreadable (ADR-059). A wake answers 202 with either the started run or `{status:"skipped"}`; anything else is Malformed. A budget over 2,147,483,647 cents or in another currency is refused before any request, as for incidents. The reply of a pause or resume is mapped as sent; whether its month spend is the hydrated figure is not verified.
 **Consequences.** After a pause the Agents tab should reload the list for the month figure.
+
+## ADR-067: The live graph is built on an internal `LivePlatform`, and the stub server is shared by copying its sources
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** `PaperclipCore.createLiveGraph(allowInsecureLocal, pairingBrowser)` builds the graph from an internal `LivePlatform` (clock, ids, time zone, `SecretStore`, `Biometrics`, `Connectivity`, `PaperclipPersistence`, the HTTP client factory and `release()`). The public overload gets its platform from `defaultLivePlatform()` (`expect`/`actual`); an internal overload takes one explicitly, which is the test seam and what `LiveIosGraph` uses. The interface is internal because it carries database and Ktor types that must not appear in the Swift header. The live-graph tests need the pinned-server stand-in that lives in the API module's test source set: the `sharedStubSources` task in `shared/umbrella/build.gradle.kts` copies only `Stub*.kt` and `*Fixtures.kt` into the umbrella's JVM test compilation. The stub no longer calls the adapter's `isServerId` (it has `isStubUuid`) and offers `newEngine()` because a client now closes the engine it is given.
+**Consequences.** The stub is compiled twice and the live flows are JVM tests (`jvmTest`); on Android host and iOS they are not repeated. Moving the stub to a published test-fixtures module would need its internal types made public and is not worth it yet. Rejected: a public platform interface (leaks types to Swift); copying the whole API test source set (the adapter suites would run again inside the umbrella).
+
+## ADR-068: No fake in the live graph, polling instead of live events, and one close that runs once
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** The live ports module binds only adapters and platform pieces. `LiveEvents` is a "polling only" object with an empty flow, because the pinned server rejects board keys on the WebSocket; the refresh policy then works from its timer and from coming back online or to the foreground (`LiveRefreshTest`). `signalPorts()` (which bound `FakeLiveEvents`) was split: `lifecyclePorts()` is shared, the fake event binding stays with the fake graphs. Two checks keep fakes out: a Konsist rule that no `Live*.kt` file imports `shared.testing` or calls `portsModule`, `demoPortsModule`, `sliceThreePorts` or `signalPorts` (with a self-test that the files are selected and the predicate flags a synthetic import), and `LiveGraphTest`, which resolves ports from a live graph and checks none belongs to the testing package. `PaperclipGraph.close()` is idempotent and releases the HTTP client (now also its engine), the database, then the platform, each once, even if one step throws. An empty database is the first-run state; nothing is seeded (AD-041).
+**Consequences.** A file named `PlatformServices.kt` (the iOS Keychain contract hook, which imports the testing module on purpose) is deliberately outside the rule. Holders must be closed before the graph.
+
+## ADR-069: Platform actuals: iOS real, JVM fails closed, Android refused
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** iOS builds `KeychainSecretStore`, `LocalAuthenticationBiometrics`, `NwConnectivity`, the system clock, UUID ids, the device time zone and `openIosPersistence` (default folder `Application Support/PaperclipData`, excluded from backups). Its first argument set comes from `IosLiveSettings` (Keychain service, data folder, localized prompt texts) through `LiveIosGraph.createLiveGraph`; the two-argument public call uses the app's service, the default folder and English texts. The JVM default is `UnavailableSecretStore`, `UnavailableBiometrics`, `OptimisticConnectivity` and an in-memory database: pairing fails (the key cannot be stored) and no destructive action is approved. Android has no `Context` and no Keystore yet, so `createLiveGraph` throws `IllegalStateException` there instead of running on a pretend secret store.
+**Consequences.** An Android build that calls it crashes at start-up, which is the right signal until the Android app phase supplies its platform. The device-service decisions were already tested in 1b-3; the new tests prove only the wiring.
+
+## ADR-070: The pairing browser is supplied as a callback
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** `PairingBrowser` is a Kotlin suspend interface and `Secret.reveal()` is hidden from Swift, so a Swift class could neither read the approval address nor implement the method without the `__open` name SKIE generates (which fails SwiftLint and swift-format). `CallbackPairingBrowser` (in `infrastructure/api`, the only place that may reveal the address) turns a closure `(approvalUrl: String, finished: () -> Unit)` into the port; `PairingBrowsers.fromCallback` exposes it through the umbrella. The `finished` call ends the wait, cancelling the pairing cancels it, and a second call is harmless. The address is a secret, so the app opens it and does not log or keep it.
+**Consequences.** `CallbackPairingBrowser` is on the API module's public-surface allow-list. The real `ASWebAuthenticationSession` implementation belongs to the iPhone UI stream.
+
