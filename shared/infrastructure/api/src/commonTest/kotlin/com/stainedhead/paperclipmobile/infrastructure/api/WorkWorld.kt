@@ -50,6 +50,7 @@ class WorkWorld(
     val attention = AttentionGatewayAdapter(client, instances, secrets)
     val dashboard = DashboardGatewayAdapter(client, instances, secrets)
     val agents = AgentGatewayAdapter(client, instances, secrets)
+    val runs = RunGatewayAdapter(client, instances, secrets)
 
     init {
         server.issueKey(HOME, TestData.TOKEN, KEY_ID, "Alex's iPhone", roles)

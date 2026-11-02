@@ -110,6 +110,8 @@ internal class StubWork(
     val attention = StubAttention(clock)
     val dashboard = StubDashboard()
     val runs = StubRuns()
+    val runHandlers = StubRunHandlers(runs)
+    val issues = StubIssues(runs)
     val agents = StubAgents(runs, clock)
 
     fun handle(request: StubRequest): StubReply? {
@@ -119,6 +121,7 @@ internal class StubWork(
         }
         return budgets.handle(request) ?: approvals.handle(request) ?: decisions.handle(request)
             ?: attention.handle(request) ?: dashboard.handle(request) ?: agents.handle(request)
+            ?: runHandlers.handle(request) ?: issues.handle(request)
     }
 
     private companion object {
