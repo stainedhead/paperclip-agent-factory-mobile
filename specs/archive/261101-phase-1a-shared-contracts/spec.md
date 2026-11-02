@@ -1,7 +1,10 @@
 # Specification: Phase 1a shared contracts
 
+> **Corrections after review (2026-11-01).** Checked against the code by review finding F-D-3: Status is no longer Draft; acceptance criterion 14 names the rule that was built; "Clock only" admits the `delay` timers of ADR-027; the use case count is 71; the `createGraph` mode parameter was dropped; the 403 and timeout wording follows the review fixes (ADR-032, ADR-034); `Unsupported(kind)` is now spelled as the real cases. Nothing else was changed.
+
+
 **Feature:** domain model, ports, use cases, presentation state holders, fakes and demo data for the shared Kotlin core
-**Created:** 2026-11-01 · **Status:** Draft · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts/`
+**Created:** 2026-11-01 · **Status:** Built and archived (Phase 1a complete; review fixes tracked in `specs/261101-phase-1a-shared-contracts-auto-review/`) · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts/`
 **Parent plan:** [../261101-iphone-app/plan.md](../../261101-iphone-app/plan.md) section 4, slices 1a-1 to 1a-4
 
 ## 1. Executive summary
@@ -50,7 +53,7 @@ Functional requirements are the PRD's, scoped to what Phase 1a delivers. IDs are
 
 ## 5. Differences found between the PRD and the pinned server (Paperclip 2026.1023.0)
 
-Read from the server's shared type definitions. The PRD should be updated as part of this phase (task P0.2).
+Read from the server's shared type definitions. The PRD was updated as part of this phase (task P0.2; the remaining items were done in review fix F-D-4).
 
 1. **No `decideNowCount`; decided: match the web app.** The attention feed returns `deskBadgeCount` (items new today or with a `decideBy` due or overdue), `totalCount` and `countsBySourceKind`. The badge shows `deskBadgeCount`. "Decide now" is `decideBy` due today or past only (no severity rule), mirroring the server's `isDecideNow`, with `isNewToday` and UTC day boundaries mirrored in domain tests. FR-030 and FR-032 are corrected in the PRD (done), and `decideBy` is a string: `today`, `this_week`, `whenever`, a `YYYY-MM-DD` date, or null.
 2. **Eleven attention source kinds**, not the short list the PRD implies: `approval`, `decision`, `issue_thread_interaction`, `join_request`, `recovery_action`, `productivity_review`, `blocker_attention`, `review`, `failed_run`, `budget_alert`, `agent_error_alert`. Kinds the app cannot act on open "Open in web app".
@@ -63,10 +66,10 @@ Read from the server's shared type definitions. The PRD should be updated as par
 
 Each item below becomes a named test in the slice that owns it.
 
-**External API failures (FR-095 to FR-097).** `DomainError` is a sealed taxonomy: `Unreachable`, `Timeout`, `Unauthorized` (401, instance shown as "Signed out", config kept), `Forbidden` (403, "no permission in <company>"), `NotFound`, `Conflict` (stale or already resolved), `Rejected(reason)` (422, with the server's reason, for example budget incidents), `ServerError`, and `Malformed` (unparseable body). Reads retry with exponential backoff, at most 3 times. A mutation is never retried; after a timeout the use case re-reads the entity and the screen shows its true state.
-**Empty and null.** Empty attention feed; null `decideBy`, `subject.title`, `detail`, `snoozedUntil`; a company with no agents or issues; an account with no companies; zero configured factories (first run); offline with an empty cache (explain, do not show a blank screen); unknown enum values from a newer server map to `Unsupported(kind)`, never a crash.
+**External API failures (FR-095 to FR-097).** `DomainError` is a sealed taxonomy: `Unreachable`, `Timeout`, `Unauthorized` (401, instance shown as "Signed out", config kept), `Forbidden` (403, "no permission in <company>"), `NotFound`, `Conflict` (stale or already resolved), `Rejected(reason)` (422, with the server's reason, for example budget incidents), `ServerError`, and `Malformed` (unparseable body). Reads retry with exponential backoff, at most 3 times per read, within a per-use-case wait budget (ADR-034). A mutation is never retried; after a timeout the use case re-reads the entity and the screen shows its true state; if the re-read cannot show whether this call took effect the result is `Unknown` and the screen reloads (ADR-032).
+**Empty and null.** Empty attention feed; null `decideBy`, `subject.title`, `detail`, `snoozedUntil`; a company with no agents or issues; an account with no companies; zero configured factories (first run); offline with an empty cache (explain, do not show a blank screen); unknown enum values from a newer server map to an `Unsupported` case (for example `UnsupportedInteraction`, `AttentionSourceKind.Unsupported`), never a crash.
 **Races and concurrent changes.** A decision or approval resolved elsewhere between load and confirm shows its final state with no options (FR-044); a decision effect that is stale is reported per effect as `skipped` or `failed`, not as overall failure; a second tap on a confirming button is ignored while a mutation is in flight; a dismissal undo racing a refresh restores the item exactly once; two screens showing the same entity stay consistent through the cache.
-**Permission boundaries.** Viewer: no mutation use case calls the gateway. Operator: cannot raise a budget or set an agent budget (owner only). An interaction whose `resolverAudience` excludes the user is shown read-only. A 403 after a role change mid-session returns `Forbidden`, refreshes the role and does not retry.
+**Permission boundaries.** Viewer: no mutation use case calls the gateway. Operator: cannot raise a budget or set an agent budget (owner only). An interaction whose `resolverAudience` excludes the user is shown read-only. A 403 after a role change mid-session returns `Forbidden`, refreshes the role (once, for a mutation or a read) and does not retry. Built in review fixes F-D-2.
 **Device authentication.** If `Biometrics` is cancelled, fails or is locked out, the action does not run and no gateway call is made. An invalidated key moves the instance to "needs re-pairing" and never falls back to unprotected storage.
 **Time.** Day boundaries use UTC to match the server (`isNewToday`, `isDecideNow`); the midnight edge is tested; "Updated <time>" uses the feed's `generatedAt` when present, otherwise the `Clock` port.
 
@@ -77,7 +80,7 @@ Each item below becomes a named test in the slice that owns it.
 - All user-facing text is a key, not prose; the shared layer never builds localized strings.
 - Public surface used from Swift avoids generics, default arguments and `Result`, and avoids `new/alloc/copy/init` prefixes (existing Konsist rules).
 - A mutation is never retried automatically; a use case that times out re-reads the entity (FR-096).
-- Time comes from the `Clock` port only (deterministic tests).
+- Time comes from the `Clock` port (deterministic tests). Timers (polling, the undo window, the pairing wait) use coroutine `delay` instead, so tests run in virtual time (ADR-027); this deviates from "Clock only".
 
 ## 7. System architecture
 
@@ -86,7 +89,7 @@ Layers and modules are unchanged from Phase 0. New code lands in:
 | Module | New contents |
 |---|---|
 | `shared/domain` | entities, value objects, ports, `DomainError`, `Role`, `Permissions`, `DeviceAuthPolicy` |
-| `shared/application` | use cases (about 45), grouped by feature package |
+| `shared/application` | use cases (71 `operator fun invoke` declarations, use cases and policies), grouped by feature package |
 | `shared/presentation` | 16 state holders, state and intent types, UI models, error-key mapping |
 | `shared/testing` | one fake per port, fixtures, `DemoData`, contract-test base classes |
 | `shared/umbrella` | Koin modules wiring everything; a `DemoGraph` that builds the graph on fakes |
@@ -99,7 +102,7 @@ Create: the packages above under `shared/*/src/commonMain` and `commonTest`; Kon
 
 ## 9. Breaking changes
 
-None to users. `PaperclipCore.createGraph(allowInsecureLocal:)` gains a mode parameter (demo or live); the Phase 0 iOS shell is updated in the same pull request that changes it.
+None to users. `PaperclipCore.createGraph(allowInsecureLocal:)` keeps its signature; the planned demo or live mode parameter was dropped. The demo graph is a separate entry point, `PaperclipCore.createDemoGraph()`, and `createGraph` stays fakes-backed until Phase 1b (ADR-037).
 
 ## 10. Success criteria and acceptance criteria
 
@@ -116,7 +119,7 @@ None to users. `PaperclipCore.createGraph(allowInsecureLocal:)` gains a mode par
 11. With the `Connectivity` fake offline, reads show cached data with its timestamp and every mutation intent is disabled with an explanation key.
 12. A decision or approval that was resolved elsewhere shows its final state and no options.
 13. A table of `decideBy` cases (`today`, `this_week`, `whenever`, past date, today's date, null) and `createdAt` values, including the UTC midnight boundary, gives the same grouping and badge inputs as the server rules (research Q1).
-14. A Konsist rule restricts callers of `Secret.reveal()` to the API auth plugin.
+14. A Konsist rule restricts callers of `Secret.reveal()` to infrastructure (where the API auth plugin will live), the testing fakes and `Secret` itself (`PortAndSecretRulesTest`). Reworded after review: the rule was never written for one named plugin, because that module has no sources in Phase 1a.
 
 ## 11. Risks and mitigation
 
@@ -124,7 +127,7 @@ None to users. `PaperclipCore.createGraph(allowInsecureLocal:)` gains a mode par
 |---|---|
 | Domain model drifts from the real server types | Model from the server's shared types (section 5); Phase 1b contract tests per DTO |
 | 16 state holders are a lot of surface to export to Swift | Review the SKIE output per slice; keep UI models plain data classes |
-| Sealed hierarchies explode (attention details, interactions, effects) | Model only what screens render; keep an `Unsupported(kind)` branch |
+| Sealed hierarchies explode (attention details, interactions, effects) | Model only what screens render; keep an `Unsupported` branch |
 | Fakes drift from real adapters | Shared contract suites; fakes extend them |
 | Large phase delays the UI | Slices 1a-1 to 1a-4 each merge on their own; UI streams start per slice |
 | Domain mirrors of `isDecideNow` and `isNewToday` drift from the server | Table-driven tests copied from the web app's cases; Phase 1b contract test against the pinned server |

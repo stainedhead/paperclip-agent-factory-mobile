@@ -1,5 +1,8 @@
 # Data dictionary: Phase 1a shared contracts
 
+> **Corrections after review (2026-11-01).** `Unsupported(kind)` for interactions is `UnsupportedInteraction` in code (review finding F-D-6); `Secret.reveal()` callers are as the Konsist rule defines them (F-D-3). The rest of the file is the Phase 1a draft and is not a complete listing; the code and `docs/technical-details.md` are authoritative.
+
+
 **Purpose:** the shared domain types, ports and enumerations. Names follow the server's types where one exists (verified against `@paperclipai/shared` 2026.1023.0). Status: draft, refined in research and architecture phases.
 
 ## Value objects
@@ -8,7 +11,7 @@
 |---|---|
 | `BaseUri` | exists (Phase 0): https only, localhost/10.0.2.2 http in debug, no user info, no query |
 | `InstanceId`, `CompanyId`, `AgentId`, `IssueId`, `RunId`, `ApprovalId`, `DecisionId` | opaque string ids, non-blank |
-| `Secret` | wraps a string; `toString()` prints `Secret(***)`; no accessor that returns text except `reveal()` used only by the API auth plugin |
+| `Secret` | wraps a character array; `toString()` prints `Secret(***)`; no accessor that returns text except `reveal()`, called only from infrastructure and the testing fakes (Konsist); `startsWith` compares in place |
 | `Money` | integer cents plus currency; arithmetic never loses precision; formatting is a presentation concern |
 | `Severity` | `critical`, `high`, `medium`, `low` (server order) |
 | `Role` | `owner`, `operator`, `viewer` |
@@ -28,7 +31,7 @@
 | `Approval` | `id`, `type`, `status`, `payload` by type, requester, linked issues, comments |
 | `BudgetIncident` | scope, observed spend, limit, status |
 | `Issue` | `id`, `identifier`, title, `status`, `priority`, assignee, project, parent, subtasks |
-| `Interaction` | sealed by kind (see enumerations) plus `Unsupported(kind)` |
+| `Interaction` | sealed by kind (see enumerations): five supported kinds plus `UnsupportedInteraction` (also for `connection_intent`); `InteractionKind.Unsupported(raw)` keeps the unknown server string |
 | `Agent` | `id`, name, role, `status`, `lifecycleState`, reports-to, current issue, month spend, budget |
 | `HeartbeatRun` | `id`, `status`, started, duration, events, log tail |
 | `DashboardSummary`, `SpendWindow` | tiles and rolling spend (5 h, 24 h, 7 d) |

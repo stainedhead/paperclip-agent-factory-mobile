@@ -1,5 +1,8 @@
 # Architecture: Phase 1a shared contracts
 
+> **Corrections after review (2026-11-01).** Decision (4) names the callers the Konsist rule really allows (review finding F-D-3).
+
+
 **Date:** 2026-11-01 · **Status:** Draft
 
 ## Architecture overview
@@ -163,4 +166,4 @@ Ports listed in the data dictionary. Phase 1b implements them; contract suites m
 
 ## Architectural decisions
 
-Recorded in `docs/architectural-decision-record.md` as they are made. Decided now: (1) sealed `Unsupported` branches for unknown server kinds; (2) device authentication is enforced inside the use case through the `Biometrics` port, never in the UI; (3) state holders take an injected `CoroutineScope` and a `Clock`, run use cases in that scope, and cancel it from a `close()` that the platform calls when the screen goes away; (4) `Secret.reveal()` is callable only from the API auth plugin, enforced by a Konsist rule. Sequence diagrams for slice 1a-2 are above; pause agent and polling refresh follow with slice 1a-3. Slice 1a-2 decisions: ADR-015 to ADR-020.
+Recorded in `docs/architectural-decision-record.md` as they are made. Decided now: (1) sealed `Unsupported` branches for unknown server kinds; (2) device authentication is enforced inside the use case through the `Biometrics` port, never in the UI; (3) state holders take an injected `CoroutineScope` and a `Clock`, run use cases in that scope, and cancel it from a `close()` that the platform calls when the screen goes away; (4) `Secret.reveal()` is callable only from infrastructure (the API auth plugin will live there), the testing fakes and `Secret` itself, enforced by a Konsist rule. Sequence diagrams for slice 1a-2 are above; pause agent and polling refresh follow with slice 1a-3. Slice 1a-2 decisions: ADR-015 to ADR-020.

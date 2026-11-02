@@ -41,7 +41,13 @@ The exported surface used from Swift is only the six state holders, their state/
 
 ## Lessons learned
 
-(none yet)
+Recorded after the review (2026-11-01, review finding F-D-3):
+
+- **Test first is only as good as its evidence.** Domain was test first; application and presentation of slice 1a-1 were written in the same pass as their tests and checked by running them and by mutation spot checks. The history cannot show a red run, so the review fix spec records red evidence per commit. Write the red run into the commit body when it happens.
+- **A passing guard that cannot fail proves nothing.** Several checks counted as evidence without being able to fail (the traceability rule satisfied by a comment, contract suites that read back what they had scripted, a Konsist rule that scanned zero files). Every guard now has a negative case (ADR-036).
+- **Coverage numbers must be fresh.** `check` does not regenerate the Kover XML reports; a number read from an old report is wrong. Take it after `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q`, which is why the status file says "measured fresh".
+- **Docs drift where numbers are typed by hand.** Counts of tests, rules, ports and ADRs went stale within one slice. The review fix spec re-derives them from the build output; re-derive them again, do not edit them.
+- **Say what a fake is.** `createGraph` looked like the live graph while every port was a fake (ADR-037). Names and KDoc must say what a thing is today.
 
 ## Slice 1a-2 TDD log (red seen first, per group)
 
