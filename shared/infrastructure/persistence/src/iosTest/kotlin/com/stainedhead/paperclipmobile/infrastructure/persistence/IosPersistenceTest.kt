@@ -1,7 +1,14 @@
 package com.stainedhead.paperclipmobile.infrastructure.persistence
 
+import app.cash.sqldelight.db.AfterVersion
+import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.db.SqlSchema
+import app.cash.sqldelight.driver.native.NativeSqliteDriver
+import co.touchlab.sqliter.DatabaseConfiguration
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.infrastructure.persistence.db.PaperclipDatabase
 import com.stainedhead.paperclipmobile.testing.AttentionFixtures
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
@@ -75,6 +82,40 @@ class IosPersistenceTest {
             persistence.close()
             excludedFromBackup(databasePath) shouldBe true
             excludedFromBackup(directory) shouldBe true
+        }
+
+    @Test
+    fun `AD-020 a file written by a newer schema version is replaced by an empty database`() =
+        runTest {
+            val first = openIosPersistence(clock, directory)
+            first.instances.add(TestData.instance("a"))
+            first.close()
+            // What a newer app version would leave behind: the same file, user_version one higher. The driver opens
+            // lazily, so the first statement is what writes the version.
+            val newer =
+                object : SqlSchema<QueryResult.Value<Unit>> {
+                    override val version = PaperclipDatabase.Schema.version + 1
+
+                    override fun create(driver: SqlDriver) = QueryResult.Unit
+
+                    override fun migrate(
+                        driver: SqlDriver,
+                        oldVersion: Long,
+                        newVersion: Long,
+                        vararg callbacks: AfterVersion,
+                    ) = QueryResult.Unit
+                }
+            NativeSqliteDriver(
+                newer,
+                "paperclip.db",
+                onConfiguration = { it.copy(extendedConfig = DatabaseConfiguration.Extended(basePath = directory)) },
+            ).also { it.scalarLong("PRAGMA user_version") shouldBe PaperclipDatabase.Schema.version + 1 }.close()
+
+            val persistence = openIosPersistence(clock, directory)
+
+            persistence.recreated shouldBe true
+            persistence.instances.observeAll().first() shouldBe emptyList()
+            persistence.close()
         }
 
     @Test
