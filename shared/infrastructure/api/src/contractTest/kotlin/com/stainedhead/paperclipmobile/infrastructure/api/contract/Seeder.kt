@@ -22,8 +22,13 @@ internal class Seeder(
     internal val raw: RawServer,
     internal val key: String,
 ) {
+    /**
+     * A company WITHOUT a company-wide budget: with one, the first finished run (whose cost accounting is still
+     * pending) trips the company's hard stop, the server pauses the whole company and every later wake answers
+     * 409 "Company is not active" (seen in CI run 41537107381).
+     */
     fun company(name: String): Seeded =
-        required("POST", "/api/companies", """{"name":"$name","budgetMonthlyCents":100000}""")
+        required("POST", "/api/companies", """{"name":"$name","budgetMonthlyCents":0}""")
 
     fun issue(
         companyId: String,
