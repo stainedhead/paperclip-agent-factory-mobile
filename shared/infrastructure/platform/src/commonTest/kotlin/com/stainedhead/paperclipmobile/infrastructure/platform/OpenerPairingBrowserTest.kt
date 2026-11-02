@@ -8,8 +8,12 @@ import kotlin.test.Test
 private class RecordingOpener : ApprovalPageOpener {
     val urls = mutableListOf<String>()
 
-    override suspend fun open(url: String) {
+    override fun open(
+        url: String,
+        onShown: () -> Unit,
+    ) {
         urls += url
+        onShown()
     }
 }
 
@@ -23,4 +27,23 @@ class OpenerPairingBrowserTest : PairingBrowserContract() {
 
     @Test
     fun `the bridge passes the pairing browser contract`() = runTest { runAll() }
+
+    @Test
+    fun `a call that is shown twice still returns once`() =
+        runTest {
+            val twice =
+                object : ApprovalPageOpener {
+                    override fun open(
+                        url: String,
+                        onShown: () -> Unit,
+                    ) {
+                        onShown()
+                        onShown()
+                    }
+                }
+            OpenerPairingBrowser(twice).open(
+                com.stainedhead.paperclipmobile.domain.Secret
+                    .of("https://a.example/x"),
+            )
+        }
 }
