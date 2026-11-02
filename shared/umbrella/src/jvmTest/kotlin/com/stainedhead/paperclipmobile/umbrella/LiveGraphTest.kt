@@ -3,8 +3,21 @@ package com.stainedhead.paperclipmobile.umbrella
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.port.AgentGateway
+import com.stainedhead.paperclipmobile.domain.port.AppSettingsStore
+import com.stainedhead.paperclipmobile.domain.port.ApprovalGateway
+import com.stainedhead.paperclipmobile.domain.port.AttentionCache
 import com.stainedhead.paperclipmobile.domain.port.AttentionGateway
+import com.stainedhead.paperclipmobile.domain.port.AuthGateway
+import com.stainedhead.paperclipmobile.domain.port.BudgetGateway
+import com.stainedhead.paperclipmobile.domain.port.DashboardGateway
+import com.stainedhead.paperclipmobile.domain.port.DecisionGateway
+import com.stainedhead.paperclipmobile.domain.port.HealthGateway
+import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
+import com.stainedhead.paperclipmobile.domain.port.InteractionGateway
+import com.stainedhead.paperclipmobile.domain.port.IssueGateway
 import com.stainedhead.paperclipmobile.domain.port.LiveEvents
+import com.stainedhead.paperclipmobile.domain.port.RunGateway
 import com.stainedhead.paperclipmobile.presentation.FirstRunStep
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakePairingBrowser
@@ -76,17 +89,45 @@ class LiveGraphTest {
     }
 
     @Test
-    fun `every port the graph resolves is a real adapter, none comes from the testing module`() {
+    fun `every network and persistence port the graph resolves is a real adapter, none is a fake`() {
         val graph = graphOn(LiveTestPlatform())
 
+        // The device ports (clock, secret store, biometrics, connectivity) come from the test platform on purpose.
         val bound =
             listOf(
+                graph.resolve<HealthGateway>(),
+                graph.resolve<AuthGateway>(),
                 graph.resolve<AttentionGateway>(),
+                graph.resolve<DecisionGateway>(),
+                graph.resolve<ApprovalGateway>(),
+                graph.resolve<BudgetGateway>(),
+                graph.resolve<IssueGateway>(),
+                graph.resolve<InteractionGateway>(),
+                graph.resolve<AgentGateway>(),
+                graph.resolve<RunGateway>(),
+                graph.resolve<DashboardGateway>(),
                 graph.resolveRaw<AttentionGateway>(),
+                graph.resolveRaw<DecisionGateway>(),
+                graph.resolveRaw<ApprovalGateway>(),
+                graph.resolveRaw<BudgetGateway>(),
+                graph.resolveRaw<IssueGateway>(),
+                graph.resolveRaw<InteractionGateway>(),
+                graph.resolveRaw<AgentGateway>(),
+                graph.resolveRaw<RunGateway>(),
+                graph.resolveRaw<DashboardGateway>(),
+                graph.resolve<InstanceRepository>(),
+                graph.resolve<AppSettingsStore>(),
+                graph.resolve<AttentionCache>(),
                 graph.resolve<LiveEvents>(),
             ).map { it::class.qualifiedName.orEmpty() }
 
-        bound.filter { it.contains(".testing.") } shouldBe emptyList()
+        bound.size shouldBe EXPECTED_PORTS
+        bound.filter { it.contains(".testing.") || it.contains("Fake") } shouldBe emptyList()
+        // Real adapters, the signed-out decorator on top of them, and the polling-only live events of the umbrella.
+        bound.filterNot {
+            it.contains(".infrastructure.") || it.contains(".umbrella.") ||
+                it.contains(".application.auth.SignedOutAware")
+        } shouldBe emptyList()
         graph.close()
     }
 
@@ -149,5 +190,7 @@ class LiveGraphTest {
         runCatching { runBlocking { platform.persistence.instances.get(InstanceId("any")) } }.isFailure shouldBe true
     }
 }
+
+private const val EXPECTED_PORTS = 24
 
 private class ClosingProbe

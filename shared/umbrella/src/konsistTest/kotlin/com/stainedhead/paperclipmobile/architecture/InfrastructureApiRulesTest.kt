@@ -12,43 +12,21 @@ import java.io.File
 class InfrastructureApiRulesTest {
     private val apiRoot = File(projectRoot, "shared/infrastructure/api")
 
-    private fun mainSources(root: File): List<File> =
-        File(root, "src")
-            .listFiles { f -> f.isDirectory && f.name.endsWith("Main") }
-            .orEmpty()
-            .flatMap { dir -> dir.walkTopDown().filter { it.extension == "kt" }.toList() }
-
-    /** Names of the top-level declarations in [source] that are neither `internal` nor `private`. */
-    private fun publicTopLevel(source: String): List<String> =
-        source
-            .lines()
-            .filter { TOP_LEVEL.containsMatchIn(it) && !NOT_PUBLIC.containsMatchIn(it) }
-            .map { TOP_LEVEL.find(it)!!.groupValues[1] }
-
-    /** Imports of [source] that start with none of [allowed]. */
-    private fun disallowedImports(
-        source: String,
-        allowed: List<String>,
-    ): List<String> =
-        source
-            .lines()
-            .map { it.trim() }
-            .filter { it.startsWith("import ") }
-            .map { it.removePrefix("import ").trim() }
-            .filter { import -> allowed.none { import.startsWith(it) } }
+    /** Public declarations of the api sources under [root] that are not part of the allowed surface. */
+    private fun surfaceOffenders(root: File): List<String> =
+        mainSources(root)
+            .filter { "/dto/" !in it.invariantSeparatorsPath }
+            .flatMap { file -> publicTopLevel(file.readText()).map { "${file.name}: $it" } }
+            .filterNot { entry ->
+                val name = entry.substringAfter(": ")
+                name.endsWith("GatewayAdapter") || name in ALLOWED_PUBLIC
+            }
 
     @Test
     fun `the api module exposes only gateway adapters, the http client and its factory`() {
         val sources = mainSources(apiRoot)
         Assertions.assertTrue(sources.isNotEmpty(), "No api sources found: the rule would pass vacuously")
-        val offenders =
-            sources
-                .filter { "/dto/" !in it.invariantSeparatorsPath }
-                .flatMap { file -> publicTopLevel(file.readText()).map { "${file.name}: $it" } }
-                .filterNot { entry ->
-                    val name = entry.substringAfter(": ")
-                    name.endsWith("GatewayAdapter") || name in ALLOWED_PUBLIC
-                }
+        val offenders = surfaceOffenders(apiRoot)
         Assertions.assertTrue(offenders.isEmpty(), "Public declarations outside the api surface: $offenders")
     }
 
@@ -101,6 +79,27 @@ class InfrastructureApiRulesTest {
         )
     }
 
+    @Test
+    fun `the surface rule fails on a planted suspend fun, const val and public class in a real source tree`() {
+        val root =
+            kotlin.io.path
+                .createTempDirectory("pafm-api-surface")
+                .toFile()
+        try {
+            val dir = File(root, "src/commonMain/kotlin").also { it.mkdirs() }
+            File(dir, "Planted.kt").writeText(
+                "suspend fun leakToken() {}\nconst val DEFAULT_KEY = \"x\"\npublic class Loud\n" +
+                    "internal class Fine\nclass RealGatewayAdapter\n",
+            )
+            Assertions.assertEquals(
+                listOf("Planted.kt: leakToken", "Planted.kt: DEFAULT_KEY", "Planted.kt: Loud"),
+                surfaceOffenders(root),
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     private companion object {
         const val API_PACKAGE = "$APP_PACKAGE.infrastructure.api"
         val ALLOWED_PUBLIC = setOf("PaperclipHttpClient", "createPaperclipHttpClient", "CallbackPairingBrowser")
@@ -115,11 +114,5 @@ class InfrastructureApiRulesTest {
                 "$APP_PACKAGE.domain",
                 API_PACKAGE,
             )
-        private const val MODIFIERS = "(?:data |enum |sealed |abstract |open |value )*"
-        val TOP_LEVEL =
-            Regex(
-                "^$MODIFIERS(?:class|object|interface|fun|val|var|typealias)\\s+(?:<[^>]*>\\s*)?(?:[\\w.]+\\.)?(\\w+)",
-            )
-        val NOT_PUBLIC = Regex("^(?:internal|private|expect internal|actual internal)\\b")
     }
 }
