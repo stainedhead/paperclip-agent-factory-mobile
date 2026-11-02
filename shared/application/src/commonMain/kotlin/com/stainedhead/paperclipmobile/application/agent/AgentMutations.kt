@@ -67,13 +67,9 @@ class ResumeAgent(
         if (!agent.canResume) return MutationResult.Invalid(InvalidInput.WrongStatus)
         val result = agents.changed(context, agent) { agents.resume(context.scope, agent.id) }
         val answered = (result as? MutationResult.Done)?.value
-        if (answered?.lifecycleState != RESUMING) return result
+        if (answered?.isResuming != true) return result
         return (agents.get(context.scope, agent.id) as? DomainResult.Success)?.let { MutationResult.Done(it.value) }
             ?: result
-    }
-
-    private companion object {
-        const val RESUMING = "resuming"
     }
 }
 

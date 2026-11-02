@@ -180,7 +180,20 @@ class PauseAgentTest {
  */
 private class ResumingAgents(
     private val inner: FakeAgentGateway,
+    private val getsStillResuming: Boolean = false,
 ) : AgentGateway by inner {
+    override suspend fun get(
+        scope: CompanyScope,
+        id: AgentId,
+    ): DomainResult<Agent> =
+        inner.get(scope, id).let { read ->
+            if (getsStillResuming && read is DomainResult.Success) {
+                DomainResult.Success(read.value.copy(status = AgentStatus.Paused, lifecycleState = "resuming"))
+            } else {
+                read
+            }
+        }
+
     override suspend fun resume(
         scope: CompanyScope,
         id: AgentId,
@@ -225,6 +238,33 @@ class ResumeAndRunNowTest {
             val result = ResumeAgent(ResumingAgents(env.agents))(env.context(Role.Operator), env.agent("agent-design"))
 
             (result as MutationResult.Done).value.lifecycleState shouldBe "resuming"
+            env.agents.count("resume") shouldBe 1
+        }
+
+    @Test
+    fun `F-A-6 a resume whose follow-up read fails leaves an agent that cannot be resumed again`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["get"] = DomainError.ServerError
+
+            val result = ResumeAgent(ResumingAgents(env.agents))(env.context(Role.Operator), env.agent("agent-design"))
+
+            val agent = (result as MutationResult.Done).value
+            agent.canResume shouldBe false
+            ResumeAgent(env.agents)(env.context(Role.Operator), agent) shouldBe
+                MutationResult.Invalid(InvalidInput.WrongStatus)
+        }
+
+    @Test
+    fun `F-A-6 a follow-up read that still shows resuming offers no second Resume`() =
+        runTest {
+            val env = Env()
+            val stuck = ResumingAgents(env.agents, getsStillResuming = true)
+
+            val result = ResumeAgent(stuck)(env.context(Role.Operator), env.agent("agent-design"))
+
+            val agent = (result as MutationResult.Done).value
+            agent.canResume shouldBe false
             env.agents.count("resume") shouldBe 1
         }
 
