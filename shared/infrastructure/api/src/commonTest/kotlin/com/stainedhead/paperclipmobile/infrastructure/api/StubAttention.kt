@@ -1,12 +1,16 @@
 package com.stainedhead.paperclipmobile.infrastructure.api
 
 import io.ktor.http.HttpMethod
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
 private class StubDismissal(
@@ -31,6 +35,7 @@ internal class StubAttention(
     val items = mutableListOf<JsonObject>()
     private val dismissals = mutableMapOf<String, StubDismissal>()
     private val decideBy = mutableMapOf<String, JsonElement>()
+    private val snoozes = mutableMapOf<String, Instant>()
 
     fun handle(request: StubRequest): StubReply? {
         val s = request.segments
@@ -73,9 +78,9 @@ internal class StubAttention(
         company: String,
     ): StubReply {
         val sort = request.query["sort"] ?: "activity"
-        val limit = request.query["limit"]?.toIntOrNull() ?: DEFAULT_LIMIT
         if (sort != "activity" && sort != "decide") return StubReply.error(400, "sort must be 'activity' or 'decide'")
-        if (limit !in 1..MAX_LIMIT) return StubReply.error(400, "limit must be an integer between 1 and $MAX_LIMIT")
+        limitRefusal(request.query["limit"])?.let { return it }
+        val limit = request.query["limit"]?.trim()?.toInt() ?: DEFAULT_LIMIT
         val visible = visible(company)
         val from = startOf(request.query["cursor"], sort, visible)
         if (from < 0) return cursorRefusal(from)
@@ -83,6 +88,17 @@ internal class StubAttention(
         val more = from + page.size < visible.size
         val next = if (more) StubCursor.encode(sort, page.last().str("id")) else null
         return StubReply.ok(FeedFixtures.page(page, next, visible, badge(visible)))
+    }
+
+    /** `routes/attention.js:36-39` (an integer) and `services/attention.js:1565-1568` (1 to 100). */
+    private fun limitRefusal(raw: String?): StubReply? {
+        val limit = raw?.trim()?.toIntOrNull()
+        return when {
+            raw == null -> null
+            limit == null -> StubReply.error(400, "limit must be an integer")
+            limit !in 1..MAX_LIMIT -> StubReply.error(400, "limit must be an integer between 1 and $MAX_LIMIT")
+            else -> null
+        }
     }
 
     /** Where the page starts, or a negative code: -1 for a cursor that is not one, -2 for one naming a gone item. */
@@ -104,10 +120,20 @@ internal class StubAttention(
             StubReply.error(400, "Attention cursor no longer matches the filtered feed")
         }
 
+    /** `isNewToday || isDecideNow` over the whole feed (`services/attention.js:297-335,1620`). */
     private fun badge(visible: List<JsonObject>): Int {
         val today = clock().toString().substringBefore('T')
+        val isSunday = clock().toLocalDateTime(TimeZone.UTC).dayOfWeek == DayOfWeek.SUNDAY
         return visible.count {
-            it.str("createdAt").startsWith(today) || (it["decideBy"] as? JsonPrimitive)?.content == "today"
+            val due = (it["decideBy"] as? JsonPrimitive)?.takeIf { p -> p.isString }?.content
+            val decideNow =
+                when {
+                    due == "today" -> true
+                    due == "this_week" -> isSunday
+                    due != null && DATE.matches(due) -> due <= today
+                    else -> false
+                }
+            decideNow || it.str("createdAt").substringBefore('T') >= today
         }
     }
 
@@ -115,10 +141,16 @@ internal class StubAttention(
         items
             .filter { it.str("companyId") == company }
             .filterNot { active(company, it) }
+            .filterNot { snoozed(company, it) }
             .map { item ->
                 val key = "$company|${item.str("sourceKind")}|${item.sourceId}"
                 decideBy[key]?.let { JsonObject(item + ("decideBy" to it)) } ?: item
             }
+
+    private fun snoozed(
+        company: String,
+        item: JsonObject,
+    ): Boolean = snoozes["$company|${item.str("sourceKind")}|${item.sourceId}"]?.let { it > clock() } == true
 
     private fun active(
         company: String,
@@ -188,14 +220,29 @@ internal class StubAttention(
         sourceId: String,
     ): StubReply {
         val body = request.jsonBody()
-        val value = body?.get("decideBy")
-        val knownKeys = body != null && body.isNotEmpty() && body.keys.all { it in TRIAGE_KEYS }
-        return when {
+        val snooze = body?.get("snoozedUntil")
+        val snoozeAt = (snooze as? JsonPrimitive)?.takeIf { it.isString }?.content?.let(::parseInstant)
+        triageRefusal(body, snoozeAt, kind, sourceId)?.let { return it }
+        val key = "$company|$kind|$sourceId"
+        body?.get("decideBy")?.let { decideBy[key] = it }
+        if (snooze is JsonNull) snoozes.remove(key)
+        if (snoozeAt != null) snoozes[key] = snoozeAt
+        return StubReply.ok("""{"companyId":"$company","sourceKind":"$kind","sourceId":"$sourceId"}""")
+    }
+
+    /** The order of the server: identity, then the body schema, then the source read (404), then the service rule. */
+    private fun triageRefusal(
+        body: JsonObject?,
+        snoozeAt: Instant?,
+        kind: String,
+        sourceId: String,
+    ): StubReply? =
+        when {
             kind !in FeedFixtures.SOURCE_KINDS || sourceId.isBlank() -> {
                 StubReply.error(400, "Invalid attention source identity")
             }
 
-            !knownKeys || !validDecideBy(value) -> {
+            !triageBodyValid(body, snoozeAt) -> {
                 StubReply.invalid()
             }
 
@@ -203,17 +250,45 @@ internal class StubAttention(
                 StubReply.notFound("Attention source not found")
             }
 
+            snoozeAt != null && snoozeAt > clock() + FIVE_YEARS -> {
+                StubReply.unprocessable("snoozedUntil must be within five years")
+            }
+
             else -> {
-                if (value != null) decideBy["$company|$kind|$sourceId"] = value
-                StubReply.ok("""{"companyId":"$company","sourceKind":"$kind","sourceId":"$sourceId"}""")
+                null
             }
         }
+
+    /** `updateDecisionTriageSchema`: strict, at least one key, a decide-by value and a datetime. */
+    private fun triageBodyValid(
+        body: JsonObject?,
+        snoozeAt: Instant?,
+    ): Boolean {
+        if (body == null || body.isEmpty() || !body.keys.all { it in TRIAGE_KEYS }) return false
+        val snooze = body["snoozedUntil"]
+        return validDecideBy(body["decideBy"]) && (snooze == null || snooze is JsonNull || snoozeAt != null)
     }
+
+    private fun parseInstant(text: String): Instant? =
+        try {
+            Instant.parse(text)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
 
     private fun validDecideBy(value: JsonElement?): Boolean {
         if (value == null || value is JsonNull) return true
         val text = (value as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return false
-        return text in setOf("today", "this_week", "whenever") || DATE.matches(text)
+        return text in setOf("today", "this_week", "whenever") || isCalendarDate(text)
+    }
+
+    /** `calendarDateSchema` (`shared/validators/decision-queue.js:28-31`): the date must exist. */
+    private fun isCalendarDate(text: String): Boolean {
+        if (!DATE.matches(text)) return false
+        val (year, month, day) = text.split('-').map { it.toInt() }
+        val leap = year % LEAP_CYCLE == 0 && (year % CENTURY != 0 || year % LEAP_CENTURY == 0)
+        val days = intArrayOf(31, if (leap) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+        return month in 1..12 && day in 1..days[month - 1]
     }
 
     private companion object {
@@ -224,6 +299,10 @@ internal class StubAttention(
         const val MAX_LIMIT = 100
         const val BAD_CURSOR = -1
         const val GONE_CURSOR = -2
+        const val LEAP_CYCLE = 4
+        const val CENTURY = 100
+        const val LEAP_CENTURY = 400
+        val FIVE_YEARS = (5 * 366).days
         val KINDS = setOf("dismiss", "snooze")
         val TRIAGE_KEYS = setOf("decideBy", "snoozedUntil")
         val ITEM_KEY = Regex("^(approval|join|run|attention):.+$")

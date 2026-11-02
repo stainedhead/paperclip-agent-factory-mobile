@@ -11,7 +11,11 @@ import kotlin.test.Test
 /** AD-012, AD-014: the shared budget contract, run unchanged against the real adapter and the stub server. */
 class BudgetGatewayContractTest : BudgetContract() {
     override val scope: CompanyScope = WorkWorld().acme
-    override val openIds = listOf(BudgetIncidentId("inc-1"), BudgetIncidentId("inc-2"))
+    override val openIds =
+        listOf(
+            BudgetIncidentId("b0000001-0000-4000-8000-000000000001"),
+            BudgetIncidentId("b0000002-0000-4000-8000-000000000002"),
+        )
     override val observed = Money.usdCents(OBSERVED_CENTS)
 
     override fun create(): BudgetGateway {

@@ -159,7 +159,7 @@ class AttentionGatewayAdapterTest {
             assertEquals(BudgetAlertInfo(BudgetThreshold.Hard, observed, hard, "agent"), card.subject.budget)
             assertEquals(AttentionDetail.Budget(100, observed, hard), card.detail)
             assertEquals(DecideBy.OnDate(kotlinx.datetime.LocalDate(2026, 11, 2)), card.decideBy)
-            assertEquals("inc-1", card.budgetIncident()?.id?.value)
+            assertEquals("b0000001-0000-4000-8000-000000000001", card.budgetIncident()?.id?.value)
         }
 
     @Test

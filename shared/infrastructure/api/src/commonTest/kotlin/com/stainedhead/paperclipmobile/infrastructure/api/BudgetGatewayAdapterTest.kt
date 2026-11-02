@@ -21,8 +21,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-private val inc1 = BudgetIncidentId("inc-1")
-private val inc2 = BudgetIncidentId("inc-2")
+private val inc1 = BudgetIncidentId("b0000001-0000-4000-8000-000000000001")
+private val inc2 = BudgetIncidentId("b0000002-0000-4000-8000-000000000002")
 
 private fun failure(error: DomainError) = DomainResult.Failure(error)
 
@@ -55,7 +55,7 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 incident reads the overview of its own company with the stored key and nothing else`() =
         runTest {
-            world.home.seed(row("inc-1"))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001"))
             world.budget.incident(world.acme, inc1).ok()
             val request = world.server.requests.single()
             assertEquals("GET", request.method)
@@ -68,7 +68,7 @@ class BudgetGatewayAdapterTest {
     fun `AD-012 incident maps the scope amounts threshold and approval`() =
         runTest {
             world.home.seed(
-                row("inc-1", observed = "12345.5000000").copy(
+                row("b0000001-0000-4000-8000-000000000001", observed = "12345.5000000").copy(
                     limit = "20000",
                     threshold = "soft",
                     scopeType = "company",
@@ -90,8 +90,8 @@ class BudgetGatewayAdapterTest {
     fun `AD-012 observed spend is rounded up to whole cents with exact arithmetic`() =
         runTest {
             world.home.seed(
-                row("inc-1", observed = "9999.0000001"),
-                row("inc-2", observed = "10000.0000000"),
+                row("b0000001-0000-4000-8000-000000000001", observed = "9999.0000001"),
+                row("b0000002-0000-4000-8000-000000000002", observed = "10000.0000000"),
             )
             assertEquals(
                 Money.usdCents(10_000),
@@ -112,14 +112,20 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 other incidents in the overview do not matter and an unknown status reads as Unknown`() =
         runTest {
-            world.home.seed(row("inc-1").copy(status = "open"), row("inc-2"))
+            world.home.seed(
+                row("b0000001-0000-4000-8000-000000000001").copy(status = "open"),
+                row("b0000002-0000-4000-8000-000000000002"),
+            )
             val body =
                 ServerFixtures.error("x").let {
                     BudgetFixtures.overview(
                         "company-acme",
                         listOf(
-                            BudgetFixtures.incident(row("inc-1")).replace("\"open\"", "\"paused_by_future\""),
-                            """{"id":"inc-2","amountObserved":"not a number"}""",
+                            BudgetFixtures
+                                .incident(
+                                    row("b0000001-0000-4000-8000-000000000001"),
+                                ).replace("\"open\"", "\"paused_by_future\""),
+                            """{"id":"b0000002-0000-4000-8000-000000000002","amountObserved":"not a number"}""",
                         ),
                     )
                 }
@@ -131,7 +137,7 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 an incident that is not in the active list is NotFound`() =
         runTest {
-            world.home.seed(row("inc-1").copy(status = "resolved"))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001").copy(status = "resolved"))
             assertEquals(failure(DomainError.NotFound), world.budget.incident(world.acme, inc1))
             assertEquals(failure(DomainError.NotFound), world.budget.incident(world.acme, inc2))
         }
@@ -163,19 +169,22 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 keep paused posts the action once after reading the overview and returns Dismissed`() =
         runTest {
-            world.home.seed(row("inc-1"))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001"))
             val result = world.budget.resolve(world.acme, inc1, BudgetResolution.KeepPaused, null).ok()
             assertEquals(IncidentStatus.Dismissed, result.status)
             val sent = world.server.requests
             assertEquals(listOf("GET", "POST"), sent.map { it.method })
-            assertEquals("/api/companies/company-acme/budget-incidents/inc-1/resolve", sent[1].path)
+            assertEquals(
+                "/api/companies/company-acme/budget-incidents/b0000001-0000-4000-8000-000000000001/resolve",
+                sent[1].path,
+            )
             assertEquals("""{"action":"keep_paused"}""", sent[1].body)
         }
 
     @Test
     fun `AD-012 a raise sends the amount in cents and the note`() =
         runTest {
-            world.home.seed(row("inc-1"))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001"))
             val raise = BudgetResolution.RaiseAndResume(Money.usdCents(10_001))
             val result = world.budget.resolve(world.acme, inc1, raise, "Approved by Alex").ok()
             assertEquals(IncidentStatus.Resolved, result.status)
@@ -190,7 +199,7 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 resolving an incident that is no longer active sends no mutation`() =
         runTest {
-            world.home.seed(row("inc-1").copy(status = "dismissed"))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001").copy(status = "dismissed"))
             assertEquals(
                 failure(DomainError.NotFound),
                 world.budget.resolve(world.acme, inc1, BudgetResolution.KeepPaused, null),
@@ -201,7 +210,7 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 a raise the server cannot take is refused here and nothing is sent`() =
         runTest {
-            world.home.seed(row("inc-1"))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001"))
             val tooBig = BudgetResolution.RaiseAndResume(Money(2_147_483_648L, "USD"))
             val euros = BudgetResolution.RaiseAndResume(Money(20_000, "EUR"))
             assertTrue(world.budget.resolve(world.acme, inc1, tooBig, null).isRejected())
@@ -214,7 +223,7 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 the three 422 reasons of the server arrive as the reason`() =
         runTest {
-            world.home.seed(row("inc-1"))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001"))
             val raise = BudgetResolution.RaiseAndResume(Money.usdCents(10_001))
             world.home.budgets.unpricedUsage = true
             assertEquals(
@@ -246,7 +255,10 @@ class BudgetGatewayAdapterTest {
                 MockEngine { request ->
                     if (request.method.value == "GET") {
                         respond(
-                            BudgetFixtures.overview("company-acme", listOf(BudgetFixtures.incident(row("inc-1")))),
+                            BudgetFixtures.overview(
+                                "company-acme",
+                                listOf(BudgetFixtures.incident(row("b0000001-0000-4000-8000-000000000001"))),
+                            ),
                             HttpStatusCode.OK,
                             headersOf(HttpHeaders.ContentType, "application/json"),
                         )
@@ -269,7 +281,7 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 a viewer may read but a resolve is Forbidden and a company without membership is Forbidden`() =
         runTest {
-            world.home.seed(row("inc-1", company = ServerFixtures.COMPANY_GLOBEX))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001", company = ServerFixtures.COMPANY_GLOBEX))
             world.budget.incident(world.globex, inc1).ok()
             assertEquals(
                 failure(DomainError.Forbidden),
@@ -281,7 +293,7 @@ class BudgetGatewayAdapterTest {
     @Test
     fun `AD-012 an incident of another company is NotFound under this one`() =
         runTest {
-            world.home.seed(row("inc-1", company = ServerFixtures.COMPANY_GLOBEX))
+            world.home.seed(row("b0000001-0000-4000-8000-000000000001", company = ServerFixtures.COMPANY_GLOBEX))
             assertEquals(failure(DomainError.NotFound), world.budget.incident(world.acme, inc1))
         }
 

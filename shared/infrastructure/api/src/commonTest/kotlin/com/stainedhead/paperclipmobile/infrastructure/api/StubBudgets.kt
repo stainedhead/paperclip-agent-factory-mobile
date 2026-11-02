@@ -70,6 +70,11 @@ internal class StubBudgets {
                 StubReply.invalid()
             }
 
+            !isServerId(id) -> {
+                // `eq(budgetIncidents.id, incidentId)` on a uuid column (`services/budgets.js:697-705`).
+                StubReply.error(500, "Internal server error")
+            }
+
             incident == null -> {
                 StubReply.notFound("Budget incident not found")
             }

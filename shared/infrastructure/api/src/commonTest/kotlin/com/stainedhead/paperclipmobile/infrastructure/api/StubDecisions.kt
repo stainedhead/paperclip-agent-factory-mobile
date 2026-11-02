@@ -43,10 +43,16 @@ internal class StubDecisions(
     val decisions = mutableListOf<StubDecision>()
     var runningReads = 0
 
+    private fun find(id: String): StubDecision? = if (isServerId(id)) decisions.firstOrNull { it.id == id } else null
+
+    /** A non-uuid id on a uuid column is a database error, 500 (`services/decisions.js:243`). */
+    private fun absent(id: String) =
+        if (isServerId(id)) StubReply.notFound(NOT_FOUND) else StubReply.error(500, "Internal server error")
+
     fun handle(request: StubRequest): StubReply? {
         val s = request.segments
         if (s.size < MIN || s[0] != "decisions") return null
-        val decision = decisions.firstOrNull { it.id == s[1] } ?: return StubReply.notFound(NOT_FOUND)
+        val decision = find(s[1]) ?: return absent(s[1])
         request.resourceRefusal(decision.company, NOT_FOUND)?.let { return it }
         return when {
             s.size == MIN && request.method == HttpMethod.Get -> {

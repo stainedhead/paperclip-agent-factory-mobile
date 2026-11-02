@@ -136,7 +136,7 @@ internal object FeedFixtures {
             decideBy = "this_week",
         )
 
-    fun budgetItem(id: String = "inc-1") =
+    fun budgetItem(id: String = "b0000001-0000-4000-8000-000000000001") =
         item(
             "budget_alert",
             "budget:policy-1:2026-11-01T00:00:00.000Z:hard",

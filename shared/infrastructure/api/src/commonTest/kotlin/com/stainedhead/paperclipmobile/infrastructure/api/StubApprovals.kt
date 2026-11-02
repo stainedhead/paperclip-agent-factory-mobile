@@ -34,7 +34,7 @@ internal class StubApprovals {
     fun handle(request: StubRequest): StubReply? {
         val s = request.segments
         if (s.size < MIN || s[0] != "approvals") return null
-        val approval = approvals.firstOrNull { it.id == s[1] } ?: return StubReply.notFound(NOT_FOUND)
+        val approval = find(s[1]) ?: return absent(s[1])
         request.resourceRefusal(approval.company, NOT_FOUND)?.let { return it }
         return when {
             s.size == MIN && request.method == HttpMethod.Get -> StubReply.ok(ApprovalFixtures.approval(approval))
@@ -43,6 +43,12 @@ internal class StubApprovals {
             else -> null
         }
     }
+
+    private fun find(id: String): StubApproval? = if (isServerId(id)) approvals.firstOrNull { it.id == id } else null
+
+    /** `router.param("id")` runs a uuid query first: a non-uuid id is a database error, 500 (`approvals.js:30`). */
+    private fun absent(id: String) =
+        if (isServerId(id)) StubReply.notFound(NOT_FOUND) else StubReply.error(500, "Internal server error")
 
     private fun read(
         approval: StubApproval,

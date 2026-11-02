@@ -30,7 +30,7 @@ private fun seed(work: StubWork) {
     work.attention.items += FeedFixtures.standard()
     work.approvals.approvals += StubApproval(APPROVAL, company)
     work.decisions.decisions += StubDecision(DECISION, company)
-    work.budgets.incidents += StubIncident("inc-1", company, "policy-1")
+    work.budgets.incidents += StubIncident("b0000001-0000-4000-8000-000000000001", company, "policy-1")
 }
 
 /** Calls every method of the four gateways once, success and failure paths alike, for [scope]. */
@@ -53,10 +53,21 @@ private suspend fun WorkWorld.exerciseEverything(scope: CompanyScope): List<Any?
     results += approvals.approve(scope, ApprovalId(APPROVAL), "ok")
     results += approvals.reject(scope, ApprovalId(APPROVAL), "late")
     results += approvals.requestRevision(scope, ApprovalId(APPROVAL), "again")
-    results += budget.incident(scope, BudgetIncidentId("inc-1"))
+    results += budget.incident(scope, BudgetIncidentId("b0000001-0000-4000-8000-000000000001"))
     results +=
-        budget.resolve(scope, BudgetIncidentId("inc-1"), BudgetResolution.RaiseAndResume(Money.usdCents(10_001)), null)
-    results += budget.resolve(scope, BudgetIncidentId("inc-1"), BudgetResolution.KeepPaused, "again")
+        budget.resolve(
+            scope,
+            BudgetIncidentId("b0000001-0000-4000-8000-000000000001"),
+            BudgetResolution.RaiseAndResume(Money.usdCents(10_001)),
+            null,
+        )
+    results +=
+        budget.resolve(
+            scope,
+            BudgetIncidentId("b0000001-0000-4000-8000-000000000001"),
+            BudgetResolution.KeepPaused,
+            "again",
+        )
     return results
 }
 
@@ -139,7 +150,7 @@ class CompanyScopedAuditTest {
                 results += feed.feed(world.acme, FeedQuery())
                 results += decisions.get(world.acme, DecisionId(DECISION))
                 results += approvals.get(world.acme, ApprovalId(APPROVAL))
-                results += budget.incident(world.acme, BudgetIncidentId("inc-1"))
+                results += budget.incident(world.acme, BudgetIncidentId("b0000001-0000-4000-8000-000000000001"))
             }
             val sink = results.joinToString("\n") { it.toString() } + trace.joinToString("\n")
             keys.forEach { key -> assertTrue(key !in sink, "a key leaked: $sink") }
