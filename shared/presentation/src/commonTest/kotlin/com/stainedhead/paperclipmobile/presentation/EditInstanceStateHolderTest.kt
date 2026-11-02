@@ -44,6 +44,8 @@ class EditInstanceStateHolderTest {
                 env.pair,
                 env.signOut,
                 env.remove,
+                env.removeHereOnly,
+                env.signOutHereOnly,
                 env.expiry,
             )
         return EditInstanceStateHolder(

@@ -1,9 +1,12 @@
 package com.stainedhead.paperclipmobile.application.auth
 
+import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
 import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.deleteCredentialsLocally
+import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
+import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
 import kotlinx.coroutines.CancellationException
@@ -38,17 +41,44 @@ class SignOutInstance(
             if (instance.status == InstanceStatus.SignedIn) outcome = revoker.revoke(id)
         } finally {
             // A declined prompt means the revoke never ran: the key stays, so nothing is deleted behind the person.
-            if (outcome != RevokeOutcome.Declined) deleteLocally(id)
+            if (outcome != RevokeOutcome.Declined) deleteSignedOutLocally(repository, secrets, locks, id)
         }
         return if (outcome == RevokeOutcome.Declined) SignOutResult.Declined else SignOutResult.SignedOut(outcome)
     }
+}
 
-    private suspend fun deleteLocally(id: InstanceId) {
-        deleteCredentialsLocally(secrets, locks, id) {
-            repository.get(id)?.let {
-                repository.update(it.copy(boardKeyId = null, keyExpiresAt = null, status = InstanceStatus.SignedOut))
-            }
-        }
+sealed interface SignOutHereOnlyResult {
+    data class SignedOut(
+        val serverKey: RevokeOutcome,
+    ) : SignOutHereOnlyResult
+
+    /** Device authentication did not succeed. Nothing was changed. */
+    data class NotAuthorized(
+        val result: BiometricResult,
+    ) : SignOutHereOnlyResult
+
+    data object NotFound : SignOutHereOnlyResult
+}
+
+/**
+ * Signs out on this phone only, for a key whose read stays denied (rereview1b F-R-2): device authentication, then the
+ * local key is deleted and the factory is marked signed out. The server is not contacted, so the key stays live there
+ * and a factory that was signed in reports [RevokeOutcome.Unconfirmed].
+ */
+class SignOutInstanceHereOnly(
+    private val repository: InstanceRepository,
+    private val secrets: SecretStore,
+    private val deviceAuth: DeviceAuthGuard,
+    private val locks: InstanceLocks,
+) {
+    suspend operator fun invoke(id: InstanceId): SignOutHereOnlyResult {
+        val instance = repository.get(id) ?: return SignOutHereOnlyResult.NotFound
+        val auth = deviceAuth(Action.RemoveFactory)
+        if (auth != BiometricResult.Approved) return SignOutHereOnlyResult.NotAuthorized(auth)
+        deleteSignedOutLocally(repository, secrets, locks, id)
+        return SignOutHereOnlyResult.SignedOut(
+            if (instance.status == InstanceStatus.SignedIn) RevokeOutcome.Unconfirmed else RevokeOutcome.NotAttempted,
+        )
     }
 }
 
@@ -90,5 +120,18 @@ class SignOutEverywhere(
             signedOut.count { it.serverKey == RevokeOutcome.Unconfirmed },
             failed,
         )
+    }
+}
+
+private suspend fun deleteSignedOutLocally(
+    repository: InstanceRepository,
+    secrets: SecretStore,
+    locks: InstanceLocks,
+    id: InstanceId,
+) {
+    deleteCredentialsLocally(secrets, locks, id) {
+        repository.get(id)?.let {
+            repository.update(it.copy(boardKeyId = null, keyExpiresAt = null, status = InstanceStatus.SignedOut))
+        }
     }
 }

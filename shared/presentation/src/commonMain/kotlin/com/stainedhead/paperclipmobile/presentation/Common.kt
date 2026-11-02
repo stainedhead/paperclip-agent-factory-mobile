@@ -61,7 +61,11 @@ enum class ErrorKey {
     /** The phone's secure store refused to keep the key. */
     StorageFailed,
 
-    /** The person declined Face ID or the passcode for the key. Nothing was sent or changed; try again (F-A-2). */
+    /**
+     * The phone could not read the key: the person declined Face ID or the passcode, or the device is locked. The
+     * Keychain cannot tell these apart to the app (one "unreadable" status class, ADR-085). Nothing was sent or
+     * changed; try again, or sign out / remove "here only" (F-A-2, F-R-2).
+     */
     AuthDeclined,
 
     /** The phone's key was invalidated (for example a new fingerprint): the factory needs re-pairing (FR-015). */

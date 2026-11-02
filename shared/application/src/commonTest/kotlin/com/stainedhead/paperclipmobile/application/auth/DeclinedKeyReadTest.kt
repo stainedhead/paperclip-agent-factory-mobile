@@ -6,7 +6,6 @@ import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceResult
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
-import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
@@ -86,7 +85,7 @@ class DeclinedKeyReadTest {
             env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.DeviceAuthDeclined)
             val remove = RemoveInstance(env.repository, env.secrets, env.revoker, env.deviceAuth, env.locks)
 
-            remove(signedIn.id) shouldBe RemoveInstanceResult.NotAuthorized(BiometricResult.Cancelled)
+            remove(signedIn.id) shouldBe RemoveInstanceResult.KeyReadDenied
 
             env.repository.deletedIds shouldBe emptyList()
             env.secrets.pathsFor(signedIn.id).isNotEmpty() shouldBe true

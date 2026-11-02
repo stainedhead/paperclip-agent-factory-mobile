@@ -29,6 +29,7 @@ import com.stainedhead.paperclipmobile.application.auth.RevokeBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SaveManualBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SignOutEverywhere
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
+import com.stainedhead.paperclipmobile.application.auth.SignOutInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.auth.SignedOutMarker
 import com.stainedhead.paperclipmobile.application.budget.LoadBudgetIncident
 import com.stainedhead.paperclipmobile.application.budget.ResolveBudgetIncident
@@ -43,6 +44,7 @@ import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
 import com.stainedhead.paperclipmobile.application.instance.ParseAddLink
 import com.stainedhead.paperclipmobile.application.instance.ProbeInstance
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
+import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.ReorderInstances
 import com.stainedhead.paperclipmobile.application.instance.SwitchCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchInstance
@@ -153,6 +155,7 @@ private fun org.koin.core.module.Module.instanceUseCases() {
     single { GetInstance(get()) }
     single { ReorderInstances(get()) }
     single { RemoveInstance(get(), get(), get(), get(), get()) }
+    single { RemoveInstanceHereOnly(get(), get(), get(), get()) }
     single { ObserveInstances(get()) }
     single { SwitchInstance(get(), get()) }
     single { SwitchCompany(get(), get()) }
@@ -165,6 +168,7 @@ private fun org.koin.core.module.Module.authUseCases() {
     single { SaveManualBoardKey(get(), get(), get()) }
     single { LoadInstanceAccess(get(), get(), get(), get(), get(), get()) }
     single { SignOutInstance(get(), get(), get(), get()) }
+    single { SignOutInstanceHereOnly(get(), get(), get(), get()) }
     single { SignOutEverywhere(get(), get()) }
     single { ListBoardKeys(get(), get(), get()) }
     single { RevokeBoardKey(get(), get(), get(), get()) }
@@ -198,11 +202,11 @@ internal fun presentationModule() =
             )
         }
         factory { params ->
-            ManageFactoriesStateHolder(ManageFactoriesUseCases(get(), get(), get()), params.get())
+            ManageFactoriesStateHolder(ManageFactoriesUseCases(get(), get(), get(), get()), params.get())
         }
         factory { params ->
             SettingsStateHolder(
-                SettingsUseCases(get(), get(), get(), get(), get(), get(), get(), get(), get()),
+                SettingsUseCases(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()),
                 get(),
                 params.get(),
             )
@@ -210,7 +214,20 @@ internal fun presentationModule() =
         factory { params ->
             EditInstanceStateHolder(
                 params.getOrNull<String>(),
-                EditInstanceUseCases(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()),
+                EditInstanceUseCases(
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                ),
                 get(),
                 params.get(),
             )

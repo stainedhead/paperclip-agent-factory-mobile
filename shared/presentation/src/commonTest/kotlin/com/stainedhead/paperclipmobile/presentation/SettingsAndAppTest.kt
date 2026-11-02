@@ -37,6 +37,7 @@ class SettingsStateHolderTest {
                 env.revokeKey,
                 env.signOut,
                 env.signOutEverywhere,
+                env.signOutHereOnly,
             )
         return SettingsStateHolder(useCases, env.connectivity, CoroutineScope(StandardTestDispatcher(testScheduler)))
     }

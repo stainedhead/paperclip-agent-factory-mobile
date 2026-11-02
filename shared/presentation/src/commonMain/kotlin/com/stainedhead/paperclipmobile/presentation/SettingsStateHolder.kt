@@ -6,7 +6,9 @@ import com.stainedhead.paperclipmobile.application.auth.LoadInstanceAccess
 import com.stainedhead.paperclipmobile.application.auth.RevokeBoardKey
 import com.stainedhead.paperclipmobile.application.auth.RevokeKeyResult
 import com.stainedhead.paperclipmobile.application.auth.SignOutEverywhere
+import com.stainedhead.paperclipmobile.application.auth.SignOutHereOnlyResult
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
+import com.stainedhead.paperclipmobile.application.auth.SignOutInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.auth.SignOutResult
 import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
 import com.stainedhead.paperclipmobile.application.settings.AppSettingsUpdate
@@ -68,6 +70,12 @@ sealed interface SettingsConfirmation {
 
     data object SignOutEverywhere : SettingsConfirmation
 
+    /** The key could not be read: sign out on this phone only; the key stays live on the server (F-R-2). */
+    data class SignOutHereOnly(
+        val instanceId: String,
+        val name: String,
+    ) : SettingsConfirmation
+
     data class RevokeKey(
         val instanceId: String,
         val keyId: String,
@@ -96,6 +104,7 @@ data class SettingsState(
     /** How many factories the last "sign out everywhere" could not sign out locally. */
     val signOutFailures: Int = 0,
     val error: ErrorUi? = null,
+    val deviceAuthIssue: DeviceAuthIssue? = null,
 )
 
 sealed interface SettingsIntent {
@@ -143,6 +152,7 @@ data class SettingsUseCases(
     val revokeKey: RevokeBoardKey,
     val signOut: SignOutInstance,
     val signOutEverywhere: SignOutEverywhere,
+    val signOutHereOnly: SignOutInstanceHereOnly,
 )
 
 /** State holder for Settings and profile (screen 13). */
@@ -208,6 +218,7 @@ class SettingsStateHolder(
                 mutableState.update {
                     it.copy(
                         error = null,
+                        deviceAuthIssue = null,
                         lastSignOutKey = null,
                         unconfirmedRevokes = 0,
                         signOutFailures = 0,
@@ -343,6 +354,7 @@ internal class SettingsConfirmations(
             when (confirmation) {
                 is SettingsConfirmation.SignOut -> signOut(confirmation.instanceId)
                 SettingsConfirmation.SignOutEverywhere -> signOutEverywhere()
+                is SettingsConfirmation.SignOutHereOnly -> signOutHereOnly(confirmation.instanceId)
                 is SettingsConfirmation.RevokeKey -> revoke(confirmation)
             }
         }
@@ -350,12 +362,43 @@ internal class SettingsConfirmations(
 
     private suspend fun signOut(instanceId: String) {
         val result = useCases.signOut(InstanceId(instanceId))
+        val declined = result == SignOutResult.Declined
         state.update {
             it.copy(
                 isBusy = false,
                 lastSignOutKey = (result as? SignOutResult.SignedOut)?.serverKey?.toUi(),
-                error = if (result == SignOutResult.Declined) ErrorUi(ErrorKey.AuthDeclined) else it.error,
+                error = if (declined) ErrorUi(ErrorKey.AuthDeclined) else it.error,
+                confirmation = if (declined) hereOnlyOffer(instanceId) else it.confirmation,
             )
+        }
+    }
+
+    /** The key could not be read, so signing out cannot revoke it: offer signing out on this phone only. */
+    private fun hereOnlyOffer(instanceId: String): SettingsConfirmation? =
+        instances
+            .firstOrNull {
+                it.id.value == instanceId
+            }?.let { SettingsConfirmation.SignOutHereOnly(instanceId, it.displayName) }
+
+    private suspend fun signOutHereOnly(instanceId: String) {
+        val result = useCases.signOutHereOnly(InstanceId(instanceId))
+        state.update {
+            when (result) {
+                is SignOutHereOnlyResult.SignedOut -> {
+                    it.copy(isBusy = false, lastSignOutKey = result.serverKey.toUi())
+                }
+
+                is SignOutHereOnlyResult.NotAuthorized -> {
+                    it.copy(
+                        isBusy = false,
+                        deviceAuthIssue = result.result.toIssue(),
+                    )
+                }
+
+                SignOutHereOnlyResult.NotFound -> {
+                    it.copy(isBusy = false)
+                }
+            }
         }
     }
 

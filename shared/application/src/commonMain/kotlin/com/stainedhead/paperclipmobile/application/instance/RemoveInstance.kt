@@ -23,6 +23,12 @@ sealed interface RemoveInstanceResult {
     ) : RemoveInstanceResult
 
     data object NotFound : RemoveInstanceResult
+
+    /**
+     * The phone could not read the key (declined, device locked or any read error), so it could not be revoked on the
+     * server. Nothing was changed. The person may try again or choose [RemoveInstanceHereOnly] (rereview1b F-R-2).
+     */
+    data object KeyReadDenied : RemoveInstanceResult
 }
 
 /**
@@ -53,9 +59,32 @@ class RemoveInstance(
             }
         }
         return if (outcome == RevokeOutcome.Declined) {
-            RemoveInstanceResult.NotAuthorized(BiometricResult.Cancelled)
+            RemoveInstanceResult.KeyReadDenied
         } else {
             RemoveInstanceResult.Removed(outcome)
         }
+    }
+}
+
+/**
+ * The way out when the key read stays denied (rereview1b F-R-2): device authentication, then every secret, the
+ * configuration and the cache of the factory are removed on this phone and the server is not contacted. The key stays
+ * live on the server, so a factory that was signed in reports [RevokeOutcome.Unconfirmed] (the screen points to the
+ * paired-devices list of the web app). A plain decline never reaches this use case and deletes nothing.
+ */
+class RemoveInstanceHereOnly(
+    private val repository: InstanceRepository,
+    private val secrets: SecretStore,
+    private val deviceAuth: DeviceAuthGuard,
+    private val locks: InstanceLocks,
+) {
+    suspend operator fun invoke(id: InstanceId): RemoveInstanceResult {
+        val instance = repository.get(id) ?: return RemoveInstanceResult.NotFound
+        val auth = deviceAuth(Action.RemoveFactory)
+        if (auth != BiometricResult.Approved) return RemoveInstanceResult.NotAuthorized(auth)
+        deleteCredentialsLocally(secrets, locks, id) { repository.delete(id) }
+        return RemoveInstanceResult.Removed(
+            if (instance.status == InstanceStatus.SignedIn) RevokeOutcome.Unconfirmed else RevokeOutcome.NotAttempted,
+        )
     }
 }
