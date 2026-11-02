@@ -26,6 +26,7 @@ import platform.Foundation.numberWithBool
 
 private const val DATABASE_NAME = "paperclip.db"
 private const val DATA_FOLDER = "PaperclipData"
+private const val MARKER_FAILED = "Could not write the recreation marker"
 private val SIDECAR_SUFFIXES = listOf("", "-wal", "-shm", "-journal")
 
 /**
@@ -39,12 +40,20 @@ fun openIosPersistence(
     directory: String = iosDataDirectory(),
 ): PaperclipPersistence {
     prepareDirectory(directory)
+    val markerPath = "$directory/$DATABASE_NAME.sweep-pending"
+    val marker =
+        FileMarker(
+            exists = { fileExists(markerPath) },
+            create = { check(NSFileManager.defaultManager.createFileAtPath(markerPath, null, null)) { MARKER_FAILED } },
+            delete = { removeFile(markerPath) },
+        )
     val opened =
         openRecovering(
             open = { nativeDriver(directory) },
             wipe = { SIDECAR_SUFFIXES.forEach { removeFile("$directory/$DATABASE_NAME$it") } },
+            marker = marker,
         )
-    val persistence = PaperclipPersistence(opened.driver, clock, opened.recreated)
+    val persistence = PaperclipPersistence(opened.driver, clock, opened.recreated, marker)
     try {
         // After the first write: on a database that was just recreated the file flag set before it was gone afterwards.
         // A sidecar (-wal, -journal) can vanish between the check and the call; that is not an error.

@@ -77,6 +77,43 @@ class LiveGraphTest {
         graph.close()
     }
 
+    private fun markedDatabase(): java.io.File {
+        val file = createTempDirectory("pafm-live").toFile().resolve("paperclip.db")
+        file.writeText("this is not a sqlite database ".repeat(200))
+        return file
+    }
+
+    @Test
+    fun `F-R-1 a launch after a wipe whose sweep never ran still announces and sweeps, once`() {
+        val file = markedDatabase()
+        // First launch: the wipe happened, then the process died before the sweep (the platform is simply dropped).
+        LiveTestPlatform(file = file).persistence.close()
+        val secrets = orphanSecretStore()
+
+        val second = graphOn(LiveTestPlatform(file = file, secretStore = secrets))
+        second.startupNotice shouldBe StartupNotice(databaseRecreated = true, orphanSecretsRemoved = 1)
+        secrets.paths shouldBe emptySet()
+        second.close()
+
+        val third = graphOn(LiveTestPlatform(file = file, secretStore = orphanSecretStore()))
+        third.startupNotice shouldBe StartupNotice()
+        third.close()
+    }
+
+    @Test
+    fun `F-R-1 a sweep that failed keeps the marker so the next launch tries again`() {
+        val file = markedDatabase()
+        val secrets = orphanSecretStore().also { it.failNamespaceDeletes += InstanceId("lost") }
+
+        graphOn(LiveTestPlatform(file = file, secretStore = secrets)).close()
+        secrets.failNamespaceDeletes.clear()
+
+        val next = graphOn(LiveTestPlatform(file = file, secretStore = secrets))
+        next.startupNotice shouldBe StartupNotice(databaseRecreated = true, orphanSecretsRemoved = 1)
+        secrets.paths shouldBe emptySet()
+        next.close()
+    }
+
     @Test
     fun `F-B-2 an intact database announces nothing and leaves the secret store alone`() {
         val secrets = orphanSecretStore()

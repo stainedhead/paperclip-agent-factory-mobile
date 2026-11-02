@@ -24,12 +24,14 @@ fun openAndroidPersistence(
     clock: Clock,
 ): PaperclipPersistence {
     val appContext = context.applicationContext
+    val marker = pendingMarker(File(appContext.noBackupFilesDir, "$DATABASE_NAME.sweep-pending"))
     val opened =
         openRecovering(
             open = { AndroidSqliteDriver(openHelper(appContext)) },
             wipe = { SIDECAR_SUFFIXES.forEach { File(appContext.noBackupFilesDir, DATABASE_NAME + it).delete() } },
+            marker = marker,
         )
-    return PaperclipPersistence(opened.driver, clock, opened.recreated)
+    return PaperclipPersistence(opened.driver, clock, opened.recreated, marker)
 }
 
 private fun openHelper(context: Context): SupportSQLiteOpenHelper =
@@ -40,4 +42,11 @@ private fun openHelper(context: Context): SupportSQLiteOpenHelper =
             .noBackupDirectory(true)
             .callback(AndroidSqliteDriver.Callback(PaperclipDatabase.Schema))
             .build(),
+    )
+
+private fun pendingMarker(file: File): SweepMarker =
+    FileMarker(
+        exists = { file.exists() },
+        create = { check(file.createNewFile() || file.exists()) { "Could not write the recreation marker" } },
+        delete = { file.delete() },
     )

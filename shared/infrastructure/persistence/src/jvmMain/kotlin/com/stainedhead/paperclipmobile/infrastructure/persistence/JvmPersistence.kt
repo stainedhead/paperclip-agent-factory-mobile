@@ -7,6 +7,14 @@ import com.stainedhead.paperclipmobile.infrastructure.persistence.db.PaperclipDa
 import java.io.File
 
 private val SIDECAR_SUFFIXES = listOf("", "-wal", "-shm", "-journal")
+private const val SWEEP_PENDING_SUFFIX = ".sweep-pending"
+
+internal fun fileMarker(marker: File): SweepMarker =
+    FileMarker(
+        exists = { marker.exists() },
+        create = { check(marker.createNewFile() || marker.exists()) { "Could not write the recreation marker" } },
+        delete = { marker.delete() },
+    )
 
 /**
  * The JVM database: the file at [file], or an in-memory database when it is null (tests and tooling; the apps use the
@@ -17,12 +25,14 @@ fun openJvmPersistence(
     file: File? = null,
 ): PaperclipPersistence {
     val url = if (file == null) JdbcSqliteDriver.IN_MEMORY else "jdbc:sqlite:${file.path}"
+    val marker = file?.let { fileMarker(File(it.path + SWEEP_PENDING_SUFFIX)) } ?: InMemoryMarker()
     val opened =
         openRecovering(
             open = { JdbcSqliteDriver(url).also { it.prepareSchema() } },
             wipe = { file?.let { f -> SIDECAR_SUFFIXES.forEach { File(f.path + it).delete() } } },
+            marker = marker,
         )
-    return PaperclipPersistence(opened.driver, clock, opened.recreated)
+    return PaperclipPersistence(opened.driver, clock, opened.recreated, marker)
 }
 
 /**

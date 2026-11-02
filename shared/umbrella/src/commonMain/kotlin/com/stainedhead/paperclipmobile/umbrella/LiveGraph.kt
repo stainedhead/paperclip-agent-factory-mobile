@@ -42,11 +42,13 @@ internal fun PaperclipCore.createLiveGraph(
  */
 private fun startupNoticeOf(platform: LivePlatform): StartupNotice {
     if (!platform.persistence.recreated) return StartupNotice()
-    val removed =
+    val swept =
         runCatching {
             runBlocking { SweepOrphanSecrets(platform.persistence.instances, platform.secretStore)() }
-        }.getOrDefault(0)
-    return StartupNotice(databaseRecreated = true, orphanSecretsRemoved = removed)
+        }.getOrNull()
+    // The marker outlives this launch until a sweep completed with nothing left behind (F-R-1).
+    if (swept?.complete == true) platform.persistence.sweepCompleted()
+    return StartupNotice(databaseRecreated = true, orphanSecretsRemoved = swept?.removed ?: 0)
 }
 
 /** What a live graph owns and lets go of when it is closed, in order: the HTTP client, the database, the platform. */

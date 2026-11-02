@@ -23,7 +23,7 @@ class SweepOrphanSecretsTest {
             env.seed("orphan-1")
             env.seed("orphan-2")
 
-            SweepOrphanSecrets(env.repository, env.secrets)() shouldBe 2
+            SweepOrphanSecrets(env.repository, env.secrets)() shouldBe SweepResult(removed = 2, failed = 0)
 
             env.secrets.paths shouldBe setOf("instance/known/boardToken")
         }
@@ -35,20 +35,20 @@ class SweepOrphanSecretsTest {
             env.seed("a")
             env.seed("b")
 
-            SweepOrphanSecrets(env.repository, env.secrets)() shouldBe 2
+            SweepOrphanSecrets(env.repository, env.secrets)() shouldBe SweepResult(removed = 2, failed = 0)
 
             env.secrets.paths shouldBe emptySet()
         }
 
     @Test
-    fun `a namespace that cannot be deleted does not stop the others and is not counted`() =
+    fun `a namespace that cannot be deleted does not stop the others and is reported as failed`() =
         runTest {
             val env = Env()
             env.seed("a")
             env.seed("b")
             env.secrets.failNamespaceDeletes += InstanceId("a")
 
-            SweepOrphanSecrets(env.repository, env.secrets)() shouldBe 1
+            SweepOrphanSecrets(env.repository, env.secrets)() shouldBe SweepResult(removed = 1, failed = 1)
 
             env.secrets.paths shouldBe setOf("instance/a/boardToken")
         }
@@ -56,6 +56,6 @@ class SweepOrphanSecretsTest {
     @Test
     fun `nothing to sweep is zero`() =
         runTest {
-            SweepOrphanSecrets(Env(listOf(known)).repository, Env().secrets)() shouldBe 0
+            SweepOrphanSecrets(Env(listOf(known)).repository, Env().secrets)() shouldBe SweepResult(0, 0)
         }
 }

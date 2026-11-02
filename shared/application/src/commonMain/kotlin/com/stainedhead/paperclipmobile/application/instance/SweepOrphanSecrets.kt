@@ -9,13 +9,14 @@ import kotlinx.coroutines.flow.first
  * Deletes the secrets of every factory that has no configuration row. The device secret store outlives the app's
  * database (an iOS Keychain item survives even a reinstall), so when the database had to be recreated empty the board
  * keys of the lost factories would stay on the phone with nothing to use or remove them (review1b F-B-2, ADR-078).
- * Returns how many namespaces were removed; one that cannot be deleted is left for the next sweep and not counted.
+ * Returns how many namespaces were removed and how many could not be; a namespace that cannot be deleted is left
+ * for the next sweep (F-R-1: the caller then keeps its pending marker).
  */
 class SweepOrphanSecrets(
     private val repository: InstanceRepository,
     private val secrets: SecretStore,
 ) {
-    suspend operator fun invoke(): Int {
+    suspend operator fun invoke(): SweepResult {
         val known =
             repository
                 .observeAll()
@@ -23,6 +24,7 @@ class SweepOrphanSecrets(
                 .map { it.id }
                 .toSet()
         var removed = 0
+        var failed = 0
         for (orphan in secrets.namespaces() - known) {
             try {
                 secrets.deleteNamespace(orphan)
@@ -31,8 +33,17 @@ class SweepOrphanSecrets(
                 throw cancelled
             } catch (_: IllegalStateException) {
                 // A secure store that refuses one namespace must not keep the others on the phone.
+                failed += 1
             }
         }
-        return removed
+        return SweepResult(removed, failed)
     }
+}
+
+/** What a sweep did: [removed] namespaces deleted, [failed] left behind. */
+data class SweepResult(
+    val removed: Int,
+    val failed: Int,
+) {
+    val complete: Boolean get() = failed == 0
 }

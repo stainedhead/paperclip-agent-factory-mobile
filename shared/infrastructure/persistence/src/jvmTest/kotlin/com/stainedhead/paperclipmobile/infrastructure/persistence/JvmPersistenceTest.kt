@@ -99,6 +99,12 @@ class JvmPersistenceTest {
             persistence.instances.add(TestData.instance("a"))
             persistence.close()
 
+            // F-R-1: until the sweep has completed the recreation is still pending, across launches.
+            val pending = openJvmPersistence(clock, file)
+            pending.recreated shouldBe true
+            pending.sweepCompleted()
+            pending.close()
+
             val reopened = openJvmPersistence(clock, file)
             reopened.recreated shouldBe false
             reopened.instances

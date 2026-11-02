@@ -8,12 +8,14 @@ import kotlinx.coroutines.Dispatchers
 
 /**
  * The three SQLite-backed ports over one database (AD-021), built by the per-platform `open…Persistence` functions.
- * [recreated] is true when the database file could not be used and was replaced by an empty one (ADR-042).
+ * [recreated] is true when the database file could not be used and was replaced by an empty one (ADR-042), or
+ * when an earlier recreation has not been followed by a completed sweep yet ([sweepCompleted]).
  */
 class PaperclipPersistence internal constructor(
     private val driver: SqlDriver,
     clock: Clock,
     val recreated: Boolean,
+    private val marker: SweepMarker = InMemoryMarker(),
 ) {
     private val db = PaperclipDatabase(driver)
     private val dispatcher = serialDispatcher()
@@ -25,6 +27,11 @@ class PaperclipPersistence internal constructor(
     init {
         // A page cached for a factory that was removed while its refresh was in flight has no owner: drop it.
         db.attentionCacheQueries.deleteOrphans()
+    }
+
+    /** The orphan sweep after a recreation has completed: the next launch is silent again (F-R-1). */
+    fun sweepCompleted() {
+        marker.clear()
     }
 
     /** Releases the database file. Nothing may be used afterwards. */

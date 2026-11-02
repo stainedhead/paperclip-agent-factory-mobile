@@ -20,13 +20,20 @@ internal class OpenedDatabase(
  * stored version is newer than the code, or an expected table is missing. Everything else (busy or locked, disk full
  * or I/O error, protected data not available yet, a migration that throws) is not proof: nothing is deleted and a
  * [StorageUnavailableException] is thrown so the caller can say storage is unavailable and try again later.
+ *
+ * Before a wipe the [marker] is set; it stays set until the caller has swept the orphaned secrets and clears it
+ * (F-R-1), so a reopen that fails or a process killed after the wipe is still reported by the next open.
  */
 internal fun openRecovering(
     open: () -> SqlDriver,
     wipe: () -> Unit,
+    marker: SweepMarker = InMemoryMarker(),
 ): OpenedDatabase {
     val driver = attemptOpen(open)
-    if (driver != null) return OpenedDatabase(driver, recreated = false)
+    // A marker left by an earlier wipe whose sweep never finished counts as a recreation too (F-R-1).
+    if (driver != null) return OpenedDatabase(driver, recreated = marker.isSet())
+    // Durable BEFORE the file goes: if this fails nothing is wiped, and a failure or kill after it is not lost.
+    runCatching { marker.set() }.onFailure { throw StorageUnavailableException(it) }
     wipe()
     return OpenedDatabase(openAfterWipe(open), recreated = true)
 }
