@@ -41,3 +41,23 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 ## Lessons learned
 
 (none yet)
+
+---
+
+# 1b-2 SQLDelight persistence (2026-11-02)
+
+## Group 1: build wiring, schema v1, SqlInstanceRepository (AD-020, AD-021, AD-022)
+
+- SQLDelight 2.4.1 (`app.cash.sqldelight`) works with Kotlin 2.4.21 and the AGP 9.5.0 KMP library plugin with no extra
+  settings: plugin alias declared `apply false` at the root, applied in the module after `pafm.kmp-library`. Generated
+  code lands in `build/generated/sqldelight`, which Spotless, detekt (`exclude("**/build/**")`) and Android Lint already
+  skip, so no exclusion commit was needed (evidence: `check lint` green with generated classes present).
+- Test targets run: JVM and the Android host test use the JDBC `sqlite-driver` (the Android host JVM has only stubbed
+  framework SQLite classes); the iOS simulator test uses the native driver on a temp file (sqlite3 links with no flags).
+- `schemaOutputDirectory` is `src/commonMain/sqldelight/databases`; `1.db` is committed and `verifyCommonMainPaperclipDatabaseMigration`
+  is part of `check`.
+- Instants are stored as ISO-8601 text (nanoseconds survive), enums by name, pins as space separated digests.
+- Unknown enum names read as the safe value (`Unknown`, `ManualBoardKey`, `SignedOut`); an unreadable row is skipped.
+- `delete` removes the cache rows of the instance in the same transaction; no foreign keys or cascade are relied on.
+- Red evidence: `SqlInstanceRepositoryTest` failed to compile with `Unresolved reference 'SqlInstanceRepository'` before
+  the class and queries existed.

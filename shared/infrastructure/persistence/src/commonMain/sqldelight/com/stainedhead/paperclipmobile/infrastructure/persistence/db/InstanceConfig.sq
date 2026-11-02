@@ -1,0 +1,46 @@
+-- Non-secret configuration of one Paperclip instance (AD-020). There is no column for a token or a key: the board
+-- key lives only in the SecretStore. Instants are ISO-8601 text so nanoseconds survive; enums are stored by name.
+CREATE TABLE instance_config (
+    id TEXT NOT NULL PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    base_uri TEXT NOT NULL,
+    deployment_mode TEXT NOT NULL,
+    exposure TEXT NOT NULL,
+    auth_method TEXT NOT NULL,
+    board_key_id TEXT,
+    key_expires_at TEXT,
+    default_company_id TEXT,
+    last_company_id TEXT,
+    pins TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    last_connected_at TEXT,
+    sort_order INTEGER NOT NULL,
+    status TEXT NOT NULL
+);
+
+CREATE INDEX instance_config_sort ON instance_config(sort_order);
+
+selectAll:
+SELECT * FROM instance_config ORDER BY sort_order, created_at, id;
+
+selectById:
+SELECT * FROM instance_config WHERE id = ?;
+
+upsert:
+INSERT OR REPLACE INTO instance_config(
+    id, display_name, base_uri, deployment_mode, exposure, auth_method, board_key_id, key_expires_at,
+    default_company_id, last_company_id, pins, created_at, last_connected_at, sort_order, status
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateExisting:
+UPDATE instance_config SET
+    display_name = ?, base_uri = ?, deployment_mode = ?, exposure = ?, auth_method = ?, board_key_id = ?,
+    key_expires_at = ?, default_company_id = ?, last_company_id = ?, pins = ?, created_at = ?,
+    last_connected_at = ?, sort_order = ?, status = ?
+WHERE id = ?;
+
+setSortOrder:
+UPDATE instance_config SET sort_order = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM instance_config WHERE id = ?;
