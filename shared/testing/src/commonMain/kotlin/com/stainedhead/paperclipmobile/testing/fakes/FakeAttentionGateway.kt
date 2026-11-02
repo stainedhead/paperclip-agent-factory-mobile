@@ -39,6 +39,9 @@ class FakeAttentionGateway(
     val snoozes = mutableListOf<Pair<String, Instant>>()
     val decideByCalls = mutableListOf<Triple<AttentionSourceKind, String, DecideBy>>()
     private val hidden = mutableMapOf<String, Dismissal>()
+
+    /** Companies (by id) whose feed is empty: nothing there needs the person. Every other company gets [items]. */
+    var emptyCompanies: Set<String> = emptySet()
     private val resolvedSubjects = mutableSetOf<String>()
     private var served = 0
 
@@ -67,7 +70,10 @@ class FakeAttentionGateway(
         val now = clock.now()
         val generatedAt = if (served++ == 0) now - firstFeedAge else now
         val visible =
-            items.filter { it.subject.id !in resolvedSubjects && (servesStaleFeed || it.dismissalKey !in hidden) }
+            items.filter { scope.companyId.value !in emptyCompanies }.filter {
+                it.subject.id !in resolvedSubjects &&
+                    (servesStaleFeed || it.dismissalKey !in hidden)
+            }
         val start =
             query.cursor?.let { cursor ->
                 val index = visible.indexOfFirst { it.id == cursor }

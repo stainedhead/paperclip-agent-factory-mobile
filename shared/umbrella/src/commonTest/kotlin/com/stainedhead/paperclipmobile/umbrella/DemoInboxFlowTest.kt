@@ -81,4 +81,16 @@ class DemoInboxFlowTest {
             inbox.state.await { !it.isOffline }.actionsDisabledReason shouldBe null
             inbox.close()
         }
+
+    @Test
+    fun `the side project company has nothing that needs the person`() =
+        runTest {
+            val inbox = graph.attention.createInboxStateHolder("demo-home", "company-side")
+
+            val state = inbox.state.await { it.phase == InboxPhase.Empty }
+
+            state.badgeCount shouldBe 0
+            state.totalCount shouldBe 0
+            inbox.close()
+        }
 }

@@ -119,7 +119,10 @@ internal fun demoPortsModule(seeded: Boolean = true) =
 
 private fun org.koin.core.module.Module.demoAttentionPorts() {
     single<AttentionGateway>(RawPort) {
-        FakeAttentionGateway(get(), DemoInbox.items()).apply { firstFeedAge = DemoInbox.FIRST_READ_AGE }
+        FakeAttentionGateway(get(), DemoInbox.items()).apply {
+            firstFeedAge = DemoInbox.FIRST_READ_AGE
+            emptyCompanies = setOf(DemoIds.SIDE_PROJECT)
+        }
     }
     single<AttentionCache> { FakeAttentionCache() }
     single<DecisionGateway>(RawPort) { FakeDecisionGateway(DemoAttentionDetails.decisions()) }
