@@ -150,3 +150,17 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
   failed with null and was removed) and real iCloud/iTunes backups.
 - Red evidence: `Unresolved reference 'openIosPersistence'`; the recreation test then failed with the flag false until
   the order of protect and construct was changed.
+
+## 1b-2 summary
+
+- Commits: 366fcf5 (schema v1, `SqlInstanceRepository`), 64daef9 (settings), 32134d8 (schema v2 + migration test), b7e7c82
+  (attention cache), ed1639b (recovery, serial executor, audit, pruning), 794e0b2 (JVM factory), f3f0350 (iOS factory),
+  760d320 (Android factory, Konsist rules), fb9ca07 (docs).
+- Tests of the persistence module from JUnit XML after the last full run: JVM 49, Android host 41 (no iOS-only files; no JVM
+  file tests), iOS simulator 45; no failures or skips. The Android-host figure is lower because `JvmPersistenceTest` and
+  `IosPersistenceTest` are platform source sets.
+- Deviations: no notification-defaults column (the domain `AppSettings` has no such field, so it would be dead); a real
+  schema v2 exists before any release to exercise migrations (group 3); the Android factory has no test (framework SQLite
+  does not run on the host JVM); iOS file protection class is requested but not verifiable on the simulator.
+- Deferred: wiring `PaperclipPersistence` into `createLiveGraph` (1b-5); deleting the factory's Keychain items on removal is
+  the use case's job through `SecretStore` (1b-3); an Android emulator test.
