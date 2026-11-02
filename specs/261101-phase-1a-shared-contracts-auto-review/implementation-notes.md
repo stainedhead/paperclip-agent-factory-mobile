@@ -153,6 +153,20 @@ Each entry names the defect shown (red, mutation or disagreement with the server
 
 Process note: three commits were first pushed or made with a detekt finding in a Konsist test (CiPinningRulesTest, RequirementsTraceabilityTest magic numbers, PortAndSecretRulesTest line length). Two were fixed forward in b1106a7 and the third amended before pushing; the `&&` between the gate and the commit was missing. From then on the gates gated the commit.
 
+### 2026-11-01 Group 4: docs, PRD, spec text and the remaining small items
+
+- F-A-9 (3d95028): `Secret.startsWith` compares the CharArray in place. No red run: the behaviour tests (empty prefix, equal, longer, wiped, empty secret) pass before and after; the finding is about memory lifetime.
+- F-A-10 (d32bedd, 0bd8b7b): `BaseUriError.InvalidPath` and the rules in `PathRules` and `HostRules` (documented in the BaseUri KDoc and configuration-reference). Decisions: a trailing dot is refused rather than rewritten (it is a different string for key binding and TLS names); Unicode hosts must be pasted as punycode (no IDNA table in common Kotlin); an IPv4-looking host must be canonical; the path must have no empty segment, so `https://h//` is invalid. Red: 5 of the new tests failed before the rules. The 16 existing BaseUri tests are unchanged.
+- F-D-2 reads (060593c): red 9 of 10; the Inbox test was added with the holder change.
+- F-A-3 revoke (30168e3): decision recorded in the commit: with `boardKeyId == null` the phone cannot tell "revoke another device" from "revoke myself", so `RevokeBoardKey` sends nothing and answers `RevokeKeyResult.CurrentKeyUnknown`; Settings shows `ErrorKey.CurrentKeyUnknown`.
+- F-B-12 (9118611): `AppLifecycleBridge.setForeground(Boolean)` covers both calls; the graph attaches the holder from `createAppStateHolder()` (one shell per graph, a later holder replaces an earlier one). Swift test updated. The `unlock()` finally half was done in F-B-6.
+- F-B-13 (0026607): `description` -> `summary` with a Konsist rule (red before the rename). Deferred, reasons: UI twins for `IdlePeriod`, `Exposure`, `ProbeRefusal`, `InstanceNameIssue` have no Swift consumer yet; boxed nullable numbers have no cheap SKIE-side option; hiding public initialisers would break constructing intents from Swift.
+- F-D-11 (28022f5): `build-kit.sh` preflight, staged swap and `.configuration` marker; `ios-test.sh` framework check; `test-build-kit.sh` (11 checks).
+- F-D-6 (26f4e1c): the four Decision paragraphs use the real symbols; `check-adr-identifiers.py` fails on the old text. F-B-10 and F-D-12: ADR-037, ADR-035 update, createGraph KDoc, no behaviour change.
+- F-D-1, F-D-3, F-D-4 and the counts (3900860, 4ee49b9, c5de41f): see the commit bodies. AGENTS.md was already correct; its only residue is the `android.yml` row (no `androidApp/` yet), stated in technical-details.
+- F-D-10: deferred. F-C-11: observation.
+- Final gates: `spotlessApply`, `check lint` (with `-Pkotlin.incremental=false` after an AGP incremental-compile crash), `build-kit.sh debug`, SwiftLint `--strict`, swift-format `--strict` (0 violations), `ios-test.sh` (33 Swift tests and the XCUITest pass), fresh Kover (core 97.97%, presentation 98.02%), markdown link and anchor check over 35 files (0 broken), 28 documentation claims re-sampled against code (one mismatch found and fixed: "21 nullable numbers" is 29).
+
 ## Edge cases and solutions
 
 (none yet)
@@ -225,3 +239,7 @@ Process note: the first full `check` failed only on Kotlin/Native (a test name c
 ## Lessons learned
 
 (none yet)
+
+## Group 4 commit hashes
+
+See the "Findings: final table" in status.md.

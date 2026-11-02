@@ -274,7 +274,7 @@ Model gaps (the design mocks show these; the model has no field, so the demo sta
 - The Approval screen carries `reportsToAgentId`, not the name; a name join is deferred.
 - Settings "Each factory" has status and expiry but not the default company name; Manage factories has no company count; Edit factory shows the days left but not the key tail (the key id is in Settings, Paired devices and keys).
 
-Swift surface (deferred, with reasons, in the review fix spec): 21 nullable numbers arrive boxed (no cheap SKIE option); every holder and state exposes a public initialiser, so Swift could build one outside the graph (the graph is the supported path; intents must stay constructible from Swift); a data class `copy` is exported as `doCopy`; a few state types expose domain enums (`IdlePeriod`, `Exposure`, `ProbeRefusal`, `InstanceNameIssue`) instead of UI twins (no Swift screen consumes them yet); `ErrorUi.detail` carries the server's own reason string, which cannot be localised. The `description` collision is fixed (`summary`).
+Swift surface (deferred, with reasons, in the review fix spec): nullable numbers arrive boxed (29 `Int?` or `Long?` properties in the presentation sources at the last count; no cheap SKIE option); every holder and state exposes a public initialiser, so Swift could build one outside the graph (the graph is the supported path; intents must stay constructible from Swift); a data class `copy` is exported as `doCopy`; a few state types expose domain enums (`IdlePeriod`, `Exposure`, `ProbeRefusal`, `InstanceNameIssue`) instead of UI twins (no Swift screen consumes them yet); `ErrorUi.detail` carries the server's own reason string, which cannot be localised. The `description` collision is fixed (`summary`).
 
 Process:
 

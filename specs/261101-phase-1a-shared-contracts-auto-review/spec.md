@@ -1,7 +1,7 @@
 # Specification: Phase 1a review fixes
 
 **Feature:** fix the defects, false assurance and stale documentation found by the Step 4 code review of Phase 1a
-**Created:** 2026-11-01 · **Status:** Draft · **Spec dir:** `specs/261101-phase-1a-shared-contracts-auto-review/`
+**Created:** 2026-11-01 · **Status:** Implemented (Groups 1 to 4); see status.md · **Spec dir:** `specs/261101-phase-1a-shared-contracts-auto-review/`
 **Source PRD:** [phase-1a-shared-contracts-auto-review-PRD.md](./phase-1a-shared-contracts-auto-review-PRD.md) (full text of every finding, location, fix and acceptance criteria)
 **Parent spec:** [../archive/261101-phase-1a-shared-contracts/spec.md](../archive/261101-phase-1a-shared-contracts/spec.md)
 
