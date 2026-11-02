@@ -31,6 +31,12 @@ jobs:
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Diagnostics (temporary)
+        run: |
+          xcodebuild -version
+          ls /Applications | grep -i xcode || true
+          xcrun simctl list runtimes
+          sw_vers
       - name: Install tools
         run: brew install swiftlint xcodegen
       - name: Kotlin/Native tests (iOS simulator)
