@@ -25,10 +25,10 @@ internal fun fakeUses(source: String): List<String> {
 }
 
 /**
- * The live graph (Phase 1b AD-040): the files that wire real adapters (`Live*.kt`, in every source set; `PlatformServices.kt` holds the iOS Keychain test hook
-and is deliberately not one of them)
- * may not import the testing module nor call a module function that binds fakes. The runtime twin of this rule is
- * `LiveGraphTest`, which resolves the ports and checks no fake is behind them.
+ * The live graph (Phase 1b AD-040): the files that wire real adapters (`Live*.kt`, in every source set) may not
+ * import the testing module nor call a module function that binds fakes. The runtime twin of this rule is
+ * `LiveGraphTest`, which resolves the ports and checks no fake is behind them. `PlatformServices.kt` holds the iOS
+ * Keychain test hook and is deliberately not one of the guarded files.
  */
 class LiveWiringRulesTest {
     private val umbrellaSrc = File(projectRoot, "shared/umbrella/src")
