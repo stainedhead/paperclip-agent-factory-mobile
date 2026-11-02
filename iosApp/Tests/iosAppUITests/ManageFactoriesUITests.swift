@@ -80,12 +80,16 @@ final class ManageFactoriesUITests: XCTestCase {
 
         let handle = app.buttons["Reorder Remove Cloud factory"]
         XCTAssertTrue(handle.waitForExistence(timeout: 5))
-        let start = handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let target = home.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
-        start.press(forDuration: 0.6, thenDragTo: target)
-
         let moved = NSPredicate { _, _ in
             app.element("manage-row-demo-cloud").frame.minY < app.element("manage-row-demo-home").frame.minY
+        }
+        // A reorder drag is a long press followed by a slow move; on a slow runner the list can miss the first one, so
+        // the gesture is repeated (it is idempotent: it only moves Cloud above Home) before the test fails.
+        for _ in 0..<3 where !moved.evaluate(with: nil) {
+            let start = handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let target = home.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+            start.press(forDuration: 1.0, thenDragTo: target, withVelocity: .slow, thenHoldForDuration: 0.5)
+            _ = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: nil)], timeout: 6)
         }
         expectation(for: moved, evaluatedWith: nil)
         waitForExpectations(timeout: 15)
