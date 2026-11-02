@@ -71,6 +71,18 @@ class PaperclipHttpClientTest {
         }
 
     @Test
+    fun `F-A-9 a dot or empty path segment is NotFound before any request`() =
+        runTest {
+            val bearer = Secret.of(TestData.TOKEN)
+            listOf(".", "..", "").forEach { segment ->
+                val reply = client().send(get("attention", segment, "dismiss", bearer = bearer))
+                assertEquals(DomainResult.Failure(DomainError.NotFound), reply, "segment '$segment'")
+            }
+            assertTrue(requests.isEmpty(), "a request left the device: $requests")
+            assertIs<DomainResult.Success<*>>(client().send(get("attention", "a.b", "..x", bearer = bearer)))
+        }
+
+    @Test
     fun `AD-001 a path prefix of the instance is kept`() =
         runTest {
             client().send(get("health", base = TestData.uri("https://example.com/paperclip")))

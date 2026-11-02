@@ -120,8 +120,14 @@ class PaperclipHttpClient(
     private fun refusal(request: ApiRequest): DomainError? =
         when {
             request.bearer?.isWiped == true -> DomainError.Unauthorized
+
+            // A dot segment would be normalised away by the engine and address another route with the same key.
+            request.segments.any { it.isEmpty() || it == "." || it == ".." } -> DomainError.NotFound
+
             !RequestRules.isSchemeAllowed(request.baseUri, allowInsecureLocal) -> DomainError.CertificateInvalid
+
             request.pins.isNotEmpty() && !pinsEnforced -> DomainError.CertificateInvalid
+
             else -> null
         }
 
