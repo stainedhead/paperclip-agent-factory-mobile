@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Start the pinned Paperclip server
         run: ./scripts/paperclip-test-server.sh up
       - name: Contract smoke checks (health and pairing challenge shapes)
@@ -45,7 +45,7 @@ jobs:
     env:
       PAPERCLIP_SERVER_VERSION: latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Start the latest Paperclip server
         run: ./scripts/paperclip-test-server.sh up
       - name: Contract smoke checks against latest (a failure here means the API drifted)
