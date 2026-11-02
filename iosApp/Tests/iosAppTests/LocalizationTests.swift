@@ -50,6 +50,17 @@ struct LocalizationTests {
     @Test func everyDecisionFinalKindHasText() { check(DecisionFinalKind.allCases) }
     @Test func everyEffectStatusHasText() { check(EffectStatusUi.allCases) }
     @Test func everyExecutionStatusHasText() { check(ExecutionStatusUi.allCases) }
+    @Test func everyApprovalLabelHasText() { check(ApprovalLabel.allCases) }
+    @Test func everyDetailLabelHasText() { check(DetailLabel.allCases) }
+    @Test func everyApprovalTypeHasText() { check(ApprovalTypeUi.allCases) }
+    @Test func everyApprovalStatusHasText() { check(ApprovalStatusUi.allCases) }
+    @Test func everyApprovalActionHasText() { check(ApprovalActionUi.allCases) }
+    @Test func everyNotePromptHasText() { check(NotePromptKind.allCases) }
+    @MainActor @Test func everyApprovalStatusHasADoneSentence() {
+        for status in ApprovalStatusUi.allCases {
+            #expect(ApprovalPresentation.doneText(status) != "approvalDone.\(status)", "no sentence for \(status)")
+        }
+    }
     @Test func everyDecideByKindHasText() { check(DecideByKindUi.allCases) }
 
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {
