@@ -131,6 +131,22 @@ class WorkFakesBehaviourTest {
         }
 
     @Test
+    fun `run now puts the agent to work and reports the run it started`() =
+        runTest {
+            val gateway = FakeAgentGateway()
+            val started = mutableListOf<RunId>()
+            gateway.onRunStarted = { started += it.id }
+            val id = AgentId("agent-qa")
+            gateway.get(scope, id).value().status shouldBe AgentStatus.Error
+
+            val outcome = gateway.invokeHeartbeat(scope, id).value()
+
+            outcome.shouldBeInstanceOf<InvokeOutcome.Started>()
+            started shouldBe listOf(outcome.run.id)
+            gateway.get(scope, id).value().status shouldBe AgentStatus.Running
+        }
+
+    @Test
     fun `runs tail by offset and sequence and only an active run can be cancelled`() =
         runTest {
             val gateway = FakeRunGateway()

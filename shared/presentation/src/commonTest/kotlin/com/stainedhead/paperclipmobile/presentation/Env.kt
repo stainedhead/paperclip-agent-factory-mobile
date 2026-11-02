@@ -63,6 +63,7 @@ import com.stainedhead.paperclipmobile.application.issue.ListIssueAttachments
 import com.stainedhead.paperclipmobile.application.issue.ListIssues
 import com.stainedhead.paperclipmobile.application.issue.LoadIssue
 import com.stainedhead.paperclipmobile.application.issue.LoadIssuePlan
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.application.issue.SearchIssues
 import com.stainedhead.paperclipmobile.application.run.CancelRun
 import com.stainedhead.paperclipmobile.application.run.ListIssueRuns
@@ -215,12 +216,17 @@ class Env(
             ResolveBudgetIncident(budgets, deviceAuth),
         )
 
-    private val listAgents = ListAgents(agents)
+    private val listAgents = ListAgents(agents, runs, LoadIssueRefs(issues))
     private val pauseAgent = PauseAgent(agents, deviceAuth)
     private val resumeAgent = ResumeAgent(agents)
     private val invoke = InvokeHeartbeat(agents, runs)
 
-    val factory = FactoryHomeUseCases(resolveContext, LoadDashboard(dashboard, runs), LoadWindowSpend(dashboard))
+    val factory =
+        FactoryHomeUseCases(
+            resolveContext,
+            LoadDashboard(dashboard, runs, LoadIssueRefs(issues)),
+            LoadWindowSpend(dashboard),
+        )
 
     val agentList = AgentsUseCases(resolveContext, listAgents, pauseAgent, resumeAgent, invoke)
 
@@ -234,7 +240,13 @@ class Env(
             SetAgentBudget(agents),
         )
 
-    val runViewer = RunViewerUseCases(resolveContext, LoadRun(runs), TailRunLog(runs), CancelRun(runs, deviceAuth))
+    val runViewer =
+        RunViewerUseCases(
+            resolveContext,
+            LoadRun(runs, LoadIssueRefs(issues)),
+            TailRunLog(runs),
+            CancelRun(runs, deviceAuth),
+        )
 
     val workList =
         WorkListUseCases(

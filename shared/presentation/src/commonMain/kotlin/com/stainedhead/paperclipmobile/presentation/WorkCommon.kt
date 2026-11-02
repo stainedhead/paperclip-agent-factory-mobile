@@ -72,9 +72,14 @@ data class RunRowUi(
     val status: RunStatusUi,
     val startedAtEpochMillis: Long?,
     val createdAtEpochMillis: Long,
+    /** Null while the run is in progress. */
+    val finishedAtEpochMillis: Long?,
+    /** The issue's identifier and title ("PAP-1204"), when they could be read. */
+    val issueIdentifier: String?,
+    val issueTitle: String?,
 )
 
-internal fun HeartbeatRun.toRow() =
+internal fun HeartbeatRun.toRow(issue: com.stainedhead.paperclipmobile.domain.IssueRef? = null) =
     RunRowUi(
         id.value,
         agentName,
@@ -82,6 +87,9 @@ internal fun HeartbeatRun.toRow() =
         status.toUi(),
         startedAt?.toEpochMilliseconds(),
         createdAt.toEpochMilliseconds(),
+        finishedAt?.toEpochMilliseconds(),
+        issue?.identifier,
+        issue?.title,
     )
 
 /** What a mutation gave back: feedback for the screen, and the entity to show when the server's truth is known. */

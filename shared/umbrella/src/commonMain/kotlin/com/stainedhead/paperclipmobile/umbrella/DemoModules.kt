@@ -6,6 +6,7 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Exposure
 import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.RunStatus
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.ServerStatus
@@ -82,15 +83,7 @@ internal fun demoPortsModule(seeded: Boolean = true) =
         }
         single { FakeBiometrics() }
         single<Biometrics> { get<FakeBiometrics>() }
-        single {
-            DemoControls(
-                get(),
-                get(),
-                get<DecisionGateway>(RawPort) as FakeDecisionGateway,
-                get<ApprovalGateway>(RawPort) as FakeApprovalGateway,
-                get<BudgetGateway>(RawPort) as FakeBudgetGateway,
-            )
-        }
+        demoControls()
         single { FakeConnectivity() }
         single<Connectivity> { get<FakeConnectivity>() }
         single<PairingBrowser> { FakePairingBrowser() }
@@ -124,6 +117,23 @@ internal fun demoPortsModule(seeded: Boolean = true) =
         demoWorkPorts()
         signalPorts()
     }
+
+private fun org.koin.core.module.Module.demoControls() {
+    single {
+        DemoControls(
+            get(),
+            get(),
+            get<DecisionGateway>(RawPort) as FakeDecisionGateway,
+            get<ApprovalGateway>(RawPort) as FakeApprovalGateway,
+            get<BudgetGateway>(RawPort) as FakeBudgetGateway,
+            DemoReadFailures(
+                get<AgentGateway>(RawPort) as FakeAgentGateway,
+                get<RunGateway>(RawPort) as FakeRunGateway,
+                get<DashboardGateway>(RawPort) as FakeDashboardGateway,
+            ),
+        )
+    }
+}
 
 private fun org.koin.core.module.Module.demoAttentionPorts() {
     single<AttentionGateway>(RawPort) {
@@ -166,7 +176,16 @@ private fun org.koin.core.module.Module.demoWorkPorts() {
     single<InteractionGateway>(RawPort) {
         FakeInteractionGateway(listOf(DemoWork.confirmation()), DemoWork.interactionsByIssue())
     }
-    single<AgentGateway>(RawPort) { FakeAgentGateway(DemoAgents.agents()) }
+    single<AgentGateway>(RawPort) {
+        FakeAgentGateway(DemoAgents.agents()).apply {
+            // A run that was asked for appears like a server's: in the run store, in progress, started now.
+            onRunStarted = { run ->
+                val now = get<Clock>().now()
+                (get<RunGateway>(RawPort) as FakeRunGateway).store[run.id] =
+                    run.copy(status = RunStatus.Running, createdAt = now, startedAt = now)
+            }
+        }
+    }
     single<RunGateway>(
         RawPort,
     ) { FakeRunGateway(DemoAgents.runs(), events = DemoAgents.events(), log = DemoAgents.LOG) }

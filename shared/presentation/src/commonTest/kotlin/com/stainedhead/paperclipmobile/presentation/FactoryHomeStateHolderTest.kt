@@ -65,6 +65,11 @@ class FactoryHomeStateHolderTest {
             state.liveRuns.map { it.runId } shouldBe listOf("run-live")
             state.liveRuns.single().agentName shouldBe "Engineer 1"
             state.liveRuns.single().status shouldBe RunStatusUi.Running
+            state.liveRuns.single().issueIdentifier shouldBe "PAP-1182"
+            state.liveRuns
+                .single()
+                .issueTitle
+                .isNullOrEmpty() shouldBe false
             state.spend.map { it.window } shouldBe
                 listOf(SpendWindowUi.Last5Hours, SpendWindowUi.Last24Hours, SpendWindowUi.Last7Days)
             state.spend.map { it.cost.minorUnits } shouldBe listOf(1_200L, 9_000L, 61_000L)

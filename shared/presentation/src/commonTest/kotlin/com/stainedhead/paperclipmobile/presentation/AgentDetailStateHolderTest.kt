@@ -46,6 +46,8 @@ class AgentDetailLoadTest {
             state.currentRun?.runId shouldBe "run-live"
             state.currentIssue?.identifier shouldBe "PAP-1182"
             state.recentRuns.size shouldBe 2
+            state.currentRun?.issueIdentifier shouldBe "PAP-1182"
+            state.recentRuns.all { it.issueIdentifier == "PAP-1182" } shouldBe true
             state.monthSpend shouldBe MoneyUi(25_000, "USD")
             state.monthlyBudget shouldBe MoneyUi(100_000, "USD")
             state.budgetPercentUsed shouldBe 25

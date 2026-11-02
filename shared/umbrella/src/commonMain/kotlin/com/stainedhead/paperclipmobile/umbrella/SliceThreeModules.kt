@@ -18,6 +18,7 @@ import com.stainedhead.paperclipmobile.application.issue.ListIssueAttachments
 import com.stainedhead.paperclipmobile.application.issue.ListIssues
 import com.stainedhead.paperclipmobile.application.issue.LoadIssue
 import com.stainedhead.paperclipmobile.application.issue.LoadIssuePlan
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.application.issue.SearchIssues
 import com.stainedhead.paperclipmobile.application.refresh.RefreshVisibleScreen
 import com.stainedhead.paperclipmobile.application.run.CancelRun
@@ -82,6 +83,7 @@ private fun Module.workUseCases() {
     single { SearchIssues(get()) }
     single { LoadIssue(get(), get(), get()) }
     single { LoadIssuePlan(get()) }
+    single { LoadIssueRefs(get()) }
     single { ListIssueAttachments(get()) }
     single { CommentOnIssue(get()) }
     single { ChangeIssueStatus(get()) }
@@ -92,7 +94,7 @@ private fun Module.workUseCases() {
 
 private fun Module.agentUseCases() {
     single { RespondToInteraction(get()) }
-    single { ListAgents(get()) }
+    single { ListAgents(get(), get(), get()) }
     single { LoadAgent(get(), get(), get()) }
     single { PauseAgent(get(), get()) }
     single { ResumeAgent(get()) }
@@ -101,11 +103,11 @@ private fun Module.agentUseCases() {
 }
 
 private fun Module.runUseCases() {
-    single { LoadRun(get()) }
+    single { LoadRun(get(), get()) }
     single { TailRunLog(get()) }
     single { CancelRun(get(), get()) }
     single { ListIssueRuns(get()) }
-    single { LoadDashboard(get(), get()) }
+    single { LoadDashboard(get(), get(), get()) }
     single { LoadWindowSpend(get()) }
 }
 
