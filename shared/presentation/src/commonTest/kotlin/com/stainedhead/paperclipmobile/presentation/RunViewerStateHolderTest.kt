@@ -230,6 +230,66 @@ class RunViewerCancelTest {
         }
 
     @Test
+    fun `acceptance 11 offline after load disables Cancel run with the Offline reason and makes no call`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = runHolder(env)
+            advanceUntilIdle()
+            holder.state.value.canCancel shouldBe true
+
+            env.connectivity.setOnline(false)
+            advanceUntilIdle()
+
+            holder.state.value.canCancel shouldBe false
+            holder.state.value.actionsDisabledReason shouldBe ActionsDisabledReason.Offline
+            holder.onIntent(RunViewerIntent.CancelTapped)
+            holder.onIntent(RunViewerIntent.CancelConfirmed)
+            advanceUntilIdle()
+            holder.state.value.confirmCancel shouldBe false
+            env.runs.count("cancel") shouldBe 0
+            env.biometrics.calls shouldBe 0
+        }
+
+    @Test
+    fun `acceptance 11 going offline after the confirmation was shown still sends nothing`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = runHolder(env)
+            advanceUntilIdle()
+            holder.onIntent(RunViewerIntent.CancelTapped)
+            advanceUntilIdle()
+            holder.state.value.confirmCancel shouldBe true
+
+            env.connectivity.setOnline(false)
+            holder.onIntent(RunViewerIntent.CancelConfirmed)
+            advanceUntilIdle()
+
+            env.runs.count("cancel") shouldBe 0
+            env.biometrics.calls shouldBe 0
+        }
+
+    @Test
+    fun `acceptance 11 offline then online enables Cancel run again`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = runHolder(env)
+            advanceUntilIdle()
+            env.connectivity.setOnline(false)
+            advanceUntilIdle()
+            holder.state.value.canCancel shouldBe false
+
+            env.connectivity.setOnline(true)
+            advanceUntilIdle()
+            holder.state.value.canCancel shouldBe true
+            holder.state.value.actionsDisabledReason shouldBe null
+
+            holder.onIntent(RunViewerIntent.CancelTapped)
+            holder.onIntent(RunViewerIntent.CancelConfirmed)
+            advanceUntilIdle()
+            env.runs.count("cancel") shouldBe 1
+        }
+
+    @Test
     fun `dismissing the confirmation does nothing and a second confirm in flight is ignored`() =
         runTest {
             val env = workEnv()
