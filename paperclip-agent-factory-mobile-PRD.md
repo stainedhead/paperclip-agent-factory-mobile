@@ -115,7 +115,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 ### Instance configuration (multiple Paperclip instances)
 
-**FR-001:** The app stores any number of **instance configurations** ("factories"). Each has: `id` (UUID, app-generated), `displayName` (1–40 chars, unique per device), `baseUri`, `deploymentMode` and `exposure` (last reported by the server), `authMethod` (`PAIRED_BOARD_KEY` or `MANUAL_BOARD_KEY`), `boardKeyId`, `keyExpiresAt`, `defaultCompanyId`, `lastCompanyId`, `pinnedSpkiSha256` (optional list), `createdAt`, `lastConnectedAt`, `sortOrder`.
+**FR-001:** The app stores any number of **instance configurations** ("factories"). Each has: `id` (UUID, app-generated), `displayName` (1–40 chars, unique per device), `baseUri`, `deploymentMode` and `exposure` (last reported by the server; the health response names them `deploymentMode` and `deploymentExposure`), `authMethod` (`PairedBoardKey` or `ManualBoardKey`), `boardKeyId`, `keyExpiresAt`, `defaultCompanyId`, `lastCompanyId`, `pins` (optional list of base64 SHA-256 SPKI pins), `createdAt`, `lastConnectedAt`, `sortOrder`, `status` (`SignedIn`, `SignedOut` or `NeedsRePairing`).
 
 **FR-002:** Non-secret configuration is persisted in the shared SQLDelight store. **Secret material is never written to SQLDelight, settings, logs, crash reports, analytics, or OS backups.**
 
@@ -126,7 +126,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 **FR-004:** The user can add an instance by **scanning a QR code** or opening a **deep link** `paperclipmobile://add?uri=<urlencoded>&name=<optional>`. A deep link only pre-fills the form; the user must confirm. Links never carry credentials.
 
-**FR-005:** Before pairing, the app **probes** `GET {baseUri}/api/health` and shows the reported deployment mode, exposure and server version. It refuses to continue when the mode is `local_trusted` and explains why. A hostname or TLS failure shows targeted help (for example "Add this hostname with `paperclipai allowed-hostname`", "Is Tailscale connected on this phone?").
+**FR-005:** Before pairing, the app **probes** `GET {baseUri}/api/health` and shows the reported deployment mode and exposure (`deploymentMode`, `deploymentExposure`), and the server version only when the server reveals it: the anonymous `200` response omits `version`, so the app cannot show it before pairing and shows it after sign-in. It refuses to continue when the mode is `local_trusted` and explains why. A hostname or TLS failure shows targeted help (for example "Add this hostname with `paperclipai allowed-hostname`", "Is Tailscale connected on this phone?").
 
 **FR-006:** The user can rename, reorder, edit the URI of, re-pair, sign out of, and delete an instance. The Factories tab has a manage mode (drag to reorder, remove) and an edit screen per factory. Removing asks for confirmation that states what is deleted and requires device authentication. Deleting removes its config row, its cache, and every secret under its namespace, and revokes the board key on the server when reachable (`POST /api/cli-auth/revoke-current`).
 
@@ -175,7 +175,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 **FR-030:** The Inbox tab loads `GET /api/companies/{c}/attention?sort=decide&limit=50` with cursor paging, and groups items into **Decide now** (`decideBy` is `today` or a date that is today or earlier, using UTC days, which is the server's own rule and the web app's), **This week** (`decideBy` is `this_week` or a later date this week), and **Whenever** (`decideBy` is `whenever` or not set). Severity orders items within a group; it never moves an item between groups.
 
-**FR-031:** Each card shows severity, source kind, subject title and identifier, `whyNow`, origin agent and relative time. Filter chips come from `countsBySourceKind`.
+**FR-031:** Each card shows severity, source kind, subject title and identifier, `whyNow`, origin agent and relative time. Filter chips come from `countsBySourceKind`. The server has eleven source kinds: `approval`, `decision`, `issue_thread_interaction`, `join_request`, `recovery_action`, `productivity_review`, `blocker_attention`, `review`, `failed_run`, `budget_alert`, `agent_error_alert`; a kind the app does not know is kept and opens "Open in web app" instead of failing.
 
 **FR-032:** The Inbox tab badge and the app icon badge show the feed's `deskBadgeCount`, the same number the web app shows: distinct items that are new today (UTC day) or whose `decideBy` is due or overdue, counted by the server before paging. The app never computes its own badge. (`decideNowCount` does not exist on the server.)
 
@@ -216,7 +216,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 **FR-062:** The user can comment (`POST /api/issues/{i}/comments`, with optional reopen or interrupt), change status and assignee (`PATCH /api/issues/{i}`), and create a new issue or subtask (`POST /api/companies/{c}/issues`).
 
-**FR-063:** Interactions render natively by kind: `ask_user_questions` (form; `respond`), `request_confirmation` (Accept / Reject), `request_checkbox_confirmation` (checklist; `respond`), `suggest_tasks` (accept selected), `request_item_verdicts` (per-item verdict). Unsupported kinds show "Open in web app" with the instance URL.
+**FR-063:** Interactions render natively by kind: `ask_user_questions` (form; `respond`), `request_confirmation` (Accept / Reject), `request_checkbox_confirmation` (checklist; `respond`), `suggest_tasks` (accept selected), `request_item_verdicts` (per-item verdict). The server has a sixth kind, `connection_intent`, which has its own endpoints and is not supported in v1; it and any kind from a newer server are unsupported and show "Open in web app" with the instance URL.
 
 ### Agents
 
@@ -260,7 +260,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 **FR-095:** All read screens render from the cache first, marked with "Updated <time>", then refresh. With no connectivity, actions are disabled with an explanation; v1 has no offline write queue.
 
-**FR-096:** Reads retry with exponential backoff (max 3). Mutations are never retried automatically unless the server supports an idempotency key (see Dependencies). A mutation that times out re-reads the entity and shows its true state.
+**FR-096:** Reads retry with exponential backoff (max 3 per read, and a total wait budget per screen load; never offline, never for a certificate failure). Mutations are never retried automatically unless the server supports an idempotency key (see Dependencies). A mutation that times out re-reads the entity and shows its true state; when that re-read cannot tell whether this tap took effect (run now, comments), the screen says the outcome is unknown and reloads instead of reporting success or failure.
 
 **FR-097:** A server error body `{error, details?}` is mapped to a typed domain error; the UI shows a human-readable message and never raw JSON.
 
