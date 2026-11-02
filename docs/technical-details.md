@@ -95,7 +95,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 37 tests in 10 files:
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 69 tests in 16 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -109,6 +109,10 @@ Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsi
 | `MutationMatrixRulesTest` | Every mutation use case has a row in `MutationMatrix.kt` (23 rows, one per company-scoped `Action`); the viewer, role and timeout matrices run over it. |
 | `CiPinningRulesTest` | Every action in `.github/workflows` is pinned to a full commit SHA with its version in a comment; no workflow or Dockerfile uses a floating image tag. |
 | `DetektConfigRulesTest` | Every deviation from the detekt defaults in `config/detekt/detekt.yml` has a reason comment above it. |
+| `InfrastructureApiRulesTest`, `InfrastructurePersistenceRulesTest`, `InfrastructureDeviceRulesTest` | The adapter modules keep DTOs and generated database types inside, import only the allowed packages, expose only the listed public declarations (every modifier form: `suspend fun`, `const val`, `fun interface`, explicit `public`, annotated one-liners), build public persistence classes only through `internal constructor`s (per class), and the secret store names no `NSUserDefaults`, `NSFileManager`, `NSFileHandle` or `NSKeyedArchiver` in any import form. Each has planted-violation tests. |
+| `LiveWiringRulesTest` | Every umbrella main-source file that is a `Live*` file or names the live seam (`createLiveGraph(`, `LivePlatform`, `livePortsModule(`) imports nothing from `testing` and binds no fake module; in a file with a demo graph next to it only the live entry point is scanned. Planted-violation test included. |
+| `SourceScanningRulesTest` | The scanners behind the infrastructure rules flag every declaration form they claim to (F-C-6). |
+| `DocumentedCountsRulesTest` | The Konsist count written in this file is the real number of `@Test` methods. |
 
 Each rule also asserts it can see the code it guards (the infrastructure rule via its fixture), so an empty scan cannot pass vacuously, and the infrastructure rule scans every `src/<set>Main` source set (commonMain, iosMain, androidMain, jvmMain) of every module and fails when a Kotlin file sits outside them. Today the five infrastructure modules are stubs, so on the real tree it checks nothing yet; a fixture test with a module that has only `iosMain` and `androidMain` files proves it reports a violation there (F-D-7).
 
@@ -187,7 +191,7 @@ Numbers from the last local run (2026-11-02, after the independent re-review fix
 | `shared/presentation` | 326 (322 on Android host and iOS simulator: `AtomicGuardsTest`'s 4 stress tests are JVM only) |
 | `shared/testing` | 48 |
 | `shared/umbrella` | 32 |
-| Konsist (`konsistTest`) | 37 in 10 files |
+| Konsist (`konsistTest`) | 69 in 16 files |
 | Swift (`iosApp/Tests`) | 33 Swift Testing cases in `iosAppTests` (counted from source) and 1 XCUITest |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.

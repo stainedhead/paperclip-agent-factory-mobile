@@ -1,0 +1,79 @@
+package com.stainedhead.paperclipmobile.architecture
+
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import java.io.File
+
+/**
+ * F-C-7: a number written in the docs about the rules themselves must be the real one. The Konsist count quoted in
+ * `docs/technical-details.md` is compared with the `@Test` methods in this folder, so adding a rule without updating
+ * the docs fails the build instead of leaving a stale number for the next reader.
+ */
+class DocumentedCountsRulesTest {
+    private val rulesDir = File(projectRoot, "shared/umbrella/src/konsistTest/kotlin")
+    private val technicalDetails = File(projectRoot, "docs/technical-details.md")
+
+    /** (tests, files) as they are in [dir] right now. */
+    private fun actualCounts(dir: File): Pair<Int, Int> {
+        val files =
+            dir
+                .walkTopDown()
+                .filter {
+                    it.extension == "kt" &&
+                        TEST_ANNOTATION.containsMatchIn(
+                            it.readText(),
+                        )
+                }.toList()
+        return files.sumOf { TEST_ANNOTATION.findAll(it.readText()).count() } to files.size
+    }
+
+    /** Every "N tests in M files" or "N in M files" pair a document states, in the order written. */
+    private fun quotedCounts(text: String): List<Pair<Int, Int>> =
+        QUOTED
+            .findAll(text)
+            .map { it.groupValues[1].toInt() to it.groupValues[2].toInt() }
+            .toList()
+
+    @Test
+    fun `the Konsist count quoted in the technical details is the real count`() {
+        val (tests, files) = actualCounts(rulesDir)
+        Assertions.assertTrue(tests > 0 && files > 0, "No Konsist tests found: the rule would pass vacuously")
+        val quoted = quotedCounts(technicalDetails.readText())
+        Assertions.assertTrue(quoted.isNotEmpty(), "technical-details.md quotes no Konsist count")
+        Assertions.assertTrue(
+            quoted.all { it == tests to files },
+            "technical-details.md says $quoted but konsistTest has $tests tests in $files files",
+        )
+    }
+
+    @Test
+    fun `the count scan reads a stale and a current statement and counts planted tests`() {
+        Assertions.assertEquals(
+            listOf(STALE, CURRENT),
+            quotedCounts(
+                "fail the build. ${STALE.first} tests in ${STALE.second} files:\n" +
+                    "| Konsist (`konsistTest`) | ${CURRENT.first} in ${CURRENT.second} files |",
+            ),
+        )
+        val dir =
+            kotlin.io.path
+                .createTempDirectory("pafm-konsist-count")
+                .toFile()
+        try {
+            File(dir, "A.kt").writeText("@Test\nfun a() {}\n@Test\nfun b() {}\n")
+            File(dir, "B.kt").writeText("@Test fun c() {}\n")
+            File(dir, "C.kt").writeText("fun notATest() {}\n")
+            Assertions.assertEquals(PLANTED, actualCounts(dir))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    private companion object {
+        val STALE = 37 to 10
+        val CURRENT = 71 to 17
+        val PLANTED = 3 to 2
+        val TEST_ANNOTATION = Regex("^\\s*@Test\\b", RegexOption.MULTILINE)
+        val QUOTED = Regex("(\\d+)(?: tests)? in (\\d+) files")
+    }
+}
