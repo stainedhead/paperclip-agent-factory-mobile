@@ -44,11 +44,11 @@ internal class StubApprovals {
         }
     }
 
-    private fun find(id: String): StubApproval? = if (isServerId(id)) approvals.firstOrNull { it.id == id } else null
+    private fun find(id: String): StubApproval? = if (isStubUuid(id)) approvals.firstOrNull { it.id == id } else null
 
     /** `router.param("id")` runs a uuid query first: a non-uuid id is a database error, 500 (`approvals.js:30`). */
     private fun absent(id: String) =
-        if (isServerId(id)) StubReply.notFound(NOT_FOUND) else StubReply.error(500, "Internal server error")
+        if (isStubUuid(id)) StubReply.notFound(NOT_FOUND) else StubReply.error(500, "Internal server error")
 
     private fun read(
         approval: StubApproval,

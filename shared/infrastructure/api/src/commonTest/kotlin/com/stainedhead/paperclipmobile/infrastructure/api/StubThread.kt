@@ -61,7 +61,7 @@ internal class StubThread(
         val issue = store.issues.firstOrNull { it.id == s[1] }
         val refusal = issue?.let { request.resourceRefusal(it.company, "Issue not found") }
         return when {
-            !isServerId(s[1]) -> StubReply.error(500, "Internal server error")
+            !isStubUuid(s[1]) -> StubReply.error(500, "Internal server error")
             issue == null -> StubReply.notFound("Issue not found")
             refusal != null -> refusal
             s[2] == "comments" && request.method == HttpMethod.Get -> list(request, issue)
@@ -117,7 +117,7 @@ internal class StubThread(
         val refusal = file?.let { request.resourceRefusal(it.company, "Attachment not found") }
         return when {
             request.method != HttpMethod.Get -> null
-            !isServerId(id) -> StubReply.error(500, "Internal server error")
+            !isStubUuid(id) -> StubReply.error(500, "Internal server error")
             file == null -> StubReply.notFound("Attachment not found")
             refusal != null -> refusal
             else -> slice(request.range, file)

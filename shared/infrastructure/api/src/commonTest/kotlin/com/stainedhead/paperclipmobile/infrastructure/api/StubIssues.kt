@@ -112,7 +112,7 @@ internal class StubIssues(
         val issue = store.issues.firstOrNull { it.id == s[1] }
         val refusal = issue?.let { request.resourceRefusal(it.company, NOT_FOUND) }
         return when {
-            !isServerId(s[1]) -> StubReply.error(500, "Internal server error")
+            !isStubUuid(s[1]) -> StubReply.error(500, "Internal server error")
             issue == null -> StubReply.notFound(NOT_FOUND)
             refusal != null -> refusal
             s.size == 2 -> issueRoute(request, issue)
@@ -307,7 +307,7 @@ internal class IssueDraft(
     val allowDuplicate: Boolean = (body["allowDuplicate"] as? JsonPrimitive)?.content == "true"
     val valid: Boolean =
         (title.isNotBlank() || !description.isNullOrBlank()) && priority in PRIORITIES &&
-            (parentId == null || isServerId(parentId))
+            (parentId == null || isStubUuid(parentId))
 
     private companion object {
         val PRIORITIES = setOf("critical", "high", "medium", "low")

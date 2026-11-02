@@ -27,7 +27,7 @@ internal class StubRunHandlers(
         request: StubRequest,
         s: List<String>,
     ): StubReply? {
-        if (!isServerId(s[1])) return StubReply.error(400, "Invalid heartbeat run ID")
+        if (!isStubUuid(s[1])) return StubReply.error(400, "Invalid heartbeat run ID")
         val run = store.runs.firstOrNull { it.id == s[1] } ?: return StubReply.notFound(NOT_FOUND)
         request.resourceRefusal(run.company, NOT_FOUND)?.let { return it }
         return if (s.size == 2) {

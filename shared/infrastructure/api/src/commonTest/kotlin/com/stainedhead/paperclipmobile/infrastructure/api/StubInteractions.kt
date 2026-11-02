@@ -48,7 +48,7 @@ internal class StubInteractions(
         val issue = store.issues.firstOrNull { it.id == s[1] }
         val refusal = issue?.let { request.resourceRefusal(it.company, "Issue not found") }
         return when {
-            !isServerId(s[1]) -> StubReply.error(500, "Internal server error")
+            !isStubUuid(s[1]) -> StubReply.error(500, "Internal server error")
             issue == null -> StubReply.notFound("Issue not found")
             refusal != null -> refusal
             s.size == LIST && request.method == HttpMethod.Get -> list(issue)

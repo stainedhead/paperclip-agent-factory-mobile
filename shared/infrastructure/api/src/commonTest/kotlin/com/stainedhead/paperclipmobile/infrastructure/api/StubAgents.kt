@@ -60,7 +60,7 @@ internal class StubAgents(
         request: StubRequest,
         s: List<String>,
     ): StubReply? {
-        if (!isServerId(s[1])) return StubReply.error(500, "Internal server error")
+        if (!isStubUuid(s[1])) return StubReply.error(500, "Internal server error")
         val agent = agents.firstOrNull { it.id == s[1] } ?: return StubReply.notFound(NOT_FOUND)
         request.resourceRefusal(agent.company, NOT_FOUND)?.let { return it }
         return if (s.size == 2) {

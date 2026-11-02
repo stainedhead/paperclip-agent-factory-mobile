@@ -18,6 +18,8 @@ import kotlinx.coroutines.SupervisorJob
 import org.koin.core.Koin
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * The composition root. Platform apps create one graph and ask it for screen state holders.
@@ -26,9 +28,13 @@ import org.koin.dsl.koinApplication
  * without a server. Each `create...StateHolder` call returns a new holder that the screen owns; call `close()` on it
  * when the screen goes away.
  */
+@OptIn(ExperimentalAtomicApi::class)
 class PaperclipGraph internal constructor(
     private val koin: Koin,
+    private val resources: AutoCloseable? = null,
 ) {
+    private val closed = AtomicInt(0)
+
     /** The Inbox, Decision, Approval and Budget incident screens (slice 1a-2). */
     val attention: AttentionScreens = AttentionScreens(koin)
 
@@ -71,6 +77,19 @@ class PaperclipGraph internal constructor(
         koin.get { parametersOf(instanceId, newScope()) }
 
     private fun newScope() = newScreenScope()
+
+    /**
+     * Lets go of what the graph owns: for a live graph the HTTP client, the database and the network monitor, each
+     * once, however often this is called. Close the screens' state holders first. Nothing may be used afterwards.
+     */
+    fun close() {
+        if (!closed.compareAndSet(0, 1)) return
+        try {
+            resources?.close()
+        } finally {
+            koin.close()
+        }
+    }
 }
 
 internal fun newScreenScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
