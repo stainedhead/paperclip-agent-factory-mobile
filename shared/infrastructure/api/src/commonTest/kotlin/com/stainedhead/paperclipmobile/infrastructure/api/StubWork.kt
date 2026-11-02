@@ -122,6 +122,7 @@ internal class StubWork(
     val issueStore = StubIssueStore()
     val issues = StubIssues(issueStore, runs, agents, clock)
     val thread = StubThread(issueStore, runs, clock)
+    val interactions = StubInteractions(issueStore, clock)
 
     fun handle(request: StubRequest): StubReply? {
         val segments = request.segments
@@ -131,6 +132,7 @@ internal class StubWork(
         return budgets.handle(request) ?: approvals.handle(request) ?: decisions.handle(request)
             ?: attention.handle(request) ?: dashboard.handle(request) ?: agents.handle(request)
             ?: runHandlers.handle(request) ?: issues.handle(request) ?: thread.handle(request)
+            ?: interactions.handle(request)
     }
 
     private companion object {
