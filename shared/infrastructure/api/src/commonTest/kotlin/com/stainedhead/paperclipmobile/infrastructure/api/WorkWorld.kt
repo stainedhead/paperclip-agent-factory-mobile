@@ -30,6 +30,7 @@ class WorkWorld(
         FakeInstanceRepository(
             listOf(
                 TestData.instance("inst-1"),
+                TestData.instance("inst-2", uri = "https://other.example.com"),
                 TestData.instance("inst-signed-out", uri = "https://signed-out.example.com"),
             ),
         )
@@ -37,9 +38,11 @@ class WorkWorld(
     val acme = CompanyScope(InstanceId("inst-1"), TestData.acme)
     val globex = CompanyScope(InstanceId("inst-1"), TestData.globex)
     val elsewhere = CompanyScope(InstanceId("inst-1"), CompanyId("company-elsewhere"))
+    val otherFactory = CompanyScope(InstanceId("inst-2"), TestData.acme)
     val signedOut = CompanyScope(InstanceId("inst-signed-out"), TestData.acme)
     val unknownFactory = CompanyScope(InstanceId("inst-missing"), TestData.acme)
     internal val home: StubWork get() = server.host(HOME).work
+    internal val other: StubWork get() = server.host(OTHER).work
 
     val budget = BudgetGatewayAdapter(client, instances, secrets)
     val approvals = ApprovalGatewayAdapter(client, instances, secrets)
@@ -48,12 +51,16 @@ class WorkWorld(
 
     init {
         server.issueKey(HOME, TestData.TOKEN, KEY_ID, "Alex's iPhone", roles)
+        server.issueKey(OTHER, OTHER_TOKEN, KEY_ID, "Alex's iPad", roles)
         server.host("signed-out.example.com")
+        secrets.seed(SecretKey(InstanceId("inst-2"), SecretName.BoardToken), OTHER_TOKEN)
         secrets.seed(SecretKey(InstanceId("inst-1"), SecretName.BoardToken), TestData.TOKEN)
     }
 
     companion object {
         const val HOME = "home.example.com"
+        const val OTHER = "other.example.com"
+        const val OTHER_TOKEN = "pcp_board_TESTONLY0000000000000002"
         const val KEY_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     }
 }
