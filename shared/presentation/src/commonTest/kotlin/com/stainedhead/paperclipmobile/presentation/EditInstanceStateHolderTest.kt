@@ -17,10 +17,12 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 
 class EditInstanceStateHolderTest {
@@ -487,5 +489,24 @@ class EditInstanceStateHolderTest {
 
             holder.state.value.probe shouldBe ProbeStatus.Idle
             holder.state.value.probeRefusal shouldBe null
+        }
+
+    @Test
+    fun `F-B-1 a late probe that cannot be cancelled is still dropped in the edit screen`() =
+        runTest {
+            val (holder, env) = loaded()
+            val gate = CompletableDeferred<Unit>()
+            env.health.onProbe =
+                { uri -> if (uri.value == "https://a.example.com") withContext(NonCancellable) { gate.await() } }
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://a.example.com"))
+            holder.onIntent(EditInstanceIntent.ProbeRequested)
+            advanceUntilIdle()
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://b.example.com"))
+            gate.complete(Unit)
+            advanceUntilIdle()
+
+            holder.state.value.probe shouldBe ProbeStatus.Idle
+            holder.state.value.canSave shouldBe false
         }
 }

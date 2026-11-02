@@ -482,8 +482,7 @@ internal class EditInstanceSaving(
 
     private suspend fun add(current: EditInstanceState) {
         val probed = session.probed
-        val address = useCases.validateAddress(current.address) as? BaseUriResult.Valid
-        if (probed == null || address?.uri != probed.baseUri) {
+        if (probed == null) {
             state.update { it.copy(isBusy = false) }
             return
         }

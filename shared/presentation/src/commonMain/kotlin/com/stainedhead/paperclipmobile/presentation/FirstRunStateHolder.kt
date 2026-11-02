@@ -356,7 +356,6 @@ internal class FirstRunSaving(
         val probed = session.probed
         if (current.probe != ProbeStatus.Accepted || probed == null || current.isBusy) return
         val address = current.normalizedAddress ?: return
-        if (probed.baseUri.value != address) return
         val name = current.name.ifBlank { address.substringAfter("://").substringBefore('/').substringBefore(':') }
         state.update { it.copy(isBusy = true, error = null, nameIssue = null) }
         scope.launch {

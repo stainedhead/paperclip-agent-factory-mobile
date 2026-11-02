@@ -17,10 +17,12 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 
 class FirstRunStateHolderTest {
@@ -416,5 +418,26 @@ class FirstRunStateHolderTest {
 
             holder.state.value.probe shouldBe ProbeStatus.Idle
             holder.state.value.probeRefusal shouldBe null
+        }
+
+    @Test
+    fun `F-B-1 a late probe that cannot be cancelled is still dropped when its address no longer matches`() =
+        runTest {
+            val (holder, env) = holderWithEnv()
+            val gate = CompletableDeferred<Unit>()
+            env.health.onProbe =
+                { uri -> if (uri.value == "https://a.example.com") withContext(NonCancellable) { gate.await() } }
+            holder.type("https://a.example.com")
+            holder.onIntent(FirstRunIntent.ProbeRequested)
+            advanceUntilIdle()
+
+            holder.type("https://b.example.com")
+            gate.complete(Unit)
+            advanceUntilIdle()
+            holder.onIntent(FirstRunIntent.ContinueRequested)
+            advanceUntilIdle()
+
+            holder.state.value.probe shouldBe ProbeStatus.Idle
+            env.repository.addCalls shouldBe 0
         }
 }
