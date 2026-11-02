@@ -342,7 +342,7 @@ class CommentOnApprovalTest {
         }
 
     @Test
-    fun `a timeout is reported once, never retried, and not claimed as posted`() =
+    fun `a timeout is reported once and never retried and not claimed as posted`() =
         runTest {
             val env = Env()
             env.approvals.failures["addComment"] = DomainError.Timeout

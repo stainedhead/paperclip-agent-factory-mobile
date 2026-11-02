@@ -52,7 +52,7 @@ class ListIssuesTest {
             n: Int,
             urgent: Boolean,
         ) = WorkFixtures.issue(
-            "i%02d".format(n),
+            "i${n.toString().padStart(2, '0')}",
             "Row $n",
             priority = if (urgent) IssuePriority.High else IssuePriority.Low,
         )

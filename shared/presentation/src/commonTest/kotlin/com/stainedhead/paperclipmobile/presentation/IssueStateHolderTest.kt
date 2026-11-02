@@ -225,7 +225,7 @@ class IssueEditsTest {
         }
 
     @Test
-    fun `acceptance 10 a timeout on a comment is sent once, reported unknown and the thread is reloaded`() =
+    fun `acceptance 10 a timeout on a comment is sent once and reported unknown and the thread is reloaded`() =
         runTest {
             val env = workEnv()
             env.issues.failures["addComment"] = DomainError.Timeout
