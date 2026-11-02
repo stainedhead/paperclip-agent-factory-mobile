@@ -292,3 +292,20 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Context.** The spec asks for fixtures under `src/commonTest/resources`. A Kotlin/Native test has no classpath, so a resource file cannot be read by `iosSimulatorArm64Test`, and the adapter tests must run on JVM, Android host and iOS simulator.
 **Decision.** `ServerFixtures` builds the JSON bodies of the pinned server's routes as Kotlin raw strings, each commented with the server file and line it follows; `StubPaperclipServer` serves them. The CI contract test (1b-5) checks the same shapes against the real container.
 **Consequences.** Fixtures run on every target. They are derived from server source, not recorded, until the contract test exists.
+
+## ADR-042: An unusable database is recreated empty; secrets are never in it
+
+**Status:** Accepted (2026-11-02, Phase 1b-2, `specs/261102-phase-1b-adapters`)
+
+**Context.** SQLite opens a garbage file and fails on the first statement; a file may also come from a newer app version after a downgrade, or lack a table. The database holds only non-secret factory configuration, settings and an Inbox cache. The credentials are in the Keychain or Keystore under `instance/{id}/`.
+**Decision.** After opening, the app probes the file (`user_version` not newer than the code; the three tables exist). If opening or the probe fails, the database and its `-wal`/`-shm`/`-journal` files are deleted and a new empty one is created (`PaperclipPersistence.recreated` is true so the composition root can tell the person). Only a failure of that second open is fatal. No secret column or secret-typed parameter exists: a test pins the exact column list and scans every stored value for `pcp_board_`, and a Konsist rule forbids importing `Secret` or `SecretKey` in the module.
+**Consequences.** The person loses the factory list, not access control. Because `SecretStore` cannot list keys, recreating orphans the items under `instance/{id}/` until the same ids are reused (they are not: new ids are generated) or the app is reinstalled; they stay protected by the Keychain/Keystore and are never read. Failing closed was rejected: it would leave the app unusable with reinstalling as the only way out.
+
+## ADR-043: Persistence layout: payload mirror classes, one serial executor, orphan pruning
+
+**Status:** Accepted (2026-11-02, Phase 1b-2)
+
+**Context.** The domain has no serialization annotations (AGENTS.md). The in-memory JDBC driver shares one connection and cannot run parallel transactions. A cache write can arrive after its factory was removed, and the cache contract requires writes for scopes with no factory row.
+**Decision.** (1) The cached Inbox page is one JSON row written through `internal` payload classes in `infrastructure.persistence.payload`, with a `format` column (added by migration 1.sqm) so an unreadable or newer layout is a cache miss that deletes the row. At most 200 items are kept; when a longer page is cut `nextCursor` is cleared, because the server cursor would skip the dropped items. (2) `PaperclipPersistence` runs the three ports on one `Dispatchers.Default.limitedParallelism(1)`, so statements and transactions of one database are ordered whatever the driver does. Deleting a factory removes its configuration and cache rows in one transaction (no reliance on foreign keys, which are off by default). (3) Opening deletes cache rows whose factory no longer exists. (4) The iOS file lives in `Application Support/PaperclipData`, excluded from backup (folder and files, reapplied on every open); Android uses `noBackupFilesDir`. (5) Generated SQLDelight classes are public by the plugin; the module hides them by making every adapter constructor `internal` and by a Konsist rule that no file outside the module names the generated package.
+**Consequences.** Reads are not parallel (fine at this size). A domain change to `AttentionItem` needs a payload change and, if the layout changes, a `format` bump.
+
