@@ -24,6 +24,9 @@ class FakeBudgetGateway(
     val resolutions = mutableListOf<BudgetResolution>()
     var serverObservedMinor: Long? = null
 
+    /** Called with the incident's id once it is resolved or dismissed, so a demo feed can drop its card. */
+    var onResolved: ((String) -> Unit)? = null
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
@@ -59,6 +62,11 @@ class FakeBudgetGateway(
         }
         val raised = resolution is BudgetResolution.RaiseAndResume
         val status = if (raised) IncidentStatus.Resolved else IncidentStatus.Dismissed
-        return DomainResult.Success(current.copy(status = status).also { store[id] = it })
+        return DomainResult.Success(
+            current.copy(status = status).also {
+                store[id] = it
+                onResolved?.invoke(id.value)
+            },
+        )
     }
 }

@@ -82,8 +82,9 @@ internal fun demoPortsModule(seeded: Boolean = true) =
         }
         single { FakeBiometrics() }
         single<Biometrics> { get<FakeBiometrics>() }
-        single { DemoControls(get()) }
-        single<Connectivity> { FakeConnectivity() }
+        single { DemoControls(get(), get()) }
+        single { FakeConnectivity() }
+        single<Connectivity> { get<FakeConnectivity>() }
         single<PairingBrowser> { FakePairingBrowser() }
         single<HealthGateway> {
             FakeHealthGateway(
@@ -117,13 +118,22 @@ internal fun demoPortsModule(seeded: Boolean = true) =
     }
 
 private fun org.koin.core.module.Module.demoAttentionPorts() {
-    single<AttentionGateway>(RawPort) { FakeAttentionGateway(get(), DemoInbox.items()) }
+    single<AttentionGateway>(RawPort) {
+        FakeAttentionGateway(get(), DemoInbox.items()).apply { firstFeedAge = DemoInbox.FIRST_READ_AGE }
+    }
     single<AttentionCache> { FakeAttentionCache() }
     single<DecisionGateway>(RawPort) { FakeDecisionGateway(DemoAttentionDetails.decisions()) }
     single<ApprovalGateway>(RawPort) {
-        FakeApprovalGateway(DemoAttentionDetails.approvals()).apply { issues = DemoAttentionDetails.linkedIssues() }
+        FakeApprovalGateway(DemoAttentionDetails.approvals()).apply {
+            issues = DemoAttentionDetails.linkedIssues()
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
     }
-    single<BudgetGateway>(RawPort) { FakeBudgetGateway(DemoAttentionDetails.incidents()) }
+    single<BudgetGateway>(RawPort) {
+        FakeBudgetGateway(DemoAttentionDetails.incidents()).apply {
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
 }
 
 private fun org.koin.core.module.Module.demoWorkPorts() {

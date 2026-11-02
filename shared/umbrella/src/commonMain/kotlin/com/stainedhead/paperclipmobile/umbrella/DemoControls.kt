@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
+import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
 
 /**
  * What a shell may steer and read on the demo graph only (`PaperclipGraph.demoControls`; null on any other graph).
@@ -10,6 +11,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeBiometrics
  */
 class DemoControls internal constructor(
     private val biometrics: FakeBiometrics,
+    private val connectivity: FakeConnectivity,
 ) {
     /** How many device-owner prompts the graph has shown so far. */
     val biometricPromptCount: Int get() = biometrics.calls
@@ -21,4 +23,7 @@ class DemoControls internal constructor(
     fun setDefaultBiometricResult(result: BiometricResult) {
         biometrics.result = result
     }
+
+    /** Goes offline (false) or comes back online (true), so UI tests can see the offline states of a screen. */
+    fun setOnline(online: Boolean) = connectivity.setOnline(online)
 }
