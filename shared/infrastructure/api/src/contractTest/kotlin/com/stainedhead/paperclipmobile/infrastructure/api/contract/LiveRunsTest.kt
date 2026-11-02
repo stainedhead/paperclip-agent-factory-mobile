@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.infrastructure.api.contract
 
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.Assignee
+import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.NewIssue
 import com.stainedhead.paperclipmobile.domain.RunId
@@ -75,7 +76,13 @@ class LiveRunsTest {
         live {
             val sleeper = seeder.agent(scope.companyId.value, "Contract Sleeper", "sleep", listOf(SLEEP_SECONDS))
             val agent = AgentId(sleeper.id)
-            val outcome = agents.invokeHeartbeat(scope, agent).verified("AgentGateway.invokeHeartbeat")
+            val invoked = agents.invokeHeartbeat(scope, agent)
+            if (invoked is DomainResult.Failure) {
+                // The adapter's error carries no body; ask once more through the raw client so the report says why.
+                val probe = raw.call("POST", "/api/agents/${agent.value}/heartbeat/invoke", bearer = key)
+                LiveReport.note("invokeHeartbeat refused", probe.describe())
+            }
+            val outcome = invoked.verified("AgentGateway.invokeHeartbeat")
             observe("invokeHeartbeat outcome") {
                 check(outcome is InvokeOutcome.Started) { "A fresh agent should start a run, got $outcome" }
                 outcome::class.simpleName.orEmpty()
