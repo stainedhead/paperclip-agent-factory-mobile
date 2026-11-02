@@ -81,6 +81,11 @@ Red evidence: 'key: expected:<InvalidKey> but was:<Malformed>' (first run, paste
 Fix: ErrorKey.InvalidKey and ErrorKey.StorageFailed; one SignInResult.toFailure() (SignInFailure.kt, no else branch) used by both holders; a pasted bad key now sets pairing Failed in first run like every other failure (it stayed Idle). Existing FR-021 test asserted Malformed for the bad key and was changed to InvalidKey.
 Swift: ErrorKey gained two cases; no Swift source switches over it (checked iosApp/Sources and Tests).
 
+### 2026-11-01 F-B-4 inline Approve/Reject check the card and the policy (Group 2)
+
+Red evidence: approveTappedOnDecisionCardIsIgnored 'expected:<0> but was:<1>' (a decision id sent to the approvals endpoint), approveTappedOnNonInlineApprovalIsIgnored 'expected:<0> but was:<1>', approveWithoutSubjectStatusIsIgnored 'expected:<0> but was:<1>', approveTappedForViewerRole... 'Expected null but actual was FeedbackUi(kind=NotAllowed...)' (the viewer tap reached the use case).
+Fix: InboxApprovalActions honours approve, reject and keepPaused only if InlineActionPolicy.actionsFor(item, role) lists that action, and ignores a card without subject.status instead of assuming pending. AttentionFixtures.approvalItem now carries status pending (the real feed does, as the demo data already did).
+
 ## Edge cases and solutions
 
 (none yet)

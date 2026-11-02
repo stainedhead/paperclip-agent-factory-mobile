@@ -33,7 +33,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] FR-R08 (P1) F-A-8: Stale-snapshot writes and unvalidated caller-supplied entities in use cases
 - [x] FR-R09 (P1) F-B-2: Decision screen can run two execution pollers at once; `polling` flag is shared
 - [x] FR-R10 (P1) F-B-3: Sign-in outcomes map to wrong or inconsistent error keys
-- [ ] FR-R11 (P1) F-B-4: Inbox inline Approve/Reject do not check the card type or the inline-action policy
+- [x] FR-R11 (P1) F-B-4: Inbox inline Approve/Reject do not check the card type or the inline-action policy
 - [ ] FR-R12 (P1) F-B-6: Holders run on `Dispatchers.Default` but guards and fields are plain check-then-set
 - [ ] FR-R13 (P1) F-B-7: Approval comment append uses a stale snapshot; a refresh can overwrite a just-finished action
 - [ ] FR-R14 (P1) F-B-9: Screens can get stuck with no refresh or lose a final outcome
@@ -95,3 +95,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-A-1 residual done (per-factory lock (ADR-033)).
 - 2026-11-01: F-B-2 done (one execution poller per Decision screen).
 - 2026-11-01: F-B-3 done (sign-in outcomes map to one consistent set of keys).
+- 2026-11-01: F-B-4 done (inline Approve/Reject check the card and the policy).

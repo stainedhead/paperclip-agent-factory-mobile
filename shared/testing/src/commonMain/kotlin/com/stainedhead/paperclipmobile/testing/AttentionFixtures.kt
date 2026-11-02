@@ -75,6 +75,7 @@ object AttentionFixtures {
             id,
             title = "Hire a Designer",
             href = "/PAP/approvals/$id",
+            status = "pending",
             approvalType = type,
         ),
     ).copy(

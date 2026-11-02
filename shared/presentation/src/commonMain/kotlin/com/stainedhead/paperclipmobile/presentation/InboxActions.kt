@@ -2,13 +2,13 @@ package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.MutationResult
 import com.stainedhead.paperclipmobile.application.attention.UndoDismiss
-import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.ApprovalId
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.AttentionItem
 import com.stainedhead.paperclipmobile.domain.BudgetResolution
 import com.stainedhead.paperclipmobile.domain.DecideBy
-import com.stainedhead.paperclipmobile.domain.Permissions
+import com.stainedhead.paperclipmobile.domain.InlineAction
+import com.stainedhead.paperclipmobile.domain.InlineActionPolicy
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -16,24 +16,35 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Instant
 
-/** Inline approval and budget actions on a card (PRD FR-033, FR-051). */
+/**
+ * Inline approval and budget actions on a card (PRD FR-033, FR-051). An intent is honoured only if the card offers that
+ * action to this role, the same list the renderer shows ([InlineActionPolicy]); a stale or forged intent is ignored.
+ */
 internal class InboxApprovalActions(
     private val session: InboxSession,
 ) {
     private fun item(id: String) = session.model.value.find(id)
 
+    /** The card, if it offers [action] to the person's role. */
+    private fun offering(
+        itemId: String,
+        action: InlineAction,
+    ): AttentionItem? {
+        val role =
+            session.model.value.context
+                ?.role ?: return null
+        return item(itemId)?.takeIf { action in InlineActionPolicy.actionsFor(it, role) }
+    }
+
     fun approve(itemId: String) {
-        val item = item(itemId) ?: return
-        session.mutate({ context ->
-            session.useCases.approve(context, ApprovalId(item.subject.id), statusOf(item), null)
-        })
+        val item = offering(itemId, InlineAction.Approve) ?: return
+        val status = statusOf(item) ?: return
+        session.mutate({ context -> session.useCases.approve(context, ApprovalId(item.subject.id), status, null) })
     }
 
     fun askForRejectNote(itemId: String) {
-        val model = session.model.value
-        val role = model.context?.role ?: return
-        if (item(itemId) == null || model.mutating || !session.connectivity.isOnline.value) return
-        if (!Permissions.allows(role, Action.RejectApproval)) return
+        val item = offering(itemId, InlineAction.Reject) ?: return
+        if (statusOf(item) == null || session.model.value.mutating || !session.connectivity.isOnline.value) return
         session.model.update { it.copy(rejectPrompt = RejectPromptUi(itemId), feedback = null) }
     }
 
@@ -42,12 +53,13 @@ internal class InboxApprovalActions(
     }
 
     fun reject(note: String) {
-        val item =
+        val itemId =
             session.model.value.rejectPrompt
-                ?.itemId
-                ?.let { item(it) } ?: return
+                ?.itemId ?: return
+        val item = offering(itemId, InlineAction.Reject) ?: return
+        val status = statusOf(item) ?: return
         session.mutate({ context ->
-            session.useCases.reject(context, ApprovalId(item.subject.id), statusOf(item), note)
+            session.useCases.reject(context, ApprovalId(item.subject.id), status, note)
         }) { result ->
             val finished = result is MutationResult.Done || result is MutationResult.Reconciled
             if (finished) session.model.update { it.copy(rejectPrompt = null) }
@@ -55,11 +67,12 @@ internal class InboxApprovalActions(
     }
 
     fun keepPaused(itemId: String) {
-        val incident = item(itemId)?.budgetIncident() ?: return
+        val incident = offering(itemId, InlineAction.KeepPaused)?.budgetIncident() ?: return
         session.mutate({ context -> session.useCases.resolveBudget(context, incident, BudgetResolution.KeepPaused) })
     }
 
-    private fun statusOf(item: AttentionItem) = ApprovalStatus.fromServer(item.subject.status ?: "pending")
+    /** Null when the card carries no approval status: nothing is guessed (F-B-4). */
+    private fun statusOf(item: AttentionItem) = item.subject.status?.let { ApprovalStatus.fromServer(it) }
 }
 
 /** Snooze, dismiss, undo and decide-by on a card (PRD FR-034). */

@@ -704,3 +704,82 @@ class InboxActionsTest {
             env.attention.count("feed") shouldBe 1
         }
 }
+
+/** F-B-4: an inline action intent is honoured only for a card that offers that action to this role. */
+class InboxInlineActionGuardTest {
+    private suspend fun TestScope.loaded(
+        env: Env,
+        items: List<com.stainedhead.paperclipmobile.domain.AttentionItem>,
+    ): InboxStateHolder {
+        env.attention.items = items
+        val holder = holder(env)
+        advanceUntilIdle()
+        return holder
+    }
+
+    @Test
+    fun `approveTappedOnDecisionCardIsIgnored`() =
+        runTest {
+            val env = env()
+            val holder = loaded(env, listOf(AttentionFixtures.decisionItem("dec-1")))
+
+            holder.onIntent(InboxIntent.ApproveTapped("decision:dec-1"))
+            holder.onIntent(InboxIntent.RejectTapped("decision:dec-1"))
+            advanceUntilIdle()
+
+            env.approvals.count("approve") shouldBe 0
+            holder.state.value.rejectPrompt shouldBe null
+        }
+
+    @Test
+    fun `approveTappedOnNonInlineApprovalIsIgnored`() =
+        runTest {
+            val env = env()
+            val holder = loaded(env, listOf(AttentionFixtures.approvalItem("ap-1", inlineResolvable = false)))
+
+            holder.onIntent(InboxIntent.ApproveTapped("approval:ap-1"))
+            holder.onIntent(InboxIntent.RejectTapped("approval:ap-1"))
+            advanceUntilIdle()
+
+            env.approvals.count("approve") shouldBe 0
+            holder.state.value.rejectPrompt shouldBe null
+        }
+
+    @Test
+    fun `approveTappedForViewerRoleMakesNoGatewayCall`() =
+        runTest {
+            val env = env(Role.Viewer)
+            val holder = loaded(env, listOf(AttentionFixtures.approvalItem("ap-1")))
+
+            holder.onIntent(InboxIntent.ApproveTapped("approval:ap-1"))
+            advanceUntilIdle()
+
+            env.approvals.count("approve") shouldBe 0
+            holder.state.value.feedback shouldBe null
+        }
+
+    @Test
+    fun `approveWithoutSubjectStatusIsIgnored`() =
+        runTest {
+            val env = env()
+            val noStatus = AttentionFixtures.approvalItem("ap-1")
+            val holder = loaded(env, listOf(noStatus.copy(subject = noStatus.subject.copy(status = null))))
+
+            holder.onIntent(InboxIntent.ApproveTapped("approval:ap-1"))
+            advanceUntilIdle()
+
+            env.approvals.count("approve") shouldBe 0
+        }
+
+    @Test
+    fun `keepPausedTappedOnAnApprovalCardIsIgnored`() =
+        runTest {
+            val env = env()
+            val holder = loaded(env, listOf(AttentionFixtures.approvalItem("ap-1")))
+
+            holder.onIntent(InboxIntent.KeepPausedTapped("approval:ap-1"))
+            advanceUntilIdle()
+
+            env.budgets.count("resolve") shouldBe 0
+        }
+}
