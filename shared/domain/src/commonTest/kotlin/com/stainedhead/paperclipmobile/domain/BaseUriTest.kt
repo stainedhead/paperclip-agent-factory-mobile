@@ -105,4 +105,82 @@ class BaseUriTest {
         val uri = BaseUri.parse("https://example.com/paperclip").shouldBeInstanceOf<BaseUriResult.Valid>().uri
         uri.apiBase shouldBe "https://example.com/paperclip/api"
     }
+
+    @Test
+    fun `rejects whitespace control characters and backslashes in the path`() {
+        listOf(
+            "https://h.example/a b",
+            "https://h.example/a\tb",
+            "https://h.example/a\u0007b",
+            "https://h.example/a\\b",
+        ).forEach { invalid(it) shouldBe BaseUriError.InvalidPath }
+    }
+
+    @Test
+    fun `rejects dot segments empty segments and unsafe percent-encoding in the path`() {
+        listOf(
+            "https://h.example/..",
+            "https://h.example/a/../b",
+            "https://h.example/./a",
+            "https://h.example/%2e%2E/a",
+            "https://h.example/a//b",
+            "https://h.example//a",
+            "https://h.example/%0d",
+            "https://h.example/%00",
+            "https://h.example/%2f",
+            "https://h.example/%5C",
+            "https://h.example/%zz",
+            "https://h.example/100%",
+            "https://h.example/%4",
+        ).forEach { invalid(it) shouldBe BaseUriError.InvalidPath }
+    }
+
+    @Test
+    fun `accepts ordinary prefixes and well-formed percent-encoding`() {
+        valid("https://h.example/paperclip/v1.2/") shouldBe "https://h.example/paperclip/v1.2"
+        valid("https://h.example/my%20factory") shouldBe "https://h.example/my%20factory"
+        valid("https://h.example/a-b_c~d/.well-known") shouldBe "https://h.example/a-b_c~d/.well-known"
+    }
+
+    @Test
+    fun `rejects empty host labels hyphen edges a trailing dot and long labels`() {
+        listOf(
+            "https://a..b",
+            "https://a-.b",
+            "https://-a.b",
+            "https://.a.b",
+            "https://example.com.",
+            "https://${"a".repeat(64)}.example",
+        ).forEach { invalid(it) shouldBe BaseUriError.InvalidHost }
+        valid("https://${"a".repeat(63)}.example") shouldBe "https://${"a".repeat(63)}.example"
+    }
+
+    @Test
+    fun `accepts punycode but rejects unicode hosts`() {
+        valid("https://xn--bcher-kva.example") shouldBe "https://xn--bcher-kva.example"
+        invalid("https://b\u00fccher.example") shouldBe BaseUriError.InvalidHost
+    }
+
+    @Test
+    fun `validates IPv4 literals`() {
+        valid("https://192.168.1.20:3100") shouldBe "https://192.168.1.20:3100"
+        listOf("https://999.1.1.1", "https://1.2.3", "https://1.2.3.4.5", "https://01.2.3.4", "https://1.2.3.256")
+            .forEach { invalid(it) shouldBe BaseUriError.InvalidHost }
+    }
+
+    @Test
+    fun `validates IPv6 literals`() {
+        valid("https://[::1]:3100/p") shouldBe "https://[::1]:3100/p"
+        valid("https://[FD7A:115C:A1E0::1]") shouldBe "https://[fd7a:115c:a1e0::1]"
+        valid("https://[::ffff:192.168.1.1]") shouldBe "https://[::ffff:192.168.1.1]"
+        listOf(
+            "https://[::1::2]",
+            "https://[12345::1]",
+            "https://[1:2:3:4:5:6:7:8:9]",
+            "https://[:::]",
+            "https://[1:2]",
+            "https://[]",
+            "https://[g::1]",
+        ).forEach { invalid(it) shouldBe BaseUriError.InvalidHost }
+    }
 }

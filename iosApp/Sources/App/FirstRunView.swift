@@ -54,6 +54,7 @@ struct FirstRunView: View {
         case .missingHost: String(localized: "Add the server name after https://")
         case .invalidHost: String(localized: "The server name has characters that are not allowed")
         case .invalidPort: String(localized: "The port must be a number from 1 to 65535")
+        case .invalidPath: String(localized: "The part of the address after the server name has characters that are not allowed")
         case .removeCredentials: String(localized: "Remove the user name and password from the address")
         case .removeQueryOrFragment: String(localized: "Remove everything after the server address")
         }

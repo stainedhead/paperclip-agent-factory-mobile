@@ -21,6 +21,7 @@ enum class AddressIssue {
     MissingHost,
     InvalidHost,
     InvalidPort,
+    InvalidPath,
     RemoveCredentials,
     RemoveQueryOrFragment,
 }
@@ -33,6 +34,7 @@ internal fun BaseUriError.toIssue(): AddressIssue? =
         BaseUriError.MissingHost -> AddressIssue.MissingHost
         BaseUriError.InvalidHost -> AddressIssue.InvalidHost
         BaseUriError.InvalidPort -> AddressIssue.InvalidPort
+        BaseUriError.InvalidPath -> AddressIssue.InvalidPath
         BaseUriError.UserInfoNotAllowed -> AddressIssue.RemoveCredentials
         BaseUriError.QueryOrFragmentNotAllowed -> AddressIssue.RemoveQueryOrFragment
     }
