@@ -60,7 +60,7 @@ internal fun livePortsModule(
     single<InstanceRepository> { platform.persistence.instances }
     single<AppSettingsStore> { platform.persistence.settings }
     single<AttentionCache> { platform.persistence.attentionCache }
-    single<HealthGateway> { HealthGatewayAdapter(client) }
+    single<HealthGateway> { HealthGatewayAdapter(client, get()) }
     single<AuthGateway> { AuthGatewayAdapter(client, get(), get()) }
     liveCompanyGateways(client)
     // Board keys are rejected on the pinned server's WebSocket, so screens poll and no events arrive (ADR-068).

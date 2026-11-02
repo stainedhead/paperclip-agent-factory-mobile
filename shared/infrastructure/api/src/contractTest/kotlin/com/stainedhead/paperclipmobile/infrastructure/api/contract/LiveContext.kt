@@ -56,7 +56,7 @@ internal class LiveContext private constructor(
 
     private val secrets: SecretStore = world.secrets
     val client = world.client
-    val health = HealthGatewayAdapter(client)
+    val health = HealthGatewayAdapter(client, world.instances)
     val auth = AuthGatewayAdapter(client, world.instances, secrets)
     val attention = AttentionGatewayAdapter(client, world.instances, secrets)
     val approvals = ApprovalGatewayAdapter(client, world.instances, secrets)
@@ -113,7 +113,7 @@ internal class LiveContext private constructor(
             val baseText = ContractTarget.adapterBase(requireNotNull(System.getenv("PAPERCLIP_CONTRACT_BASE_URL")))
             val base = (BaseUri.parse(baseText, allowInsecureLocal = true) as BaseUriResult.Valid).uri
             val raw = RawServer(baseText)
-            val health = HealthGatewayAdapter(world.client)
+            val health = HealthGatewayAdapter(world.client, world.instances)
             val auth = AuthGatewayAdapter(world.client, world.instances, world.secrets)
             val before = Pairing.value(health.probe(base), "probe before bootstrap")
             val session = ServerBootstrap.establishSession(raw, System.getenv("PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE"))

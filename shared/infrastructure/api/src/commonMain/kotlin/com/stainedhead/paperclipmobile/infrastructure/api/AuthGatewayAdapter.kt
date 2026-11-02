@@ -36,6 +36,7 @@ class AuthGatewayAdapter(
     secrets: SecretStore,
 ) : AuthGateway {
     private val stored = StoredCredentials(instances, secrets)
+    private val pinsOf = PinLookup(instances)
 
     override suspend fun createChallenge(
         baseUri: BaseUri,
@@ -44,7 +45,12 @@ class AuthGatewayAdapter(
     ): DomainResult<PairingChallenge> {
         val body = CreateChallengeBody(PAIRING_COMMAND, clientName, BOARD_ACCESS, requestedCompanyId?.value)
         val request =
-            ApiRequest(Destination(baseUri), HttpMethod.Post, CHALLENGES, jsonBody = ApiJson.encodeToString(body))
+            ApiRequest(
+                Destination(baseUri, pinsOf(baseUri)),
+                HttpMethod.Post,
+                CHALLENGES,
+                jsonBody = ApiJson.encodeToString(body),
+            )
         return client.send(request).decode<ChallengeCreatedDto>().map { it.toDomain(baseUri) }
     }
 
@@ -56,7 +62,7 @@ class AuthGatewayAdapter(
         // The challenge token is the server's own query parameter (access.ts:2812); it goes to this host only.
         val request =
             ApiRequest(
-                Destination(baseUri),
+                Destination(baseUri, pinsOf(baseUri)),
                 HttpMethod.Get,
                 CHALLENGES + challengeId,
                 query = listOf("token" to challengeToken.reveal()),
@@ -69,7 +75,7 @@ class AuthGatewayAdapter(
         key: Secret,
     ): DomainResult<BoardAccess> =
         client
-            .send(ApiRequest(Destination(baseUri), HttpMethod.Get, ME, bearer = key))
+            .send(ApiRequest(Destination(baseUri, pinsOf(baseUri)), HttpMethod.Get, ME, bearer = key))
             .decode<MeDto>()
             .map { it.toDomain() }
 
@@ -108,7 +114,7 @@ class AuthGatewayAdapter(
         key: Secret,
     ): DomainResult<List<BoardKey>> =
         client
-            .send(ApiRequest(Destination(baseUri), HttpMethod.Get, KEYS, bearer = key))
+            .send(ApiRequest(Destination(baseUri, pinsOf(baseUri)), HttpMethod.Get, KEYS, bearer = key))
             .decode<List<BoardKeyDto>>()
             .map { list -> list.map { it.toDomain(currentKeyId = null) } }
 

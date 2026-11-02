@@ -11,6 +11,7 @@ import com.stainedhead.paperclipmobile.domain.port.HealthGateway
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.contract.HealthContract
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
+import com.stainedhead.paperclipmobile.testing.fakes.FakeInstanceRepository
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -37,7 +38,10 @@ class HealthGatewayContractTest : HealthContract() {
         server.host("ready.example.com")
         server.host("trusted.example.com").health = HealthMode.LocalTrusted
         server.host("bootstrap.example.com").health = HealthMode.Bootstrapping
-        return HealthGatewayAdapter(PaperclipHttpClient(server.engine, allowInsecureLocal = false))
+        return HealthGatewayAdapter(
+            PaperclipHttpClient(server.engine, allowInsecureLocal = false),
+            FakeInstanceRepository(),
+        )
     }
 
     @Test
@@ -50,7 +54,7 @@ class HealthGatewayAdapterTest {
     private val home = TestData.uri()
 
     private fun gateway(engine: MockEngine = server.engine) =
-        HealthGatewayAdapter(PaperclipHttpClient(engine, allowInsecureLocal = false))
+        HealthGatewayAdapter(PaperclipHttpClient(engine, allowInsecureLocal = false), FakeInstanceRepository())
 
     private suspend fun report(mode: HealthMode) =
         server.host("home.example.com").also { it.health = mode }.let {
