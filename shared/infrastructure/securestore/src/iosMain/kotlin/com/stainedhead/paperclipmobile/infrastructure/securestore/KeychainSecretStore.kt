@@ -7,6 +7,7 @@ import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.domain.SecretReadResult
 import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import platform.Security.errSecItemNotFound
@@ -31,6 +32,7 @@ class KeychainSecretStore internal constructor(
     private val backend: KeychainBackend,
 ) : SecretStore {
     /** The Keychain of this app under the Keychain service [service]. */
+    @OptIn(ExperimentalForeignApi::class)
     constructor(service: String) : this(SecurityKeychain(service))
 
     private val writer = KeychainWriter(backend)

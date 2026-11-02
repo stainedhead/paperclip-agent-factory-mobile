@@ -40,6 +40,7 @@ import platform.Security.SecAccessControlCreateWithFlags
 import platform.Security.SecItemAdd
 import platform.Security.SecItemCopyMatching
 import platform.Security.SecItemDelete
+import platform.Security.errSecParam
 import platform.Security.errSecSuccess
 import platform.Security.kSecAccessControlBiometryCurrentSet
 import platform.Security.kSecAccessControlUserPresence
@@ -70,6 +71,7 @@ import platform.posix.memset
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 internal class SecurityKeychain(
     private val service: String,
+    private val accessControlFor: (Protection) -> CFTypeRef? = ::createAccessControl,
 ) : KeychainBackend {
     override fun add(
         account: String,
@@ -81,8 +83,9 @@ internal class SecurityKeychain(
             try {
                 data.usePinned { memcpy(buffer.mutableBytes, it.addressOf(0), data.size.convert()) }
                 query.setOwned(kSecValueData, CFBridgingRetain(buffer))
-                query.protect(protection)
-                SecItemAdd(query.dictionary, null)
+                // A protected item that cannot be protected is refused before the add: SecItemAdd would otherwise
+                // store it with the default, backup-eligible accessibility (review1b F-C-1).
+                if (query.protect(protection, accessControlFor)) SecItemAdd(query.dictionary, null) else errSecParam
             } finally {
                 memset(buffer.mutableBytes, 0, buffer.length)
             }
@@ -181,23 +184,34 @@ private class Query(
         setOwned(kSecUseAuthenticationContext, CFBridgingRetain(LAContext().apply { interactionNotAllowed = true }))
     }
 
-    /** Accessibility is part of the access control for protected items, so the two attributes are never both set. */
-    fun protect(protection: Protection) {
-        val flags =
-            when (protection) {
-                Protection.None -> null
-                Protection.BiometryCurrentSet -> kSecAccessControlBiometryCurrentSet
-                Protection.UserPresence -> kSecAccessControlUserPresence
-            }
-        if (flags == null) {
+    /**
+     * Accessibility is part of the access control for protected items, so the two attributes are never both set.
+     * Returns false, setting neither, when a protected item's access control cannot be created.
+     */
+    fun protect(
+        protection: Protection,
+        accessControlFor: (Protection) -> CFTypeRef?,
+    ): Boolean {
+        if (protection == Protection.None) {
             this[kSecAttrAccessible] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-            return
+            return true
         }
-        val control =
-            SecAccessControlCreateWithFlags(null, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, flags, null)
-        // Failing to build the access control must not fall back to an open item: the add then fails on its own.
-        if (control != null) setOwned(kSecAttrAccessControl, control)
+        val control = accessControlFor(protection) ?: return false
+        setOwned(kSecAttrAccessControl, control)
+        return true
     }
 
     override fun close() = CFRelease(dictionary)
+}
+
+/** The access control of a protected item: this device only, while unlocked, behind the biometric set or presence. */
+@OptIn(ExperimentalForeignApi::class)
+private fun createAccessControl(protection: Protection): CFTypeRef? {
+    val flags =
+        when (protection) {
+            Protection.None -> return null
+            Protection.BiometryCurrentSet -> kSecAccessControlBiometryCurrentSet
+            Protection.UserPresence -> kSecAccessControlUserPresence
+        }
+    return SecAccessControlCreateWithFlags(null, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, flags, null)
 }
