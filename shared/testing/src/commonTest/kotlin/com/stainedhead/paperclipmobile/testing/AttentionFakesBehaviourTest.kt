@@ -100,7 +100,9 @@ class AttentionFakesBehaviourTest {
                 ?.results
                 ?.single()
                 ?.reason shouldBe "target_changed"
-            gateway.decide(scope, id, "ship", emptyMap(), "k2").error() shouldBe DomainError.Conflict
+            // Server rule (decisions.ts:686-689): the same option and inputs replay whatever the key.
+            gateway.decide(scope, id, "ship", emptyMap(), "k2").value().chosenOptionId shouldBe "ship"
+            gateway.decide(scope, id, "cancel", emptyMap(), "k3").error() shouldBe DomainError.Conflict
             gateway.dismiss(scope, id, null).error() shouldBe DomainError.Conflict
         }
 

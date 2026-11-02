@@ -18,8 +18,10 @@ import com.stainedhead.paperclipmobile.testing.AttentionFixtures
  * A decision endpoint with the server's rules (research Q4/Q8): deciding a non-open decision is a Conflict, unknown
  * options and bad inputs are Rejected, and the response carries per-effect results. [runningReads] makes the first
  * N reads of a decided decision report `running`, so polling can be tested. [failures] and [afterFailureHook] script
- * errors. A replay of `decide` with the key that decided it returns the decision (`svc/decisions.ts:690-696`). A
- * `decide` failure can still change the server state through [serverChangesOnFailure].
+ * errors. `decide` on a decided decision replays it for the same key, or for the same option and inputs whatever
+ * the key, and is a Conflict for another option or other inputs (`svc/decisions.ts:683-691`). `dismiss` is `decide` on
+ * the effect-less option when the decision has one (so a second dismiss replays), else a direct update (a second
+ * dismiss conflicts). A `decide` failure can still change the server state through [serverChangesOnFailure].
  */
 class FakeDecisionGateway(
     decisions: List<Decision> = listOf(AttentionFixtures.decision()),
@@ -109,7 +111,9 @@ class FakeDecisionGateway(
             serverChangesOnFailure?.let { store[id] = it(current) }
             return DomainResult.Failure(scripted)
         }
-        if (!current.isOpen && decidedKeys[id] == idempotencyKey) return DomainResult.Success(current)
+        if (!current.isOpen && isReplay(current, optionId, inputValues, idempotencyKey, decidedKeys[id])) {
+            return DomainResult.Success(current)
+        }
         return applyDecision(current, optionId, inputValues, idempotencyKey)
     }
 
@@ -117,7 +121,7 @@ class FakeDecisionGateway(
         current: Decision,
         optionId: String,
         inputValues: Map<String, String>,
-        idempotencyKey: String,
+        idempotencyKey: String?,
     ): DomainResult<Decision> {
         val id = current.id
         val option = current.options.firstOrNull { it.id == optionId }
@@ -128,7 +132,7 @@ class FakeDecisionGateway(
                 status = DecisionStatus.Decided,
                 chosenOptionId = optionId,
                 inputValues = inputValues,
-                outcome = outcomeFor(option),
+                outcome = outcomeFor(option, effectStatuses),
             )
         val stored =
             if (runningReads > 0) {
@@ -138,35 +142,8 @@ class FakeDecisionGateway(
                 decided
             }
         store[id] = stored
-        decidedKeys[id] = idempotencyKey
+        if (idempotencyKey != null) decidedKeys[id] = idempotencyKey
         return DomainResult.Success(stored)
-    }
-
-    private fun problem(
-        current: Decision,
-        option: DecisionOption?,
-        inputValues: Map<String, String>,
-    ): DomainError? =
-        when {
-            !current.isOpen -> DomainError.Conflict
-            option == null -> DomainError.Rejected("Unknown optionId")
-            else -> current.validateInputs(inputValues)?.let { DomainError.Rejected("Input ${it.inputId} is invalid") }
-        }
-
-    private fun outcomeFor(option: DecisionOption): DecisionOutcome {
-        val statuses = effectStatuses ?: option.effects.map { EffectStatus.Executed }
-        val executed = statuses.count { it == EffectStatus.Executed }
-        val execution =
-            when {
-                statuses.all { it == EffectStatus.Executed } -> ExecutionStatus.Succeeded
-                executed > 0 -> ExecutionStatus.Partial
-                else -> ExecutionStatus.Failed
-            }
-        val results =
-            statuses.mapIndexed { index, status ->
-                EffectResult(index, "effect", status, "target_changed".takeIf { status == EffectStatus.Skipped })
-            }
-        return DecisionOutcome(execution, results)
     }
 
     override suspend fun dismiss(
@@ -177,6 +154,12 @@ class FakeDecisionGateway(
         val scripted = record("dismiss")
         val current = store[id] ?: return DomainResult.Failure(DomainError.NotFound)
         if (scripted != null) return DomainResult.Failure(scripted)
+        val effectLess = current.options.firstOrNull { it.effects.isEmpty() }
+        return if (effectLess != null) dismissThroughOption(current, effectLess) else dismissDirectly(current)
+    }
+
+    /** `decisions.ts:740-743`: the direct update only matches an open decision. */
+    private fun dismissDirectly(current: Decision): DomainResult<Decision> {
         if (!current.isOpen) return DomainResult.Failure(DomainError.Conflict)
         val dismissed =
             current.copy(
@@ -185,7 +168,73 @@ class FakeDecisionGateway(
                 dismissed = true,
                 outcome = DecisionOutcome(ExecutionStatus.Succeeded, emptyList()),
             )
-        store[id] = dismissed
+        store[current.id] = dismissed
         return DomainResult.Success(dismissed)
     }
+
+    /** `decisions.ts:738-739`: a decision with an effect-less option is dismissed by deciding that option. */
+    private fun dismissThroughOption(
+        current: Decision,
+        option: DecisionOption,
+    ): DomainResult<Decision> {
+        if (!current.isOpen) {
+            return if (isReplay(current, option.id, emptyMap(), null, null)) {
+                DomainResult.Success(current)
+            } else {
+                DomainResult.Failure(DomainError.Conflict)
+            }
+        }
+        return when (val decided = applyDecision(current, option.id, emptyMap(), null)) {
+            is DomainResult.Success -> {
+                val dismissed = decided.value.copy(dismissed = true)
+                store[current.id] = dismissed
+                DomainResult.Success(dismissed)
+            }
+
+            is DomainResult.Failure -> {
+                decided
+            }
+        }
+    }
+}
+
+/** `decisions.ts:683-690`: the same key, or the same option with the same inputs, replays the stored decision. */
+private fun isReplay(
+    current: Decision,
+    optionId: String,
+    inputValues: Map<String, String>,
+    idempotencyKey: String?,
+    decidedKey: String?,
+): Boolean =
+    (idempotencyKey != null && decidedKey == idempotencyKey) ||
+        (current.chosenOptionId == optionId && current.inputValues == inputValues)
+
+private fun problem(
+    current: Decision,
+    option: DecisionOption?,
+    inputValues: Map<String, String>,
+): DomainError? =
+    when {
+        !current.isOpen -> DomainError.Conflict
+        option == null -> DomainError.Rejected("Unknown optionId")
+        else -> current.validateInputs(inputValues)?.let { DomainError.Rejected("Input ${it.inputId} is invalid") }
+    }
+
+private fun outcomeFor(
+    option: DecisionOption,
+    effectStatuses: List<EffectStatus>?,
+): DecisionOutcome {
+    val statuses = effectStatuses ?: option.effects.map { EffectStatus.Executed }
+    val executed = statuses.count { it == EffectStatus.Executed }
+    val execution =
+        when {
+            statuses.all { it == EffectStatus.Executed } -> ExecutionStatus.Succeeded
+            executed > 0 -> ExecutionStatus.Partial
+            else -> ExecutionStatus.Failed
+        }
+    val results =
+        statuses.mapIndexed { index, status ->
+            EffectResult(index, "effect", status, "target_changed".takeIf { status == EffectStatus.Skipped })
+        }
+    return DecisionOutcome(execution, results)
 }

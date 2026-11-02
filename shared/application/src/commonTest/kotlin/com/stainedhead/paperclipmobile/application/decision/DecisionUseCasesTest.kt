@@ -333,11 +333,13 @@ class DismissDecisionTest {
     fun `FR-044 a conflict comes back as the final state`() =
         runTest {
             val env = Env()
-            env.decisions.put(open.copy(status = DecisionStatus.Decided, chosenOptionId = "hold"))
+            // Another option was chosen elsewhere. (Dismissing a decision already decided with its effect-less
+            // option "hold" is a replay and a success on the server: decisions.ts:738-739 and 686-689.)
+            env.decisions.put(open.copy(status = DecisionStatus.Decided, chosenOptionId = "ship"))
 
             val result = DismissDecision(env.decisions)(env.context(), open, null)
 
-            (result as MutationResult.Reconciled<Decision>).current.chosenOptionId shouldBe "hold"
+            (result as MutationResult.Reconciled<Decision>).current.chosenOptionId shouldBe "ship"
         }
 }
 

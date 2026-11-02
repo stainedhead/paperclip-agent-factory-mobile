@@ -8,6 +8,7 @@ import com.stainedhead.paperclipmobile.domain.BudgetIncidentId
 import com.stainedhead.paperclipmobile.domain.ChallengeStatus
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DecisionId
+import com.stainedhead.paperclipmobile.domain.DecisionInput
 import com.stainedhead.paperclipmobile.domain.DeploymentMode
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
@@ -181,10 +182,23 @@ class FakeAttentionTriageContractTest : AttentionTriageContract() {
 
 class FakeDecisionContractTest : DecisionContract() {
     override val scope = acmeScope
-    override val openIds = listOf(DecisionId("d1"), DecisionId("d2"), DecisionId("d3"))
+    override val openIds = (1..5).map { DecisionId("d$it") }
     override val validOptionId = "ship"
+    override val otherOptionId = "cancel"
+    override val inputId = "note"
+    override val effectLessOptionId = "hold"
 
-    override fun create(): DecisionGateway = FakeDecisionGateway(openIds.map { AttentionFixtures.decision(it.value) })
+    override fun create(): DecisionGateway =
+        FakeDecisionGateway(
+            openIds.mapIndexed { index, id ->
+                val base = AttentionFixtures.decision(id.value)
+                when (index) {
+                    2 -> base.copy(inputs = listOf(DecisionInput(inputId, "Note")))
+                    4 -> base.copy(options = base.options.filter { it.effects.isNotEmpty() })
+                    else -> base
+                }
+            },
+        )
 
     @Test
     fun `the fake passes the decision contract`() = runTest { runAll() }
