@@ -9,6 +9,7 @@ import com.stainedhead.paperclipmobile.domain.ApprovalPayload
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.ApprovalType
 import com.stainedhead.paperclipmobile.domain.CompanyContext
+import com.stainedhead.paperclipmobile.domain.DeviceAuthPolicy
 import com.stainedhead.paperclipmobile.domain.Permissions
 import com.stainedhead.paperclipmobile.domain.Role
 import kotlin.time.Instant
@@ -81,12 +82,12 @@ internal object ApprovalRenderer {
                 } else {
                     emptyList()
                 },
-            rejectNeedsDeviceAuth = true,
+            rejectNeedsDeviceAuth = DeviceAuthPolicy.requires(Action.RejectApproval),
             isResolved = approval != null && !approval.status.isResolvable,
             notePrompt = model.notePrompt,
             isSubmitting = model.submitting,
             isOffline = !online,
-            actionsDisabledReason = disabledReason(online, role),
+            actionsDisabledReason = disabledReason(online, role, Action.ApproveApproval),
             role = role?.toUi(),
             updatedAtEpochMillis = model.loadedAt?.toEpochMilliseconds(),
             refreshIntervalSeconds =
@@ -100,15 +101,6 @@ internal object ApprovalRenderer {
             error = model.error,
             feedback = model.feedback,
         )
-    }
-
-    private fun disabledReason(
-        online: Boolean,
-        role: Role?,
-    ) = when {
-        !online -> ActionsDisabledReason.Offline
-        role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-        else -> null
     }
 
     private fun type(type: ApprovalType) =

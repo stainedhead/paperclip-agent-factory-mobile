@@ -18,6 +18,8 @@ data class AgentDetailState(
     val role: RoleUi? = null,
     val isOffline: Boolean = false,
     val actionsDisabledReason: ActionsDisabledReason? = null,
+    /** Why Set budget is disabled when the other actions are not: an operator is not an owner. */
+    val budgetDisabledReason: ActionsDisabledReason? = null,
     val updatedAtEpochMillis: Long? = null,
     /** 5 seconds while the agent has a run in progress, otherwise 15 (PRD FR-090). */
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,

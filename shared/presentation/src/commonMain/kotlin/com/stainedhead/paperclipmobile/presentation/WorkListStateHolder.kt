@@ -223,12 +223,7 @@ private fun renderWork(
         createdIssueId = model.createdId,
         role = role?.toUi(),
         isOffline = !online,
-        actionsDisabledReason =
-            when {
-                !online -> ActionsDisabledReason.Offline
-                role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-                else -> null
-            },
+        actionsDisabledReason = disabledReason(online, role, Action.CreateIssue),
         updatedAtEpochMillis = model.loadedAtMillis,
         error = model.error,
         feedback = model.feedback,

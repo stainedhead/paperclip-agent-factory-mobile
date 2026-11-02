@@ -61,6 +61,9 @@ data class InboxSectionUi(
 enum class ActionsDisabledReason {
     Offline,
     ViewerRole,
+
+    /** The role can use the screen but not this action: only an owner may (for example raise a budget). */
+    OwnerRole,
 }
 
 /** The five-second undo offer after a dismiss or snooze (PRD FR-034). */

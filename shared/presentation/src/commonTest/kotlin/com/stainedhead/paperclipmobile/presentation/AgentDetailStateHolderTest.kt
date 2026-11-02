@@ -15,7 +15,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-private fun TestScope.detailHolder(
+internal fun TestScope.detailHolder(
     env: Env,
     agentId: String = "agent-eng-1",
 ) = AgentDetailStateHolder(

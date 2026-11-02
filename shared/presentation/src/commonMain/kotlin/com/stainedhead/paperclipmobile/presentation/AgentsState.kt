@@ -7,6 +7,7 @@ import com.stainedhead.paperclipmobile.application.agent.LoadAgent
 import com.stainedhead.paperclipmobile.application.agent.PauseAgent
 import com.stainedhead.paperclipmobile.application.agent.ResumeAgent
 import com.stainedhead.paperclipmobile.application.agent.SetAgentBudget
+import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGroup
 
@@ -103,22 +104,12 @@ data class AgentDetailUseCases(
 internal fun Agent.actionsFor(
     role: com.stainedhead.paperclipmobile.domain.Role?,
     online: Boolean,
-): List<AgentActionUi> {
-    val mayAct =
-        online &&
-            role != null &&
-            com.stainedhead.paperclipmobile.domain.Permissions
-                .allows(role, com.stainedhead.paperclipmobile.domain.Action.PauseAgent)
-    return if (!mayAct) {
-        emptyList()
-    } else {
-        listOfNotNull(
-            AgentActionUi.Pause.takeIf { canPause },
-            AgentActionUi.Resume.takeIf { canResume },
-            AgentActionUi.RunNow.takeIf { canRunNow },
-        )
-    }
-}
+): List<AgentActionUi> =
+    listOfNotNull(
+        AgentActionUi.Pause.takeIf { canPause && mayAct(online, role, Action.PauseAgent) },
+        AgentActionUi.Resume.takeIf { canResume && mayAct(online, role, Action.ResumeAgent) },
+        AgentActionUi.RunNow.takeIf { canRunNow && mayAct(online, role, Action.RunAgentNow) },
+    )
 
 internal fun Agent.toRow(actions: List<AgentActionUi>) =
     AgentRowUi(

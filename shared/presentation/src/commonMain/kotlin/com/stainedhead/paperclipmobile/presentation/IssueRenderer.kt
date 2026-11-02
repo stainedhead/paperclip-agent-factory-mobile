@@ -80,12 +80,7 @@ internal object IssueRenderer {
             canCreateSubtask = may(Action.CreateIssue),
             isBusy = model.busy,
             isOffline = !online,
-            actionsDisabledReason =
-                when {
-                    !online -> ActionsDisabledReason.Offline
-                    role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-                    else -> null
-                },
+            actionsDisabledReason = disabledReason(online, role, Action.CommentOnIssue),
         )
     }
 

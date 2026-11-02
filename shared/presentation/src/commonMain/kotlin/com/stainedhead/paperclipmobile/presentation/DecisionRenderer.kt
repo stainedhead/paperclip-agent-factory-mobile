@@ -78,7 +78,7 @@ internal object DecisionRenderer {
         val role = model.context?.role
         val open = decision?.takeIf { it.isOpen }
         val selected = open?.options?.firstOrNull { it.id == model.selectedOptionId }
-        val allowed = !model.submitting && online && role != null && role != Role.Viewer
+        val idle = !model.submitting
         return DecisionState(
             phase = phase(decision != null, model.loading),
             title = decision?.title.orEmpty(),
@@ -89,17 +89,17 @@ internal object DecisionRenderer {
             options = open?.options.orEmpty().map(::option),
             inputs = open?.inputs.orEmpty().map { input(it, model.inputValues[it.id].orEmpty()) },
             selectedOptionId = selected?.id,
-            canConfirm = selected != null && allowed && Permissions.allows(role, Action.DecideOption),
+            canConfirm = selected != null && idle && mayAct(online, role, Action.DecideOption),
             confirmNeedsDeviceAuth = selected?.isDestructive == true,
-            canDismiss = open != null && allowed,
-            canSnooze = open != null && allowed && canSnooze(model, role),
+            canDismiss = open != null && idle && mayAct(online, role, Action.DismissDecision),
+            canSnooze = open != null && idle && online && canSnooze(model, role),
             snoozeOptions = snoozeOptions,
             isSnoozed = model.snoozed,
             finalState = decision?.takeIf { it.isFinal }?.let(::finalState),
             execution = decision?.outcome?.let { execution(it, model.polling) },
             isSubmitting = model.submitting,
             isOffline = !online,
-            actionsDisabledReason = disabledReason(online, role),
+            actionsDisabledReason = disabledReason(online, role, Action.DecideOption),
             role = role?.toUi(),
             updatedAtEpochMillis = model.loadedAt?.toEpochMilliseconds(),
             refreshIntervalSeconds = if (decision?.isFinal == true) 0 else SCREEN_REFRESH_SECONDS,
@@ -120,15 +120,6 @@ internal object DecisionRenderer {
         hasContent -> DetailPhase.Content
         loading -> DetailPhase.Loading
         else -> DetailPhase.Failed
-    }
-
-    private fun disabledReason(
-        online: Boolean,
-        role: Role?,
-    ) = when {
-        !online -> ActionsDisabledReason.Offline
-        role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-        else -> null
     }
 
     private fun option(option: DecisionOption) =

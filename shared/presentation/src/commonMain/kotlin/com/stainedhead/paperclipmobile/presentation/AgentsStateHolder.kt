@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
+import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGrouping
 import com.stainedhead.paperclipmobile.domain.AgentId
@@ -193,12 +194,7 @@ private fun render(
         busyAgentId = model.busy?.value,
         role = model.role?.toUi(),
         isOffline = !online,
-        actionsDisabledReason =
-            when {
-                !online -> ActionsDisabledReason.Offline
-                model.role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-                else -> null
-            },
+        actionsDisabledReason = disabledReason(online, model.role, Action.PauseAgent),
         updatedAtEpochMillis = model.loadedAtMillis,
         error = model.error,
         feedback = model.feedback,

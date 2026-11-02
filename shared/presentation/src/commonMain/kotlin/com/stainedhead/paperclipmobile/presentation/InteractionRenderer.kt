@@ -1,7 +1,9 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.AskUserQuestions
 import com.stainedhead.paperclipmobile.domain.Interaction
+import com.stainedhead.paperclipmobile.domain.Permissions
 import com.stainedhead.paperclipmobile.domain.RequestCheckboxConfirmation
 import com.stainedhead.paperclipmobile.domain.RequestConfirmation
 import com.stainedhead.paperclipmobile.domain.RequestItemVerdicts
@@ -66,13 +68,33 @@ internal object InteractionRenderer {
         viewer: InteractionViewer,
     ): InteractionReadOnlyUi? =
         when {
-            interaction is UnsupportedInteraction -> InteractionReadOnlyUi.Unsupported
-            !interaction.meta.status.isOpen -> InteractionReadOnlyUi.NotPending
-            viewer.role == null || viewer.role == Role.Viewer -> InteractionReadOnlyUi.ViewerRole
-            !viewer.online -> InteractionReadOnlyUi.Offline
-            interaction.meta.acceptanceBlocked -> InteractionReadOnlyUi.Blocked
-            !interaction.meta.audience.allowsUser(viewer.userId) -> InteractionReadOnlyUi.NotForYou
-            else -> null
+            interaction is UnsupportedInteraction -> {
+                InteractionReadOnlyUi.Unsupported
+            }
+
+            !interaction.meta.status.isOpen -> {
+                InteractionReadOnlyUi.NotPending
+            }
+
+            viewer.role == null || !Permissions.allows(viewer.role, Action.RespondToInteraction) -> {
+                InteractionReadOnlyUi.ViewerRole
+            }
+
+            !viewer.online -> {
+                InteractionReadOnlyUi.Offline
+            }
+
+            interaction.meta.acceptanceBlocked -> {
+                InteractionReadOnlyUi.Blocked
+            }
+
+            !interaction.meta.audience.allowsUser(viewer.userId) -> {
+                InteractionReadOnlyUi.NotForYou
+            }
+
+            else -> {
+                null
+            }
         }
 
     private fun hasReject(interaction: Interaction) =

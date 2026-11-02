@@ -17,13 +17,13 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-private fun TestScope.budgetEnv(role: Role = Role.Owner): Env {
+internal fun TestScope.budgetEnv(role: Role = Role.Owner): Env {
     val env = Env(listOf(TestData.instance())) { testScheduler.currentTime }
     env.auth.meResult = DomainResult.Success(TestData.access(role))
     return env
 }
 
-private fun TestScope.budgetHolder(
+internal fun TestScope.budgetHolder(
     env: Env,
     incidentId: String = "inc-1",
 ) = BudgetIncidentStateHolder(

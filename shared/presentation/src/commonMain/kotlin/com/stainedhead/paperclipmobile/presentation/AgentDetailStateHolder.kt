@@ -200,17 +200,13 @@ private fun renderDetail(
         monthlyBudget = view?.agent?.monthlyBudget?.toUi(),
         budgetPercentUsed = view?.agent?.budgetPercentUsed ?: 0,
         actions = actions,
-        canSetBudget = online && !model.busy && role?.let { Permissions.allows(it, Action.SetAgentBudget) } == true,
+        canSetBudget = !model.busy && mayAct(online, role, Action.SetAgentBudget),
         confirmPause = model.confirmPause,
         isBusy = model.busy,
         role = role?.toUi(),
         isOffline = !online,
-        actionsDisabledReason =
-            when {
-                !online -> ActionsDisabledReason.Offline
-                role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-                else -> null
-            },
+        actionsDisabledReason = disabledReason(online, role, Action.PauseAgent),
+        budgetDisabledReason = disabledReason(online, role, Action.SetAgentBudget),
         updatedAtEpochMillis = model.loadedAtMillis,
         refreshIntervalSeconds = if (view?.currentRun != null) RUNNING_REFRESH_SECONDS else SCREEN_REFRESH_SECONDS,
         error = model.error,

@@ -86,6 +86,11 @@ Swift: ErrorKey gained two cases; no Swift source switches over it (checked iosA
 Red evidence: approveTappedOnDecisionCardIsIgnored 'expected:<0> but was:<1>' (a decision id sent to the approvals endpoint), approveTappedOnNonInlineApprovalIsIgnored 'expected:<0> but was:<1>', approveWithoutSubjectStatusIsIgnored 'expected:<0> but was:<1>', approveTappedForViewerRole... 'Expected null but actual was FeedbackUi(kind=NotAllowed...)' (the viewer tap reached the use case).
 Fix: InboxApprovalActions honours approve, reject and keepPaused only if InlineActionPolicy.actionsFor(item, role) lists that action, and ignores a card without subject.status instead of assuming pending. AttentionFixtures.approvalItem now carries status pending (the real feed does, as the demo data already did).
 
+### 2026-11-01 F-B-5 role gating uses Permissions everywhere (Group 2)
+
+Red evidence: 'Expected OwnerRole but actual was null' for the Operator on the budget incident (raiseDisabledReason) and on agent detail (budgetDisabledReason). The wrong-flag half did not reproduce (role != Viewer equals Permissions today), so RoleGatingTest (Role x Action x online over disabledReason and mayAct) is a regression guard, not a red.
+Fix: RoleGating.kt (disabledReason, mayAct); ActionsDisabledReason.OwnerRole; BudgetIncidentState.raiseDisabledReason and AgentDetailState.budgetDisabledReason; every renderer and holder flag and reason goes through it (Decision confirm, dismiss and snooze now use their own action; Run cancel; Agents Resume and RunNow use their own action); rejectNeedsDeviceAuth follows DeviceAuthPolicy; interactions use RespondToInteraction.
+
 ## Edge cases and solutions
 
 (none yet)

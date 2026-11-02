@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
+import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.Invalidation
@@ -138,7 +139,7 @@ class RunViewerStateHolder(
     private fun canCancelNow(): Boolean {
         val current = model.value
         return connectivity.isOnline.value && !current.cancelling && current.run?.canCancel == true &&
-            current.role?.let { it != Role.Viewer } == true
+            mayAct(true, current.role, Action.CancelRun)
     }
 
     private fun askToCancel() {
@@ -162,7 +163,7 @@ private fun renderRun(
 ): RunViewerState {
     val run = model.run
     val role = model.role
-    val mayCancel = online && !model.cancelling && run?.canCancel == true && role != null && role != Role.Viewer
+    val mayCancel = !model.cancelling && run?.canCancel == true && mayAct(online, role, Action.CancelRun)
     return RunViewerState(
         phase =
             when {
@@ -182,12 +183,7 @@ private fun renderRun(
         isCancelling = model.cancelling,
         role = role?.toUi(),
         isOffline = !online,
-        actionsDisabledReason =
-            when {
-                !online -> ActionsDisabledReason.Offline
-                role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-                else -> null
-            },
+        actionsDisabledReason = disabledReason(online, role, Action.CancelRun),
         updatedAtEpochMillis = model.loadedAtMillis,
         refreshIntervalSeconds = if (run?.isLive == true) RUNNING_REFRESH_SECONDS else 0,
         error = model.error,

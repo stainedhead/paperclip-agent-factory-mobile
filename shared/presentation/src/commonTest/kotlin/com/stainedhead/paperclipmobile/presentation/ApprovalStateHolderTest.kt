@@ -23,13 +23,13 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-private fun TestScope.approvalEnv(role: Role = Role.Owner): Env {
+internal fun TestScope.approvalEnv(role: Role = Role.Owner): Env {
     val env = Env(listOf(TestData.instance())) { testScheduler.currentTime }
     env.auth.meResult = DomainResult.Success(TestData.access(role))
     return env
 }
 
-private fun TestScope.approvalHolder(env: Env) =
+internal fun TestScope.approvalHolder(env: Env) =
     ApprovalStateHolder(
         env.approval,
         env.connectivity,

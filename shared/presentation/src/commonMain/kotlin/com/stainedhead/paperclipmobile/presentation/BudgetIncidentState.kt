@@ -40,6 +40,8 @@ data class BudgetIncidentState(
     val canKeepPaused: Boolean = false,
     /** Owner only (PRD "Users and Roles"). */
     val canRaise: Boolean = false,
+    /** Why Raise is disabled when the rest of the sheet is not: an operator is not an owner. */
+    val raiseDisabledReason: ActionsDisabledReason? = null,
     val canSubmit: Boolean = false,
     val submitNeedsDeviceAuth: Boolean = false,
     val isSubmitting: Boolean = false,

@@ -54,11 +54,12 @@ internal object BudgetIncidentRenderer {
             amountIssue = issue,
             canKeepPaused = canKeep,
             canRaise = canRaise,
+            raiseDisabledReason = disabledReason(online, role, Action.RaiseBudgetAndResume).takeIf { open },
             canSubmit = canSubmit(model, canKeep, canRaise, issue),
             submitNeedsDeviceAuth = model.choice == BudgetChoice.RaiseAndResume,
             isSubmitting = model.submitting,
             isOffline = !online,
-            actionsDisabledReason = disabledReason(online, role),
+            actionsDisabledReason = disabledReason(online, role, Action.KeepBudgetPaused),
             role = role?.toUi(),
             updatedAtEpochMillis = model.loadedAt?.toEpochMilliseconds(),
             refreshIntervalSeconds = if (incident != null && !open) 0 else SCREEN_REFRESH_SECONDS,
@@ -105,15 +106,6 @@ internal object BudgetIncidentRenderer {
             ResolutionIssue.WrongCurrency -> InvalidKey.WrongCurrency
             null -> null
         }
-    }
-
-    private fun disabledReason(
-        online: Boolean,
-        role: Role?,
-    ) = when {
-        !online -> ActionsDisabledReason.Offline
-        role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-        else -> null
     }
 
     /** How a status that is no longer open reads; null while the incident is still open. */

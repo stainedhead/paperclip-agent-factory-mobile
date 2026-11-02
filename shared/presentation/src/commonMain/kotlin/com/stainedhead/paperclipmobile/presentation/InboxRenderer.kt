@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.attention.AvailableSnoozePresets
+import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.AttentionItem
 import com.stainedhead.paperclipmobile.domain.AttentionSourceKind
 import com.stainedhead.paperclipmobile.domain.InboxGrouping
@@ -37,7 +38,7 @@ internal class InboxRenderer(
             canLoadMore = model.nextCursor != null && online,
             isOffline = !online,
             role = role?.toUi(),
-            actionsDisabledReason = disabledReason(online, role),
+            actionsDisabledReason = disabledReason(online, role, Action.DismissItem),
             isMutating = model.mutating,
             snoozeOptions = snoozePresets().map { it.toUi() },
             undo = model.undo,
@@ -57,16 +58,6 @@ internal class InboxRenderer(
             !online -> InboxPhase.OfflineEmpty
             model.error != null -> InboxPhase.Failed
             else -> InboxPhase.Loading
-        }
-
-    private fun disabledReason(
-        online: Boolean,
-        role: Role?,
-    ): ActionsDisabledReason? =
-        when {
-            !online -> ActionsDisabledReason.Offline
-            role == Role.Viewer -> ActionsDisabledReason.ViewerRole
-            else -> null
         }
 
     /** One chip per source kind the server counted; kinds this app does not know share one chip. */

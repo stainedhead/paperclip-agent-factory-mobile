@@ -58,7 +58,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] FR-R33 (P2) F-B-11: UI mapping by enum ordinal or `valueOf` with no compile-time exhaustiveness
 - [ ] FR-R34 (P2) F-B-12: App lock and refresh lifecycle need two separate platform calls
 - [ ] FR-R35 (P2) F-B-13: Swift-facing and wording notes
-- [ ] FR-R36 (P2) F-B-5: Gating is hard-coded to `Role.Viewer` or a single `Action` in several places instead of using `Permi
+- [x] FR-R36 (P2) F-B-5: Gating is hard-coded to `Role.Viewer` or a single `Action` in several places instead of using `Permi
 - [ ] FR-R37 (P2) F-B-8: Paired-devices loads are not ordered or cancelled
 - [ ] FR-R38 (P2) F-C-10: Real-time and unbounded waiting in umbrella tests (flake and vacuous-pass risk)
 - [ ] FR-R39 (P2) F-C-11: TDD evidence is self-reported and the history cannot show red
@@ -96,3 +96,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-B-2 done (one execution poller per Decision screen).
 - 2026-11-01: F-B-3 done (sign-in outcomes map to one consistent set of keys).
 - 2026-11-01: F-B-4 done (inline Approve/Reject check the card and the policy).
+- 2026-11-01: F-B-5 done (role gating uses Permissions everywhere).
