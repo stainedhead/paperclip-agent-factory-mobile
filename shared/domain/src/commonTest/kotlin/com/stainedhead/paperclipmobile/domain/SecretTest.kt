@@ -31,4 +31,25 @@ class SecretTest {
         secret.isWiped shouldBe true
         secret.reveal() shouldBe ""
     }
+
+    @Test
+    fun `startsWith compares the prefix in place`() {
+        val secret = Secret.of("pcp_board_TESTONLY1")
+
+        secret.startsWith("pcp_board_") shouldBe true
+        secret.startsWith("pcp_board_TESTONLY1") shouldBe true
+        secret.startsWith("") shouldBe true
+        secret.startsWith("pcp_agent_") shouldBe false
+        secret.startsWith("pcp_board_TESTONLY1x") shouldBe false
+    }
+
+    @Test
+    fun `startsWith on a wiped secret matches only the empty prefix`() {
+        val secret = Secret.of("pcp_board_TESTONLY1")
+        secret.wipe()
+
+        secret.startsWith("") shouldBe true
+        secret.startsWith("pcp_board_") shouldBe false
+        Secret.of("").startsWith("p") shouldBe false
+    }
 }

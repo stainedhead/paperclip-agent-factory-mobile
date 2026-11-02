@@ -20,8 +20,12 @@ class Secret private constructor(
     @HiddenFromObjC
     fun reveal(): String = chars.concatToString()
 
-    /** True when the value begins with [prefix]. Lets callers check a key's shape without reading it. */
-    fun startsWith(prefix: String): Boolean = chars.concatToString().startsWith(prefix)
+    /**
+     * True when the value begins with [prefix]. Lets callers check a key's shape without reading it: the characters
+     * are compared in place, so no `String` copy of the key (which [wipe] could not clear) is ever created.
+     */
+    fun startsWith(prefix: String): Boolean =
+        prefix.length <= chars.size && prefix.indices.all { chars[it] == prefix[it] }
 
     /** Overwrites the in-memory copy. The instance stays usable but holds an empty value. */
     fun wipe() {
