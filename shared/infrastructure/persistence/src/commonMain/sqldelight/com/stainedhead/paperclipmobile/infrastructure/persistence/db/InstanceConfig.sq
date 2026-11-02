@@ -32,11 +32,13 @@ INSERT OR REPLACE INTO instance_config(
     default_company_id, last_company_id, pins, created_at, last_connected_at, sort_order, status
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+-- sort_order and created_at are not written: `add` sets them and `reorder` owns the order, so an update made from
+-- an older read can never undo a reorder committed in between (review1b F-B-6).
 updateExisting:
 UPDATE instance_config SET
     display_name = ?, base_uri = ?, deployment_mode = ?, exposure = ?, auth_method = ?, board_key_id = ?,
-    key_expires_at = ?, default_company_id = ?, last_company_id = ?, pins = ?, created_at = ?,
-    last_connected_at = ?, sort_order = ?, status = ?
+    key_expires_at = ?, default_company_id = ?, last_company_id = ?, pins = ?,
+    last_connected_at = ?, status = ?
 WHERE id = ?;
 
 setSortOrder:

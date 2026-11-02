@@ -71,9 +71,7 @@ class SqlInstanceRepository internal constructor(
                     defaultCompanyId?.value,
                     lastCompanyId?.value,
                     pins.toStoredPins(),
-                    createdAt.toString(),
                     lastConnectedAt?.toString(),
-                    sortOrder.toLong(),
                     status.name,
                     id.value,
                 )
