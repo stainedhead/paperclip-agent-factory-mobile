@@ -34,9 +34,10 @@ internal class CompanyCalls(
         instanceId: InstanceId,
         segments: List<String>,
         range: String,
+        maxBytes: Long,
     ): DomainResult<ApiBytes> =
         stored.call(instanceId) { instance, key ->
             val destination = Destination(instance.baseUri, instance.pins)
-            client.sendBytes(ApiRequest(destination, HttpMethod.Get, segments, bearer = key), range)
+            client.sendBytes(ApiRequest(destination, HttpMethod.Get, segments, bearer = key), range, maxBytes)
         }
 }

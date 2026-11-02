@@ -184,10 +184,10 @@ class IssueGatewayAdapter(
     }
 
     /**
-     * Reads bytes [start] to [endInclusive] (to the end when null) of an attachment of [issueId] with an HTTP Range
-     * request, so a large file is never pulled whole. The attachment must be in the issue's own list, which proves it
-     * belongs to this company before any byte is requested. A 416 is a [DomainError.Rejected]. This call is not on the
-     * port: nothing above infrastructure can reach it yet (ADR-064).
+     * Reads bytes [start] to [endInclusive] (one slice, [AttachmentRanges.MAX_SLICE_BYTES], when null) of an attachment
+     * of [issueId] with an HTTP Range request, so a large file is never pulled whole. The attachment must be in the
+     * issue's own list, which proves it belongs to this company before any byte is requested. A 416 is a
+     * [DomainError.Rejected]. This call is not on the port: nothing above infrastructure can reach it yet (ADR-064).
      */
     suspend fun attachmentContent(
         scope: CompanyScope,
@@ -205,8 +205,17 @@ class IssueGatewayAdapter(
         if ((listed as DomainResult.Success).value.none { it.id == attachmentId }) {
             return DomainResult.Failure(DomainError.NotFound)
         }
-        val range = "bytes=$start-${endInclusive ?: ""}"
-        val reply = calls.sendBytes(scope.instanceId, listOf("attachments", attachmentId, "content"), range)
+        val end = endInclusive ?: (start + AttachmentRanges.MAX_SLICE_BYTES - 1)
+        if (end - start + 1 > AttachmentRanges.MAX_SLICE_BYTES) {
+            return DomainResult.Failure(DomainError.Rejected("The slice is larger than one megabyte"))
+        }
+        val reply =
+            calls.sendBytes(
+                scope.instanceId,
+                listOf("attachments", attachmentId, "content"),
+                "bytes=$start-$end",
+                AttachmentRanges.MAX_SLICE_BYTES,
+            )
         return when (reply) {
             is DomainResult.Success -> AttachmentRanges.slice(reply.value, start)
             is DomainResult.Failure -> reply

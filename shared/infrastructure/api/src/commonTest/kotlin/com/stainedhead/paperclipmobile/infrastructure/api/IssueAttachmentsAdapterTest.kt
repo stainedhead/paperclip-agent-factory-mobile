@@ -107,10 +107,10 @@ class IssueAttachmentsAdapterTest {
         }
 
     @Test
-    fun `AD-013 an open ended range reads to the end and binary bytes arrive unchanged`() =
+    fun `AD-013 an open ended range reads one slice from the start and binary bytes arrive unchanged`() =
         runTest {
             val slice = world.issues.attachmentContent(world.acme, root, PNG, 4, null).value()
-            assertEquals("bytes=4-", sent.last().range)
+            assertEquals("bytes=4-${4 + AttachmentRanges.MAX_SLICE_BYTES - 1}", sent.last().range)
             assertContentEquals(pngBytes.copyOfRange(4, pngBytes.size), slice.bytes)
             assertEquals(4L, slice.start)
             val whole = world.issues.attachmentContent(world.acme, root, PNG, 0, (pngBytes.size - 1).toLong()).value()
@@ -160,5 +160,64 @@ class IssueAttachmentsAdapterTest {
             assertEquals(0L, slice.start)
             assertContentEquals(sqlBytes, slice.bytes)
             assertEquals(sqlBytes.size.toLong(), slice.total)
+        }
+
+    private fun adapterReplying(
+        listing: String,
+        content: ByteArray,
+        contentStatus: HttpStatusCode = HttpStatusCode.OK,
+        requests: MutableList<String> = mutableListOf(),
+    ): IssueGatewayAdapter {
+        val engine =
+            MockEngine { request ->
+                requests += request.headers[HttpHeaders.Range].orEmpty()
+                if (request.url.encodedPath.endsWith("/attachments")) {
+                    respond("[$listing]", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+                } else {
+                    respond(content, contentStatus, headersOf(HttpHeaders.ContentType, "application/octet-stream"))
+                }
+            }
+        return IssueGatewayAdapter(PaperclipHttpClient(engine, false), world.instances, world.secrets)
+    }
+
+    private fun bigFile() = StubAttachment(SQL, acme, PAP_1182, "big.bin", "application/octet-stream", ByteArray(8))
+
+    @Test
+    fun `F-A-7 an open ended read asks for at most one slice and never to the end of the file`() =
+        runTest {
+            val ranges = mutableListOf<String>()
+            val adapter = adapterReplying(IssueRowFixtures.attachment(bigFile()), ByteArray(1), requests = ranges)
+            adapter.attachmentContent(world.acme, root, SQL, 100, null)
+            assertEquals("bytes=100-${100 + AttachmentRanges.MAX_SLICE_BYTES - 1}", ranges.last())
+        }
+
+    @Test
+    fun `F-A-7 a closed range longer than one slice is refused before any request`() =
+        runTest {
+            val ranges = mutableListOf<String>()
+            val adapter = adapterReplying(IssueRowFixtures.attachment(bigFile()), ByteArray(1), requests = ranges)
+            val tooLong = adapter.attachmentContent(world.acme, root, SQL, 0, AttachmentRanges.MAX_SLICE_BYTES)
+            assertIs<DomainError.Rejected>((tooLong as DomainResult.Failure).error)
+            val exact = adapter.attachmentContent(world.acme, root, SQL, 0, AttachmentRanges.MAX_SLICE_BYTES - 1)
+            assertIs<DomainResult.Success<*>>(exact)
+            assertEquals(1, ranges.count { it.startsWith("bytes=") }, "only the legal read reached the server")
+        }
+
+    @Test
+    fun `F-A-7 a server that ignores Range for a file bigger than the cap is Rejected and not handed over`() =
+        runTest {
+            val huge = ByteArray((AttachmentRanges.MAX_SLICE_BYTES + 1).toInt())
+            val adapter = adapterReplying(IssueRowFixtures.attachment(bigFile()), huge)
+            val reply = adapter.attachmentContent(world.acme, root, SQL, 0, 9)
+            assertIs<DomainError.Rejected>((reply as DomainResult.Failure).error)
+        }
+
+    @Test
+    fun `F-A-7 a reply exactly at the cap is accepted`() =
+        runTest {
+            val exact = ByteArray(AttachmentRanges.MAX_SLICE_BYTES.toInt())
+            val adapter = adapterReplying(IssueRowFixtures.attachment(bigFile()), exact)
+            val reply = adapter.attachmentContent(world.acme, root, SQL, 0, AttachmentRanges.MAX_SLICE_BYTES - 1)
+            assertEquals(exact.size, reply.value().bytes.size)
         }
 }

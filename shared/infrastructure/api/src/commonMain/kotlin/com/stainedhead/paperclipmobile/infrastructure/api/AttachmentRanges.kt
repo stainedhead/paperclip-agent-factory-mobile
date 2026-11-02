@@ -34,6 +34,13 @@ internal object AttachmentRanges {
         return DomainResult.Success(IssueGatewayAdapter.AttachmentSlice(reply.bytes, start, total, reply.contentType))
     }
 
+    /**
+     * The most bytes one slice may ask for and the most any reply may carry (1 MiB). A phone must not buffer a
+     * large file: an open ended request is cut to one slice, a longer closed range is refused, and a server or proxy
+     * that ignores `Range` and sends more than this is refused while the body is read, not after it is buffered.
+     */
+    const val MAX_SLICE_BYTES = 1_048_576L
+
     private const val PARTIAL = 206
     private const val TOTAL = 3
 }

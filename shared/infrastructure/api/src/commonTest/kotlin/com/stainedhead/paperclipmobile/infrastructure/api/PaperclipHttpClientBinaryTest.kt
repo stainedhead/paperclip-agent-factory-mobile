@@ -23,6 +23,8 @@ import kotlin.test.assertTrue
 private val home = TestData.uri()
 
 /** AD-013: the binary path of the shared client, used by the attachment content call. */
+private const val MAX_TEST_BYTES = 1024L
+
 class PaperclipHttpClientBinaryTest {
     private val requests = mutableListOf<HttpRequestData>()
     private val trace = mutableListOf<String>()
@@ -52,7 +54,8 @@ class PaperclipHttpClientBinaryTest {
             bearer = Secret.of(TestData.TOKEN),
         )
 
-    private suspend fun PaperclipHttpClient.sendBytes(request: ApiRequest) = sendBytes(request, "bytes=0-7")
+    private suspend fun PaperclipHttpClient.sendBytes(request: ApiRequest) =
+        sendBytes(request, "bytes=0-7", MAX_TEST_BYTES)
 
     @Test
     fun `AD-013 a range request sends the header and keeps every byte of the reply`() =

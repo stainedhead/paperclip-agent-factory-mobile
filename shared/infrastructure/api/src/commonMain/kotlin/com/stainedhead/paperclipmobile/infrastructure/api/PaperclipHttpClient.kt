@@ -13,16 +13,18 @@ import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
-import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
+import io.ktor.utils.io.readBuffer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.io.readByteArray
 
 /** Where a call goes: an instance and the certificate pins stored for it (empty when it has none). */
 internal class Destination(
@@ -94,12 +96,14 @@ class PaperclipHttpClient(
 
     /**
      * Like [send] but keeps the body as bytes, because a binary reply must not be decoded as text (attachment slices).
-     * [range] is the value of the `Range` header, for example `bytes=0-65535`.
+     * [range] is the value of the `Range` header, for example `bytes=0-65535`. A reply with more than [maxBytes] is
+     * [DomainError.Rejected]: the body is read through a bounded channel, so it is never buffered whole.
      */
     internal suspend fun sendBytes(
         request: ApiRequest,
         range: String,
-    ): DomainResult<ApiBytes> = call(request, range, ::interpretBytes)
+        maxBytes: Long,
+    ): DomainResult<ApiBytes> = call(request, range) { interpretBytes(it, maxBytes) }
 
     private suspend fun <T> call(
         request: ApiRequest,
@@ -157,13 +161,20 @@ class PaperclipHttpClient(
         }
     }
 
-    private suspend fun interpretBytes(response: HttpResponse): DomainResult<ApiBytes> {
+    private suspend fun interpretBytes(
+        response: HttpResponse,
+        maxBytes: Long,
+    ): DomainResult<ApiBytes> {
         val status = response.status.value
         return if (status in SUCCESS) {
+            val bytes = response.bodyAsChannel().readBuffer(maxBytes + 1).readByteArray()
+            if (bytes.size > maxBytes) {
+                return DomainResult.Failure(DomainError.Rejected("The reply is larger than the allowed slice"))
+            }
             DomainResult.Success(
                 ApiBytes(
                     status,
-                    response.readRawBytes(),
+                    bytes,
                     response.headers[HttpHeaders.ContentType],
                     response.headers[HttpHeaders.ContentRange],
                 ),
