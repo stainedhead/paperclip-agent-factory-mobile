@@ -49,6 +49,7 @@ class WorkWorld(
     val decisions = DecisionGatewayAdapter(client, instances, secrets)
     val attention = AttentionGatewayAdapter(client, instances, secrets)
     val dashboard = DashboardGatewayAdapter(client, instances, secrets)
+    val agents = AgentGatewayAdapter(client, instances, secrets)
 
     init {
         server.issueKey(HOME, TestData.TOKEN, KEY_ID, "Alex's iPhone", roles)
