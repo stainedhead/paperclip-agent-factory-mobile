@@ -44,6 +44,7 @@ class WorkWorld(
     val budget = BudgetGatewayAdapter(client, instances, secrets)
     val approvals = ApprovalGatewayAdapter(client, instances, secrets)
     val decisions = DecisionGatewayAdapter(client, instances, secrets)
+    val attention = AttentionGatewayAdapter(client, instances, secrets)
 
     init {
         server.issueKey(HOME, TestData.TOKEN, KEY_ID, "Alex's iPhone", roles)

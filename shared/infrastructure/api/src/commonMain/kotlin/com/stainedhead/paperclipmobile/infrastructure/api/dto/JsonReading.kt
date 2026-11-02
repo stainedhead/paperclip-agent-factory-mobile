@@ -44,3 +44,11 @@ internal fun JsonObject.objects(name: String): List<JsonObject> =
         }.orEmpty()
 
 internal fun JsonElement?.asObject(): JsonObject = this as? JsonObject ?: JsonObject(emptyMap())
+
+/** The integer part of a number field (a fractional percent is rounded down), without floating point. */
+internal fun JsonObject.wholePart(name: String): Int? =
+    (this[name] as? JsonPrimitive)
+        ?.takeIf { it !is JsonNull }
+        ?.content
+        ?.substringBefore('.')
+        ?.toIntOrNull()
