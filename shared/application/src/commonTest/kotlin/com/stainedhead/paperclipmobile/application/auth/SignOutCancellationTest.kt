@@ -76,11 +76,14 @@ class SignOutCancellationTest {
         }
 
     @Test
-    fun `cancelling sign out everywhere propagates the cancellation`() =
+    fun `cancelling sign out everywhere stops after the factory in progress and the caller sees the cancellation`() =
         runTest {
-            val env = Env(listOf(signedIn))
+            val second = TestData.instance("b", "Cloud", sortOrder = 1)
+            val env = Env(listOf(signedIn, second))
             env.storeToken(signedIn)
+            env.storeToken(second)
             env.auth.onCall = { if (it.name == "revokeCurrentKey") awaitCancellation() }
+            var completed = false
 
             val job =
                 launch {
@@ -88,13 +91,18 @@ class SignOutCancellationTest {
                         env.repository,
                         SignOutInstance(env.repository, env.secrets, env.revoker, env.locks),
                     )()
+                    completed = true
                 }
             advanceUntilIdle()
             job.cancel()
             job.join()
 
             job.isCancelled shouldBe true
+            completed shouldBe false
+            // The factory in progress finished its own local deletion; the next one was never started.
             env.secrets.pathsFor(signedIn.id) shouldBe emptySet()
+            env.repository.get(second.id)?.status shouldBe InstanceStatus.SignedIn
+            env.secrets.pathsFor(second.id).isNotEmpty() shouldBe true
         }
 
     private class FailingDelete(

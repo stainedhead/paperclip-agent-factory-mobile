@@ -434,6 +434,12 @@ class FirstRunStateHolderTest {
             holder.type("https://b.example.com")
             gate.complete(Unit)
             advanceUntilIdle()
+
+            // Straight after the late result: it is not shown for the new address (the holder's own check, not only
+            // AddInstance's later refusal).
+            holder.state.value.probe shouldBe ProbeStatus.Idle
+            holder.state.value.serverVersion shouldBe null
+            holder.state.value.normalizedAddress shouldBe "https://b.example.com"
             holder.onIntent(FirstRunIntent.ContinueRequested)
             advanceUntilIdle()
 
