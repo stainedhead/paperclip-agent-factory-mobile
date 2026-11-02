@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 /**
- * CI supply chain (F-C-7): every third-party action is pinned to a full commit SHA with its version in a comment, and
- * every container image used by CI is pinned by digest. Dependabot (`github-actions` and `docker` ecosystems) keeps both
- * current.
+ * CI supply chain (F-C-7): every third-party action is pinned to a full commit SHA with its version in a comment,
+ * and every container image used by CI is pinned by digest. Dependabot (`github-actions` and `docker` ecosystems)
+ * keeps both current.
  */
 class CiPinningRulesTest {
     private val workflows: List<File> =

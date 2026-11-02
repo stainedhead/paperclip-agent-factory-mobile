@@ -100,7 +100,7 @@ class RequirementsTraceabilityTest {
             }
             """.trimIndent()
 
-        Assertions.assertEquals(setOf(5, 6), idsInTestNames(source))
+        Assertions.assertEquals(setOf(FIFTH, SIXTH), idsInTestNames(source))
     }
 
     @Test
@@ -118,6 +118,8 @@ class RequirementsTraceabilityTest {
 
     private companion object {
         const val MIN_TEST_SOURCES = 50
+        const val FIFTH = 5
+        const val SIXTH = 6
         const val PHASE_ONE_A_IDS = 47
     }
 }
