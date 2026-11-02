@@ -160,4 +160,34 @@ class ErrorMapperTest {
         val reason = (status(422, """{"error":"${"pcp_board_x ".repeat(100)}"}""") as DomainError.Rejected).reason
         assertTrue(reason.length <= ErrorMapper.MAX_REASON_LENGTH)
     }
+
+    @Test
+    fun `F-R-5 long snake case and hyphenated words and the real server reasons survive`() {
+        listOf(
+            "validation_failed_budget_exceeded",
+            "company-budget-exceeded-hard-stop-reached for this agent",
+            "Resolve unpriced usage or explicitly allow it in the budget policy before resuming",
+            "Completed runs must finish accounting before resuming",
+            "New budget must exceed current observed spend",
+            "Agent shortname lookup requires companyId query parameter",
+            "Agent token did not verify; obtain fresh credentials and retry",
+            "Costs are outside this actor's authorization boundary",
+        ).forEach { text ->
+            val reason = (status(422, """{"error":"$text"}""") as DomainError.Rejected).reason
+            assertEquals(text.take(ErrorMapper.MAX_REASON_LENGTH), reason)
+        }
+    }
+
+    @Test
+    fun `F-R-5 token looking runs are still removed`() {
+        listOf(
+            "sha 0123456789abcdef0123456789abcdef01234567 seen",
+            "uuid 123e4567-e89b-12d3-a456-426614174000 seen",
+            "padded QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo= seen",
+            "mixed Abcdefghijklmnopqrstuvwxyz seen",
+        ).forEach { text ->
+            val reason = (status(422, """{"error":"$text"}""") as DomainError.Rejected).reason
+            assertTrue("[removed]" in reason, "nothing removed from '$text': '$reason'")
+        }
+    }
 }

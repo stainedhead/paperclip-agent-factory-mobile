@@ -91,7 +91,9 @@ internal object ErrorMapper {
             Regex("(?i)bearer\\s+\\S+"),
             Regex("(?i)https?://\\S+"),
             Regex("(?i)(token|key|secret|password|signature)=[^&\\s\"']+"),
-            Regex("[A-Za-z0-9+/_=-]{24,}"),
+            // An unbroken run of 24 or more key characters that holds a digit, a capital or one of + / = (hex, uuid,
+            // base64). A run of lower case words joined by _ or - is a word of the server's text, not a token (F-R-5).
+            Regex("(?=[A-Za-z0-9+/_=-]*[A-Z0-9+/=])[A-Za-z0-9+/_=-]{24,}"),
         )
 
     private fun reasonOf(
@@ -114,8 +116,9 @@ internal object ErrorMapper {
     /**
      * Server text is shown to the person and may reach a log, so anything shaped like a credential is replaced
      * before it is cut (F-C-5): board keys and bootstrap tokens (`pcp_...`), bearer headers, urls, `token=` style
-     * query values and any unbroken run of 24 or more key characters (hex, base64, uuid). A text that is nothing but
-     * removed parts says nothing, so the caller falls back to the status.
+     * query values and any unbroken run of 24 or more key characters that holds a digit, a capital letter or `+/=`
+     * (hex, base64, uuid). A text that is nothing but removed parts says nothing, so the caller falls back to the
+     * status.
      */
     private fun redacted(message: String): String {
         val cleaned = SECRET_SHAPES.fold(message.trim()) { text, shape -> shape.replace(text, REMOVED) }
