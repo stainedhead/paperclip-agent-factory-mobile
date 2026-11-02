@@ -10,7 +10,7 @@ import com.stainedhead.paperclipmobile.domain.CompanyContext
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.Decision
 import com.stainedhead.paperclipmobile.domain.DecisionId
-import com.stainedhead.paperclipmobile.domain.DecisionOption
+import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Permissions
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
@@ -29,9 +29,12 @@ class LoadDecision(
 }
 
 /**
- * Chooses an option (PRD FR-043). Order (ADR-019): permission, then the decision and option exist and inputs are valid,
- * then device authentication for a destructive option, then ONE gateway call carrying an idempotency key. A timeout or
- * a conflict reads the decision again so the screen shows what really happened. Never retried.
+ * Chooses an option (PRD FR-043). It takes the decision's id, not an entity: the decision is read again first (ADR-032)
+ * so that "is this option destructive?" and "is it still open?" come from the server's current copy, never from what
+ * a screen loaded earlier. Order (ADR-019): the minimum permission, that read, the permission for the option's real
+ * action, input validation, device authentication for a destructive option, then ONE gateway call carrying an
+ * idempotency key. A decision that is no longer open is returned as [MutationResult.Reconciled] with a conflict and
+ * no call is made. A timeout or a conflict reads the decision again. Never retried.
  */
 class DecideDecision(
     private val gateway: DecisionGateway,
@@ -40,33 +43,58 @@ class DecideDecision(
 ) {
     suspend operator fun invoke(
         context: CompanyContext,
-        decision: Decision,
+        id: DecisionId,
         optionId: String,
         inputValues: Map<String, String>,
     ): MutationResult<Decision> {
-        val option = decision.options.firstOrNull { it.id == optionId }
-        val action = if (option?.isDestructive == true) Action.DecideDestructiveOption else Action.DecideOption
-        if (!Permissions.allows(context.role, action)) return MutationResult.Denied
-        val problem = problem(decision, option, inputValues)
-        if (problem != null) return MutationResult.Invalid(problem)
-        val auth = deviceAuth(action)
+        val ready =
+            when (val checked = check(context, id, optionId, inputValues)) {
+                is Checked.Refused -> return checked.result
+                is Checked.Ready -> checked
+            }
+        val auth = deviceAuth(ready.action)
         if (auth != BiometricResult.Approved) return MutationResult.NotAuthorized(auth)
-        return when (val result = gateway.decide(context.scope, decision.id, optionId, inputValues, ids.generate())) {
+        val scope = context.scope
+        return when (val result = gateway.decide(scope, ready.decisionId, optionId, inputValues, ids.generate())) {
             is DomainResult.Success -> MutationResult.Done(result.value)
-            is DomainResult.Failure -> failed(result.error) { gateway.get(context.scope, decision.id) }
+            is DomainResult.Failure -> failed(result.error) { gateway.get(scope, ready.decisionId) }
         }
     }
 
-    private fun problem(
-        decision: Decision,
-        option: DecisionOption?,
+    private sealed interface Checked {
+        data class Refused(
+            val result: MutationResult<Decision>,
+        ) : Checked
+
+        data class Ready(
+            val decisionId: DecisionId,
+            val action: Action,
+        ) : Checked
+    }
+
+    private suspend fun check(
+        context: CompanyContext,
+        id: DecisionId,
+        optionId: String,
         inputValues: Map<String, String>,
-    ): InvalidInput? =
-        when {
-            !decision.isOpen -> InvalidInput.WrongStatus
-            option == null -> InvalidInput.UnknownOption
-            else -> decision.validateInputs(inputValues)?.let { InvalidInput.Input(it) }
-        }
+    ): Checked {
+        if (!Permissions.allows(context.role, Action.DecideOption)) return Checked.Refused(MutationResult.Denied)
+        val decision =
+            when (val read = gateway.get(context.scope, id)) {
+                is DomainResult.Success -> read.value
+                is DomainResult.Failure -> return Checked.Refused(MutationResult.Failed(read.error))
+            }
+        val option = decision.options.firstOrNull { it.id == optionId }
+        val action = if (option?.isDestructive == true) Action.DecideDestructiveOption else Action.DecideOption
+        val refusal =
+            when {
+                !Permissions.allows(context.role, action) -> MutationResult.Denied
+                !decision.isOpen -> MutationResult.Reconciled(DomainError.Conflict, decision)
+                option == null -> MutationResult.Invalid(InvalidInput.UnknownOption)
+                else -> decision.validateInputs(inputValues)?.let { MutationResult.Invalid(InvalidInput.Input(it)) }
+            }
+        return refusal?.let { Checked.Refused(it) } ?: Checked.Ready(decision.id, action)
+    }
 }
 
 /** Dismisses a decision without choosing an option (PRD FR-043). */

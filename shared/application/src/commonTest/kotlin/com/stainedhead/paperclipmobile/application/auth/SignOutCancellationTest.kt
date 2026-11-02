@@ -41,6 +41,24 @@ class SignOutCancellationTest {
         }
 
     @Test
+    fun `sign_out_keeps_rename_made_during_revoke`() =
+        runTest {
+            val env = Env(listOf(signedIn))
+            env.storeToken(signedIn)
+            env.auth.onCall = {
+                if (it.name == "revokeCurrentKey") {
+                    env.repository.update(env.repository.get(signedIn.id)!!.copy(displayName = "Renamed meanwhile"))
+                }
+            }
+
+            SignOutInstance(env.repository, env.secrets, env.revoker)(signedIn.id)
+
+            val stored = env.repository.get(signedIn.id)!!
+            stored.displayName shouldBe "Renamed meanwhile"
+            stored.status shouldBe InstanceStatus.SignedOut
+        }
+
+    @Test
     fun `sign out everywhere continues after one factory fails and reports it`() =
         runTest {
             val second = TestData.instance("b", "Cloud", sortOrder = 1)

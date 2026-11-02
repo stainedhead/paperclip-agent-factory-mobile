@@ -59,6 +59,12 @@ Red evidence (against the old code, with MutationResult.Unknown only added): 'ex
 Fix: ADR-032. MutationResult.Unknown(error); InvokeHeartbeat, CommentOnIssue, CommentOnApproval read before the call and compare after a timeout or conflict. Presentation: FeedbackKind.Unknown, issue and approval threads reload, inbox refreshes. Existing tests that encoded the guess were changed in the same commit: run now timeout (now Unknown, 2 reads), issue comment timeout (Unknown, 4 reads in the holder test), approval comment timeout (Unknown), WorkRoleMatrixTest acceptance 10 (accepts Unknown for the comment case). Presentation tests for the new feedback were written together with the code, so their red run was not taken separately.
 Test support: FakeAgentGateway.onInvoke, FakeIssueGateway.storesCommentOnFailure, FakeApprovalGateway.storesCommentOnFailure.
 
+### 2026-11-01 F-A-8 decide re-reads the decision before device auth (Group 2)
+
+Red evidence: 'expected:<NotAuthorized(result=Cancelled)> but was:<Done(value=Decision(... status=Decided' (a caller copy without the cancel effect skipped biometrics; the store held the destructive one). The sign-out half (sign_out_keeps_rename_made_during_revoke) PASSES on the Group 1 code: refuted as already fixed; the test is kept.
+Fix: ADR-032 (scope paragraph). DecideDecision takes DecisionId, reads the decision, derives the real action from the fresh option, answers Failed when the read fails, and returns Reconciled(Conflict, fresh) without a gateway call when the fresh copy is not open (acceptance 12 behaviour kept). Tests changed in the same commit: tests built around a caller copy now put the copy in the fake store; read counts rose by one (acceptance 10: 3 in the holder test); FR-044 not-open now expects Reconciled(Conflict) with zero decide calls instead of Invalid(WrongStatus), because the screen can then show the final state.
+Not changed, with reason: PauseAgent, CancelRun, ResolveBudgetIncident, ApproveApproval keep entity parameters. Their device-auth requirement does not depend on the entity, the server repeats the eligibility checks, and the use case reconciles; re-reading would add a read per tap with no security gain (see ADR-032).
+
 ## Edge cases and solutions
 
 (none yet)

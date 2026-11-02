@@ -30,7 +30,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] FR-R05 (P1) F-A-4: `AddInstance` trusts a caller-supplied `HealthReport` that is not bound to the address
 - [x] FR-R06 (P1) F-A-5: Failed enrollment and cancellation leave key, status and config inconsistent
 - [x] FR-R07 (P1) F-A-6: Reconciled results for heartbeat and comments do not say whether the mutation took effect
-- [ ] FR-R08 (P1) F-A-8: Stale-snapshot writes and unvalidated caller-supplied entities in use cases
+- [x] FR-R08 (P1) F-A-8: Stale-snapshot writes and unvalidated caller-supplied entities in use cases
 - [ ] FR-R09 (P1) F-B-2: Decision screen can run two execution pollers at once; `polling` flag is shared
 - [ ] FR-R10 (P1) F-B-3: Sign-in outcomes map to wrong or inconsistent error keys
 - [ ] FR-R11 (P1) F-B-4: Inbox inline Approve/Reject do not check the card type or the inline-action policy
@@ -91,3 +91,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: FR-R30 fixed (F-A-7 bounded pairing wait).
 - 2026-11-01: F-A-3 done (401 marks Signed out in one choke point).
 - 2026-11-01: F-A-6 done (timeout reconciliation compares with the pre-call state).
+- 2026-11-01: F-A-8 done (decide re-reads the decision before device auth).

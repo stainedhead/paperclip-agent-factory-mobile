@@ -142,7 +142,7 @@ class DecisionStateHolder(
         val decision = current.decision ?: return
         val optionId = current.selectedOptionId ?: return
         if (!current.mayAct(Action.DecideOption, connectivity.isOnline.value) || !decision.isOpen) return
-        act { context -> useCases.decide(context, decision, optionId, current.inputValues) }
+        act { context -> useCases.decide(context, decision.id, optionId, current.inputValues) }
     }
 
     private fun dismiss() {

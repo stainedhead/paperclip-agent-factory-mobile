@@ -389,7 +389,8 @@ class DecisionActionsTest {
             advanceUntilIdle()
 
             env.decisions.count("decide") shouldBe 1
-            env.decisions.count("get") shouldBe 2
+            // The load, the read before the decision (ADR-032), and the read after the timeout.
+            env.decisions.count("get") shouldBe 3
             holder.state.value.feedback
                 ?.kind shouldBe FeedbackKind.Reconciled
             holder.state.value.finalState shouldBe null
@@ -502,6 +503,7 @@ class DecisionActionsTest {
             holder.close()
             holder.onIntent(DecisionIntent.Refresh)
             advanceUntilIdle()
-            env.decisions.count("get") shouldBe 1
+            // The load, and the read the use case makes before asking the device (ADR-032).
+            env.decisions.count("get") shouldBe 2
         }
 }

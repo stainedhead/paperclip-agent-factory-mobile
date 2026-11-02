@@ -70,7 +70,7 @@ class DecideDecisionTest {
         runTest {
             val env = Env()
 
-            val result = env.decide()(env.context(Role.Operator), open, "ship", emptyMap())
+            val result = env.decide()(env.context(Role.Operator), open.id, "ship", emptyMap())
 
             val decided = (result as MutationResult.Done).value
             decided.status shouldBe DecisionStatus.Decided
@@ -88,7 +88,7 @@ class DecideDecisionTest {
         runTest {
             val env = Env()
 
-            val result = env.decide()(env.context(), open, "cancel", emptyMap())
+            val result = env.decide()(env.context(), open.id, "cancel", emptyMap())
 
             result.shouldBeInstanceOf<MutationResult.Done<*>>()
             env.biometrics.calls shouldBe 1
@@ -114,9 +114,36 @@ class DecideDecisionTest {
                 )
             env.decisions.put(sneaky)
 
-            env.decide()(env.context(), sneaky, "stop", emptyMap())
+            env.decide()(env.context(), sneaky.id, "stop", emptyMap())
 
             env.biometrics.calls shouldBe 1
+        }
+
+    @Test
+    fun `decide_uses_server_side_option_destructiveness_for_device_auth even though a screen holds an older copy`() =
+        runTest {
+            val env = Env()
+            val destructive =
+                open.copy(
+                    options =
+                        listOf(
+                            DecisionOption(
+                                "stop",
+                                "Stop",
+                                null,
+                                OptionStyle.Default,
+                                listOf(DecisionEffect.CancelIssueTree("iss-1", "stop")),
+                            ),
+                        ),
+                )
+            env.decisions.put(destructive)
+            env.biometrics.result = BiometricResult.Cancelled
+
+            val result = env.decide()(env.context(), destructive.id, "stop", emptyMap())
+
+            result shouldBe MutationResult.NotAuthorized(BiometricResult.Cancelled)
+            env.biometrics.calls shouldBe 1
+            env.decisions.count("decide") shouldBe 0
         }
 
     @Test
@@ -131,7 +158,7 @@ class DecideDecisionTest {
                 val env = Env()
                 env.biometrics.result = denied
 
-                val result = env.decide()(env.context(), open, "cancel", emptyMap())
+                val result = env.decide()(env.context(), open.id, "cancel", emptyMap())
 
                 result shouldBe MutationResult.NotAuthorized(denied)
                 env.decisions.count("decide") shouldBe 0
@@ -143,7 +170,7 @@ class DecideDecisionTest {
         runTest {
             val env = Env()
 
-            val result = env.decide()(env.context(Role.Viewer), open, "cancel", emptyMap())
+            val result = env.decide()(env.context(Role.Viewer), open.id, "cancel", emptyMap())
 
             result shouldBe MutationResult.Denied
             env.biometrics.calls shouldBe 0
@@ -155,8 +182,9 @@ class DecideDecisionTest {
         runTest {
             val env = Env()
             val withInput = open.copy(inputs = listOf(DecisionInput("why", "Why", required = true)))
+            env.decisions.put(withInput)
 
-            val result = env.decide()(env.context(), withInput, "cancel", emptyMap())
+            val result = env.decide()(env.context(), withInput.id, "cancel", emptyMap())
 
             result shouldBe MutationResult.Invalid(InvalidInput.Input(InputIssue.Required("why")))
             env.biometrics.calls shouldBe 0
@@ -170,7 +198,7 @@ class DecideDecisionTest {
             val withInput = AttentionFixtures.decision(inputs = listOf(DecisionInput("why", "Why", required = true)))
             env.decisions.put(withInput)
 
-            env.decide()(env.context(), withInput, "ship", mapOf("why" to "ready"))
+            env.decide()(env.context(), withInput.id, "ship", mapOf("why" to "ready"))
 
             env.decisions.decidedWith
                 .single()
@@ -182,7 +210,7 @@ class DecideDecisionTest {
         runTest {
             val env = Env()
 
-            env.decide()(env.context(), open, "teleport", emptyMap()) shouldBe
+            env.decide()(env.context(), open.id, "teleport", emptyMap()) shouldBe
                 MutationResult.Invalid(InvalidInput.UnknownOption)
 
             env.decisions.count("decide") shouldBe 0
@@ -192,10 +220,13 @@ class DecideDecisionTest {
     fun `FR-044 a decision that is not open is refused without a gateway call`() =
         runTest {
             val env = Env()
+            val expired = open.copy(status = DecisionStatus.Expired)
+            env.decisions.put(expired)
 
-            val result = env.decide()(env.context(), open.copy(status = DecisionStatus.Expired), "ship", emptyMap())
+            val result = env.decide()(env.context(), expired.id, "ship", emptyMap())
 
-            result shouldBe MutationResult.Invalid(InvalidInput.WrongStatus)
+            // The server's copy is not open: nothing is sent and the screen gets that copy as the truth (FR-044).
+            result shouldBe MutationResult.Reconciled(DomainError.Conflict, expired)
             env.decisions.count("decide") shouldBe 0
         }
 
@@ -206,13 +237,13 @@ class DecideDecisionTest {
             env.decisions.failures["decide"] = DomainError.Timeout
             env.decisions.serverChangesOnFailure = { it.copy(status = DecisionStatus.Decided, chosenOptionId = "ship") }
 
-            val result = env.decide()(env.context(), open, "ship", emptyMap())
+            val result = env.decide()(env.context(), open.id, "ship", emptyMap())
 
             val reconciled = result as MutationResult.Reconciled<Decision>
             reconciled.error shouldBe DomainError.Timeout
             reconciled.current.status shouldBe DecisionStatus.Decided
             env.decisions.count("decide") shouldBe 1
-            env.decisions.count("get") shouldBe 1
+            env.decisions.count("get") shouldBe 2
         }
 
     @Test
@@ -221,16 +252,17 @@ class DecideDecisionTest {
             val env = Env()
             env.decisions.put(open.copy(status = DecisionStatus.Decided, chosenOptionId = "hold"))
 
-            val result = env.decide()(env.context(), open, "ship", emptyMap())
+            val result = env.decide()(env.context(), open.id, "ship", emptyMap())
 
             val reconciled = result as MutationResult.Reconciled<Decision>
             reconciled.error shouldBe DomainError.Conflict
             reconciled.current.chosenOptionId shouldBe "hold"
             reconciled.current.isOpen shouldBe false
+            env.decisions.count("decide") shouldBe 0
         }
 
     @Test
-    fun `other failures are reported once with no re-read and no retry`() =
+    fun `other failures are reported once with no reconciling read and no retry`() =
         runTest {
             listOf(
                 DomainError.Forbidden,
@@ -240,10 +272,10 @@ class DecideDecisionTest {
                 val env = Env()
                 env.decisions.failures["decide"] = it
 
-                env.decide()(env.context(), open, "ship", emptyMap()) shouldBe MutationResult.Failed(it)
+                env.decide()(env.context(), open.id, "ship", emptyMap()) shouldBe MutationResult.Failed(it)
 
                 env.decisions.count("decide") shouldBe 1
-                env.decisions.count("get") shouldBe 0
+                env.decisions.count("get") shouldBe 1
             }
         }
 
@@ -252,9 +284,12 @@ class DecideDecisionTest {
         runTest {
             val env = Env()
             env.decisions.failures["decide"] = DomainError.Timeout
-            env.decisions.failures["get"] = DomainError.Unreachable
+            env.decisions.serverChangesOnFailure = {
+                env.decisions.failures["get"] = DomainError.Unreachable
+                it
+            }
 
-            env.decide()(env.context(), open, "ship", emptyMap()) shouldBe MutationResult.Failed(DomainError.Timeout)
+            env.decide()(env.context(), open.id, "ship", emptyMap()) shouldBe MutationResult.Failed(DomainError.Timeout)
         }
 }
 
