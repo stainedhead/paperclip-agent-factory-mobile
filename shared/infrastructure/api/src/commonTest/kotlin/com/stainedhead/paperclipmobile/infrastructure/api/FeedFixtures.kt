@@ -14,6 +14,11 @@ import kotlinx.serialization.json.put
  * `createItem` builds it (`services/attention.ts:393-420`), subjects and metadata per source kind (`:1138-1152`,
  * `:1257-1270`, `:1772-1790`), details (`packages/shared/src/types/attention.ts:110-187`), the resolver audience
  * (`:189-219`, `services/attention.ts:738-770`) and the page (`:221-277`, `:1893-1937`).
+ *
+ * Re-verified in 1b-4b against the pinned release 2026.1023.0 (compiled dist): `server/dist/services/
+ * attention.js:53-56,78-95,297-365,1535-1625`, `routes/attention.js`, `routes/inbox-dismissals.js`,
+ * `routes/decision-queues.js`,
+ * `shared/dist/types/attention.d.ts`.
  */
 internal object FeedFixtures {
     val SOURCE_KINDS =

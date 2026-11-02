@@ -6,6 +6,9 @@ package com.stainedhead.paperclipmobile.infrastructure.api
  * row (`approval_comments.ts:6-18`, 201 at `approvals.ts:517-543`) and the issue rows of `listIssuesForApproval`
  * (`services/issue-approvals.ts:74-110`). Payload fields: hire_agent `routes/agents.ts:4427-4437,4663-4680`; the other
  * three `ui/src/components/ApprovalPayload.tsx:89-184` and `services/budgets.ts:253-269`.
+ *
+ * Re-verified in 1b-4b against the pinned release 2026.1023.0 (compiled dist): `server/dist/routes/approvals.js:30-58,
+ * 180-476`, `lib/approval-records.js`, `services/approvals.js`; payloads are redacted by `redactEventPayload`.
  */
 internal object ApprovalFixtures {
     const val HIRE_ID = "11111111-1111-4111-8111-111111111111"

@@ -386,3 +386,52 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** A card without an id, source kind, dismissal key, subject id or readable `activityAt`/`createdAt` makes the whole page `Malformed`. Skipping it would hide something that needs a decision and make the page disagree with its own `totalCount`; the Inbox shows its error state and the cached first page. Missing optional parts (verbs, detail, dismissal, resolver audience) never fail a card. `countsBySourceKind` keeps unknown kinds as `Unsupported` keys. The cursor is never inspected or validated: it is passed back as received and the server's rejection arrives as `Rejected` with its own reason.
 **Consequences.** A server that adds a required-looking field breaks nothing; a server that drops an identity field breaks the Inbox loudly instead of quietly.
+
+## ADR-060: The pinned release's compiled dist is the source of truth, and the stub follows it
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** Server facts for the adapters are read from the pinned release 2026.1023.0 as installed (`@paperclipai/{server,shared,db}/dist`), not from a newer development working tree. Before the 1b-4b gateways were built, every 1b-4a assumption was re-read there; the differences were fixed test first (research, "1b-4a corrections vs pinned release"). Each fixture and stub header names the dist file it follows. The stub server follows the server's permissiveness and quirks, not the port's strictness, so a test can only pass if the adapter itself compensates (a cancel of an ended run answers 200 with the run unchanged; a log read omits `nextOffset` on its last chunk; comments come newest first; a create may be answered `deduplicated`).
+**Consequences.** The one production defect found was an exponent number literal (`5e-7`) that `ceilToCents` refused; the rest were stub differences. Facts that cannot be read from source (the status after `verdicts`, the reply of a pause) are listed as not verified and wait for the container run in CI (1b-5).
+
+## ADR-061: Every id-addressed call proves the company first; lists prove it row by row
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b); extends ADR-057
+
+**Decision.** Issues, agents, runs, attachments and interaction answers are addressed by id with no company in the path, and a board key that belongs to several companies can read all of them. So each call is made under the scope's company like this: an id that is not a uuid is NotFound without a request; a single-resource read checks the `companyId` of the reply; every mutation is preceded by a read of the resource (a board key must not be able to pause, comment on or cancel the work of a company the person did not select); a reply to a mutation that names another company is not trusted. A list whose rows each name their company (comments, attachments, interactions) is checked row by row, and an empty list, which proves nothing, asks the issue once (`provingOwnership`). Lists of rows that do not name a company (`issues/{id}/runs`) are preceded by the issue read. The audit test calls every method of the five gateways against a Globex resource under an Acme scope and asserts NotFound, no write and no body read.
+**Consequences.** A mutation costs one more read; a thread that really is empty costs one more read per poll. Both are cheap next to a wrong-company write.
+
+## ADR-062: Runs: the guard is ours, the log offset is counted in bytes
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** Cancelling a run that has already ended is answered 200 with the run unchanged by the pinned server, so `cancel` reads the run first and returns Conflict for one that is not active without sending a mutation; a reply that comes back neither active nor cancelled is also Conflict, a `null` body is NotFound. The log is read in chunks of 64 KiB by byte offset. The server sends `nextOffset` only when more bytes follow, so on the last, short chunk the adapter computes the next offset as the start plus the UTF-8 byte length of the content (not its character count), and an empty read has none; a 404 on the log of a run that was just read means "no log written yet" and is an empty chunk. Events are read in pages of 500 after the last sequence number and returned oldest first without repeats.
+**Consequences.** A chunk boundary can fall inside a multi-byte character; the server decodes both halves with replacement characters. This is accepted: the tail is for reading progress, and the replacement shows at most once per 64 KiB.
+
+## ADR-063: Issue requests are written for the pinned server's rules
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** The list uses `view=compact` with the saved filter's parameters and never claims a description (the server sends a 1200-character preview). Comments are asked `order=asc` (the default is newest first) and deleted comments, which come back empty, are left out. Create always sends `allowDuplicate: true`, because the default silently returns an existing open issue with the same title and parent created in the last 48 hours; a `deduplicated` reply anyway is a Conflict. Assignee changes send both assignee fields every time (the other one as an explicit null) because the server merges with the stored values and refuses two assignees. A status the app does not know and an agent id that is not a uuid are refused before any request. The server's own 422 texts (`blocked` needs a blocker or a pending card, `in_progress` needs an assignee) arrive as the reason. Detail is two reads: the issue, then its subtasks by `parentId`.
+**Consequences.** Two quick taps on Create make two issues; the presentation layer disables the action while it is pending.
+
+## ADR-064: Attachment content is an adapter-only, ranged call
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** `IssueGateway` has no method for file content, and adding one is a domain change outside this stream. The adapter therefore has a public, non-port method `IssueGatewayAdapter.attachmentContent(scope, issueId, attachmentId, start, endInclusive)` that sends `Range: bytes=a-b` through a new byte path of the shared client (`sendBytes`, which never decodes the body as text). The attachment must be in the issue's own list, which proves its company before any byte is asked for. 206 is read from `Content-Range`; a 200 (the server ignored the range) is the whole file from byte zero; 416 is Rejected with a reason. Its result type is nested in the adapter so that the Konsist rule about the public surface of `api` still holds.
+**Consequences.** Nothing above infrastructure can reach it until a port is added (recorded as deferred); the byte path is tested at the client (non-UTF-8 bytes survive, no key or query in the trace) and at the adapter.
+
+## ADR-065: Interactions: five kinds are answered, everything else is shown and never sent
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** `suggest_tasks`, `ask_user_questions`, `request_confirmation`, `request_checkbox_confirmation` and `request_item_verdicts` are mapped to their domain types. `connection_intent`, a kind from a newer server, a confirmation that carries `toolAction`, `secretProposal` or `connectionAuthorization` (it gates a tool call, a secret or an external login that a phone prompt cannot describe), and a supported kind whose payload cannot be read all become `UnsupportedInteraction` with their real kind; one bad payload never hides the rest of the thread. An answer first reads the thread: an unknown interaction is NotFound, an unsupported one is refused, an answer that does not fit the kind (a plain accept for tasks would accept every task) or an empty task selection is refused, and one for an interaction that is no longer pending is a Conflict, each without a mutation. The answer then goes once to its endpoint (`accept`, `reject`, `respond`, `verdicts`, `skip`). `required` is true only when the server says so, `allowOther` false only when it says so. The resolver audience is read with the attention mapper's `resolverAudienceOf`.
+**Consequences.** The server stays the authority on everything the app cannot know (the creator rule, the addressee, a closed issue): its 403 and 409 arrive as `Forbidden` and `Conflict`.
+
+## ADR-066: Dashboard and agents: tiles and money are all or nothing
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** A dashboard with a missing, negative or non-integer count, or money that is not a number, is Malformed, not a tile of zeros. Window spend prefers `costCentsExact` (text) over the double next to it, rounds each row up to whole cents, and keeps rows of windows the app does not know for the domain to ignore. The agent list sends no query (the server answers 400 to any), maps an unknown status to `Unknown`, and fails as a whole if one row is unreadable (ADR-059). A wake answers 202 with either the started run or `{status:"skipped"}`; anything else is Malformed. A budget over 2,147,483,647 cents or in another currency is refused before any request, as for incidents. The reply of a pause or resume is mapped as sent; whether its month spend is the hydrated figure is not verified.
+**Consequences.** After a pause the Agents tab should reload the list for the month figure.

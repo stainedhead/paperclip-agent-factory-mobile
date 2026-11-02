@@ -12,6 +12,9 @@ import kotlinx.serialization.json.put
  * `executions` that `GET /decisions/{id}` and both mutations answer (`services/decisions.ts:277-281`, columns
  * `packages/db/src/schema/decisions.ts:34-115`, options/effects `packages/shared/src/types/decision.ts:6-78`).
  * `signedSpec` and `targetSnapshots` are in the row and are ignored by the app.
+ *
+ * Re-verified in 1b-4b against the pinned release 2026.1023.0 (compiled dist): `server/dist/routes/decisions.js:30-37,
+ * 174-199`, `services/decisions.js:243-248,610-760`, `db/dist/schema/decisions.js`.
  */
 internal object DecisionFixtures {
     fun decision(row: StubDecision): String =

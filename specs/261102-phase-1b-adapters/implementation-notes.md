@@ -276,3 +276,61 @@ Budget first (smallest; it established the company-scoped stub, `WorkWorld` and 
 - The attention stub's cursor is base64url `{v:1,sort,id}` like the server's and is bound to the sort mode; the adapter never inspects it.
 - `Money` cannot hold a negative or a non-USD value; both a `RaiseAndResume` in another currency and one over 2,147,483,647 cents are refused before any request.
 - A key that is not wiped on failure: `StoredCredentials.call` wipes in `finally`; the hostile-engine audit covers error and trace lines.
+
+---
+
+# 1b-4b Issue, interaction, agent, run, dashboard gateways (2026-11-02)
+
+## Order and commits
+
+TASK 0 first (re-verify 1b-4a against the pinned dist), then the gateways from small to large, one commit each: `c762ed9` exponent literals (fix), `265738a` stub fidelity (non-uuid ids, attention limit, triage snooze, calendar dates, badge), `da28e82` dashboard, `ff96f3f` agents, `fe91181` runs, `149ba34` byte reads with `Range` in the shared client and 416 as a reason, `5ede000` issues, `a95095b` interactions, `9a4714c` audits. Docs: ADR-060 to ADR-066, research ("1b-4a corrections vs pinned release" and "Answers: milestone 1b-4b"), technical details, status.
+
+## Source of truth
+
+The previous milestone read `~/Code/Test/paperclip` (a newer dev tree). Everything here is read from the installed pinned release (`@paperclipai/{server,shared,db}/dist`, compiled JS). The 1b-4a shapes held; the differences are listed in research.md. The incident ids of the 1b-4a tests (`inc-1`, `inc-2`) became uuids because the stub now answers a non-uuid id with the server's 500.
+
+## Decisions (see the ADRs for the reasons)
+
+- ADR-060 pinned dist and a stub that has the server's quirks. ADR-061 ownership: uuid guard, reply `companyId`, read before write, rows per company, an empty list asks the issue. ADR-062 cancel guard and byte log offsets. ADR-063 issue bodies (`order=asc`, `allowDuplicate: true`, explicit null assignee, no list description). ADR-064 adapter-only ranged attachment content. ADR-065 interactions (five answerable kinds, the rest never sent). ADR-066 all-or-nothing tiles and agent money.
+- The log chunk (64 KiB) is a constant of the adapter. The contract subclass gives the stub a log of 150,000 bytes so the shared suite needs two reads without making the chunk artificially small.
+- `IssueGateway.get` is two reads (issue, subtasks by `parentId`). A failing second read fails the whole call.
+- Unreadable payload of a supported interaction kind degrades to `UnsupportedInteraction` instead of failing the thread (unlike a feed card, ADR-059): a thread is read to answer one card, and the web app can still answer it.
+
+## Red evidence (honest)
+
+- Exponent literals: `BudgetMapperTest` failed with `expected:<1> but was:<null>` for `5e-7`; fix; green. The old test that listed `1e3` as refused was changed with it.
+- Stub fidelity: all five `PinnedStubFidelityTest` tests failed for the stated reasons (`expected ServerError but was NotFound`, `Success where Failure expected` for limit and snooze, `expected 4 but was 5` for the snooze hiding a card, `expected 0 but was 1` for the badge), then the stubs were fixed.
+- Gateways: for each gateway the tests and stubs were written first and failed to compile (`Unresolved reference 'DashboardGatewayAdapter'`, and so on); that is compile-red only. After the adapter existed almost every test passed on the first run, so those tests prove the code but were not individually shown to fail. Two real failures were found by running: a test expectation about the number of log reads (the adapter now computes an offset for the last chunk, so the tail ends with one empty read) and one about `total` of a 200 reply.
+- Mutation checks (change the code, see a test fail, revert): dashboard exact text before double (1 failed); agent reply ownership (1) and read-before-write (4); run byte length instead of characters (1) and cancel guard (2); issue `allowDuplicate` removed (3), explicit null assignee removed (1), `order=asc` removed (2); interaction unsupported guard, empty task selection, not-pending Conflict and kind fit (1 each). Not mutation-checked: the mappers' optional fields, the stubs themselves, the dashboard negative counts.
+
+## Edge cases
+
+- `JSON.stringify` prints 5e-7; so exponent literals must be read exactly (fix, ADR-060).
+- The server's `cancel` answers 200 with the run unchanged for an ended run; `null` body possible.
+- A log read ends without `nextOffset`; the byte length of the content, not `String.length`, is the next offset (the test log has `é`, `ö`, `✓`).
+- `GET .../comments` is newest first and unpaged; deleted comments come back with an empty body.
+- `POST /issues` quietly returns an existing open issue with the same title (200 `deduplicated`).
+- Assigning an agent to an issue with a user assignee is 422 unless the user is nulled in the same patch.
+- Interactions of a closed issue are listed as `expired` and answering is 409.
+- A list that names no company (`issues/{id}/runs`) or is empty cannot prove ownership: the issue is read first or afterwards.
+- `StubReply` gained binary bodies and response headers, `StubRequest` and `RecordedRequest` gained the `Range` header; `StubPaperclipServer` answers a reply with bytes.
+- Kotlin/Native test names cannot contain commas or parentheses; two names were rewritten.
+
+## Deviations from the brief
+
+- `attachmentContent` is not on `IssueGateway` (no port method exists for file content; adding one is a domain change). It is a public method of `IssueGatewayAdapter`, unreachable from presentation until a port is added (ADR-064, deferred).
+- Issue runs are `RunGateway.forIssue`; nothing was added to `IssueGateway`. The plan document is part of `IssueDetail`.
+- "Live runs for the current issue" is `RunGateway.live` (company-wide live runs with agent name and issue id); there is no per-issue live route in the port.
+- No domain port, fake or shared contract suite was changed.
+- No Konsist rule was added: the nested `AttachmentSlice` keeps the public-surface rule (`InfrastructureApiRulesTest`) true, and the existing rules cover the new files.
+
+## Not covered / not verified
+
+- No fixture was recorded from a running server and the contract test against the pinned container is CI only (1b-5); Docker does not run here.
+- Not verified from source: the reply of pause/resume (hydrated month spend?), whether `attention=blocked` returns non-`blocked` statuses, the status after `verdicts`, the unknown-parent answer of `POST /issues` (research, "Not verified").
+- `attachmentContent` has no Darwin or OkHttp byte-level test: the bytes are checked through the Ktor `MockEngine` only.
+- Real TLS, pins (still fail closed) and the WebSocket are unchanged and out of scope.
+
+## Tests
+
+JUnit XML of the final run, module `shared/infrastructure/api`: 299 tests on each of JVM, Android host and iOS simulator (0 failed, 0 skipped); Konsist 55 (all modules). New or changed this milestone: Dashboard 11, Agent 18, Run 17, Issue reads 14, writes 15, attachments 9, Interaction 21, binary client 5, stub fidelity 5, audit 5 (was 4), mapper 3 (was 2). Kover from a fresh XML: Core 97.98% (2568 of 2621 lines), Presentation 98.02%; the infrastructure modules are outside the gates.

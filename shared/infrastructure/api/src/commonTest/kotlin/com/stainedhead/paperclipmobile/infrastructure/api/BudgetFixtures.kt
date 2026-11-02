@@ -5,6 +5,10 @@ package com.stainedhead.paperclipmobile.infrastructure.api
  * `BudgetIncident` (`packages/shared/src/types/budget.ts:61-88`, built at `server/src/services/budgets.ts:604-626` and
  * `947-957`). `amountObserved` is a `numeric(24,7)` column read as a JS number (`budget_incidents.ts:21`), so it may be
  * fractional; `amountLimit` is an integer. Dates are ISO strings.
+ *
+ * Re-verified in 1b-4b against the pinned release 2026.1023.0 (compiled dist): `server/dist/services/
+ * budgets.js:395-428,597-626,697-790`, `db/dist/schema/budget_incidents.js`,
+ * `server/dist/routes/costs.js:263-316,332-374`.
  */
 internal object BudgetFixtures {
     fun incident(row: StubIncident): String {
