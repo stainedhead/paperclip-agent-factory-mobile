@@ -13,7 +13,9 @@ struct SeverityLabel: View {
             .accessibilityIdentifier("severity-label")
     }
 
-    private var text: String {
+    private var text: String { Self.name(severity) }
+
+    static func name(_ severity: SeverityUi) -> String {
         switch severity {
         case .critical: ShellLabel.severityCritical.text
         case .high: ShellLabel.severityHigh.text

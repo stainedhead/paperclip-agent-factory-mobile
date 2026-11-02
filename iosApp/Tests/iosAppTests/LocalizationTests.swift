@@ -36,6 +36,17 @@ struct LocalizationTests {
     @Test func everyIdlePeriodHasText() { check(IdlePeriod.allCases) }
     @Test func everyPairedDevicesStatusHasText() { check(PairedDevicesStatus.allCases) }
 
+    @Test func everySourceKindHasACardAndAChipLabel() {
+        check(SourceKindUi.allCases)
+        for kind in SourceKindUi.allCases {
+            #expect(L10n.resolve("kindPlural.\(kind)") != "kindPlural.\(kind)", "no chip label for \(kind)")
+        }
+    }
+    @Test func everySnoozePresetHasText() { check(SnoozePresetUi.allCases) }
+    @Test func everyInboxGroupHasText() { check(InboxGroupUi.allCases) }
+    @Test func everyInlineActionHasText() { check(InlineActionUi.allCases) }
+    @Test func everyInboxLabelHasText() { check(InboxLabel.allCases) }
+
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {
         #expect(ErrorKey.certificateInvalid.catalogKey == "error.certificateInvalid")
         #expect(ActionsDisabledReason.viewerRole.catalogKey == "disabled.viewerRole")

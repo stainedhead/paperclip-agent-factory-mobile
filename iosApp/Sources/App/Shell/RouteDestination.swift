@@ -15,3 +15,25 @@ struct RouteDestination: View {
         }
     }
 }
+
+/// The sheet the router presents. The budget incident sheet is built in a later milestone; until then it says so.
+struct SheetDestination: View {
+    let sheet: AppSheet
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            EmptyState(
+                symbol: "hammer", title: ShellLabel.placeholderTitle.text, message: InboxLabel.placeholderBudget.text
+            )
+            .accessibilityIdentifier("sheet-placeholder-budget")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(ShellLabel.commonDone.text) { dismiss() }
+                        .accessibilityIdentifier("sheet-placeholder-done")
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}

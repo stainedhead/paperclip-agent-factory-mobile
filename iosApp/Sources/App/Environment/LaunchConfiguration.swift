@@ -8,6 +8,7 @@ import PaperclipKit
 /// - `-demo-biometrics cancelled,failed,approved`: script the device-owner prompt for the demo graph, in order.
 /// - `-demo-idle immediately`: set the app lock's idle period at launch (so one background trip re-locks).
 /// - `-demo-tab factories`: start on that tab. `-demo-open settings|manage|add|edit:<id>`: push that screen on it.
+/// - `-demo-offline`: take the demo phone offline once the Inbox has loaded, so the offline states can be seen.
 /// - `-demo-diagnostics`: show a small read-only counter overlay (prompt count) that UI tests can read.
 struct LaunchConfiguration {
     let useDemo: Bool
@@ -15,6 +16,7 @@ struct LaunchConfiguration {
     let scriptedBiometrics: [BiometricResult]
     let demoIdlePeriod: IdlePeriod?
     let showsDiagnostics: Bool
+    let goesOffline: Bool
     let startTab: AppTab?
     let startRoute: String?
 
@@ -22,6 +24,7 @@ struct LaunchConfiguration {
         useDemo = arguments.contains("-demo")
         useFirstRunDemo = arguments.contains("-demo-first-run")
         showsDiagnostics = arguments.contains("-demo-diagnostics")
+        goesOffline = arguments.contains("-demo-offline")
         startTab = Self.value(after: "-demo-tab", in: arguments).flatMap { AppTab(rawValue: $0) }
         startRoute = Self.value(after: "-demo-open", in: arguments)
         scriptedBiometrics =

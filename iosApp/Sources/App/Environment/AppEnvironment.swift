@@ -51,6 +51,7 @@ final class AppEnvironment {
     @ObservationIgnored private var inboxSession: RefreshSession?
     @ObservationIgnored private var observations: [Task<Void, Never>] = []
     @ObservationIgnored private var started = false
+    @ObservationIgnored private var wentOffline = false
 
     convenience init(configuration: LaunchConfiguration) {
         let page = ASWebAuthSessionPairingBrowser()
@@ -217,7 +218,15 @@ final class AppEnvironment {
         let model = HolderModel(holder: holder)
         inbox = model
         inboxSession = graph.refresh.start(target: holder.refreshTarget)
+        model.didUpdate = { [weak self] state in self?.inboxChanged(state) }
         observe(model)
+    }
+
+    /// `-demo-offline`: the phone goes offline once, after the cards have loaded, so the offline Inbox keeps them.
+    private func inboxChanged(_ state: InboxState) {
+        guard configuration.goesOffline, !wentOffline, state.phase == .content else { return }
+        wentOffline = true
+        graph.demoControls?.setOnline(online: false)
     }
 
     private func stopInbox() {
