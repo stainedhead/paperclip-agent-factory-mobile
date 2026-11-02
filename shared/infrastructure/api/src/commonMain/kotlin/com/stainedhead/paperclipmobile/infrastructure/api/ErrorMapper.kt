@@ -24,6 +24,7 @@ internal object ErrorMapper {
     private const val NOT_FOUND = 404
     private const val REQUEST_TIMEOUT = 408
     private const val CONFLICT = 409
+    private const val RANGE_NOT_SATISFIABLE = 416
     private const val TOO_MANY_REQUESTS = 429
     private val CLIENT_ERRORS = 400..499
     private val SERVER_ERRORS = 500..599
@@ -42,6 +43,7 @@ internal object ErrorMapper {
             NOT_FOUND -> DomainError.NotFound
             REQUEST_TIMEOUT -> DomainError.Timeout
             CONFLICT -> DomainError.Conflict
+            RANGE_NOT_SATISFIABLE -> DomainError.Rejected("The range is outside the file")
             TOO_MANY_REQUESTS -> DomainError.RateLimited
             in CLIENT_ERRORS -> DomainError.Rejected(reasonOf(status, body))
             in SERVER_ERRORS -> DomainError.ServerError

@@ -14,11 +14,10 @@ import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.URLBuilder
-import io.ktor.http.appendPathSegments
 import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
 import kotlinx.coroutines.CancellationException
@@ -51,6 +50,14 @@ internal data class ApiResponse(
     val isJson: Boolean,
 )
 
+/** A 2xx reply read as bytes (an attachment slice). [contentRange] is the `Content-Range` header, if any. */
+internal class ApiBytes(
+    val status: Int,
+    val bytes: ByteArray,
+    val contentType: String?,
+    val contentRange: String?,
+)
+
 /**
  * The only door to the network (AD-001). It sends each request exactly once: reads are retried by the use case with
  * `retryingRead`, mutations never are (AD-002). The key is attached per request from the [Secret] the caller hands in,
@@ -79,33 +86,44 @@ class PaperclipHttpClient(
 
     fun close() = http.close()
 
-    internal suspend fun send(request: ApiRequest): DomainResult<ApiResponse> {
+    internal suspend fun send(request: ApiRequest): DomainResult<ApiResponse> = call(request, null, ::interpret)
+
+    /**
+     * Like [send] but keeps the body as bytes, because a binary reply must not be decoded as text (attachment slices).
+     * [range] is the value of the `Range` header, for example `bytes=0-65535`.
+     */
+    internal suspend fun sendBytes(
+        request: ApiRequest,
+        range: String,
+    ): DomainResult<ApiBytes> = call(request, range, ::interpretBytes)
+
+    private suspend fun <T> call(
+        request: ApiRequest,
+        range: String?,
+        read: suspend (HttpResponse) -> DomainResult<T>,
+    ): DomainResult<T> {
         val refusal = refusal(request)
         if (refusal != null) return DomainResult.Failure(refusal)
-        val result = execute(request)
-        trace?.invoke(traceLine(request, result))
+        val result = execute(request, range, read)
+        trace?.invoke(RequestRules.traceLine(request, result))
         return result
     }
 
     private fun refusal(request: ApiRequest): DomainError? =
         when {
             request.bearer?.isWiped == true -> DomainError.Unauthorized
-            !isSchemeAllowed(request.baseUri) -> DomainError.CertificateInvalid
+            !RequestRules.isSchemeAllowed(request.baseUri, allowInsecureLocal) -> DomainError.CertificateInvalid
             request.pins.isNotEmpty() && !pinsEnforced -> DomainError.CertificateInvalid
             else -> null
         }
 
-    private fun isSchemeAllowed(baseUri: BaseUri): Boolean {
-        val text = baseUri.value
-        if (text.startsWith(HTTPS_PREFIX)) return true
-        val host = text.removePrefix(HTTP_PREFIX).substringBefore('/').substringBeforeLast(':')
-        return allowInsecureLocal && text.startsWith(HTTP_PREFIX) && host in INSECURE_LOCAL_HOSTS
-    }
-
-    private suspend fun execute(request: ApiRequest): DomainResult<ApiResponse> =
+    private suspend fun <T> execute(
+        request: ApiRequest,
+        range: String?,
+        read: suspend (HttpResponse) -> DomainResult<T>,
+    ): DomainResult<T> =
         try {
-            val response = http.request(urlOf(request)) { configure(request) }
-            interpret(response)
+            read(http.request(RequestRules.urlOf(request)) { configure(request, range) })
         } catch (cancelled: CancellationException) {
             // A timeout raised inside the engine can arrive as a cancellation; only our own cancellation propagates.
             currentCoroutineContext().ensureActive()
@@ -114,17 +132,14 @@ class PaperclipHttpClient(
             DomainResult.Failure(ErrorMapper.fromTransport(failure))
         }
 
-    private fun urlOf(request: ApiRequest): String =
-        URLBuilder(request.baseUri.apiBase)
-            .apply {
-                appendPathSegments(request.segments, encodeSlash = true)
-                request.query.forEach { (name, value) -> parameters.append(name, value) }
-            }.buildString()
-
-    private fun io.ktor.client.request.HttpRequestBuilder.configure(request: ApiRequest) {
+    private fun io.ktor.client.request.HttpRequestBuilder.configure(
+        request: ApiRequest,
+        range: String?,
+    ) {
         method = request.method
         accept(ContentType.Application.Json)
         request.bearer?.let { header(HttpHeaders.Authorization, "Bearer ${it.reveal()}") }
+        range?.let { header(HttpHeaders.Range, it) }
         request.jsonBody?.let { setBody(TextContent(it, ContentType.Application.Json)) }
     }
 
@@ -138,38 +153,30 @@ class PaperclipHttpClient(
         }
     }
 
+    private suspend fun interpretBytes(response: HttpResponse): DomainResult<ApiBytes> {
+        val status = response.status.value
+        return if (status in SUCCESS) {
+            DomainResult.Success(
+                ApiBytes(
+                    status,
+                    response.readRawBytes(),
+                    response.headers[HttpHeaders.ContentType],
+                    response.headers[HttpHeaders.ContentRange],
+                ),
+            )
+        } else {
+            DomainResult.Failure(ErrorMapper.fromStatus(status, response.bodyAsText()))
+        }
+    }
+
     private fun ContentType?.isJson(): Boolean =
         this != null && contentType == "application" && (contentSubtype == "json" || contentSubtype.endsWith("+json"))
-
-    private fun traceLine(
-        request: ApiRequest,
-        result: DomainResult<ApiResponse>,
-    ): String {
-        val host =
-            request.baseUri.value
-                .substringAfter("://")
-                .substringBefore('/')
-        val path =
-            URLBuilder(request.baseUri.apiBase)
-                .appendPathSegments(request.segments, encodeSlash = true)
-                .build()
-                .encodedPath
-        val outcome =
-            when (result) {
-                is DomainResult.Success -> result.value.status.toString()
-                is DomainResult.Failure -> result.error::class.simpleName.orEmpty()
-            }
-        return "${request.method.value} $host $path -> $outcome"
-    }
 
     companion object {
         const val CONNECT_TIMEOUT_MS = 15_000L
         const val READ_TIMEOUT_MS = 30_000L
         private const val REQUEST_TIMEOUT_MS = 60_000L
-        private const val HTTPS_PREFIX = "https://"
-        private const val HTTP_PREFIX = "http://"
         private val SUCCESS = 200..299
-        private val INSECURE_LOCAL_HOSTS = setOf("localhost", "10.0.2.2")
     }
 }
 
