@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.infrastructure.api.contract
 
+import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.AgentStatus
 import com.stainedhead.paperclipmobile.domain.ApprovalId
@@ -13,6 +14,8 @@ import com.stainedhead.paperclipmobile.domain.IssueStatus
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.NewIssue
 import com.stainedhead.paperclipmobile.domain.port.FeedQuery
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -24,6 +27,8 @@ class LiveMutationsTest {
     private companion object {
         const val NEW_BUDGET_CENTS = 1000L
         const val MAX_NOTE = 160
+        const val SETTLE_ATTEMPTS = 30
+        const val SETTLE_DELAY_MS = 1000L
     }
 
     @Test
@@ -170,13 +175,18 @@ class LiveMutationsTest {
             val paused = agents.pause(scope, id).verified("AgentGateway.pause")
             observe("pause reply") {
                 assertEquals(AgentStatus.Paused, paused.status)
-                "status=${paused.status} reason=${paused.pauseReason}"
+                describe(paused)
             }
+            // A resume right after a pause meets a pause that is still being applied (lifecycle "pausing").
             val resumed = agents.resume(scope, id).verified("AgentGateway.resume")
-            observe("resume reply") {
-                assertTrue(resumed.status != AgentStatus.Paused)
-                "status=${resumed.status} reason=${resumed.pauseReason}"
-            }
+            observe("resume right after pause, reply") { describe(resumed) }
+            observe("resume right after pause, settled") { settled(id, "after resume") }
+            // A resume of an agent whose pause has settled.
+            agents.pause(scope, id).verified("AgentGateway.pause", "(again)")
+            observe("pause settled") { settledWhile(id) { it.lifecycleState != "paused" } }
+            val resumedLater = agents.resume(scope, id).verified("AgentGateway.resume", "(after the pause settled)")
+            observe("resume of a settled pause, reply") { describe(resumedLater) }
+            observe("resume of a settled pause, settled") { settled(id, "after second resume") }
             val budgeted =
                 agents
                     .setBudget(
@@ -202,4 +212,32 @@ class LiveMutationsTest {
             val cancelled = runs.cancel(scope, run.id).verified("RunGateway.cancel")
             observe("run cancel") { "status=${cancelled.status}" }
         }
+
+    private fun describe(agent: Agent): String =
+        "status=${agent.status} reason=${agent.pauseReason} lifecycle=${agent.lifecycleState}"
+
+    /** Polls the agent until [stillWaiting] is false (at most 30 s) and describes where it ended. */
+    private fun LiveContext.settledWhile(
+        id: AgentId,
+        stillWaiting: (Agent) -> Boolean,
+    ): String =
+        runBlocking {
+            var last: Agent? = null
+            repeat(SETTLE_ATTEMPTS) { attempt ->
+                last = agents.get(scope, id).verified("AgentGateway.get", "(settle)")
+                if (!stillWaiting(
+                        checkNotNull(last),
+                    )
+                ) {
+                    return@runBlocking "after ${attempt}s: ${describe(checkNotNull(last))}"
+                }
+                delay(SETTLE_DELAY_MS)
+            }
+            "not settled after ${SETTLE_ATTEMPTS}s: ${last?.let(::describe)}"
+        }
+
+    private fun LiveContext.settled(
+        id: AgentId,
+        label: String,
+    ): String = "$label: " + settledWhile(id) { it.status == AgentStatus.Paused }
 }
