@@ -54,7 +54,7 @@ internal object ServerBootstrap {
         return health.string("bootstrapStatus") == "bootstrap_pending"
     }
 
-    private fun refuse(reason: String): Nothing = throw IllegalStateException("Refusing to run: $reason")
+    private fun refuse(reason: String): Nothing = error("Refusing to run: $reason")
 
     private fun signInOnly(
         raw: RawServer,

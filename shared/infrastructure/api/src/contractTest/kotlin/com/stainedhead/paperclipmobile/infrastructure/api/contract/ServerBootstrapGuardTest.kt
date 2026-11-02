@@ -15,8 +15,8 @@ import org.junit.jupiter.api.assertThrows
 class ServerBootstrapGuardTest {
     private class ScriptedServer(
         private val pending: Boolean,
-        private val signInStatus: Int = 200,
-        private val acceptStatus: Int = 202,
+        private val signInStatus: Int = OK,
+        private val acceptStatus: Int = ACCEPTED,
     ) : RawServer("http://localhost:3199") {
         val calls = mutableListOf<String>()
         private var accepted = false
@@ -33,34 +33,42 @@ class ServerBootstrapGuardTest {
             return when {
                 path == "/api/health" -> {
                     val state = if (pending && !accepted) "bootstrap_pending" else "ready"
-                    RawResponse(200, """{"bootstrapStatus":"$state"}""", emptyList())
+                    RawResponse(OK, """{"bootstrapStatus":"$state"}""", emptyList())
                 }
 
                 path.endsWith("/sign-up/email") -> {
-                    RawResponse(200, "{}", cookies)
+                    RawResponse(OK, "{}", cookies)
                 }
 
                 path.endsWith("/sign-in/email") -> {
-                    RawResponse(signInStatus, "{}", if (signInStatus == 200) cookies else emptyList())
+                    RawResponse(signInStatus, "{}", if (signInStatus == OK) cookies else emptyList())
                 }
 
                 path.endsWith("/accept") -> {
-                    accepted = acceptStatus == 202
+                    accepted = acceptStatus == ACCEPTED
                     RawResponse(acceptStatus, "{}", emptyList())
                 }
 
                 else -> {
-                    RawResponse(200, "{}", emptyList())
+                    RawResponse(OK, "{}", emptyList())
                 }
             }
         }
     }
 
-    private val invite = "pcp_bootstrap_" + "ab".repeat(24)
+    private companion object {
+        const val OK = 200
+        const val ACCEPTED = 202
+        const val UNAUTHORIZED = 401
+        const val NOT_FOUND = 404
+        const val TOKEN_BYTES = 24
+    }
+
+    private val invite = "pcp_bootstrap_" + "ab".repeat(TOKEN_BYTES)
 
     @Test
     fun `a server in use that does not hold the test account is refused and nothing is created`() {
-        val server = ScriptedServer(pending = false, signInStatus = 401)
+        val server = ScriptedServer(pending = false, signInStatus = UNAUTHORIZED)
         val failure = assertThrows<IllegalStateException> { ServerBootstrap.establishSession(server, invite) }
         assertTrue(failure.message!!.startsWith("Refusing to run"), failure.message)
         assertFalse(server.calls.any { it.contains("sign-up") }, "must not sign up on a server in use")
@@ -92,7 +100,7 @@ class ServerBootstrapGuardTest {
 
     @Test
     fun `a fresh server that rejects the invite is refused`() {
-        val server = ScriptedServer(pending = true, acceptStatus = 404)
+        val server = ScriptedServer(pending = true, acceptStatus = NOT_FOUND)
         assertThrows<IllegalStateException> { ServerBootstrap.establishSession(server, invite) }
     }
 
