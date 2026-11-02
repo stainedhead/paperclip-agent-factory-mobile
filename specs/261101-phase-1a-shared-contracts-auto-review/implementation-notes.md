@@ -112,6 +112,11 @@ Fix: SettingsDevices keeps loadJob, cancels it when a new load starts, and appli
 Red evidence: failedFirstLoadKeepsRefreshInterval 'expected:<15> but was:<0>'; refreshAfterResolveKeepsRaisedOutcome 'expected:<Raised> but was:<NoLongerActive>'.
 Fix: the Run viewer keeps the default 15 s interval until a run has loaded; the Budget holder keeps a resolved outcome when a refresh answers NotFound and maps the status with outcomeOf when a load succeeds.
 
+### 2026-11-01 F-B-11 UI enum mappings are exhaustive when expressions (Group 2)
+
+Not red by design: the orders and names match today (the finding said so), so UiEnumMappingTest passes before and after; the fix is structural. It checks that every domain enum maps to the twin of the same name and that the round trips return the original.
+Fix: the 14 ordinal/valueOf one-liners became exhaustive 'when (this)' without else, and the 7 inline entries[ordinal]/valueOf sites use new toUi functions in EnumMappings.kt, so a new or reordered domain value now fails to compile (checked: no .ordinal/valueOf/entries[ left in presentation except sorting chips by source kind).
+
 ## Edge cases and solutions
 
 (none yet)

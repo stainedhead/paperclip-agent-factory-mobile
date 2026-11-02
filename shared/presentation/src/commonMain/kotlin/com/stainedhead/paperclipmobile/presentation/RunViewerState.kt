@@ -31,8 +31,8 @@ internal fun RunEvent.toUi() =
     RunEventUi(
         seq,
         type,
-        stream?.let { RunStreamUi.valueOf(it.name) },
-        level?.let { RunLevelUi.valueOf(it.name) },
+        stream?.toUi(),
+        level?.toUi(),
         message,
         createdAt.toEpochMilliseconds(),
     )

@@ -18,7 +18,13 @@ enum class AgentGroupUi {
     Idle,
 }
 
-internal fun AgentGroup.toUi() = AgentGroupUi.valueOf(name)
+internal fun AgentGroup.toUi(): AgentGroupUi =
+    when (this) {
+        AgentGroup.NeedsAttention -> AgentGroupUi.NeedsAttention
+        AgentGroup.Running -> AgentGroupUi.Running
+        AgentGroup.Paused -> AgentGroupUi.Paused
+        AgentGroup.Idle -> AgentGroupUi.Idle
+    }
 
 /** A button on an agent row or the detail screen (PRD FR-071). */
 enum class AgentActionUi {

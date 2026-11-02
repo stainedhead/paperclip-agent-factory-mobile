@@ -17,9 +17,23 @@ enum class IssueFilterUi {
     AssignedToMe,
 }
 
-internal fun IssueFilterUi.toDomain() = IssueFilter.valueOf(name)
+internal fun IssueFilterUi.toDomain(): IssueFilter =
+    when (this) {
+        IssueFilterUi.AllOpen -> IssueFilter.AllOpen
+        IssueFilterUi.Blocked -> IssueFilter.Blocked
+        IssueFilterUi.CriticalAndHigh -> IssueFilter.CriticalAndHigh
+        IssueFilterUi.InReview -> IssueFilter.InReview
+        IssueFilterUi.AssignedToMe -> IssueFilter.AssignedToMe
+    }
 
-internal fun IssueFilter.toUi() = IssueFilterUi.valueOf(name)
+internal fun IssueFilter.toUi(): IssueFilterUi =
+    when (this) {
+        IssueFilter.AllOpen -> IssueFilterUi.AllOpen
+        IssueFilter.Blocked -> IssueFilterUi.Blocked
+        IssueFilter.CriticalAndHigh -> IssueFilterUi.CriticalAndHigh
+        IssueFilter.InReview -> IssueFilterUi.InReview
+        IssueFilter.AssignedToMe -> IssueFilterUi.AssignedToMe
+    }
 
 data class IssueRowUi(
     val id: String,

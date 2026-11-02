@@ -79,7 +79,7 @@ internal object ApprovalRenderer {
                         .availableFor(
                             approval.status,
                             role,
-                        ).map { ApprovalActionUi.entries[it.ordinal] }
+                        ).map { it.toUi() }
                         .sorted()
                 } else {
                     emptyList()
@@ -160,4 +160,12 @@ internal object ApprovalRenderer {
         }
 }
 
-internal fun ApprovalStatus.toUi() = ApprovalStatusUi.entries[ordinal]
+internal fun ApprovalStatus.toUi(): ApprovalStatusUi =
+    when (this) {
+        ApprovalStatus.Pending -> ApprovalStatusUi.Pending
+        ApprovalStatus.RevisionRequested -> ApprovalStatusUi.RevisionRequested
+        ApprovalStatus.Approved -> ApprovalStatusUi.Approved
+        ApprovalStatus.Rejected -> ApprovalStatusUi.Rejected
+        ApprovalStatus.Cancelled -> ApprovalStatusUi.Cancelled
+        ApprovalStatus.Unknown -> ApprovalStatusUi.Unknown
+    }

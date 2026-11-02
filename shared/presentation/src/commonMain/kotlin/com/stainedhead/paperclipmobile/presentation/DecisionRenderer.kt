@@ -201,10 +201,8 @@ internal object DecisionRenderer {
         outcome: DecisionOutcome,
         polling: Boolean,
     ) = ExecutionUi(
-        status = ExecutionStatusUi.entries[(outcome.executionStatus ?: ExecutionStatus.Running).ordinal],
+        status = (outcome.executionStatus ?: ExecutionStatus.Running).toUi(),
         results = outcome.results.map { EffectResultUi(it.index, it.effectType, it.status.toUi(), it.reason) },
         isPolling = polling,
     )
 }
-
-private fun com.stainedhead.paperclipmobile.domain.EffectStatus.toUi() = EffectStatusUi.entries[ordinal]

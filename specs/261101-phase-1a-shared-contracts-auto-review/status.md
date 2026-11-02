@@ -55,7 +55,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] FR-R30 (P1) F-A-7: `PairInstance` polling is unbounded by server-supplied values and ignores rate limiting
 - [ ] FR-R31 (P2) F-A-9: `Secret.startsWith` copies the whole key into an unwipeable String
 - [ ] FR-R32 (P2) F-B-10: `createGraph` and the demo graph hide real behaviour behind fakes with a frozen clock
-- [ ] FR-R33 (P2) F-B-11: UI mapping by enum ordinal or `valueOf` with no compile-time exhaustiveness
+- [x] FR-R33 (P2) F-B-11: UI mapping by enum ordinal or `valueOf` with no compile-time exhaustiveness
 - [ ] FR-R34 (P2) F-B-12: App lock and refresh lifecycle need two separate platform calls
 - [ ] FR-R35 (P2) F-B-13: Swift-facing and wording notes
 - [x] FR-R36 (P2) F-B-5: Gating is hard-coded to `Role.Viewer` or a single `Action` in several places instead of using `Permi
@@ -101,3 +101,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-B-7 done (a late read never overwrites a finished action).
 - 2026-11-01: F-B-8 done (paired-devices loads are ordered and cancelled).
 - 2026-11-01: F-B-9 done (no stuck run viewer, no lost budget outcome).
+- 2026-11-01: F-B-11 done (UI enum mappings are exhaustive when expressions).

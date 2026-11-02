@@ -23,7 +23,17 @@ enum class InteractionStatusUi {
     Unknown,
 }
 
-internal fun InteractionStatus.toUi() = InteractionStatusUi.valueOf(name)
+internal fun InteractionStatus.toUi(): InteractionStatusUi =
+    when (this) {
+        InteractionStatus.Pending -> InteractionStatusUi.Pending
+        InteractionStatus.Accepted -> InteractionStatusUi.Accepted
+        InteractionStatus.Rejected -> InteractionStatusUi.Rejected
+        InteractionStatus.Answered -> InteractionStatusUi.Answered
+        InteractionStatus.Cancelled -> InteractionStatusUi.Cancelled
+        InteractionStatus.Expired -> InteractionStatusUi.Expired
+        InteractionStatus.Failed -> InteractionStatusUi.Failed
+        InteractionStatus.Unknown -> InteractionStatusUi.Unknown
+    }
 
 /** Why a card cannot be answered; null when it can. */
 enum class InteractionReadOnlyUi {
@@ -48,9 +58,19 @@ enum class VerdictUi {
     Defer,
 }
 
-internal fun VerdictUi.toDomain() = Verdict.valueOf(name)
+internal fun VerdictUi.toDomain(): Verdict =
+    when (this) {
+        VerdictUi.Approve -> Verdict.Approve
+        VerdictUi.Reject -> Verdict.Reject
+        VerdictUi.Defer -> Verdict.Defer
+    }
 
-internal fun Verdict.toUi() = VerdictUi.valueOf(name)
+internal fun Verdict.toUi(): VerdictUi =
+    when (this) {
+        Verdict.Approve -> VerdictUi.Approve
+        Verdict.Reject -> VerdictUi.Reject
+        Verdict.Defer -> VerdictUi.Defer
+    }
 
 data class ChoiceUi(
     val id: String,

@@ -19,9 +19,21 @@ enum class SnoozePresetUi {
     NextWeek,
 }
 
-internal fun SnoozePreset.toUi() = SnoozePresetUi.entries[ordinal]
+internal fun SnoozePreset.toUi(): SnoozePresetUi =
+    when (this) {
+        SnoozePreset.OneHour -> SnoozePresetUi.OneHour
+        SnoozePreset.Tonight -> SnoozePresetUi.Tonight
+        SnoozePreset.Tomorrow -> SnoozePresetUi.Tomorrow
+        SnoozePreset.NextWeek -> SnoozePresetUi.NextWeek
+    }
 
-internal fun SnoozePresetUi.toDomain() = SnoozePreset.entries[ordinal]
+internal fun SnoozePresetUi.toDomain(): SnoozePreset =
+    when (this) {
+        SnoozePresetUi.OneHour -> SnoozePreset.OneHour
+        SnoozePresetUi.Tonight -> SnoozePreset.Tonight
+        SnoozePresetUi.Tomorrow -> SnoozePreset.Tomorrow
+        SnoozePresetUi.NextWeek -> SnoozePreset.NextWeek
+    }
 
 /** The web app address of a card: the factory address plus the card's relative path, or null without a path. */
 internal fun webUrl(
@@ -29,4 +41,9 @@ internal fun webUrl(
     subject: AttentionSubject,
 ): String? = subject.href?.let { baseUrl.trimEnd('/') + "/" + it.trimStart('/') }
 
-internal fun ResolverPolicy.toUi() = ResolverPolicyUi.entries[ordinal]
+internal fun ResolverPolicy.toUi(): ResolverPolicyUi =
+    when (this) {
+        ResolverPolicy.Anyone -> ResolverPolicyUi.Anyone
+        ResolverPolicy.NotCreator -> ResolverPolicyUi.NotCreator
+        ResolverPolicy.HumanOnly -> ResolverPolicyUi.HumanOnly
+    }

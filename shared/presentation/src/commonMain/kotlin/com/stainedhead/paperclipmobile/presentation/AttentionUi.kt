@@ -20,7 +20,13 @@ enum class SeverityUi {
     Low,
 }
 
-internal fun Severity.toUi() = SeverityUi.entries[ordinal]
+internal fun Severity.toUi(): SeverityUi =
+    when (this) {
+        Severity.Critical -> SeverityUi.Critical
+        Severity.High -> SeverityUi.High
+        Severity.Medium -> SeverityUi.Medium
+        Severity.Low -> SeverityUi.Low
+    }
 
 /** The source kind of a card. [Unsupported] cards open the web app (PRD FR-033). */
 enum class SourceKindUi {
@@ -60,7 +66,12 @@ enum class InboxGroupUi {
     Whenever,
 }
 
-internal fun InboxGroup.toUi() = InboxGroupUi.entries[ordinal]
+internal fun InboxGroup.toUi(): InboxGroupUi =
+    when (this) {
+        InboxGroup.DecideNow -> InboxGroupUi.DecideNow
+        InboxGroup.ThisWeek -> InboxGroupUi.ThisWeek
+        InboxGroup.Whenever -> InboxGroupUi.Whenever
+    }
 
 enum class DecideByKindUi {
     Today,
@@ -94,7 +105,13 @@ enum class InlineActionUi {
     RaiseAndResume,
 }
 
-internal fun InlineAction.toUi() = InlineActionUi.entries[ordinal]
+internal fun InlineAction.toUi(): InlineActionUi =
+    when (this) {
+        InlineAction.Approve -> InlineActionUi.Approve
+        InlineAction.Reject -> InlineActionUi.Reject
+        InlineAction.KeepPaused -> InlineActionUi.KeepPaused
+        InlineAction.RaiseAndResume -> InlineActionUi.RaiseAndResume
+    }
 
 enum class OpenKindUi {
     Decision,
@@ -114,7 +131,7 @@ data class OpenTargetUi(
     val issueId: String?,
 )
 
-internal fun Destination.toUi() = OpenTargetUi(OpenKindUi.entries[kind.ordinal], id, issueId)
+internal fun Destination.toUi() = OpenTargetUi(kind.toUi(), id, issueId)
 
 enum class ResolverPolicyUi {
     Anyone,
@@ -132,7 +149,7 @@ data class AudienceUi(
 
 internal fun ResolverAudience.toUi(userId: String?) =
     AudienceUi(
-        policy = ResolverPolicyUi.entries[effectivePolicy.ordinal],
+        policy = effectivePolicy.toUi(),
         addresseeName = addresseeName,
         addresseeIsAnotherUser = !allowsUser(userId),
         createdByName = createdByAgentName,

@@ -46,7 +46,7 @@ internal object BudgetIncidentRenderer {
             phase = phase(incident != null || model.outcome != null, model.loading),
             scopeName = incident?.scopeName.orEmpty(),
             scopeType = incident?.scopeType.orEmpty(),
-            threshold = incident?.threshold?.let { BudgetThresholdUi.entries[it.ordinal] },
+            threshold = incident?.threshold?.toUi(),
             observed = incident?.observed?.toUi(),
             limit = incident?.limit?.toUi(),
             observedPercent = percent(incident),
