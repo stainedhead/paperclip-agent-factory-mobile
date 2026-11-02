@@ -24,7 +24,7 @@ Update this file after every task and phase. It is the single source of progress
 ## Fix checklist (tick when merged to the branch with its regression test; note commit hashes in implementation-notes.md)
 
 - [x] FR-R01 (P0) F-A-1: A board key can be sent to a different host if the address is edited while pairing or manual entry i
-- [ ] FR-R02 (P0) F-A-2: Sign out and sign out everywhere can leave credentials behind when cancelled or when one factory thr
+- [x] FR-R02 (P0) F-A-2: Sign out and sign out everywhere can leave credentials behind when cancelled or when one factory thr
 - [x] FR-R03 (P0) F-B-1: A late probe result is applied to a different address, so an unprobed (possibly `local_trusted`) add
 - [ ] FR-R04 (P1) F-A-3: A 401 on any company-scoped read or mutation does not mark the factory Signed out (PRD FR-023)
 - [x] FR-R05 (P1) F-A-4: `AddInstance` trusts a caller-supplied `HealthReport` that is not bound to the address
@@ -86,3 +86,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: FR-R03 fixed (F-B-1 probe result bound to the probed address).
 - 2026-11-01: FR-R05 fixed (F-A-4 AddInstance requires a probe bound to the address).
 - 2026-11-01: FR-R06 fixed (F-A-5 enrollment failure and cancellation consistency).
+- 2026-11-01: FR-R02 fixed (F-A-2 (cancellation half, P0) sign out is cancellation-safe).

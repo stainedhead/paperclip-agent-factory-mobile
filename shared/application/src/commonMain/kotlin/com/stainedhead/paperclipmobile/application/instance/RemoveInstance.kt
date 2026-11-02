@@ -3,14 +3,13 @@ package com.stainedhead.paperclipmobile.application.instance
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
 import com.stainedhead.paperclipmobile.application.auth.KeyRevoker
 import com.stainedhead.paperclipmobile.application.auth.RevokeOutcome
+import com.stainedhead.paperclipmobile.application.deleteCredentialsLocally
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 
 sealed interface RemoveInstanceResult {
     data class Removed(
@@ -44,10 +43,7 @@ class RemoveInstance(
         try {
             if (instance.status == InstanceStatus.SignedIn) outcome = revoker.revoke(id)
         } finally {
-            withContext(NonCancellable) {
-                secrets.deleteNamespace(id)
-                repository.delete(id)
-            }
+            deleteCredentialsLocally(secrets, id) { repository.delete(id) }
         }
         return RemoveInstanceResult.Removed(outcome)
     }
