@@ -134,6 +134,20 @@ class DemoFactoryFlowTest {
         }
 
     @Test
+    fun `failing reads break the Agents and Run viewer screens too`() =
+        runTest {
+            val controls = checkNotNull(graph.demoControls)
+            controls.failReads(true)
+            val agents = graph.agents.createAgentsStateHolder(HOME, ACME)
+            val run = graph.runs.createRunViewerStateHolder(HOME, ACME, "run-1204-live")
+
+            agents.state.await { it.phase == DetailPhase.Failed && it.error != null }
+            run.state.await { it.phase == DetailPhase.Failed && it.error != null }
+            agents.close()
+            run.close()
+        }
+
+    @Test
     fun `a server that fails every read shows the error state and recovers when it is fixed`() =
         runTest {
             val controls = checkNotNull(graph.demoControls)

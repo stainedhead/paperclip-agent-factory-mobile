@@ -82,7 +82,7 @@ internal class DemoReadFailures(
     fun fail(enabled: Boolean) {
         val error = DomainError.ServerError
         val failing =
-            mapOf(agents.failures to listOf("list", "get"), runs.failures to listOf("get", "live", "forAgent"))
+            listOf(agents.failures to listOf("list", "get"), runs.failures to listOf("get", "live", "forAgent"))
         for ((failures, names) in failing) {
             for (name in names) if (enabled) failures[name] = error else failures.remove(name)
         }
