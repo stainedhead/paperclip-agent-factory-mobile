@@ -483,7 +483,7 @@ Method as in F1: a failing test first for every code finding (red seen before th
 | A-9 dot segments | reproduced | 902cbd6 | `..`, `.` and empty segments reached the engine; mutation (guard disabled) made the test fail. |
 | A-10 approval ownership on empty lists | reproduced | 6f6a772 | A foreign approval's empty issues/comments returned `Success([])`; now one ownership read. |
 | B-10 delete order | reproduced | ab707da | A marker delete failure after the value delete read as `Invalidated` (ClassCastException in the test); marker is now deleted first. |
-| C-4 `ios` workflow red | skipped (stream 2i) | status.md | One honest line in `status.md`: criterion 8 is not met on this branch because `FirstRunUITests` fails; not touched. |
+| C-4 `ios` workflow red | skipped (stream 2i) | status.md | One honest line in `status.md`: `FirstRunUITests` failed on earlier heads (flaky, owned by the iPhone UI stream); all four workflows were green on 6ecff4b (`ios` run 41539163864). Not touched. |
 | C-10 resume still resuming | refuted | none | Covered by F1's `getsStillResuming` test in `AgentUseCasesTest` (A-6); ADR-074 wording left as is. |
 | C-11 CI items | partly done | f3ed5f4 | (f) path filters for domain, application, testing added; (b) invite scoped to the step and (d) script guard skipped: low value, ephemeral container. |
 | A-11 one bad card blanks the feed | skipped | none | Deliberate ADR-059 trade-off (a card is never skipped); an "N items unreadable" marker needs a UI design. |
