@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.infrastructure.api.contract
 
 import com.stainedhead.paperclipmobile.domain.AgentId
+import com.stainedhead.paperclipmobile.domain.Assignee
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.NewIssue
 import com.stainedhead.paperclipmobile.domain.RunId
@@ -35,7 +36,15 @@ class LiveRunsTest {
             val echo = seeder.agent(scope.companyId.value, "Contract Echo", "echo", listOf(ECHO_TEXT))
             val agent = AgentId(echo.id)
             val issue = issues.create(scope, NewIssue("Contract run issue", "Run echo")).verified("IssueGateway.create")
-            val runId = RunId(seeder.wake(echo.id, issue.id.value))
+            // The run must belong to the issue's assignee, or the server cancels it as "assignee changed". The
+            // assignment itself wakes the agent; when that does not produce a run, an explicit wake does.
+            issues.assign(scope, issue.id, Assignee.AgentAssignee(agent)).verified("IssueGateway.assign", "(wakes)")
+            val assignedRun =
+                patiently("a run started by the assignment") {
+                    runs.forIssue(scope, issue.id).verified("RunGateway.forIssue").firstOrNull()
+                }
+            val runId = assignedRun?.id ?: RunId(seeder.wake(echo.id, issue.id.value))
+            LiveReport.note("echo run started by", if (assignedRun != null) "the assignment" else "an explicit wake")
             val linked =
                 eventually("the run in the issue's run list", RUN_SECONDS) {
                     runs.forIssue(scope, issue.id).verified("RunGateway.forIssue").firstOrNull { it.id == runId }
