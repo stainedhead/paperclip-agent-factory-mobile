@@ -59,7 +59,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] FR-R34 (P2) F-B-12: App lock and refresh lifecycle need two separate platform calls
 - [ ] FR-R35 (P2) F-B-13: Swift-facing and wording notes
 - [x] FR-R36 (P2) F-B-5: Gating is hard-coded to `Role.Viewer` or a single `Action` in several places instead of using `Permi
-- [ ] FR-R37 (P2) F-B-8: Paired-devices loads are not ordered or cancelled
+- [x] FR-R37 (P2) F-B-8: Paired-devices loads are not ordered or cancelled
 - [ ] FR-R38 (P2) F-C-10: Real-time and unbounded waiting in umbrella tests (flake and vacuous-pass risk)
 - [ ] FR-R39 (P2) F-C-11: TDD evidence is self-reported and the history cannot show red
 - [ ] FR-R40 (P2) F-C-12: `DeviceAuthGuardTest` partly restates the production policy
@@ -99,3 +99,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-B-5 done (role gating uses Permissions everywhere).
 - 2026-11-01: F-B-6 done (guards and shared fields are atomic).
 - 2026-11-01: F-B-7 done (a late read never overwrites a finished action).
+- 2026-11-01: F-B-8 done (paired-devices loads are ordered and cancelled).

@@ -21,6 +21,7 @@ import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -251,24 +252,31 @@ internal class SettingsDevices(
     private val state: MutableStateFlow<SettingsState>,
     private val scope: CoroutineScope,
 ) {
+    private var loadJob: Job? = null
+
+    /** The latest request wins: asking for another factory cancels the load in flight (F-B-8). */
     fun load(instanceId: String) {
         if (!connectivity.isOnline.value) return
         val id = InstanceId(instanceId)
         val loading = PairedDevicesUi(instanceId, PairedDevicesStatus.Loading)
         state.update { it.copy(pairedDevices = loading, error = null) }
-        scope.launch {
-            val keys = useCases.listKeys(id)
-            val access = useCases.loadAccess(id)
-            state.update { current ->
-                val profile = (access as? DomainResult.Success)?.value?.profile
-                current.copy(
-                    pairedDevices = keys.toDevices(instanceId),
-                    profileName = profile?.name,
-                    profileEmail = profile?.email,
-                    error = (keys as? DomainResult.Failure)?.error?.toErrorUi(),
-                )
+        loadJob?.cancel()
+        loadJob =
+            scope.launch {
+                val keys = useCases.listKeys(id)
+                val access = useCases.loadAccess(id)
+                state.update { current ->
+                    // Only the factory the screen is asking about may be filled in.
+                    if (current.pairedDevices?.instanceId != instanceId) return@update current
+                    val profile = (access as? DomainResult.Success)?.value?.profile
+                    current.copy(
+                        pairedDevices = keys.toDevices(instanceId),
+                        profileName = profile?.name,
+                        profileEmail = profile?.email,
+                        error = (keys as? DomainResult.Failure)?.error?.toErrorUi(),
+                    )
+                }
             }
-        }
     }
 
     private fun DomainResult<List<BoardKey>>.toDevices(instanceId: String): PairedDevicesUi =

@@ -102,6 +102,11 @@ Not changed: the first-run and edit probe/pair job fields (probeJob, pairJob, se
 Red evidence: staleLoadDoesNotOverwriteAfterApprove 'expected:<Approved> but was:<Pending>'; AgentDetail 'expected:<Paused> but was:<Running>'; Decision stale load re-opened a decided decision (assertion false). The comment lost-update half was appended inside a single update in the F-A-6 commit (ApprovalModel.withComment), so it needs no separate test.
 Fix: a version counter in the Approval, Decision, Budget, AgentDetail, Agents, RunViewer and Issue models. An action bumps it in the same update that clears its in-flight flag; a read records the version when it starts and drops its result if the version moved. Test support: afterRead hooks in FakeApprovalGateway, FakeDecisionGateway, FakeAgentGateway (the answer is read first, then delayed, so it really is older than what follows).
 
+### 2026-11-01 F-B-8 paired-devices loads are ordered and cancelled (Group 2)
+
+Red evidence: slowLoadForPreviousFactoryDoesNotOverwriteCurrent 'expected:<cloud> but was:<home>' (the slow answer for the first factory overwrote the second).
+Fix: SettingsDevices keeps loadJob, cancels it when a new load starts, and applies a result only while pairedDevices still names the requested factory.
+
 ## Edge cases and solutions
 
 (none yet)

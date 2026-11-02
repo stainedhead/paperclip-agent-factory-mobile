@@ -11,9 +11,12 @@ import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes
@@ -235,6 +238,29 @@ class SettingsStateHolderTest {
             holder.onIntent(SettingsIntent.RevokeKeyRequested("home", "unknown"))
             holder.state.value.confirmation shouldBe null
             holder.close()
+        }
+
+    @Test
+    fun `slowLoadForPreviousFactoryDoesNotOverwriteCurrent`() =
+        runTest {
+            val cloudElsewhere = TestData.instance("cloud", "Cloud", uri = "https://cloud.example.com", sortOrder = 1)
+            val env = Env(listOf(home, cloudElsewhere))
+            val holder = ready(env)
+            env.auth.onCall = { call -> if (call.host == home.baseUri) delay(5_000) }
+
+            holder.onIntent(SettingsIntent.PairedDevicesRequested("home"))
+            runCurrent()
+            holder.onIntent(SettingsIntent.PairedDevicesRequested("cloud"))
+            advanceTimeBy(100)
+            holder.state.value.pairedDevices
+                ?.instanceId shouldBe "cloud"
+
+            advanceUntilIdle()
+
+            holder.state.value.pairedDevices
+                ?.instanceId shouldBe "cloud"
+            holder.state.value.pairedDevices
+                ?.status shouldBe PairedDevicesStatus.Loaded
         }
 }
 
