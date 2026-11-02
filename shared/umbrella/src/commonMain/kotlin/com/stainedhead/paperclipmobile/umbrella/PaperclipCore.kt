@@ -47,7 +47,7 @@ class PaperclipGraph internal constructor(
     /** Starts the refresh policy for a visible screen (slice 1a-4). */
     val refresh: RefreshScreens = RefreshScreens(koin)
 
-    /** Tell the graph when the app goes to the background or comes back (slice 1a-4). */
+    /** Tell the graph when the app goes to the background or comes back: `setForeground`, one call (slice 1a-4). */
     val lifecycle: AppLifecycleBridge = koin.get()
 
     internal inline fun <reified T : Any> resolve(): T = koin.get()
@@ -57,7 +57,8 @@ class PaperclipGraph internal constructor(
 
     fun createFirstRunStateHolder(): FirstRunStateHolder = koin.get { parametersOf(newScope()) }
 
-    fun createAppStateHolder(): AppStateHolder = koin.get { parametersOf(newScope()) }
+    fun createAppStateHolder(): AppStateHolder =
+        koin.get<AppStateHolder> { parametersOf(newScope()) }.also { lifecycle.attach(it) }
 
     fun createFactoriesStateHolder(): FactoriesStateHolder = koin.get { parametersOf(newScope()) }
 

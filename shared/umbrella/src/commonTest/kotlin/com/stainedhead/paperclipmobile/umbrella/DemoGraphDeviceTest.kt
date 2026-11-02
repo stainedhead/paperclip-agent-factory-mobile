@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.domain.Exposure
 import com.stainedhead.paperclipmobile.domain.IdlePeriod
+import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.presentation.AppIntent
 import com.stainedhead.paperclipmobile.presentation.EditMode
 import com.stainedhead.paperclipmobile.presentation.FactoryStatusUi
@@ -16,6 +17,7 @@ import com.stainedhead.paperclipmobile.presentation.RemovalEffect
 import com.stainedhead.paperclipmobile.presentation.RoleUi
 import com.stainedhead.paperclipmobile.presentation.SettingsIntent
 import com.stainedhead.paperclipmobile.testing.demo.DemoIds
+import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +26,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 private suspend fun <S> StateFlow<S>.await(predicate: (S) -> Boolean): S =
@@ -108,6 +111,25 @@ class DemoGraphDeviceTest {
             loaded.lock shouldBe LockState.Locked
             app.onIntent(AppIntent.UnlockRequested)
             app.state.await { it.lock == LockState.Unlocked }
+            app.close()
+        }
+
+    @Test
+    fun `one setForeground call drives both the app lock and the refresh policy`() =
+        runTest {
+            val app = graph.createAppStateHolder()
+            app.state.await { it.isLoaded }
+            app.onIntent(AppIntent.UnlockRequested)
+            app.state.await { it.lock == LockState.Unlocked }
+            val clock = graph.resolve<Clock>() as FakeClock
+
+            graph.lifecycle.setForeground(false)
+            graph.lifecycle.isForeground.value shouldBe false
+            clock.advance(IdlePeriod.FiveMinutes.minutes.minutes + 1.minutes)
+            graph.lifecycle.setForeground(true)
+
+            graph.lifecycle.isForeground.value shouldBe true
+            app.state.await { it.lock == LockState.Locked }
             app.close()
         }
 

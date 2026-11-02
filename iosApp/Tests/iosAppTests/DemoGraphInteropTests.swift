@@ -237,9 +237,9 @@ struct DemoFlowAndRefreshInteropTests {
 
     @Test func theLifecycleBridgeFollowsTheShell() async {
         #expect(graph.lifecycle.isForeground.value.boolValue)
-        graph.lifecycle.enterBackground()
+        graph.lifecycle.setForeground(isForeground: false)
         #expect(await eventually { graph.lifecycle.isForeground.value.boolValue == false })
-        graph.lifecycle.enterForeground()
+        graph.lifecycle.setForeground(isForeground: true)
         #expect(await eventually { graph.lifecycle.isForeground.value.boolValue })
     }
 }
