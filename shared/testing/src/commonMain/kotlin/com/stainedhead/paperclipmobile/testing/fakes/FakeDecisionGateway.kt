@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.testing.fakes
 
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.Decision
+import com.stainedhead.paperclipmobile.domain.DecisionEffect
 import com.stainedhead.paperclipmobile.domain.DecisionId
 import com.stainedhead.paperclipmobile.domain.DecisionOption
 import com.stainedhead.paperclipmobile.domain.DecisionOutcome
@@ -242,7 +243,15 @@ internal fun outcomeFor(
         }
     val results =
         statuses.mapIndexed { index, status ->
-            EffectResult(index, "effect", status, "target_changed".takeIf { status == EffectStatus.Skipped })
+            EffectResult(
+                index,
+                option.effects.getOrNull(index)?.serverType() ?: "effect",
+                status,
+                "target_changed".takeIf {
+                    status ==
+                        EffectStatus.Skipped
+                },
+            )
         }
     return DecisionOutcome(execution, results)
 }
@@ -262,3 +271,15 @@ fun FakeDecisionGateway.resolveElsewhere(
         ),
     )
 }
+
+/** The server's name for the effect, as it appears in each effect result. */
+private fun DecisionEffect.serverType(): String =
+    when (this) {
+        is DecisionEffect.CommentOnIssue -> "comment_on_issue"
+        is DecisionEffect.CreateIssue -> "create_issue"
+        is DecisionEffect.UpdateIssueStatus -> "update_issue_status"
+        is DecisionEffect.AssignIssue -> "assign_issue"
+        is DecisionEffect.CancelIssueTree -> "cancel_issue_tree"
+        is DecisionEffect.ResolveBlocker -> "resolve_blockers"
+        is DecisionEffect.Unsupported -> raw
+    }
