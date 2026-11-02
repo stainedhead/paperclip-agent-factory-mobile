@@ -78,7 +78,9 @@ internal fun demoPortsModule() =
                 AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = InstanceId(DemoIds.HOME_FACTORY)),
             )
         }
-        single<Biometrics> { FakeBiometrics() }
+        single { FakeBiometrics() }
+        single<Biometrics> { get<FakeBiometrics>() }
+        single { DemoControls(get()) }
         single<Connectivity> { FakeConnectivity() }
         single<PairingBrowser> { FakePairingBrowser() }
         single<HealthGateway> {

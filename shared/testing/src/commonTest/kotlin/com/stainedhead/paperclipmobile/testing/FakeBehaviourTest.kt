@@ -66,6 +66,18 @@ class FakeBehaviourTest {
         }
 
     @Test
+    fun `scripted biometric results answer prompts in order before the default applies`() =
+        runTest {
+            val biometrics = FakeBiometrics(BiometricResult.Approved)
+            biometrics.script(BiometricResult.Cancelled, BiometricResult.Failed)
+
+            biometrics.authenticate(AuthReason.UnlockApp) shouldBe BiometricResult.Cancelled
+            biometrics.authenticate(AuthReason.ConfirmDestructiveAction) shouldBe BiometricResult.Failed
+            biometrics.authenticate(AuthReason.UnlockApp) shouldBe BiometricResult.Approved
+            biometrics.calls shouldBe 3
+        }
+
+    @Test
     fun `biometrics connectivity and the auth gateway record what happened`() =
         runTest {
             val biometrics = FakeBiometrics(BiometricResult.LockedOut)

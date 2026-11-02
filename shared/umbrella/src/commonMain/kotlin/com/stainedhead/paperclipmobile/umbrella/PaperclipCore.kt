@@ -50,6 +50,9 @@ class PaperclipGraph internal constructor(
     /** Tell the graph when the app goes to the background or comes back: `setForeground`, one call (slice 1a-4). */
     val lifecycle: AppLifecycleBridge = koin.get()
 
+    /** Steering and counters for UI tests; present on the demo graph only, null on every other graph. */
+    val demoControls: DemoControls? = koin.getOrNull()
+
     internal inline fun <reified T : Any> resolve(): T = koin.get()
 
     /** A gateway as the adapter (or fake) provides it, before the signed-out decorator. For tests of the wiring. */
