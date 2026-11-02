@@ -8,11 +8,11 @@ Update this file after every task and phase. It is the single source of progress
 
 | Phase | State |
 |---|---|
-| Phase 0 Specification | In Progress |
-| Phase 1 Research and data model | Not Started |
-| Phase 2 Architecture and plan | Not Started |
-| Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation (Groups 1 to 4) | Not Started |
+| Phase 0 Specification | Complete |
+| Phase 1 Research and data model | Complete |
+| Phase 2 Architecture and plan | Complete |
+| Phase 3 Task breakdown | Complete |
+| Phase 4 Implementation (Groups 1 to 4) | In Progress (Groups 1 to 3 done, Group 4 docs next) |
 | Phase 5 Completion and archive | Not Started |
 
 ## Phase 0 checklist
@@ -37,18 +37,18 @@ Update this file after every task and phase. It is the single source of progress
 - [x] FR-R12 (P1) F-B-6: Holders run on `Dispatchers.Default` but guards and fields are plain check-then-set
 - [x] FR-R13 (P1) F-B-7: Approval comment append uses a stale snapshot; a refresh can overwrite a just-finished action
 - [x] FR-R14 (P1) F-B-9: Screens can get stuck with no refresh or lose a final outcome
-- [ ] FR-R15 (P1) F-C-1: Decision contract suite asserts a "conflict" the pinned server does not return
-- [ ] FR-R16 (P1) F-C-2: Run viewer never tests Cancel run being disabled offline after the run loaded (acceptance 11 overcla
-- [ ] FR-R17 (P1) F-C-3: Role and timeout matrix is narrower than its names and acceptance 8 and 10 claim
-- [ ] FR-R18 (P1) F-C-4: Platform "contract" suites are tautological (acceptance 4 "Met" overstated)
-- [ ] FR-R19 (P1) F-C-5: Requirement traceability can be satisfied by a comment, and some tags are stamps
-- [ ] FR-R20 (P1) F-C-6: `contract.yml` is green and tests nothing; the nightly drift job cannot detect drift
-- [ ] FR-R21 (P1) F-C-8: "No credential to the wrong host" is not testable with the fakes; only the address-edit path is cove
+- [x] FR-R15 (P1) F-C-1: Decision contract suite asserts a "conflict" the pinned server does not return
+- [x] FR-R16 (P1) F-C-2: Run viewer never tests Cancel run being disabled offline after the run loaded (acceptance 11 overcla
+- [x] FR-R17 (P1) F-C-3: Role and timeout matrix is narrower than its names and acceptance 8 and 10 claim
+- [x] FR-R18 (P1) F-C-4: Platform "contract" suites are tautological (acceptance 4 "Met" overstated)
+- [x] FR-R19 (P1) F-C-5: Requirement traceability can be satisfied by a comment, and some tags are stamps
+- [x] FR-R20 (P1) F-C-6: `contract.yml` is green and tests nothing; the nightly drift job cannot detect drift
+- [x] FR-R21 (P1) F-C-8: "No credential to the wrong host" is not testable with the fakes; only the address-edit path is cove
 - [ ] FR-R22 (P1) F-D-1: technical-details.md states AGENTS.md is stale in ways it is not (false "known limitation")
 - [x] FR-R23 (P1) F-D-2: Spec 5a "403 after a role change refreshes the role" is not implemented; role is cached for a holder
 - [ ] FR-R24 (P1) F-D-3: Spec and status files are stale against what was built (progress table, criterion 14 text, FR-096 wo
 - [ ] FR-R25 (P1) F-D-4: PRD still contradicts the pinned server and the built behaviour in three places
-- [ ] FR-R26 (P1) F-D-5: Requirements-traceability rule is satisfied by a comment mention, so "every FR is named by a test" i
+- [x] FR-R26 (P1) F-D-5: Requirements-traceability rule is satisfied by a comment mention, so "every FR is named by a test" i
 - [ ] FR-R27 (P2) F-A-10: `BaseUri` does not validate the path and accepts odd hosts
 - [x] FR-R28 (P2) F-A-11: Retries stack up and `retryingRead` retries unreachable and certificate failures
 - [x] FR-R29 (P2) F-A-12: Dead parameters and unused domain functions
@@ -60,20 +60,27 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] FR-R35 (P2) F-B-13: Swift-facing and wording notes
 - [x] FR-R36 (P2) F-B-5: Gating is hard-coded to `Role.Viewer` or a single `Action` in several places instead of using `Permi
 - [x] FR-R37 (P2) F-B-8: Paired-devices loads are not ordered or cancelled
-- [ ] FR-R38 (P2) F-C-10: Real-time and unbounded waiting in umbrella tests (flake and vacuous-pass risk)
+- [x] FR-R38 (P2) F-C-10: Real-time and unbounded waiting in umbrella tests (flake and vacuous-pass risk)
 - [ ] FR-R39 (P2) F-C-11: TDD evidence is self-reported and the history cannot show red
-- [ ] FR-R40 (P2) F-C-12: `DeviceAuthGuardTest` partly restates the production policy
-- [ ] FR-R41 (P2) F-C-13: Config and hygiene observations
-- [ ] FR-R42 (P2) F-C-7: CI supply-chain pinning and unpinned tools
-- [ ] FR-R43 (P2) F-C-9: Konsist rules: contract-per-port and Secret.reveal checks are weaker than they read
+- [x] FR-R40 (P2) F-C-12: `DeviceAuthGuardTest` partly restates the production policy
+- [x] FR-R41 (P2) F-C-13: Config and hygiene observations
+- [x] FR-R42 (P2) F-C-7: CI supply-chain pinning and unpinned tools
+- [x] FR-R43 (P2) F-C-9: Konsist rules: contract-per-port and Secret.reveal checks are weaker than they read
 - [ ] FR-R44 (P2) F-D-10: "Continue to pairing" is an enabled button with an empty action (honestly documented; acceptable for
 - [ ] FR-R45 (P2) F-D-11: Framework build and consumption failure modes (debug vs release, destructive copy, no preflight)
 - [ ] FR-R46 (P2) F-D-12: Shipping framework contains demo graph, fakes and a fake-key demo set
-- [ ] FR-R47 (P2) F-D-13: Lint configs are lenient (swift-format enables only two rules; SwiftLint is near default)
+- [x] FR-R47 (P2) F-D-13: Lint configs are lenient (swift-format enables only two rules; SwiftLint is near default)
 - [ ] FR-R48 (P2) F-D-6: ADR bodies still describe designs that do not exist; the correction is an appended "Note"
-- [ ] FR-R49 (P2) F-D-7: Infrastructure Konsist rule is vacuous today and will still miss platform source sets later
-- [ ] FR-R50 (P2) F-D-8: Swift holder lifecycle: FirstRunModel never closes its holder, and holders are created inside view/s
-- [ ] FR-R51 (P2) F-D-9: Several Swift interop tests assert nothing about the intents they send, and close holders mid-flight
+- [x] FR-R49 (P2) F-D-7: Infrastructure Konsist rule is vacuous today and will still miss platform source sets later
+- [x] FR-R50 (P2) F-D-8: Swift holder lifecycle: FirstRunModel never closes its holder, and holders are created inside view/s
+- [x] FR-R51 (P2) F-D-9: Several Swift interop tests assert nothing about the intents they send, and close holders mid-flight
+
+## Group 3 notes
+
+- Partly covered requirements (F-C-5): FR-002, FR-008, FR-013, FR-016 and FR-097 have a tagged test for the Phase 1a part only; the rest is Phase 1b/1c (see the `partial` map in `RequirementsTraceabilityTest`). No requirement lacks an honest test.
+- Deferred inside F-C-7: pinning `brew install swiftlint xcodegen` and `xcode-version: latest-stable` (brew cannot pin by hash), narrowing the gitleaks `TESTONLY` allowlist (cannot be exercised without Docker locally), and a Gradle dependency-vulnerability job.
+- Deferred inside F-C-13: detekt over `build-logic`, root scripts and `androidApp`; Kover merging presentation execution data into the `core` total (accepted by AGENTS wording).
+- `unused_import` is configured as a SwiftLint analyzer rule (F-D-13): it only runs under `swiftlint analyze`, not `swiftlint --strict`.
 
 ## Blockers
 
@@ -81,6 +88,7 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Recent activity
 
+- 2026-11-01: Group 3 (tests, contracts, Konsist, CI) done: F-C-1 to F-C-10, F-C-12, F-C-13, F-D-5, F-D-7 to F-D-9, F-D-13; commits in implementation-notes.md.
 - 2026-11-01: spec created from the review PRD.
 - 2026-11-01: FR-R01 fixed (F-A-1 key host binding).
 - 2026-11-01: FR-R03 fixed (F-B-1 probe result bound to the probed address).

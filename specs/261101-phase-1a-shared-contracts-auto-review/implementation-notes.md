@@ -132,6 +132,27 @@ Fix: ADR-034. RetryBudget (3.5 s per use case), connectivity check, DomainError.
 Red evidence: critical_and_high_page_fills_across_server_pages 'Missing elements from index 1: expected [i01, i11, i12, i13, i14] but was [i01]' and the exhausted-server case 'expected:<false> but was:<true>'.
 Fix: ListIssues reads server pages (up to 10) until the page holds the limit of urgent rows or the server runs out; serverRowCount is the number of server rows used so the next page starts right after the last row shown; a later page that fails returns the rows already found with hasMore. Removed the unused userId parameter of ListIssues and SearchIssues (and their callers), the unused DayOfWeek and atStartOfDayIn imports of SnoozeTimes, and the domain function Interaction.canBeResolvedBy with its test (production uses InteractionRenderer.readOnlyReason, which has its own tests). Kept on purpose: DecideBy.toServer (the Phase 1b request mapping), IssueQuery.nextPage (used by the Issue contract), IssueFilter.matches and matchesSearch (the rule the fake shares with tests).
 
+### 2026-11-01 Group 3: tests, contracts, Konsist rules and CI
+
+Each entry names the defect shown (red, mutation or disagreement with the server) and the fix; the same text is in the commit body.
+
+- F-C-1 (4b2354a): the new DecisionContract cases failed against the old FakeDecisionGateway. Contract and fake now follow `decisions.ts:683-711`: same option and inputs replays whatever the key; another option or other inputs is Conflict; dismiss goes through the effect-less option (second dismiss replays) or, with none, a direct update (second dismiss conflicts). Two tests encoded the old rule and changed with it (AttentionFakesBehaviourTest; DismissDecisionTest FR-044). No presentation test relied on it.
+- F-C-2 (d40b0e4): three Run viewer offline tests. Mutations: deleting the `canCancelNow` online check fails 2, the `renderRun` `mayAct(online ...)` fails 2, the `disabledReason(online ...)` fails 1; before, the whole module stayed green.
+- F-C-3 (cd11bf5): `MutationMatrix.kt` has 23 rows, one per company-scoped Action. The viewer, role and timeout matrices run over it; `MutationMatrixRulesTest` (Konsist) fails when a mutation use case has no row (negative sample included). Allowed roles must get `Done` with exactly one gateway call. Deleting the CommentOnApproval permission check fails the viewer matrix.
+- F-C-4 (86e2465): platform suites rewritten around real obligations (Biometrics never reuses an approval, Clock moves on, PairingBrowser opens exactly the approval URL, pairing secrets never print). Connectivity and AppLifecycle suites deleted (StateFlow). Four mutations each fail their suite. Archive status criterion 4 now reads "fake-only; real adapters in Phase 1b". ADR-036.
+- F-C-5 and F-D-5 (a54e491): the traceability tag must be in a `@Test` function name; `partial` map for FR-002, 008, 013, 016, 097; negative test. Removing "FR-097 " from the test names (KDoc kept) now fails; before it passed.
+- F-C-6 (acb32d1): `scripts/contract-smoke.sh`. CI evidence: the push run `contract / pinned server` passed with "Paperclip contract smoke passed against http://127.0.0.1:3199" on Paperclip 2026.1023.0 (run 41372749599); a `workflow_dispatch` run (41373151085) passed both jobs including `latest`. The latest job has no `continue-on-error` and runs only on schedule and dispatch.
+- F-C-7 (5bd1e1d, b1106a7 detekt follow-up): actions pinned to SHAs with version comments; gitleaks built from `docker/gitleaks/Dockerfile` (v8.30.1 by digest, same digest as `latest` today); Dependabot docker entry; `CiPinningRulesTest`. `security` workflow green on the push with the pinned scanner.
+- F-C-8 (f6e90f0): `AuthWrongServerContract` failed against the old fake and now passes; the fake remembers the server of each challenge and pending key. Group 1 application tests already cover the use-case half.
+- F-C-9 (b3de91a): contract-per-port needs an abstract class whose `create()` returns the port plus a subclass that runs it; the reveal rule flags the identifier anywhere (with/run/::reveal) and scans androidApp when it exists; wildcard `domain.port.*` in presentation fails. Each shown by mutation.
+- F-D-7 (be73235): the infrastructure rule scans every `src/<set>Main` and a fixture module with only iosMain/androidMain files shows violations are reported.
+- F-C-10 (6fe6058): `FakeLiveEvents.subscriberCount`; the umbrella refresh tests wait for the subscriber signal, no `delay`. `RefreshSession.stop()` as a no-op fails the teardown tests. 10 consecutive runs of DemoRefreshWiringTest: 0 failures.
+- F-C-12 (e94bf03): the guard test uses the literal set of six destructive actions; always-prompt and never-prompt guards both fail it.
+- F-C-13 (9a5b8f2): reason comment above every detekt rule (`DetektConfigRulesTest`); ADR-035 (fakes ship in the framework), ADR-036; the 424 MB heap dump deleted, no `*.hprof` tracked.
+- F-D-8, F-D-9, F-D-13 (7d1a4a4, 3891996, fe4db74): see the commit bodies. 33 Swift tests and the XCUITest pass; SwiftLint and swift-format report 0 violations.
+
+Process note: three commits were first pushed or made with a detekt finding in a Konsist test (CiPinningRulesTest, RequirementsTraceabilityTest magic numbers, PortAndSecretRulesTest line length). Two were fixed forward in b1106a7 and the third amended before pushing; the `&&` between the gate and the commit was missing. From then on the gates gated the commit.
+
 ## Edge cases and solutions
 
 (none yet)
@@ -179,6 +200,27 @@ Group 1 coverage (fresh Kover run): core 97.67% (was 97.58%), presentation 97.70
 
 Group 2 coverage (fresh Kover run): core 97.89%, presentation 98.01%.
 Process note: the first full `check` failed only on Kotlin/Native (a test name containing a comma, String.format in common code); fixed in 968bdc6. The commit for F-A-6 was pushed with a detekt failure and fixed in 1c2a2ac.
+
+## Group 3 commit hashes
+
+| Finding | Commit |
+|---|---|
+| F-C-1 | 4b2354a |
+| F-C-2 | d40b0e4 |
+| F-C-3 | cd11bf5 |
+| F-C-4 | 86e2465 |
+| F-C-5 and F-D-5 | a54e491 |
+| F-C-6 | acb32d1 |
+| F-C-7 | 5bd1e1d (+ b1106a7 detekt follow-up) |
+| F-C-8 | f6e90f0 |
+| F-C-9 | b3de91a |
+| F-D-7 | be73235 |
+| F-C-10 | 6fe6058 |
+| F-C-12 | e94bf03 |
+| F-C-13 | 9a5b8f2 |
+| F-D-8 | 7d1a4a4 |
+| F-D-9 | 3891996 |
+| F-D-13 | fe4db74 |
 
 ## Lessons learned
 
