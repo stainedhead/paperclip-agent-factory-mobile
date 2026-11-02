@@ -11,14 +11,15 @@ internal class OpenedDatabase(
 )
 
 /**
- * Opens the database, and if it cannot be used recreates it empty (decision: recreate, do not fail closed).
+ * Opens the database, and recreates it empty only when the file is proven unusable (decision: recreate on proof, never
+ * on a guess).
  *
  * The file holds only non-secret configuration and a cache, so recreating loses the factory list, not any
- * credential. The board keys stay in the SecretStore; recreating orphans them (ADR-042) and the person adds the
- * factories again. Failing closed would leave the app unusable with no way out except reinstalling.
- *
- * "Cannot be used" means: opening or the first statement throws (SQLite accepts a garbage file until it is read), the
- * file was written by a newer schema version, or a table is missing. Only the second open may fail loudly.
+ * credential (ADR-042, ADR-077). It is wiped only for evidence that the content can never be read again: SQLite says
+ * the file is not a database or is malformed, the platform refuses to open a file from a newer schema version, the
+ * stored version is newer than the code, or an expected table is missing. Everything else (busy or locked, disk full
+ * or I/O error, protected data not available yet, a migration that throws) is not proof: nothing is deleted and a
+ * [StorageUnavailableException] is thrown so the caller can say storage is unavailable and try again later.
  */
 internal fun openRecovering(
     open: () -> SqlDriver,
@@ -27,33 +28,53 @@ internal fun openRecovering(
     val driver = attemptOpen(open)
     if (driver != null) return OpenedDatabase(driver, recreated = false)
     wipe()
-    return OpenedDatabase(open(), recreated = true)
+    return OpenedDatabase(openAfterWipe(open), recreated = true)
 }
 
+private fun openAfterWipe(open: () -> SqlDriver): SqlDriver =
+    runCatching(open).getOrElse { throw StorageUnavailableException(it) }
+
 private fun attemptOpen(open: () -> SqlDriver): SqlDriver? {
-    val driver =
-        try {
-            open()
-        } catch (_: Exception) {
-            return null
-        }
-    if (driver.isUsable()) return driver
+    val opened = runCatching(open)
+    val driver = opened.getOrNull() ?: return opened.exceptionOrNull().unusableOrThrow()
+    val probe = runCatching { driver.isUsable() }
+    if (probe.getOrNull() == true) return driver
     driver.close()
-    return null
+    return if (probe.isSuccess) null else probe.exceptionOrNull().unusableOrThrow()
 }
+
+/** Null when [this] proves the database is unusable (the caller wipes); otherwise the failure is not proof. */
+private fun Throwable?.unusableOrThrow(): SqlDriver? {
+    if (this !is Exception) throw this ?: error("open failed without a cause")
+    if (provesUnusable()) return null
+    throw StorageUnavailableException(this)
+}
+
+private val UNUSABLE_SIGNS = listOf("not a database", "malformed", "corrupt", "downgrade", "newer than")
+
+private fun Throwable.provesUnusable(): Boolean {
+    var current: Throwable? = this
+    var depth = 0
+    while (current != null && depth < MAX_CAUSE_DEPTH) {
+        val text = current.message?.lowercase().orEmpty()
+        if (UNUSABLE_SIGNS.any { it in text }) return true
+        current = current.cause
+        depth += 1
+    }
+    return false
+}
+
+private const val MAX_CAUSE_DEPTH = 8
 
 private const val EXPECTED_TABLES = 3L
 
+/** False when the stored version is newer or a table is missing; throws for any failure of the probe itself. */
 private fun SqlDriver.isUsable(): Boolean =
-    try {
-        scalarLong("PRAGMA user_version") <= PaperclipDatabase.Schema.version &&
-            scalarLong(
-                "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND " +
-                    "name IN ('instance_config', 'app_settings', 'attention_cache')",
-            ) == EXPECTED_TABLES
-    } catch (_: Exception) {
-        false
-    }
+    scalarLong("PRAGMA user_version") <= PaperclipDatabase.Schema.version &&
+        scalarLong(
+            "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND " +
+                "name IN ('instance_config', 'app_settings', 'attention_cache')",
+        ) == EXPECTED_TABLES
 
 internal fun SqlDriver.scalarLong(sql: String): Long =
     executeQuery(

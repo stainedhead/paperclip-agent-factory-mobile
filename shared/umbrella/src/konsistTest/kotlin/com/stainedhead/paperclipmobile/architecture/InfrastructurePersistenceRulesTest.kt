@@ -122,7 +122,13 @@ class InfrastructurePersistenceRulesTest {
     private companion object {
         const val PERSISTENCE_PACKAGE = "$APP_PACKAGE.infrastructure.persistence"
         val ALLOWED_PUBLIC =
-            setOf("PaperclipPersistence", "openJvmPersistence", "openIosPersistence", "openAndroidPersistence")
+            setOf(
+                "PaperclipPersistence",
+                "StorageUnavailableException",
+                "openJvmPersistence",
+                "openIosPersistence",
+                "openAndroidPersistence",
+            )
         val ALLOWED_IMPORTS =
             listOf(
                 "kotlin.",

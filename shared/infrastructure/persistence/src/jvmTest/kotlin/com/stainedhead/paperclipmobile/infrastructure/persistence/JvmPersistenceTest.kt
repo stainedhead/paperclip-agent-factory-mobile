@@ -7,14 +7,17 @@ import com.stainedhead.paperclipmobile.infrastructure.persistence.db.PaperclipDa
 import com.stainedhead.paperclipmobile.testing.AttentionFixtures
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakeClock
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.sql.DriverManager
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 
@@ -141,5 +144,43 @@ class JvmPersistenceTest {
             openJvmPersistence(clock, file).close()
             wal.exists() shouldBe false
             shm.exists() shouldBe false
+        }
+
+    @Test
+    fun `F-B-1 a version 1 file whose migration throws is kept untouched`() =
+        runTest {
+            JdbcSqliteDriver("jdbc:sqlite:${file.path}").also { driver ->
+                driver.execute(null, "CREATE TABLE precious (note TEXT)", 0)
+                driver.execute(null, "INSERT INTO precious VALUES ('factory list')", 0)
+                driver.execute(null, "PRAGMA user_version = 1", 0)
+                driver.close()
+            }
+            val before = file.readBytes()
+
+            shouldThrow<StorageUnavailableException> { openJvmPersistence(clock, file) }
+
+            file.readBytes().contentEquals(before) shouldBe true
+        }
+
+    @Test
+    fun `F-B-1 a database another connection holds locked is not wiped`() =
+        runTest {
+            openJvmPersistence(clock, file).also {
+                runBlocking { it.instances.add(TestData.instance("a", "Home factory")) }
+                it.close()
+            }
+            val holder = DriverManager.getConnection("jdbc:sqlite:${file.path}")
+            holder.createStatement().execute("BEGIN EXCLUSIVE")
+            try {
+                shouldThrow<StorageUnavailableException> { openJvmPersistence(clock, file) }
+            } finally {
+                holder.createStatement().execute("ROLLBACK")
+                holder.close()
+            }
+
+            val reopened = openJvmPersistence(clock, file)
+            reopened.recreated shouldBe false
+            reopened.instances.get(InstanceId("a"))?.displayName shouldBe "Home factory"
+            reopened.close()
         }
 }
