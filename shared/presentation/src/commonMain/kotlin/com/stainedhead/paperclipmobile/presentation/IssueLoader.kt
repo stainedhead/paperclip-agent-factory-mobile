@@ -15,8 +15,7 @@ internal class IssueLoader(
             model.update { it.copy(loading = false) }
             return
         }
-        if (model.value.loading) return
-        model.update { it.copy(loading = true, error = null) }
+        if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
         session.scope.launch {
             val allowed = session.context.get()
             if (allowed is DomainResult.Failure) {

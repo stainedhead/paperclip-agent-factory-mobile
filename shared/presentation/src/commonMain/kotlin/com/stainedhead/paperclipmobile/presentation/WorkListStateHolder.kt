@@ -80,7 +80,7 @@ class WorkListStateHolder(
 
     fun onIntent(intent: WorkListIntent) {
         when (intent) {
-            WorkListIntent.Refresh -> if (!model.value.loading) reload()
+            WorkListIntent.Refresh -> reload()
             is WorkListIntent.FilterSelected -> change { it.copy(filter = intent.filter.toDomain()) }
             is WorkListIntent.SearchChanged -> change { it.copy(search = intent.text.trim()) }
             WorkListIntent.LoadMore -> loadMore()
@@ -111,7 +111,7 @@ class WorkListStateHolder(
             model.update { it.copy(loading = false) }
             return
         }
-        model.update { it.copy(loading = true, error = null) }
+        if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
         loadJob =
             scope.launch {
                 val allowed = context.get()
@@ -154,9 +154,8 @@ class WorkListStateHolder(
 
     private fun loadMore() {
         val current = model.value
-        val idle = !current.loading && !current.loadingMore
-        if (!connectivity.isOnline.value || !current.hasMore || !idle) return
-        model.update { it.copy(loadingMore = true) }
+        if (!connectivity.isOnline.value || !current.hasMore || current.loading) return
+        if (!model.claim({ it.loadingMore }) { it.copy(loadingMore = true) }) return
         scope.launch {
             val next = query(offset = current.serverRows)
             val page = useCases.list(companyScope, next, userId())
@@ -182,8 +181,8 @@ class WorkListStateHolder(
     private fun create(intent: WorkListIntent.CreateSubmitted) {
         val current = model.value
         val allowed = current.role?.let { Permissions.allows(it, Action.CreateIssue) } == true
-        if (!allowed || !connectivity.isOnline.value || current.creating) return
-        model.update { it.copy(creating = true, feedback = null) }
+        if (!allowed || !connectivity.isOnline.value) return
+        if (!model.claim({ it.creating }) { it.copy(creating = true, feedback = null) }) return
         scope.launch {
             val result =
                 mutate(context) { useCases.create(it, NewIssue(intent.title, priority = intent.priority.toDomain())) }

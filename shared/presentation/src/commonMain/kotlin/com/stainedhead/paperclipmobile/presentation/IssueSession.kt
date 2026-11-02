@@ -42,7 +42,7 @@ internal class IssueSession(
         apply: (IssueModel, T) -> IssueModel,
         reload: (() -> Unit)? = null,
     ) {
-        model.update { it.copy(busy = true, feedback = null) }
+        if (!model.claim({ it.busy }) { it.copy(busy = true, feedback = null) }) return
         scope.launch {
             val result = call()
             model.update { current ->

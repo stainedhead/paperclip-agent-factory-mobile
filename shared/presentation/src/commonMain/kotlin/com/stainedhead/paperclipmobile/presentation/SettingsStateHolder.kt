@@ -302,7 +302,14 @@ internal class SettingsConfirmations(
     private val scope: CoroutineScope,
     private val devices: SettingsDevices,
 ) {
-    var instances: List<Instance> = emptyList()
+    private val known = MutableStateFlow<List<Instance>>(emptyList())
+
+    /** Written by the instance collector and read by intents on other threads (F-B-6). */
+    var instances: List<Instance>
+        get() = known.value
+        set(value) {
+            known.value = value
+        }
 
     fun askSignOut(instanceId: String) {
         val instance = instances.firstOrNull { it.id.value == instanceId } ?: return
@@ -323,8 +330,7 @@ internal class SettingsConfirmations(
 
     fun accept() {
         val confirmation = state.value.confirmation ?: return
-        if (state.value.isBusy) return
-        state.update { it.copy(isBusy = true, confirmation = null) }
+        if (!state.claim({ it.isBusy }) { it.copy(isBusy = true, confirmation = null) }) return
         scope.launch {
             when (confirmation) {
                 is SettingsConfirmation.SignOut -> signOut(confirmation.instanceId)

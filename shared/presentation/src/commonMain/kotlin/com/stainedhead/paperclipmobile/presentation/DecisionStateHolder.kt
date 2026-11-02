@@ -111,8 +111,8 @@ class DecisionStateHolder(
     }
 
     private fun load() {
-        if (!connectivity.isOnline.value || model.value.loading) return
-        model.update { it.copy(loading = true, error = null) }
+        if (!connectivity.isOnline.value) return
+        if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
         scope.launch {
             val context = ensureContext()
             if (context != null) {
@@ -156,7 +156,7 @@ class DecisionStateHolder(
         val current = model.value
         if (!current.mayAct(Action.SnoozeItem, connectivity.isOnline.value)) return
         if (current.decision?.isOpen != true || current.snoozed) return
-        model.update { it.copy(submitting = true, feedback = null) }
+        if (!model.claim({ it.submitting }) { it.copy(submitting = true, feedback = null) }) return
         scope.launch {
             val context = ensureContext()
             val result = context?.let { useCases.snooze(it, key, preset.toDomain()) }
@@ -173,7 +173,7 @@ class DecisionStateHolder(
     private fun act(
         action: suspend (com.stainedhead.paperclipmobile.domain.CompanyContext) -> MutationResult<Decision>,
     ) {
-        model.update { it.copy(submitting = true, feedback = null) }
+        if (!model.claim({ it.submitting }) { it.copy(submitting = true, feedback = null) }) return
         scope.launch {
             val context = ensureContext()
             val result = if (context == null) null else action(context)

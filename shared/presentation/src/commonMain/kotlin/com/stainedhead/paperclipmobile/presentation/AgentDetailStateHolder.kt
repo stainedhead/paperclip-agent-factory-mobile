@@ -87,8 +87,8 @@ class AgentDetailStateHolder(
     }
 
     private fun load() {
-        if (!connectivity.isOnline.value || model.value.loading) return
-        model.update { it.copy(loading = true, error = null) }
+        if (!connectivity.isOnline.value) return
+        if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
         scope.launch {
             val allowed = context.get()
             if (allowed is DomainResult.Failure) {
@@ -162,7 +162,7 @@ class AgentDetailStateHolder(
     }
 
     private fun run(call: suspend () -> ActionResult<Agent>) {
-        model.update { it.copy(busy = true, feedback = null) }
+        if (!model.claim({ it.busy }) { it.copy(busy = true, feedback = null) }) return
         scope.launch {
             val result = call()
             model.update { m ->

@@ -14,6 +14,7 @@ import com.stainedhead.paperclipmobile.domain.IssueStatus
 import com.stainedhead.paperclipmobile.domain.RunStatus
 import com.stainedhead.paperclipmobile.domain.SpendWindow
 import com.stainedhead.paperclipmobile.domain.SpendWindowKind
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /** The refresh interval a visible screen needs (PRD FR-090); the polling policy itself is slice 1a-4. */
 internal const val SCREEN_REFRESH_SECONDS = 15
@@ -26,15 +27,15 @@ internal class ContextSource(
     private val resolve: ResolveCompanyContext,
     val scope: CompanyScope,
 ) {
-    private var cached: CompanyContext? = null
+    private val cached = MutableStateFlow<CompanyContext?>(null)
 
-    val role get() = cached?.role
+    val role get() = cached.value?.role
 
-    val userId get() = cached?.userId
+    val userId get() = cached.value?.userId
 
     suspend fun get(): DomainResult<CompanyContext> =
-        cached?.let { DomainResult.Success(it) }
-            ?: resolve(scope).also { if (it is DomainResult.Success) cached = it.value }
+        cached.value?.let { DomainResult.Success(it) }
+            ?: resolve(scope).also { if (it is DomainResult.Success) cached.value = it.value }
 }
 
 enum class SpendWindowUi {

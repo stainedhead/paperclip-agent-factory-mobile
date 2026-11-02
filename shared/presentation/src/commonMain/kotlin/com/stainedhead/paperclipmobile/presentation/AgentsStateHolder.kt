@@ -82,8 +82,8 @@ class AgentsStateHolder(
     }
 
     private fun load() {
-        if (!connectivity.isOnline.value || model.value.loading) return
-        model.update { it.copy(loading = true, error = null) }
+        if (!connectivity.isOnline.value) return
+        if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
         scope.launch {
             val allowed = context.get()
             if (allowed is DomainResult.Failure) {
@@ -130,8 +130,8 @@ class AgentsStateHolder(
     ) {
         val current = model.value
         val agent = current.agents.firstOrNull { it.id.value == agentId } ?: return
-        if (current.busy != null || action !in agent.actionsFor(current.role, connectivity.isOnline.value)) return
-        model.update { it.copy(busy = agent.id, feedback = null) }
+        if (action !in agent.actionsFor(current.role, connectivity.isOnline.value)) return
+        if (!model.claim({ it.busy != null }) { it.copy(busy = agent.id, feedback = null) }) return
         scope.launch {
             val result =
                 when (action) {

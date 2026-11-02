@@ -64,8 +64,7 @@ class FactoryHomeStateHolder(
             model.update { it.copy(phase = if (it.tiles == null) DetailPhase.Failed else it.phase) }
             return
         }
-        if (model.value.isRefreshing) return
-        model.update { it.copy(isRefreshing = true, error = null) }
+        if (!model.claim({ it.isRefreshing }) { it.copy(isRefreshing = true, error = null) }) return
         scope.launch {
             val allowed = context.get()
             if (allowed is DomainResult.Failure) {

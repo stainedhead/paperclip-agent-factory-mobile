@@ -61,8 +61,7 @@ internal class InboxSession(
     }
 
     suspend fun refresh() {
-        if (!connectivity.isOnline.value || model.value.refreshing) return
-        model.update { it.copy(refreshing = true) }
+        if (!connectivity.isOnline.value || !model.claim({ it.refreshing }) { it.copy(refreshing = true) }) return
         if (ensureContext() == null) return
         when (val result = useCases.refresh(companyScope)) {
             is DomainResult.Success -> {
@@ -83,8 +82,8 @@ internal class InboxSession(
 
     suspend fun loadMore() {
         val cursor = model.value.nextCursor
-        if (cursor == null || model.value.loadingMore || !connectivity.isOnline.value) return
-        model.update { it.copy(loadingMore = true) }
+        if (cursor == null || !connectivity.isOnline.value) return
+        if (!model.claim({ it.loadingMore }) { it.copy(loadingMore = true) }) return
         when (val result = useCases.loadMore(companyScope, cursor)) {
             is DomainResult.Success -> {
                 model.update { it.withNextPage(result.value).copy(loadingMore = false) }
@@ -114,8 +113,8 @@ internal class InboxSession(
         action: suspend (CompanyContext) -> MutationResult<T>,
         onResult: (MutationResult<T>) -> Unit = {},
     ) {
-        if (model.value.mutating || !connectivity.isOnline.value) return
-        model.update { it.copy(mutating = true, feedback = null) }
+        if (!connectivity.isOnline.value) return
+        if (!model.claim({ it.mutating }) { it.copy(mutating = true, feedback = null) }) return
         scope.launch {
             val context = ensureContext()
             if (context == null) {

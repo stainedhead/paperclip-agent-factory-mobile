@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Instant
@@ -75,16 +76,15 @@ class AppStateHolder(
 ) {
     private val scope = childScope(scope)
     private val mutableState = MutableStateFlow(AppState())
-    private var settings: AppSettings? = null
-    private var backgroundedAt: Instant? = null
-    private var unlocking = false
+
+    /** Written by the settings collector and by intents on other threads, so it lives in one atomic cell (F-B-6). */
+    private val internals = MutableStateFlow(Internals())
     val state: StateFlow<AppState> = mutableState.asStateFlow()
 
     init {
         this.scope.launch {
             combine(useCases.observeSettings(), useCases.observeInstances()) { s, list ->
-                val first = settings == null
-                settings = s
+                val first = internals.getAndUpdate { it.copy(settings = s) }.settings == null
                 mutableState.update { it.fromSources(s, list, first) }
             }.collect {}
         }
@@ -93,7 +93,8 @@ class AppStateHolder(
     fun onIntent(intent: AppIntent) {
         when (intent) {
             AppIntent.WentToBackground -> {
-                backgroundedAt = clock.now()
+                val now = clock.now()
+                internals.update { it.copy(backgroundedAt = now) }
             }
 
             AppIntent.CameToForeground -> {
@@ -144,9 +145,8 @@ class AppStateHolder(
     }
 
     private fun relock() {
-        val current = settings ?: return
-        val since = backgroundedAt ?: return
-        backgroundedAt = null
+        val current = internals.value.settings ?: return
+        val since = internals.getAndUpdate { it.copy(backgroundedAt = null) }.backgroundedAt ?: return
         if (useCases.shouldLock(
                 current,
                 since,
@@ -157,11 +157,15 @@ class AppStateHolder(
     }
 
     private fun unlock() {
-        if (unlocking || mutableState.value.lock == LockState.Unlocked) return
-        unlocking = true
+        if (mutableState.value.lock == LockState.Unlocked) return
+        if (!internals.claim({ it.unlocking }) { it.copy(unlocking = true) }) return
         scope.launch {
-            val result = useCases.unlock()
-            unlocking = false
+            val result =
+                try {
+                    useCases.unlock()
+                } finally {
+                    internals.update { it.copy(unlocking = false) }
+                }
             mutableState.update {
                 if (result == BiometricResult.Approved) {
                     it.copy(lock = LockState.Unlocked, unlockIssue = null)
@@ -172,3 +176,9 @@ class AppStateHolder(
         }
     }
 }
+
+private data class Internals(
+    val settings: AppSettings? = null,
+    val backgroundedAt: Instant? = null,
+    val unlocking: Boolean = false,
+)

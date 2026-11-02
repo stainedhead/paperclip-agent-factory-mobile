@@ -91,6 +91,12 @@ Fix: InboxApprovalActions honours approve, reject and keepPaused only if InlineA
 Red evidence: 'Expected OwnerRole but actual was null' for the Operator on the budget incident (raiseDisabledReason) and on agent detail (budgetDisabledReason). The wrong-flag half did not reproduce (role != Viewer equals Permissions today), so RoleGatingTest (Role x Action x online over disabledReason and mayAct) is a regression guard, not a red.
 Fix: RoleGating.kt (disabledReason, mayAct); ActionsDisabledReason.OwnerRole; BudgetIncidentState.raiseDisabledReason and AgentDetailState.budgetDisabledReason; every renderer and holder flag and reason goes through it (Decision confirm, dismiss and snooze now use their own action; Run cancel; Agents Resume and RunNow use their own action); rejectNeedsDeviceAuth follows DeviceAuthPolicy; interactions use RespondToInteraction.
 
+### 2026-11-01 F-B-6 guards and shared fields are atomic (Group 2)
+
+Red evidence (AtomicGuardsTest, JVM only, 60 iterations x 4 concurrent callers on Dispatchers.Default, run against the pre-fix holders): UnlockRequested prompted the device more than once in 31 of 120 iterations, Refresh loaded more than once in 76, ConfirmTapped sent the decision more than once or not at all in 113, DismissTapped dismissed more than once in 89 (counts from the first 120-iteration version; the final version uses 60 iterations and fails the same way).
+Fix: Guards.kt claim() (compareAndSet loop) replaces every 'if (flag) return; update { flag = true }' in the Decision, Approval, Budget, Agents, AgentDetail, RunViewer, WorkList, Issue, FactoryHome, Settings and Inbox holders and sessions; AppStateHolder keeps settings, backgroundedAt and unlocking in one MutableStateFlow cell and clears unlocking in finally; ContextSource.cached, Factories, ManageFactories and SettingsConfirmations.instances are MutableStateFlow cells. Run 5 times after the fix: 4 tests, 0 failures, 8.7 s each run.
+Not changed: the first-run and edit probe/pair job fields (probeJob, pairJob, session.probed) are still plain; they are written from intents on the UI thread and read from coroutines they launch, and a lost write there is bounded by the address binding of F-B-1 (a stale probe is dropped by address). Recorded as a known limitation.
+
 ## Edge cases and solutions
 
 (none yet)

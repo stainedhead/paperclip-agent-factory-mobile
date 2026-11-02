@@ -75,13 +75,13 @@ class ManageFactoriesStateHolder(
 ) {
     private val scope = childScope(scope)
     private val mutableState = MutableStateFlow(ManageFactoriesState())
-    private var instances: List<Instance> = emptyList()
+    private val instances = MutableStateFlow<List<Instance>>(emptyList())
     val state: StateFlow<ManageFactoriesState> = mutableState.asStateFlow()
 
     init {
         this.scope.launch {
             useCases.observeInstances().collect { list ->
-                instances = list
+                instances.value = list
                 mutableState.update {
                     it.copy(
                         rows =
@@ -130,7 +130,7 @@ class ManageFactoriesStateHolder(
     }
 
     private fun askToRemove(id: String) {
-        val instance = instances.firstOrNull { it.id.value == id } ?: return
+        val instance = instances.value.firstOrNull { it.id.value == id } ?: return
         val effects =
             buildList {
                 add(RemovalEffect.Configuration)

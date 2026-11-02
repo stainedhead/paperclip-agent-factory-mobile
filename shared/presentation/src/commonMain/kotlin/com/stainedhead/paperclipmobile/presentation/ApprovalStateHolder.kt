@@ -103,8 +103,8 @@ class ApprovalStateHolder(
     }
 
     private fun load() {
-        if (!connectivity.isOnline.value || model.value.loading) return
-        model.update { it.copy(loading = true, error = null) }
+        if (!connectivity.isOnline.value) return
+        if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
         scope.launch {
             if (ensureContext() != null) {
                 when (val result = useCases.load(companyScope, id)) {
@@ -207,7 +207,7 @@ class ApprovalStateHolder(
         call: suspend (CompanyContext) -> MutationResult<T>,
         onResult: (MutationResult<T>) -> Unit,
     ) {
-        model.update { it.copy(submitting = true, feedback = null) }
+        if (!model.claim({ it.submitting }) { it.copy(submitting = true, feedback = null) }) return
         scope.launch {
             val context = ensureContext()
             val result = context?.let { call(it) }

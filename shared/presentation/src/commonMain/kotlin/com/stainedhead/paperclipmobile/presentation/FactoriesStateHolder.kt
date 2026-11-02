@@ -94,7 +94,7 @@ class FactoriesStateHolder(
     private val scope = childScope(scope)
     private val progress = MutableStateFlow(Progress())
     private val mutableState = MutableStateFlow(FactoriesState())
-    private var instances: List<Instance> = emptyList()
+    private val instances = MutableStateFlow<List<Instance>>(emptyList())
     val state: StateFlow<FactoriesState> = mutableState.asStateFlow()
 
     init {
@@ -105,7 +105,7 @@ class FactoriesStateHolder(
                 connectivity.isOnline,
                 progress,
             ) { list, settings, online, progress ->
-                instances = list
+                instances.value = list
                 render(list, settings, online, progress)
             }.collect { mutableState.value = it }
         }
@@ -139,7 +139,7 @@ class FactoriesStateHolder(
         progress.update { it.copy(isRefreshing = true) }
         scope.launch {
             var anySuccess = false
-            instances.forEach { anySuccess = load(it) || anySuccess }
+            instances.value.forEach { anySuccess = load(it) || anySuccess }
             progress.update {
                 it.copy(
                     isRefreshing = false,

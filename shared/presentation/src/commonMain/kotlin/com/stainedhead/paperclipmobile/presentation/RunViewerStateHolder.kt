@@ -88,8 +88,8 @@ class RunViewerStateHolder(
     }
 
     private fun refresh() {
-        if (!connectivity.isOnline.value || model.value.loading) return
-        model.update { it.copy(loading = true, error = null) }
+        if (!connectivity.isOnline.value) return
+        if (!model.claim({ it.loading }) { it.copy(loading = true, error = null) }) return
         scope.launch {
             val allowed = context.get()
             if (allowed is DomainResult.Failure) {
@@ -149,7 +149,12 @@ class RunViewerStateHolder(
     private fun cancel() {
         val run = model.value.run ?: return
         if (!model.value.confirmCancel || !canCancelNow()) return
-        model.update { it.copy(confirmCancel = false, cancelling = true, feedback = null) }
+        if (!model.claim(
+                { it.cancelling },
+            ) { it.copy(confirmCancel = false, cancelling = true, feedback = null) }
+        ) {
+            return
+        }
         scope.launch {
             val result = mutate(context) { useCases.cancel(it, run) }
             model.update { it.copy(cancelling = false, feedback = result.feedback, run = result.value ?: it.run) }
