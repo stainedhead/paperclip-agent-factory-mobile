@@ -288,4 +288,93 @@ class LocalOnlyRemovalStateTest {
             env.repository.deletedIds shouldBe emptyList()
             env.secrets.paths.isEmpty() shouldBe false
         }
+
+    @Test
+    fun `a denied remove that was cancelled meanwhile does not bring the dialog back`() =
+        runTest {
+            val env = deniedEnv()
+            val holder = manage(env)
+            advanceUntilIdle()
+            holder.onIntent(ManageFactoriesIntent.RemoveRequested("home"))
+            holder.onIntent(ManageFactoriesIntent.RemoveConfirmed)
+            holder.onIntent(ManageFactoriesIntent.RemoveCancelled)
+            advanceUntilIdle()
+
+            holder.state.value.confirmation shouldBe null
+            holder.state.value.isRemoving shouldBe false
+            env.repository.deletedIds shouldBe emptyList()
+        }
+
+    @Test
+    fun `sign out here only of a factory that vanished meanwhile just ends the busy state`() =
+        runTest {
+            val env = deniedEnv()
+            val holder = settings(env)
+            advanceUntilIdle()
+            holder.onIntent(SettingsIntent.SignOutRequested("home"))
+            holder.onIntent(SettingsIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+            env.repository.delete(home.id)
+
+            holder.onIntent(SettingsIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.isBusy shouldBe false
+            holder.state.value.lastSignOutKey shouldBe null
+        }
+
+    @Test
+    fun `edit screen here only actions of a factory that vanished meanwhile end as removed`() =
+        runTest {
+            val env = deniedEnv()
+            val holder = edit(env)
+            advanceUntilIdle()
+            holder.onIntent(EditInstanceIntent.SignOutRequested)
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+            env.repository.delete(home.id)
+
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.removed shouldBe true
+            holder.state.value.isBusy shouldBe false
+        }
+
+    @Test
+    fun `edit screen remove here only refused by the device owner keeps the offer and says why`() =
+        runTest {
+            val env = deniedEnv()
+            val holder = edit(env)
+            advanceUntilIdle()
+            holder.onIntent(EditInstanceIntent.RemoveRequested)
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+            env.biometrics.result = BiometricResult.Failed
+
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.deviceAuthIssue shouldBe DeviceAuthIssue.Failed
+            holder.state.value.confirmation shouldBe EditConfirmation.RemoveHereOnly
+            holder.state.value.removed shouldBe false
+        }
+
+    @Test
+    fun `edit screen sign out here only refused by the device owner keeps the key and says why`() =
+        runTest {
+            val env = deniedEnv()
+            val holder = edit(env)
+            advanceUntilIdle()
+            holder.onIntent(EditInstanceIntent.SignOutRequested)
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+            env.biometrics.result = BiometricResult.Failed
+
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.deviceAuthIssue shouldBe DeviceAuthIssue.Failed
+            env.secrets.paths.isEmpty() shouldBe false
+        }
 }
