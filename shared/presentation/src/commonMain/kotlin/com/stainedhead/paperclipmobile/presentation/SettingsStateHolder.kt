@@ -392,6 +392,10 @@ internal class SettingsConfirmations(
                 )
             }
 
+            RevokeKeyResult.CurrentKeyUnknown -> {
+                copy(isBusy = false, error = ErrorUi(ErrorKey.CurrentKeyUnknown))
+            }
+
             is RevokeKeyResult.Failed -> {
                 copy(isBusy = false, error = result.error.toErrorUi())
             }

@@ -60,6 +60,9 @@ enum class ErrorKey {
 
     /** The phone's secure store refused to keep the key. */
     StorageFailed,
+
+    /** This phone does not know which server key is its own, so it will not revoke keys (PRD FR-025). */
+    CurrentKeyUnknown,
 }
 
 /** An error to show. [detail] is the server's own reason for [ErrorKey.Rejected]; it is never raw JSON. */

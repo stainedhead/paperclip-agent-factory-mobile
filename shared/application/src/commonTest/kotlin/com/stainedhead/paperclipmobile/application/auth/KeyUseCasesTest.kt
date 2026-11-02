@@ -232,4 +232,39 @@ class KeyUseCasesTest {
             env.repository.get(signedIn.id)?.status shouldBe InstanceStatus.SignedOut
             revoke(InstanceId("zzz"), "k") shouldBe RevokeKeyResult.Failed(DomainError.NotFound)
         }
+
+    @Test
+    fun `FR-025 revoke refuses every key when this phone's key id is unknown`() =
+        runTest {
+            val noKeyId = signedIn.copy(boardKeyId = null)
+            val env = Env(listOf(noKeyId))
+            env.storeToken()
+            val revoke =
+                RevokeBoardKey(
+                    env.repository,
+                    env.auth,
+                    SignOutInstance(env.repository, env.secrets, env.revoker, env.locks),
+                    env.signedOut,
+                )
+
+            revoke(noKeyId.id, "key-laptop") shouldBe RevokeKeyResult.CurrentKeyUnknown
+            revoke(noKeyId.id, TestData.KEY_ID) shouldBe RevokeKeyResult.CurrentKeyUnknown
+
+            env.auth.count("revokeBoardKey") shouldBe 0
+            env.auth.count("revokeCurrentKey") shouldBe 0
+            env.repository.get(noKeyId.id)?.status shouldBe InstanceStatus.SignedIn
+            env.secrets.paths.isNotEmpty() shouldBe true
+        }
+
+    @Test
+    fun `FR-025 no listed key is marked as this phone's when its key id is unknown`() =
+        runTest {
+            val noKeyId = signedIn.copy(boardKeyId = null)
+            val env = Env(listOf(noKeyId))
+
+            val keys = ListBoardKeys(env.repository, env.auth, env.signedOut)(noKeyId.id)
+
+            keys.shouldBeInstanceOf<DomainResult.Success<List<BoardKey>>>().value.none { it.isCurrentDevice } shouldBe
+                true
+        }
 }

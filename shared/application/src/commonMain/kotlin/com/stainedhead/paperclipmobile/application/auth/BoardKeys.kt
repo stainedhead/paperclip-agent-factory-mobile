@@ -42,6 +42,12 @@ sealed interface RevokeKeyResult {
         val serverKey: RevokeOutcome,
     ) : RevokeKeyResult
 
+    /**
+     * This phone does not know which server key is its own, so it cannot tell "revoke another device" from "revoke
+     * myself". Nothing was sent: revoking blind could lock this phone out while the factory still shows Signed in.
+     */
+    data object CurrentKeyUnknown : RevokeKeyResult
+
     data class Failed(
         val error: DomainError,
     ) : RevokeKeyResult
@@ -59,6 +65,7 @@ class RevokeBoardKey(
         keyId: String,
     ): RevokeKeyResult {
         val instance = repository.get(instanceId) ?: return RevokeKeyResult.Failed(DomainError.NotFound)
+        if (instance.boardKeyId == null) return RevokeKeyResult.CurrentKeyUnknown
         if (instance.boardKeyId == keyId) {
             val result = signOut(instanceId) as? SignOutResult.SignedOut
             return RevokeKeyResult.SignedOutThisDevice(result?.serverKey ?: RevokeOutcome.NotAttempted)

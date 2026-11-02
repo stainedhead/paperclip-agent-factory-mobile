@@ -177,6 +177,26 @@ class SettingsStateHolderTest {
         }
 
     @Test
+    fun `FR-025 a factory whose own key id is unknown shows a typed error instead of revoking`() =
+        runTest {
+            val unknownKey = home.copy(boardKeyId = null)
+            val env = Env(listOf(unknownKey))
+            env.storeToken(unknownKey)
+            val holder = ready(env)
+            holder.onIntent(SettingsIntent.PairedDevicesRequested("home"))
+            advanceUntilIdle()
+
+            holder.onIntent(SettingsIntent.RevokeKeyRequested("home", "key-laptop"))
+            holder.onIntent(SettingsIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            env.auth.count("revokeBoardKey") shouldBe 0
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.CurrentKeyUnknown)
+            holder.state.value.isBusy shouldBe false
+            env.repository.get(home.id)?.status shouldBe InstanceStatus.SignedIn
+        }
+
+    @Test
     fun `FR-024 sign out asks first and reports whether the server confirmed`() =
         runTest {
             val env = Env(listOf(home))
