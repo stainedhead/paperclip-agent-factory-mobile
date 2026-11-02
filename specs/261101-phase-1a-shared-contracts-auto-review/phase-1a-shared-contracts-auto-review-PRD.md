@@ -2,8 +2,8 @@
 
 **Created:** 2026-11-01
 **Status:** Draft, from the dev-flow Step 4 review of `feat/phase-1a-shared-contracts`
-**Source spec:** [specs/archive/261101-phase-1a-shared-contracts](specs/archive/261101-phase-1a-shared-contracts/spec.md)
-**Related:** [AGENTS.md](./AGENTS.md), [INTENT.md](./INTENT.md), draft PR #5
+**Source spec:** [specs/archive/261101-phase-1a-shared-contracts](../archive/261101-phase-1a-shared-contracts/spec.md)
+**Related:** [AGENTS.md](../../AGENTS.md), [INTENT.md](../../INTENT.md), draft PR #5
 
 ---
 

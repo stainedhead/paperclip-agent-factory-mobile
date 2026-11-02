@@ -2,7 +2,8 @@
 
 **Spec:** specs/archive/261101-phase-1a-shared-contracts
 **Branch:** feat/phase-1a-shared-contracts (stacked on phase-1a/spec, PR #4; Phase 0 PRs #1 to #3 unmerged)
-**Review PRD:** phase-1a-shared-contracts-auto-review-PRD.md
+**Review PRD:** specs/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md
+**Review spec:** specs/261101-phase-1a-shared-contracts-auto-review/
 **Process Start:** 2026-11-01T19:29:08Z
 **Process End:** —
 **Total Runtime:** —
@@ -19,8 +20,8 @@
 | 4  | Code and Design Review          | ✅ Complete | 2026-11-01T22:41:32Z | 2026-11-01T22:57:18Z | 16 |
 | 5  | Prepare Review PRD              | ✅ Complete | 2026-11-01T22:57:18Z | 2026-11-01T23:12:46Z | 15 |
 | 6  | Archive Original Spec           | ✅ Complete | 2026-11-01T23:12:46Z | 2026-11-01T23:14:00Z | 1 |
-| 7  | Spec Review Fixes               | 🔄 In Progress | 2026-11-01T23:14:00Z | — | — |
-| 8  | Implement Review Fixes          | ⬜ Pending | — | — | — |
+| 7  | Spec Review Fixes               | ✅ Complete | 2026-11-01T23:14:00Z | 2026-11-02T00:03:25Z | 49 |
+| 8  | Implement Review Fixes          | 🔄 In Progress | 2026-11-02T00:03:25Z | — | — |
 | 9  | Archive Fixes Spec              | ⬜ Pending | — | — | — |
 | 10 | Final Quality Pass              | ⬜ Pending | — | — | — |
 | 11 | Process Analysis Report         | ⬜ Pending | — | — | — |
@@ -44,3 +45,4 @@
 - 2026-11-01T22:57:18Z: Step 4 complete. 4 reviewers (52 findings) + verification (12 of 14 reproduced, 3 ratings corrected). Review PRD written: 51 requirements (P0 3, P1 23, P2 25) at phase-1a-shared-contracts-auto-review-PRD.md. Step 5 (review-prd) starting. CI on PR #5: shared, contract, security green; ios running at last check.
 - 2026-11-01T23:12:46Z: Step 5 complete. review-prd verdict Needs revision, then fixed: split F-A-2 into P0+P1, F-A-7 raised to P1, 11 acceptance criteria made testable, NFR section, implementation order and parallel groups, policy for unreproduced findings. Counts now P0 3, P1 24, P2 24 (51). Step 6 (archive spec) starting.
 - 2026-11-01T23:14:00Z: Step 6 complete. Spec archived to specs/archive/261101-phase-1a-shared-contracts/ after making status.md truthful (it showed phases 1-3 Not Started); 9 relative links inside the spec and all references (README, technical-details, iphone-app status, review PRD, dashboard, one KDoc) rewritten; 82 markdown links checked, 0 broken. Step 7 (create-spec for the review PRD) starting.
+- 2026-11-02T00:03:25Z: Step 7 complete. Fix spec created at specs/261101-phase-1a-shared-contracts-auto-review/ (8 files, 51 tracked fixes, PRD moved in, links fixed). Owner instruction: run all remaining steps without asking; PR at the end. Step 8 (implement fixes) starting.
