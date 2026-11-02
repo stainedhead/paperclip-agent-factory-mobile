@@ -214,3 +214,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Consequences.** Run now and comments cost one extra read per tap. `InvokeOutcome.Skipped` stays in the domain for the server's own verdict, which the reconciliation path no longer produces.
 
 **Scope of the re-read (F-A-8).** `DecideDecision` is the only mutation whose device-authentication requirement is derived from an entity (`option.isDestructive`), so it alone takes an id and reads the decision first. For `PauseAgent`, `CancelRun`, `ResolveBudgetIncident` and the approval actions the requirement is fixed by the action (`DeviceAuthPolicy`), so a stale entity can at worst fail an eligibility pre-check that the server repeats and the use case reconciles; those keep their entity parameters and avoid a second read per tap.
+
+## ADR-033: Configuration and credential changes of one factory are serialised by a per-factory lock
+
+**Status:** Accepted (2026-11-01, residual race of review fix F-A-1)
+
+**Context.** An address edit (`UpdateInstance`, which deletes the credentials of the old address) and a key enrollment (`KeyEnrollment`, which writes the key and then the status) were each correct alone, but interleaved they could revert the address to the old one with the status Signed in and no key.
+
+**Decision.** `InstanceLocks` (application) hands out one `Mutex` per `InstanceId`. `UpdateInstance`, `KeyEnrollment` (put, re-read and update), the local half of sign out and remove (`deleteCredentialsLocally`, taken inside `NonCancellable`) and `SignedOutMarker` run their read-modify-write under it. A lock is never held across a server call. The composition root creates one `InstanceLocks` and passes it to those use cases; there is no global state, so tests build their own.
+
+**Consequences.** A concurrent edit waits for an enrollment to finish and then wins or loses cleanly: either the new key on the old address is kept, or the address changes and the key is removed with the namespace. The use case constructors take the lock as an argument.

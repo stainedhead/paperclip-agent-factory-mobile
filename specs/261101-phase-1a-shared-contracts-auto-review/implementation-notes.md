@@ -65,6 +65,11 @@ Red evidence: 'expected:<NotAuthorized(result=Cancelled)> but was:<Done(value=De
 Fix: ADR-032 (scope paragraph). DecideDecision takes DecisionId, reads the decision, derives the real action from the fresh option, answers Failed when the read fails, and returns Reconciled(Conflict, fresh) without a gateway call when the fresh copy is not open (acceptance 12 behaviour kept). Tests changed in the same commit: tests built around a caller copy now put the copy in the fake store; read counts rose by one (acceptance 10: 3 in the holder test); FR-044 not-open now expects Reconciled(Conflict) with zero decide calls instead of Invalid(WrongStatus), because the screen can then show the final state.
 Not changed, with reason: PauseAgent, CancelRun, ResolveBudgetIncident, ApproveApproval keep entity parameters. Their device-auth requirement does not depend on the entity, the server repeats the eligibility checks, and the use case reconciles; re-reading would add a read per tap with no security gain (see ADR-032).
 
+### 2026-11-01 F-A-1 residual per-factory lock (ADR-033) (Group 2)
+
+Red evidence: 'expected:<false> but was:<true>' in InstanceLockingTest (a gated repository update: after the address edit the factory was SignedIn on the old address with no key stored).
+Fix: InstanceLocks, ADR-033; UpdateInstance, KeyEnrollment, deleteCredentialsLocally (sign out, remove) and SignedOutMarker take it. Constructor changes touched every Env in tests.
+
 ## Edge cases and solutions
 
 (none yet)

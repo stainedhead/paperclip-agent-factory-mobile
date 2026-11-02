@@ -86,7 +86,7 @@ class EnrollmentFailureTest {
             val unpaired = signedIn.copy(boardKeyId = null, keyExpiresAt = null, status = InstanceStatus.SignedOut)
             val env = Env(listOf(unpaired))
             val cancelling = CancelAfterPut(env.secrets)
-            val enrollment = KeyEnrollment(env.auth, cancelling, env.repository, env.clock, env.settings)
+            val enrollment = KeyEnrollment(env.auth, cancelling, env.repository, env.clock, env.settings, env.locks)
 
             val job =
                 launch {
@@ -108,7 +108,7 @@ class EnrollmentFailureTest {
             val env = Env(listOf(signedIn))
             env.withOldKey()
             val failing = FailFirstUpdate(env.repository)
-            val enrollment = KeyEnrollment(env.auth, env.secrets, failing, env.clock, env.settings)
+            val enrollment = KeyEnrollment(env.auth, env.secrets, failing, env.clock, env.settings, env.locks)
 
             shouldThrow<IllegalStateException> {
                 enrollment.complete(signedIn, Secret.of(newToken), AuthMethod.PairedBoardKey, null)

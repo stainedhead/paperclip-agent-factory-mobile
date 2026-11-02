@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.ResolveCompanyContext
 import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
 import com.stainedhead.paperclipmobile.application.agent.InvokeHeartbeat
@@ -132,8 +133,9 @@ class Env(
     private val validate = ValidateInstanceAddress(allowInsecureLocal = false)
     private val deviceAuth = DeviceAuthGuard(biometrics)
     private val revoker = KeyRevoker(auth)
-    private val signedOutMarker = SignedOutMarker(repository)
-    private val enrollment = KeyEnrollment(auth, secrets, repository, clock, settings)
+    val locks = InstanceLocks()
+    private val signedOutMarker = SignedOutMarker(repository, locks)
+    private val enrollment = KeyEnrollment(auth, secrets, repository, clock, settings, locks)
 
     init {
         auth.hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }
@@ -142,7 +144,7 @@ class Env(
 
     val probe = ProbeInstance(health)
     val add = AddInstance(repository, clock, ids, validate)
-    val update = UpdateInstance(repository, secrets, validate)
+    val update = UpdateInstance(repository, secrets, validate, locks)
     val get = GetInstance(repository)
     val pair = PairInstance(repository, auth, browser, clock, settings, enrollment)
     val saveKey = SaveManualBoardKey(repository, auth, enrollment)
@@ -153,8 +155,8 @@ class Env(
     val observeInstances = ObserveInstances(repository)
     val observeSettings = ObserveAppSettings(settings)
     val reorder = ReorderInstances(repository)
-    val remove = RemoveInstance(repository, secrets, revoker, deviceAuth)
-    val signOut = SignOutInstance(repository, secrets, revoker)
+    val remove = RemoveInstance(repository, secrets, revoker, deviceAuth, locks)
+    val signOut = SignOutInstance(repository, secrets, revoker, locks)
     val signOutEverywhere = SignOutEverywhere(repository, signOut)
     val listKeys = ListBoardKeys(repository, auth, signedOutMarker)
     val revokeKey = RevokeBoardKey(repository, auth, signOut, signedOutMarker)

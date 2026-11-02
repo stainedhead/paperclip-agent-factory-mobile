@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.auth
 
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.domain.AuthMethod
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
@@ -53,6 +54,7 @@ class KeyEnrollment(
     private val repository: InstanceRepository,
     private val clock: Clock,
     private val settings: AppSettingsStore,
+    private val locks: InstanceLocks,
 ) {
     /**
      * [knownKeyId] is given when the key was already validated against [instance]'s address. Otherwise the key is
@@ -91,34 +93,39 @@ class KeyEnrollment(
         expiresAt: Instant?,
     ): SignInResult =
         withContext(NonCancellable) {
-            val policy = SecretPolicy(requireUserPresence = settings.observe().first().appLockEnabled)
-            val key = SecretKey(instance.id, SecretName.BoardToken)
-            if (secrets.put(key, token, policy) !=
-                SecretWriteResult.Stored
-            ) {
-                return@withContext SignInResult.StorageFailed
-            }
-            var committed = false
-            try {
-                val fresh = repository.get(instance.id)
-                if (fresh == null || fresh.baseUri != instance.baseUri) {
-                    return@withContext SignInResult.Failed(DomainError.Conflict)
-                }
-                repository.update(
-                    fresh.copy(
-                        authMethod = method,
-                        boardKeyId = keyId,
-                        keyExpiresAt = expiresAt,
-                        status = InstanceStatus.SignedIn,
-                        lastConnectedAt = clock.now(),
-                    ),
-                )
-                committed = true
-                SignInResult.SignedIn(keyId, expiresAt)
-            } finally {
-                if (!committed) discard(instance, key)
-            }
+            locks.withLock(instance.id) { write(instance, token, method, keyId, expiresAt) }
         }
+
+    /** Runs under the factory's lock (ADR-033), so an address edit cannot interleave with the put and the update. */
+    private suspend fun write(
+        instance: Instance,
+        token: Secret,
+        method: AuthMethod,
+        keyId: String?,
+        expiresAt: Instant?,
+    ): SignInResult {
+        val policy = SecretPolicy(requireUserPresence = settings.observe().first().appLockEnabled)
+        val key = SecretKey(instance.id, SecretName.BoardToken)
+        if (secrets.put(key, token, policy) != SecretWriteResult.Stored) return SignInResult.StorageFailed
+        var committed = false
+        try {
+            val fresh = repository.get(instance.id)
+            if (fresh == null || fresh.baseUri != instance.baseUri) return SignInResult.Failed(DomainError.Conflict)
+            repository.update(
+                fresh.copy(
+                    authMethod = method,
+                    boardKeyId = keyId,
+                    keyExpiresAt = expiresAt,
+                    status = InstanceStatus.SignedIn,
+                    lastConnectedAt = clock.now(),
+                ),
+            )
+            committed = true
+            return SignInResult.SignedIn(keyId, expiresAt)
+        } finally {
+            if (!committed) discard(instance, key)
+        }
+    }
 
     /** Removes an uncommitted key, and marks the factory Signed out if it is still at its address. */
     private suspend fun discard(

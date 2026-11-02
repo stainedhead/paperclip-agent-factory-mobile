@@ -184,7 +184,7 @@ class InstanceUseCasesTest {
             val instance = TestData.instance()
             val env = Env(listOf(instance))
             env.storeToken(instance)
-            val update = UpdateInstance(env.repository, env.secrets, env.validate)
+            val update = UpdateInstance(env.repository, env.secrets, env.validate, env.locks)
 
             val result = update(instance.id, instance.toEdit().copy(displayName = "Renamed"))
 
@@ -201,7 +201,7 @@ class InstanceUseCasesTest {
             val instance = TestData.instance()
             val env = Env(listOf(instance))
             env.storeToken(instance)
-            val update = UpdateInstance(env.repository, env.secrets, env.validate)
+            val update = UpdateInstance(env.repository, env.secrets, env.validate, env.locks)
 
             val result =
                 update(
@@ -226,7 +226,7 @@ class InstanceUseCasesTest {
             val instance = TestData.instance()
             val env = Env(listOf(instance))
             env.storeToken(instance)
-            val update = UpdateInstance(env.repository, env.secrets, env.validate)
+            val update = UpdateInstance(env.repository, env.secrets, env.validate, env.locks)
 
             val result = update(instance.id, instance.toEdit().copy(address = "https://never-probed.example.com"))
 
@@ -241,7 +241,7 @@ class InstanceUseCasesTest {
         runTest {
             val instance = TestData.instance()
             val env = Env(listOf(instance))
-            val update = UpdateInstance(env.repository, env.secrets, env.validate)
+            val update = UpdateInstance(env.repository, env.secrets, env.validate, env.locks)
             val edit = instance.toEdit().copy(address = "https://other.example.com")
 
             update(instance.id, edit.copy(probed = accepted("https://different.example.com"))) shouldBe
@@ -260,7 +260,7 @@ class InstanceUseCasesTest {
         runTest {
             val instance = TestData.instance("a", "Home")
             val env = Env(listOf(instance, TestData.instance("b", "Cloud", sortOrder = 1)))
-            val update = UpdateInstance(env.repository, env.secrets, env.validate)
+            val update = UpdateInstance(env.repository, env.secrets, env.validate, env.locks)
 
             (
                 update(
@@ -287,7 +287,7 @@ class InstanceUseCasesTest {
             val env = Env(listOf(instance))
             val pin = SpkiPin.parse("47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=")!!
 
-            UpdateInstance(env.repository, env.secrets, env.validate)(
+            UpdateInstance(env.repository, env.secrets, env.validate, env.locks)(
                 instance.id,
                 instance.toEdit().copy(defaultCompanyId = TestData.globex, pins = listOf(pin)),
             )

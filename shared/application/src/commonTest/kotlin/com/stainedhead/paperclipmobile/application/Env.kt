@@ -64,8 +64,9 @@ class Env(
     val validate = ValidateInstanceAddress(allowInsecureLocal = false)
     val deviceAuth = DeviceAuthGuard(biometrics)
     val revoker = KeyRevoker(auth)
-    val signedOut = SignedOutMarker(repository)
-    val enrollment = KeyEnrollment(auth, secrets, repository, clock, settings)
+    val locks = InstanceLocks()
+    val signedOut = SignedOutMarker(repository, locks)
+    val enrollment = KeyEnrollment(auth, secrets, repository, clock, settings, locks)
 
     init {
         auth.hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }

@@ -39,7 +39,7 @@ class EnrollmentAddressChangeTest {
 
     private fun Env.pair() = PairInstance(repository, auth, browser, clock, settings, enrollment)
 
-    private fun Env.update() = UpdateInstance(repository, secrets, validate)
+    private fun Env.update() = UpdateInstance(repository, secrets, validate, locks)
 
     private fun edit(
         name: String = unpaired.displayName,
@@ -131,7 +131,7 @@ class EnrollmentAddressChangeTest {
             val env = env()
             val signedIn = unpaired.copy(boardKeyId = "key-x", status = InstanceStatus.SignedIn)
             val racing = RacingRepository(env.repository) { env.repository.update(signedIn) }
-            val update = UpdateInstance(racing, env.secrets, env.validate)
+            val update = UpdateInstance(racing, env.secrets, env.validate, env.locks)
 
             update(unpaired.id, edit(name = "Renamed"))
 

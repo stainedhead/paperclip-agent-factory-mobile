@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.auth
 
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.deleteCredentialsLocally
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
@@ -25,6 +26,7 @@ class SignOutInstance(
     private val repository: InstanceRepository,
     private val secrets: SecretStore,
     private val revoker: KeyRevoker,
+    private val locks: InstanceLocks,
 ) {
     suspend operator fun invoke(id: InstanceId): SignOutResult {
         val instance = repository.get(id) ?: return SignOutResult.NotFound
@@ -32,7 +34,7 @@ class SignOutInstance(
         try {
             if (instance.status == InstanceStatus.SignedIn) outcome = revoker.revoke(id)
         } finally {
-            deleteCredentialsLocally(secrets, id) {
+            deleteCredentialsLocally(secrets, locks, id) {
                 repository.get(id)?.let {
                     repository.update(
                         it.copy(boardKeyId = null, keyExpiresAt = null, status = InstanceStatus.SignedOut),

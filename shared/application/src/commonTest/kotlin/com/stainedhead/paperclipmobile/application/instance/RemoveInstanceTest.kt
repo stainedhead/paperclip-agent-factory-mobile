@@ -20,7 +20,7 @@ class RemoveInstanceTest {
     private val instance = TestData.instance()
     private val other = TestData.instance("other", "Cloud", sortOrder = 1)
 
-    private fun Env.remove() = RemoveInstance(repository, secrets, revoker, deviceAuth)
+    private fun Env.remove() = RemoveInstance(repository, secrets, revoker, deviceAuth, locks)
 
     private suspend fun Env.storeAllSecrets() {
         SecretName.entries.forEach {

@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.application.instance
 
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.auth.KeyRevoker
 import com.stainedhead.paperclipmobile.application.auth.RevokeOutcome
 import com.stainedhead.paperclipmobile.application.deleteCredentialsLocally
@@ -34,6 +35,7 @@ class RemoveInstance(
     private val secrets: SecretStore,
     private val revoker: KeyRevoker,
     private val deviceAuth: DeviceAuthGuard,
+    private val locks: InstanceLocks,
 ) {
     suspend operator fun invoke(id: InstanceId): RemoveInstanceResult {
         val instance = repository.get(id) ?: return RemoveInstanceResult.NotFound
@@ -43,7 +45,7 @@ class RemoveInstance(
         try {
             if (instance.status == InstanceStatus.SignedIn) outcome = revoker.revoke(id)
         } finally {
-            deleteCredentialsLocally(secrets, id) { repository.delete(id) }
+            deleteCredentialsLocally(secrets, locks, id) { repository.delete(id) }
         }
         return RemoveInstanceResult.Removed(outcome)
     }

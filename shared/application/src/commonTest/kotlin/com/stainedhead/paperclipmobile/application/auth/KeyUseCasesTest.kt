@@ -96,7 +96,7 @@ class KeyUseCasesTest {
             val env = Env(listOf(signedIn))
             env.storeToken()
 
-            val result = SignOutInstance(env.repository, env.secrets, env.revoker)(signedIn.id)
+            val result = SignOutInstance(env.repository, env.secrets, env.revoker, env.locks)(signedIn.id)
 
             result shouldBe SignOutResult.SignedOut(RevokeOutcome.Revoked)
             env.auth.count("revokeCurrentKey") shouldBe 1
@@ -114,7 +114,7 @@ class KeyUseCasesTest {
             env.storeToken()
             env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.Timeout)
 
-            val result = SignOutInstance(env.repository, env.secrets, env.revoker)(signedIn.id)
+            val result = SignOutInstance(env.repository, env.secrets, env.revoker, env.locks)(signedIn.id)
 
             result shouldBe SignOutResult.SignedOut(RevokeOutcome.Unconfirmed)
             env.auth.count("revokeCurrentKey") shouldBe 1
@@ -127,7 +127,7 @@ class KeyUseCasesTest {
             val env = Env(listOf(signedIn))
             env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.Unauthorized)
 
-            SignOutInstance(env.repository, env.secrets, env.revoker)(signedIn.id) shouldBe
+            SignOutInstance(env.repository, env.secrets, env.revoker, env.locks)(signedIn.id) shouldBe
                 SignOutResult.SignedOut(RevokeOutcome.AlreadyInvalid)
         }
 
@@ -135,7 +135,7 @@ class KeyUseCasesTest {
     fun `signing out of a factory that is already signed out does not call the server`() =
         runTest {
             val env = Env(listOf(unpaired))
-            val signOut = SignOutInstance(env.repository, env.secrets, env.revoker)
+            val signOut = SignOutInstance(env.repository, env.secrets, env.revoker, env.locks)
 
             signOut(unpaired.id) shouldBe SignOutResult.SignedOut(RevokeOutcome.NotAttempted)
             signOut(InstanceId("zzz")) shouldBe SignOutResult.NotFound
@@ -148,7 +148,11 @@ class KeyUseCasesTest {
             val env = Env(listOf(signedIn, TestData.instance("b", "Cloud", sortOrder = 1)))
             env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.Unreachable)
 
-            val result = SignOutEverywhere(env.repository, SignOutInstance(env.repository, env.secrets, env.revoker))()
+            val result =
+                SignOutEverywhere(
+                    env.repository,
+                    SignOutInstance(env.repository, env.secrets, env.revoker, env.locks),
+                )()
 
             result shouldBe SignOutEverywhereResult(signedOut = 2, unconfirmed = 2, failed = emptyList())
             env.repository.current.all { it.status == InstanceStatus.SignedOut } shouldBe true
@@ -194,7 +198,7 @@ class KeyUseCasesTest {
                 RevokeBoardKey(
                     env.repository,
                     env.auth,
-                    SignOutInstance(env.repository, env.secrets, env.revoker),
+                    SignOutInstance(env.repository, env.secrets, env.revoker, env.locks),
                     env.signedOut,
                 )
 
@@ -216,7 +220,7 @@ class KeyUseCasesTest {
                 RevokeBoardKey(
                     env.repository,
                     env.auth,
-                    SignOutInstance(env.repository, env.secrets, env.revoker),
+                    SignOutInstance(env.repository, env.secrets, env.revoker, env.locks),
                     env.signedOut,
                 )
 

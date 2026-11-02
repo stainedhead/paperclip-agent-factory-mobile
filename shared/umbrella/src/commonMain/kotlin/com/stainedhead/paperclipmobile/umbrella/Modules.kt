@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.ResolveCompanyContext
 import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
 import com.stainedhead.paperclipmobile.application.approval.ApproveApproval
@@ -134,9 +135,10 @@ internal fun useCaseModule(allowInsecureLocal: Boolean) =
         single { ValidateInstanceAddress(allowInsecureLocal) }
         single { DeviceAuthGuard(get()) }
         single { KeyRevoker(get()) }
-        single { SignedOutMarker(get()) }
+        single { InstanceLocks() }
+        single { SignedOutMarker(get(), get()) }
         guardedGateways()
-        single { KeyEnrollment(get(), get(), get(), get(), get()) }
+        single { KeyEnrollment(get(), get(), get(), get(), get(), get()) }
         instanceUseCases()
         authUseCases()
         settingsUseCases()
@@ -147,10 +149,10 @@ internal fun useCaseModule(allowInsecureLocal: Boolean) =
 private fun org.koin.core.module.Module.instanceUseCases() {
     single { ProbeInstance(get()) }
     single { AddInstance(get(), get(), get(), get()) }
-    single { UpdateInstance(get(), get(), get()) }
+    single { UpdateInstance(get(), get(), get(), get()) }
     single { GetInstance(get()) }
     single { ReorderInstances(get()) }
-    single { RemoveInstance(get(), get(), get(), get()) }
+    single { RemoveInstance(get(), get(), get(), get(), get()) }
     single { ObserveInstances(get()) }
     single { SwitchInstance(get(), get()) }
     single { SwitchCompany(get()) }
@@ -162,7 +164,7 @@ private fun org.koin.core.module.Module.authUseCases() {
     single { PairInstance(get(), get(), get(), get(), get(), get()) }
     single { SaveManualBoardKey(get(), get(), get()) }
     single { LoadInstanceAccess(get(), get(), get(), get()) }
-    single { SignOutInstance(get(), get(), get()) }
+    single { SignOutInstance(get(), get(), get(), get()) }
     single { SignOutEverywhere(get(), get()) }
     single { ListBoardKeys(get(), get(), get()) }
     single { RevokeBoardKey(get(), get(), get(), get()) }

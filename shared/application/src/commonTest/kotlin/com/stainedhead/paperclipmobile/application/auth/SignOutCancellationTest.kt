@@ -25,7 +25,7 @@ class SignOutCancellationTest {
             val env = Env(listOf(signedIn))
             env.storeToken(signedIn)
             env.auth.onCall = { if (it.name == "revokeCurrentKey") awaitCancellation() }
-            val signOut = SignOutInstance(env.repository, env.secrets, env.revoker)
+            val signOut = SignOutInstance(env.repository, env.secrets, env.revoker, env.locks)
 
             val job = launch { signOut(signedIn.id) }
             advanceUntilIdle()
@@ -51,7 +51,7 @@ class SignOutCancellationTest {
                 }
             }
 
-            SignOutInstance(env.repository, env.secrets, env.revoker)(signedIn.id)
+            SignOutInstance(env.repository, env.secrets, env.revoker, env.locks)(signedIn.id)
 
             val stored = env.repository.get(signedIn.id)!!
             stored.displayName shouldBe "Renamed meanwhile"
@@ -66,7 +66,7 @@ class SignOutCancellationTest {
             env.storeToken(signedIn)
             env.storeToken(second)
             val failingSecrets = FailingDelete(env.secrets, signedIn.id)
-            val signOut = SignOutInstance(env.repository, failingSecrets, env.revoker)
+            val signOut = SignOutInstance(env.repository, failingSecrets, env.revoker, env.locks)
 
             val result = SignOutEverywhere(env.repository, signOut)()
 
@@ -86,7 +86,7 @@ class SignOutCancellationTest {
                 launch {
                     SignOutEverywhere(
                         env.repository,
-                        SignOutInstance(env.repository, env.secrets, env.revoker),
+                        SignOutInstance(env.repository, env.secrets, env.revoker, env.locks),
                     )()
                 }
             advanceUntilIdle()

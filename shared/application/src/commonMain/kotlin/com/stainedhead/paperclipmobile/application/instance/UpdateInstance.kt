@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.instance
 
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.ValidateInstanceAddress
 import com.stainedhead.paperclipmobile.domain.BaseUri
 import com.stainedhead.paperclipmobile.domain.BaseUriError
@@ -56,6 +57,7 @@ class UpdateInstance(
     private val repository: InstanceRepository,
     private val secrets: SecretStore,
     private val validateAddress: ValidateInstanceAddress,
+    private val locks: InstanceLocks,
 ) {
     suspend operator fun invoke(
         id: InstanceId,
@@ -69,12 +71,16 @@ class UpdateInstance(
             }
 
             is BaseUriResult.Valid -> {
-                if (nameIssue != null) UpdateInstanceResult.InvalidName(nameIssue) else apply(id, edit, parsed)
+                if (nameIssue != null) {
+                    UpdateInstanceResult.InvalidName(nameIssue)
+                } else {
+                    locks.withLock(id) { apply(id, edit, parsed) }
+                }
             }
         }
     }
 
-    /** Reads the factory again right before writing, so a key enrollment that finished meanwhile is not reverted. */
+    /** Runs under the factory's lock and reads it again, so a finished key enrollment is not reverted. */
     private suspend fun apply(
         id: InstanceId,
         edit: InstanceEdit,

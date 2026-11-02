@@ -92,3 +92,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: F-A-3 done (401 marks Signed out in one choke point).
 - 2026-11-01: F-A-6 done (timeout reconciliation compares with the pre-call state).
 - 2026-11-01: F-A-8 done (decide re-reads the decision before device auth).
+- 2026-11-01: F-A-1 residual done (per-factory lock (ADR-033)).
