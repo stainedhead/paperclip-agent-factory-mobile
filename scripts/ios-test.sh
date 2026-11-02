@@ -4,6 +4,8 @@
 #   IOS_SIMULATOR_ID=<udid>  pick a specific simulator (default: first available iPhone on the newest iOS runtime)
 #   TEST_SET=all|functional|audits  which tests run (default all). CI runs `functional` as the blocking step and
 #                            `audits` as a separate, non-blocking one (docs/architectural-decision-record.md, ADR-080).
+#   SHARD=1|2|3             with TEST_SET=functional, run only that third of the functional tests (CI runs the three in
+#                            parallel jobs to stay well under the job timeout, ADR-104). Unset runs them all.
 #   RESULT_BUNDLE=<path>     also write the .xcresult (failure screenshots and element hierarchies) there
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -74,10 +76,32 @@ audit_tests=(
   iosAppUITests/ShellUITests/testAccessibilityAuditBaselineOfTheShell
   iosAppUITests/OperationsAuditUITests
 )
+# The functional UI test classes by shard. Every UI test class must be listed in a shard or be audit-only, so a new
+# class cannot silently run nowhere.
+shard_targets() {
+  case "$1" in
+    1) echo "iosAppTests iosAppUITests/FirstRunUITests iosAppUITests/EditFactoryUITests iosAppUITests/FactoriesUITests iosAppUITests/ManageFactoriesUITests iosAppUITests/SettingsUITests iosAppUITests/ShellUITests" ;;
+    2) echo "iosAppUITests/InboxUITests iosAppUITests/DecisionUITests" ;;
+    3) echo "iosAppUITests/ApprovalUITests iosAppUITests/BudgetUITests iosAppUITests/FactoryHomeUITests iosAppUITests/AgentsUITests iosAppUITests/AgentDetailUITests iosAppUITests/RunViewerUITests" ;;
+    *) echo "error: SHARD must be 1, 2 or 3" >&2; exit 1 ;;
+  esac
+}
+audit_only_classes="OperationsAuditUITests"
+for class in $(grep -rhoE 'final class [A-Za-z]+UITests' iosApp/Tests/iosAppUITests | awk '{print $3}'); do
+  if ! { for n in 1 2 3; do shard_targets "$n"; done; echo "$audit_only_classes"; } | grep -qw "$class"; then
+    echo "error: $class is in no shard of scripts/ios-test.sh" >&2
+    exit 1
+  fi
+done
+
 filter_args=()
 case "${TEST_SET:-all}" in
   audits) for t in "${audit_tests[@]}"; do filter_args+=("-only-testing:$t"); done ;;
-  functional) for t in "${audit_tests[@]}"; do filter_args+=("-skip-testing:$t"); done ;;
+  functional)
+    if [ -n "${SHARD:-}" ]; then
+      for target in $(shard_targets "$SHARD"); do filter_args+=("-only-testing:$target"); done
+    fi
+    for t in "${audit_tests[@]}"; do filter_args+=("-skip-testing:$t"); done ;;
   all) ;;
   *) echo "error: TEST_SET must be all, functional or audits" >&2; exit 1 ;;
 esac

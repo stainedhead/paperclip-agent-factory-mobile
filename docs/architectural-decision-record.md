@@ -423,3 +423,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** `FakeAgentGateway.invokeHeartbeat` puts the agent to work and reports the run (`onRunStarted`); the demo wiring adds it to the run store. `DemoControls.failReads` makes the Factory, Agents and Run reads fail with a server error; launch options `-demo-server-error` and `-demo-open run:<id>|agent:<id>` expose them. The demo's Running-now data, events and log are the mock's.
+
+## ADR-104: The functional iOS tests run as three parallel CI jobs by test class
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Context.** The functional step took 40.5 minutes on the runner for the 2i-3 head (run 41542545380, 52 minutes in all, 60 minute timeout) and 2i-4 adds about 13 UI tests plus Swift Testing cases.
+
+**Decision.** `scripts/ios-test.sh` takes `SHARD=1|2|3` with `TEST_SET=functional` (a fixed list of test classes per shard, and a check that fails the script if a UI test class is in no shard). `ios.yml` runs a matrix `ios (1)`, `ios (2)`, `ios (3)` and `ios (audits)`; lint and the Kotlin/Native tests run in shard 1 only; the audits job is `continue-on-error` (ADR-080). Every `uses:` stays SHA-pinned. Required status checks named `ios` must be renamed to the four matrix names (audits not required).
+
+**Consequences.** Each shard repeats the setup and the XCFramework build (about 5 minutes) but the longest shard is about a third of the tests.

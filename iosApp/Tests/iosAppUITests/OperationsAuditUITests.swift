@@ -13,7 +13,7 @@ final class OperationsAuditUITests: XCTestCase {
     /// expectation is non-strict so a change of runtime that makes them pass does not fail the test.
     private func assertCleanExceptScrollFold(
         _ findings: @autoclosure () throws -> [String], file: StaticString = #filePath, line: UInt = #line
-    ) rethrows {
+    ) throws {
         let options = XCTExpectedFailure.Options()
         options.isStrict = false
         XCTExpectFailure(
@@ -28,20 +28,20 @@ final class OperationsAuditUITests: XCTestCase {
     @MainActor
     func testAccessibilityAuditOfFactoryHome() throws {
         let app = launchFactoryHome()
-        assertCleanExceptScrollFold(try auditTabRoot(app, screen: "factory"))
+        try assertCleanExceptScrollFold(try auditTabRoot(app, screen: "factory"))
     }
 
     @MainActor
     func testAccessibilityAuditOfOfflineFactoryHome() throws {
         let app = launchOperations(tab: "factory", root: "factory-root", extra: ["-demo-offline-after-detail"])
         XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 30))
-        assertCleanExceptScrollFold(try auditTabRoot(app, screen: "factory-offline"))
+        try assertCleanExceptScrollFold(try auditTabRoot(app, screen: "factory-offline"))
     }
 
     @MainActor
     func testAccessibilityAuditOfAgents() throws {
         let app = launchAgents()
-        assertCleanExceptScrollFold(try auditTabRoot(app, screen: "agents"))
+        try assertCleanExceptScrollFold(try auditTabRoot(app, screen: "agents"))
     }
 
     @MainActor
