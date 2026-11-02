@@ -6,7 +6,6 @@ import com.stainedhead.paperclipmobile.application.MutationResult
 import com.stainedhead.paperclipmobile.application.failed
 import com.stainedhead.paperclipmobile.application.needsReread
 import com.stainedhead.paperclipmobile.application.retryingRead
-import com.stainedhead.paperclipmobile.application.toMutation
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Approval
 import com.stainedhead.paperclipmobile.domain.ApprovalComment
@@ -104,7 +103,10 @@ class RequestRevision(
     }
 }
 
-/** Adds a comment to an approval (PRD FR-051). */
+/**
+ * Adds a comment to an approval (PRD FR-051). Like [com.stainedhead.paperclipmobile.application.issue.CommentOnIssue]:
+ * the comment ids are read once before the call (ADR-032) and a timeout is reconciled against them, never guessed.
+ */
 class CommentOnApproval(
     private val gateway: ApprovalGateway,
 ) {
@@ -115,7 +117,34 @@ class CommentOnApproval(
     ): MutationResult<ApprovalComment> {
         if (!Permissions.allows(context.role, Action.CommentOnApproval)) return MutationResult.Denied
         if (body.isBlank()) return MutationResult.Invalid(InvalidInput.BodyRequired)
-        return gateway.addComment(context.scope, id, body).toMutation()
+        val before = commentIds(context, id)
+        return when (val result = gateway.addComment(context.scope, id, body)) {
+            is DomainResult.Success -> MutationResult.Done(result.value)
+            is DomainResult.Failure -> reconcile(context, id, body, result.error, before)
+        }
+    }
+
+    private suspend fun commentIds(
+        context: CompanyContext,
+        id: ApprovalId,
+    ): Set<String>? = (gateway.comments(context.scope, id) as? DomainResult.Success)?.value?.map { it.id }?.toSet()
+
+    private suspend fun reconcile(
+        context: CompanyContext,
+        id: ApprovalId,
+        body: String,
+        error: DomainError,
+        before: Set<String>?,
+    ): MutationResult<ApprovalComment> {
+        if (!error.needsReread()) return MutationResult.Failed(error)
+        val thread =
+            (gateway.comments(context.scope, id) as? DomainResult.Success)?.value
+                ?: return MutationResult.Failed(error)
+        val own =
+            before?.let { known ->
+                thread.firstOrNull { it.id !in known && it.authorUserId == context.userId && it.body == body }
+            }
+        return own?.let { MutationResult.Reconciled(error, it) } ?: MutationResult.Unknown(error)
     }
 }
 

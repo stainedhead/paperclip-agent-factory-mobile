@@ -43,6 +43,9 @@ class FakeIssueGateway(
     val commentOptions = mutableListOf<CommentOptions>()
     val queries = mutableListOf<IssueQuery>()
 
+    /** The server stores a comment even though the answer is a scripted failure (a timeout after the write). */
+    var storesCommentOnFailure = false
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
@@ -103,7 +106,8 @@ class FakeIssueGateway(
         options: CommentOptions,
     ): DomainResult<Comment> {
         commentOptions += options
-        record("addComment")?.let { return DomainResult.Failure(it) }
+        val scripted = record("addComment")
+        if (scripted != null && !storesCommentOnFailure) return DomainResult.Failure(scripted)
         val issue = store[id] ?: return DomainResult.Failure(DomainError.NotFound)
         if (options.reopen && !issue.status.isOpen) store[id] = issue.copy(status = IssueStatus.Todo)
         val comment =
@@ -116,7 +120,7 @@ class FakeIssueGateway(
                 TestData.epoch,
             )
         commentStore.getOrPut(id) { mutableListOf() } += comment
-        return DomainResult.Success(comment)
+        return scripted?.let { DomainResult.Failure(it) } ?: DomainResult.Success(comment)
     }
 
     override suspend fun setStatus(

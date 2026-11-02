@@ -41,8 +41,8 @@ sealed interface InvalidInput {
 }
 
 /**
- * What a mutation use case reports (ADR-019). Everything except [Done], [Reconciled] and [Failed] means no gateway
- * call was made.
+ * What a mutation use case reports (ADR-019). Everything except [Done], [Reconciled], [Unknown] and [Failed] means no
+ * gateway call was made.
  */
 sealed interface MutationResult<out T> {
     data class Done<out T>(
@@ -74,6 +74,14 @@ sealed interface MutationResult<out T> {
         val error: DomainError,
         val current: T,
     ) : MutationResult<T>
+
+    /**
+     * The call timed out and what could be read afterwards does not show whether it took effect (F-A-6). The caller
+     * must show that, must not report success or "skipped", and must not send the call again without looking.
+     */
+    data class Unknown(
+        val error: DomainError,
+    ) : MutationResult<Nothing>
 }
 
 internal fun <T> DomainResult<T>.toMutation(): MutationResult<T> =

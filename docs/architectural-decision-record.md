@@ -202,3 +202,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `SignedOutAware<X>Gateway` decorators (application layer) wrap the nine company-scoped gateways and call `SignedOutMarker` on every `DomainError.Unauthorized`, so no use case repeats the check. The composition root binds adapters (or fakes) under the `RawPort` qualifier and gives use cases the decorated bindings. The marker writes only when the factory is not already Signed out, so repeated 401s cost one status write. The access and key-list use cases keep their explicit calls (they also go through `AuthGateway`, which is not company-scoped and is not decorated).
 
 **Consequences.** Real Phase 1b adapters must map HTTP 401 to `DomainError.Unauthorized` (and 429 to `RateLimited`); the decorator only sees domain results. A new company-scoped gateway needs a decorator and a `RawPort` binding.
+
+## ADR-032: A mutation may read the state before its one gateway call; a timeout is reconciled against it, never guessed
+
+**Status:** Accepted (2026-11-01, review fixes F-A-6 and F-A-8)
+
+**Context.** "One gateway call per mutation, never retried" (ADR-019) left reconciliation after a timeout to a single re-read. For run now and comments that read cannot tell whether THIS tap took effect: a live run that was already running, or another person's newest comment, looked like success, and a missing run was reported as `Skipped`, a verdict the server never gave. Separately, destructiveness and eligibility were decided from an entity the caller loaded earlier.
+
+**Decision.** The rule is "one gateway call for the MUTATION". A use case may read before it, never retries the mutation, and never makes a second mutation. `InvokeHeartbeat`, `CommentOnIssue` and `CommentOnApproval` read the live run ids or comment ids before the call; after a timeout or conflict they read once more and report `Reconciled` only for a NEW live run, or a new comment by this person with this text. Otherwise the result is `MutationResult.Unknown(error)`: the call may or may not have happened. If the read before the call failed there is nothing to compare, so the result is also `Unknown`; if the read afterwards fails the original error is reported as `Failed`. Presentation maps `Unknown` to `FeedbackKind.Unknown` (a refresh prompt, no success, no "skipped") and reloads the thread. Re-reading before deciding device authentication (F-A-8) uses the same allowance.
+
+**Consequences.** Run now and comments cost one extra read per tap. `InvokeOutcome.Skipped` stays in the domain for the server's own verdict, which the reconciliation path no longer produces.

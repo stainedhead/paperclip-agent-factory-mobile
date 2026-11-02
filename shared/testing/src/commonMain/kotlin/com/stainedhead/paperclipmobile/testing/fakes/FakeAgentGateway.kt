@@ -24,6 +24,9 @@ class FakeAgentGateway(
     val calls = mutableMapOf<String, Int>()
     val failures = mutableMapOf<String, DomainError>()
 
+    /** Runs when `invokeHeartbeat` is called, before any scripted failure: what the server did meanwhile. */
+    var onInvoke: (() -> Unit)? = null
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
@@ -64,7 +67,9 @@ class FakeAgentGateway(
         scope: CompanyScope,
         id: AgentId,
     ): DomainResult<InvokeOutcome> {
-        record("invokeHeartbeat")?.let { return DomainResult.Failure(it) }
+        val scripted = record("invokeHeartbeat")
+        onInvoke?.invoke()
+        scripted?.let { return DomainResult.Failure(it) }
         val agent = store[id] ?: return DomainResult.Failure(DomainError.NotFound)
         val run = AgentFixtures.run("run-invoked-${id.value}", RunStatus.Queued, agent.id, null)
         return DomainResult.Success(InvokeOutcome.Started(run))

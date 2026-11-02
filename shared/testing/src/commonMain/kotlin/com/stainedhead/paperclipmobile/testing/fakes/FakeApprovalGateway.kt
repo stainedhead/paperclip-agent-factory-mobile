@@ -31,6 +31,9 @@ class FakeApprovalGateway(
     /** Runs after a scripted failure so a test can model "resolved elsewhere while the call was in flight". */
     var serverChangesOnFailure: ((Approval) -> Approval)? = null
 
+    /** The server stores a comment even though the answer is a scripted failure (a timeout after the write). */
+    var storesCommentOnFailure = false
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
@@ -102,11 +105,12 @@ class FakeApprovalGateway(
         id: ApprovalId,
         body: String,
     ): DomainResult<ApprovalComment> {
-        record("addComment")?.let { return DomainResult.Failure(it) }
+        val scripted = record("addComment")
+        if (scripted != null && !storesCommentOnFailure) return DomainResult.Failure(scripted)
         if (id !in store) return DomainResult.Failure(DomainError.NotFound)
         val comment = ApprovalComment("c-${commentList.size + 1}", body, TestData.epoch, authorUserId = "user-1")
         commentList.add(comment)
-        return DomainResult.Success(comment)
+        return scripted?.let { DomainResult.Failure(it) } ?: DomainResult.Success(comment)
     }
 
     private fun resolve(

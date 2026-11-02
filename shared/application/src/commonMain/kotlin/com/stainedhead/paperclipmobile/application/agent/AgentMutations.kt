@@ -4,14 +4,17 @@ import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
 import com.stainedhead.paperclipmobile.application.InvalidInput
 import com.stainedhead.paperclipmobile.application.MutationResult
 import com.stainedhead.paperclipmobile.application.failed
+import com.stainedhead.paperclipmobile.application.needsReread
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.CompanyContext
+import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.Permissions
 import com.stainedhead.paperclipmobile.domain.ResolutionIssue
+import com.stainedhead.paperclipmobile.domain.RunId
 import com.stainedhead.paperclipmobile.domain.port.AgentGateway
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.RunGateway
@@ -60,7 +63,11 @@ class ResumeAgent(
     }
 }
 
-/** Wakes an agent now (PRD FR-071). After a timeout the agent's live runs say whether a run started. */
+/**
+ * Wakes an agent now (PRD FR-071). The agent's live run ids are read BEFORE the call (one read; the one gateway call for
+ * the mutation rule is unchanged, ADR-032). After a timeout the runs are read once more: a live run that was not there
+ * before is reported as started, anything else is [MutationResult.Unknown], never "skipped" or a guess (F-A-6).
+ */
 class InvokeHeartbeat(
     private val agents: AgentGateway,
     private val runs: RunGateway,
@@ -71,27 +78,39 @@ class InvokeHeartbeat(
     ): MutationResult<InvokeOutcome> {
         if (!Permissions.allows(context.role, Action.RunAgentNow)) return MutationResult.Denied
         if (!agent.canRunNow) return MutationResult.Invalid(InvalidInput.WrongStatus)
+        val before = liveRunIds(context, agent)
         return when (val result = agents.invokeHeartbeat(context.scope, agent.id)) {
-            is DomainResult.Success -> {
-                MutationResult.Done(result.value)
-            }
+            is DomainResult.Success -> MutationResult.Done(result.value)
+            is DomainResult.Failure -> reconcile(context, agent, result.error, before)
+        }
+    }
 
-            is DomainResult.Failure -> {
-                failed(result.error) {
-                    when (val list = runs.forAgent(context.scope, agent.id)) {
-                        is DomainResult.Failure -> {
-                            list
-                        }
+    private suspend fun liveRunIds(
+        context: CompanyContext,
+        agent: Agent,
+    ): Set<RunId>? =
+        (
+            runs.forAgent(
+                context.scope,
+                agent.id,
+            ) as? DomainResult.Success
+        )?.value?.filter { it.isLive }?.map { it.id }?.toSet()
 
-                        is DomainResult.Success -> {
-                            DomainResult.Success(
-                                list.value.firstOrNull { it.isLive }?.let { InvokeOutcome.Started(it) }
-                                    ?: InvokeOutcome.Skipped,
-                            )
-                        }
-                    }
-                }
-            }
+    private suspend fun reconcile(
+        context: CompanyContext,
+        agent: Agent,
+        error: DomainError,
+        before: Set<RunId>?,
+    ): MutationResult<InvokeOutcome> {
+        if (!error.needsReread()) return MutationResult.Failed(error)
+        val after =
+            (runs.forAgent(context.scope, agent.id) as? DomainResult.Success)?.value
+                ?: return MutationResult.Failed(error)
+        val started = before?.let { known -> after.firstOrNull { it.isLive && it.id !in known } }
+        return if (started != null) {
+            MutationResult.Reconciled(error, InvokeOutcome.Started(started))
+        } else {
+            MutationResult.Unknown(error)
         }
     }
 }

@@ -132,5 +132,6 @@ internal class InboxSession(
     private fun MutationResult<*>.mayHaveChangedTheServer() =
         this is MutationResult.Done ||
             this is MutationResult.Reconciled ||
+            this is MutationResult.Unknown ||
             (this is MutationResult.Failed && error == DomainError.Timeout)
 }

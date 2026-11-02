@@ -82,6 +82,8 @@ internal fun HeartbeatRun.toRow() =
 internal data class ActionResult<T>(
     val feedback: FeedbackUi?,
     val value: T?,
+    /** The call may have changed the server although there is no entity to show: the screen should reload. */
+    val reload: Boolean = false,
 )
 
 /** Resolves the person's role once, then runs one mutation use case and turns its result into screen terms. */
@@ -98,6 +100,7 @@ internal suspend fun <T> mutate(
             when (val result = call(resolved.value)) {
                 is MutationResult.Done -> ActionResult(null, result.value)
                 is MutationResult.Reconciled -> ActionResult(result.toFeedback(), result.current)
+                is MutationResult.Unknown -> ActionResult(result.toFeedback(), null, reload = true)
                 else -> ActionResult(result.toFeedback(), null)
             }
         }

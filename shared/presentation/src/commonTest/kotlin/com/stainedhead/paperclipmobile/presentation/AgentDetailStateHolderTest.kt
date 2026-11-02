@@ -215,4 +215,19 @@ class AgentDetailActionsTest {
             advanceUntilIdle()
             env.agents.count("get") shouldBe 2
         }
+
+    @Test
+    fun `heartbeat_timeout_with_preexisting_live_run_shows_the_refresh_prompt_key`() =
+        runTest {
+            val env = workEnv()
+            env.agents.failures["invokeHeartbeat"] = DomainError.Timeout
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AgentDetailIntent.RunNowTapped)
+            advanceUntilIdle()
+
+            env.agents.count("invokeHeartbeat") shouldBe 1
+            holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Unknown, error = ErrorUi(ErrorKey.Timeout))
+        }
 }

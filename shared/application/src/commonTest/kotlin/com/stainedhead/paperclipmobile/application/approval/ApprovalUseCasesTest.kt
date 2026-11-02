@@ -341,13 +341,13 @@ class CommentOnApprovalTest {
         }
 
     @Test
-    fun `a failure is reported once and never retried`() =
+    fun `a timeout is reported once, never retried, and not claimed as posted`() =
         runTest {
             val env = Env()
             env.approvals.failures["addComment"] = DomainError.Timeout
 
             CommentOnApproval(env.approvals)(env.context(), id, "hi") shouldBe
-                MutationResult.Failed(DomainError.Timeout)
+                MutationResult.Unknown(DomainError.Timeout)
             env.approvals.count("addComment") shouldBe 1
         }
 }

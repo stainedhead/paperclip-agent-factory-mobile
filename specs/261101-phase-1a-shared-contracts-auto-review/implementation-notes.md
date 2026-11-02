@@ -53,6 +53,12 @@ Red evidence: 'inbox refresh | expected:<SignedOut> but was:<SignedIn>' (all ten
 Fix: ADR-031. SignedOutAware<X>Gateway decorators over the nine company-scoped gateways (research Q2 answered: decorator at the port, not 30 use cases and not retryingRead, which has no scope). The umbrella binds adapters under RawPort and hands use cases the decorated bindings; a graph test proves the wiring (SignedOutWiringTest). SignedOutMarker now writes only when the factory is not already Signed out. Phase 1b adapters must map 401 to Unauthorized.
 Not done: the PRD fix also suggested making RevokeBoardKey refuse the revoke-other path when boardKeyId is null; left for Group 4 (needs a product decision on what the screen shows).
 
+### 2026-11-01 F-A-6 timeout reconciliation compares with the pre-call state (Group 2)
+
+Red evidence (against the old code, with MutationResult.Unknown only added): 'expected:<Unknown(error=Timeout)> but was:<Reconciled(error=Timeout, current=Started(run=...run-live...))>' (pre-existing live run reported as started), 'but was:<Reconciled(error=Timeout, current=Skipped)>' (no new run reported skipped), 'Failed(error=Timeout)' for the approval comment (no re-read at all), and for the issue comment 'but was:<Reconciled(... current=Comment(id=c-foreign ...' (a foreign newest comment reported as own).
+Fix: ADR-032. MutationResult.Unknown(error); InvokeHeartbeat, CommentOnIssue, CommentOnApproval read before the call and compare after a timeout or conflict. Presentation: FeedbackKind.Unknown, issue and approval threads reload, inbox refreshes. Existing tests that encoded the guess were changed in the same commit: run now timeout (now Unknown, 2 reads), issue comment timeout (Unknown, 4 reads in the holder test), approval comment timeout (Unknown), WorkRoleMatrixTest acceptance 10 (accepts Unknown for the comment case). Presentation tests for the new feedback were written together with the code, so their red run was not taken separately.
+Test support: FakeAgentGateway.onInvoke, FakeIssueGateway.storesCommentOnFailure, FakeApprovalGateway.storesCommentOnFailure.
+
 ## Edge cases and solutions
 
 (none yet)

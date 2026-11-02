@@ -190,16 +190,17 @@ class ResumeAndRunNowTest {
         }
 
     @Test
-    fun `a timeout on run now is sent once and the agent's live runs are read`() =
+    fun `a timeout on run now is sent once and the agent's runs are read before and after`() =
         runTest {
             val env = Env()
             env.agents.failures["invokeHeartbeat"] = DomainError.Timeout
 
             val result = InvokeHeartbeat(env.agents, env.runs)(env.context(), env.agent("agent-eng-1"))
 
-            (result as MutationResult.Reconciled).current.shouldBeStarted()
+            // Engineer 1 already had a live run before the tap, so nothing proves the tap started one (F-A-6).
+            result shouldBe MutationResult.Unknown(DomainError.Timeout)
             env.agents.count("invokeHeartbeat") shouldBe 1
-            env.runs.count("forAgent") shouldBe 1
+            env.runs.count("forAgent") shouldBe 2
         }
 
     private fun InvokeOutcome.shouldBeStarted() {

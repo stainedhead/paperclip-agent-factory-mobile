@@ -17,6 +17,9 @@ enum class FeedbackKind {
 
     /** The call failed, the screen re-read the entity and now shows its true state. */
     Reconciled,
+
+    /** The call timed out and the screen cannot tell whether it took effect: refresh before trying again. */
+    Unknown,
 }
 
 enum class InvalidKey {
@@ -109,6 +112,10 @@ internal fun MutationResult<*>.toFeedback(): FeedbackUi? =
 
         is MutationResult.Reconciled -> {
             FeedbackUi(FeedbackKind.Reconciled, error = error.toErrorUi())
+        }
+
+        is MutationResult.Unknown -> {
+            FeedbackUi(FeedbackKind.Unknown, error = error.toErrorUi())
         }
     }
 

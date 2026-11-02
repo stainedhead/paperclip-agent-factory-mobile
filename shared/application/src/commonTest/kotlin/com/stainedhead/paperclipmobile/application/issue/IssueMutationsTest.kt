@@ -56,21 +56,21 @@ class CommentOnIssueTest {
         }
 
     @Test
-    fun `FR-096 a timeout is sent once and the thread is read again`() =
+    fun `FR-096 a timeout is sent once and the thread is compared with the one before the call`() =
         runTest {
             val env = Env()
             env.issues.failures["addComment"] = DomainError.Timeout
 
             val result = CommentOnIssue(env.issues)(env.context(), id, "hi", CommentOptions())
 
-            (result as MutationResult.Reconciled).error shouldBe DomainError.Timeout
-            result.current.id shouldBe "c2"
+            // The thread holds nothing new by this person, so the app does not claim the comment was posted (F-A-6).
+            result shouldBe MutationResult.Unknown(DomainError.Timeout)
             env.issues.count("addComment") shouldBe 1
-            env.issues.count("comments") shouldBe 1
+            env.issues.count("comments") shouldBe 2
         }
 
     @Test
-    fun `a forbidden answer is reported and not retried or re-read`() =
+    fun `a forbidden answer is reported and not retried or reconciled`() =
         runTest {
             val env = Env()
             env.issues.failures["addComment"] = DomainError.Forbidden
@@ -79,7 +79,7 @@ class CommentOnIssueTest {
 
             result shouldBe MutationResult.Failed(DomainError.Forbidden)
             env.issues.count("addComment") shouldBe 1
-            env.issues.count("comments") shouldBe 0
+            env.issues.count("comments") shouldBe 1
         }
 }
 

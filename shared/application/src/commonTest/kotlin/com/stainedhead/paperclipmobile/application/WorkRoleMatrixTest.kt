@@ -128,7 +128,8 @@ class WorkRoleMatrixTest {
 
                 val result = cases.first { it.name == name }.run(env, Role.Owner)
 
-                (name to (result is MutationResult.Reconciled<*>)) shouldBe (name to true)
+                (name to (result is MutationResult.Reconciled<*> || result is MutationResult.Unknown)) shouldBe
+                    (name to true)
                 (name to sent.getValue(name)(env)) shouldBe (name to 1)
             }
         }

@@ -3,6 +3,7 @@ package com.stainedhead.paperclipmobile.application.issue
 import com.stainedhead.paperclipmobile.application.InvalidInput
 import com.stainedhead.paperclipmobile.application.MutationResult
 import com.stainedhead.paperclipmobile.application.failed
+import com.stainedhead.paperclipmobile.application.needsReread
 import com.stainedhead.paperclipmobile.application.toMutation
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Assignee
@@ -28,9 +29,10 @@ private suspend fun IssueGateway.readIssue(
     }
 
 /**
- * Comments on an issue, with optional reopen or interrupt (PRD FR-062). Order (ADR-019): permission, text, ONE gateway
- * call. After a timeout or conflict the thread is read once; [MutationResult.Reconciled.current] is then its newest
- * comment and the screen reloads the thread.
+ * Comments on an issue, with optional reopen or interrupt (PRD FR-062). Order (ADR-019): permission, text, the thread's
+ * comment ids (one read, ADR-032), then ONE gateway call. After a timeout or conflict the thread is read once more: the
+ * comment is reported posted only if a NEW comment by this person with this text is in it, otherwise the result is
+ * [MutationResult.Unknown] and the screen reloads the thread (F-A-6).
  */
 class CommentOnIssue(
     private val issues: IssueGateway,
@@ -44,29 +46,34 @@ class CommentOnIssue(
         if (!Permissions.allows(context.role, Action.CommentOnIssue)) return MutationResult.Denied
         val text = body.trim()
         if (text.isEmpty()) return MutationResult.Invalid(InvalidInput.BodyRequired)
+        val before = commentIds(context, id)
         return when (val result = issues.addComment(context.scope, id, text, options)) {
-            is DomainResult.Success -> {
-                MutationResult.Done(result.value)
-            }
-
-            is DomainResult.Failure -> {
-                failed(result.error) {
-                    when (val thread = issues.comments(context.scope, id)) {
-                        is DomainResult.Failure -> {
-                            thread
-                        }
-
-                        is DomainResult.Success -> {
-                            thread.value
-                                .sortedBy { it.createdAt }
-                                .lastOrNull()
-                                ?.let { DomainResult.Success(it) }
-                                ?: DomainResult.Failure(DomainError.NotFound)
-                        }
-                    }
-                }
-            }
+            is DomainResult.Success -> MutationResult.Done(result.value)
+            is DomainResult.Failure -> reconcile(context, id, text, result.error, before)
         }
+    }
+
+    private suspend fun commentIds(
+        context: CompanyContext,
+        id: IssueId,
+    ): Set<String>? = (issues.comments(context.scope, id) as? DomainResult.Success)?.value?.map { it.id }?.toSet()
+
+    private suspend fun reconcile(
+        context: CompanyContext,
+        id: IssueId,
+        text: String,
+        error: DomainError,
+        before: Set<String>?,
+    ): MutationResult<Comment> {
+        if (!error.needsReread()) return MutationResult.Failed(error)
+        val thread =
+            (issues.comments(context.scope, id) as? DomainResult.Success)?.value
+                ?: return MutationResult.Failed(error)
+        val own =
+            before?.let { known ->
+                thread.firstOrNull { it.id !in known && it.authorUserId == context.userId && it.body.trim() == text }
+            }
+        return own?.let { MutationResult.Reconciled(error, it) } ?: MutationResult.Unknown(error)
     }
 }
 

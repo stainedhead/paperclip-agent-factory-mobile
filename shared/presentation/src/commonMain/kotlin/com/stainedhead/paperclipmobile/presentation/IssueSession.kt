@@ -49,7 +49,7 @@ internal class IssueSession(
                 val applied = result.value?.let { apply(current, it) } ?: current
                 applied.copy(busy = false, feedback = result.feedback)
             }
-            if (result.value != null) reload?.invoke()
+            if (result.value != null || result.reload) reload?.invoke()
         }
     }
 }

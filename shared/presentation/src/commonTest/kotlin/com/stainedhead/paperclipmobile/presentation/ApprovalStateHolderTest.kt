@@ -421,3 +421,39 @@ class ApprovalActionsTest {
             env.approvals.count("get") shouldBe 1
         }
 }
+
+class ApprovalCommentTimeoutTest {
+    @Test
+    fun `comment_timeout_with_own_comment_is_appended_once_and_reported_reconciled`() =
+        runTest {
+            val env = approvalEnv()
+            env.approvals.failures["addComment"] = DomainError.Timeout
+            env.approvals.storesCommentOnFailure = true
+            val holder = approvalHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(ApprovalIntent.CommentSubmitted("Please check"))
+            advanceUntilIdle()
+
+            holder.state.value.comments
+                .map { it.body } shouldBe listOf("Looks fine to me.", "Please check")
+            holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Reconciled, error = ErrorUi(ErrorKey.Timeout))
+            env.approvals.count("addComment") shouldBe 1
+        }
+
+    @Test
+    fun `a comment timeout with nothing new in the thread says unknown and reloads the thread`() =
+        runTest {
+            val env = approvalEnv()
+            env.approvals.failures["addComment"] = DomainError.Timeout
+            val holder = approvalHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(ApprovalIntent.CommentSubmitted("Please check"))
+            advanceUntilIdle()
+
+            holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Unknown, error = ErrorUi(ErrorKey.Timeout))
+            env.approvals.count("get") shouldBe 2
+            holder.state.value.comments.size shouldBe 1
+        }
+}

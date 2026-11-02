@@ -225,7 +225,7 @@ class IssueEditsTest {
         }
 
     @Test
-    fun `acceptance 10 a timeout on a comment is sent once and the thread is read again`() =
+    fun `acceptance 10 a timeout on a comment is sent once, reported unknown and the thread is reloaded`() =
         runTest {
             val env = workEnv()
             env.issues.failures["addComment"] = DomainError.Timeout
@@ -236,8 +236,9 @@ class IssueEditsTest {
             advanceUntilIdle()
 
             env.issues.count("addComment") shouldBe 1
-            holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Reconciled, error = ErrorUi(ErrorKey.Timeout))
-            env.issues.count("comments") shouldBe 3
+            // Nothing new by this person is in the thread, so the screen says it cannot tell (F-A-6) and reloads.
+            holder.state.value.feedback shouldBe FeedbackUi(FeedbackKind.Unknown, error = ErrorUi(ErrorKey.Timeout))
+            env.issues.count("comments") shouldBe 4
         }
 
     @Test
