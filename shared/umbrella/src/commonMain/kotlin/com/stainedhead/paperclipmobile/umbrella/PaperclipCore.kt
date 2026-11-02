@@ -11,7 +11,7 @@ class PaperclipGraph internal constructor(
     private val koin: Koin,
 ) {
     /** Creates a new state holder. The screen that shows it owns it and keeps the same instance while it is visible. */
-    fun newFirstRunStateHolder(): FirstRunStateHolder = koin.get()
+    fun createFirstRunStateHolder(): FirstRunStateHolder = koin.get()
 }
 
 object PaperclipCore {
