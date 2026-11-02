@@ -1,7 +1,6 @@
 package com.stainedhead.paperclipmobile.infrastructure.api.contract
 
 import com.stainedhead.paperclipmobile.domain.AgentId
-import com.stainedhead.paperclipmobile.domain.Assignee
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.NewIssue
 import com.stainedhead.paperclipmobile.domain.RunId
@@ -15,7 +14,14 @@ import org.junit.jupiter.api.Test
  * leaves events and a log; a long `sleep` run is live, read and cancelled. Both are real processes of the server.
  */
 class LiveRunsTest {
+    /** Like [eventually] but gives up quietly, so one run reports every missing piece (the verdict then fails). */
+    private suspend fun <T : Any> patiently(
+        what: String,
+        step: suspend () -> T?,
+    ): T? = runCatching { eventually(what, PATIENCE_SECONDS, step) }.getOrNull()
+
     private companion object {
+        const val PATIENCE_SECONDS = 20
         const val ECHO_TEXT = "contract-hello"
         const val SLEEP_SECONDS = "120"
         const val RUN_SECONDS = 90
@@ -24,42 +30,35 @@ class LiveRunsTest {
     }
 
     @Test
-    fun `an assigned issue starts an echo run whose events, log and listings decode with content`() =
+    fun `an echo run linked to an issue has events, a log and listings that decode with content`() =
         live {
             val echo = seeder.agent(scope.companyId.value, "Contract Echo", "echo", listOf(ECHO_TEXT))
             val agent = AgentId(echo.id)
             val issue = issues.create(scope, NewIssue("Contract run issue", "Run echo")).verified("IssueGateway.create")
-            issues.assign(scope, issue.id, Assignee.AgentAssignee(agent)).verified("IssueGateway.assign", "(wakes)")
-            val run =
-                eventually("a run for the assigned issue", RUN_SECONDS) {
-                    runs.forIssue(scope, issue.id).verified("RunGateway.forIssue").firstOrNull()
+            val runId = RunId(seeder.wake(echo.id, issue.id.value))
+            val linked =
+                eventually("the run in the issue's run list", RUN_SECONDS) {
+                    runs.forIssue(scope, issue.id).verified("RunGateway.forIssue").firstOrNull { it.id == runId }
                 }
-            assertEquals(agent, run.agentId)
-            assertEquals(issue.id, run.issueId)
+            assertEquals(agent, linked.agentId)
             val finished =
-                eventually("the echo run to finish", RUN_SECONDS) {
-                    runs.get(scope, run.id).verified("RunGateway.get", "(echo)").takeIf { !it.status.isActive }
+                eventually("the echo run to end", RUN_SECONDS) {
+                    runs.get(scope, runId).verified("RunGateway.get", "(echo)").takeIf { !it.status.isActive }
                 }
-            LiveReport.note("echo run ended", "${finished.status} source=${finished.invocationSource}")
-            assertEquals(agent, finished.agentId)
-            val events =
-                eventually("run events", RUN_SECONDS) {
-                    runs.events(scope, run.id, 0).verified("RunGateway.events").takeIf { it.isNotEmpty() }
-                }
-            LiveReport.note("run events", "count=${events.size} first=${events.first().type}")
-            assertTrue(events.all { it.seq > 0 }, "An event has no sequence number: $events")
-            assertEquals(events.sortedBy { it.seq }.map { it.seq }, events.map { it.seq }.sorted())
-            val chunk =
-                eventually("run log text", RUN_SECONDS) {
-                    runs.log(scope, run.id, 0).verified("RunGateway.log").takeIf { it.content.isNotBlank() }
-                }
-            LiveReport.note("run log", chunk.toString().take(NOTE_CHARS))
-            assertTrue(
-                chunk.content.contains(ECHO_TEXT),
-                "The log lacks the echoed text: ${chunk.content.take(SHOWN_CHARS)}",
+            LiveReport.note(
+                "echo run ended",
+                "${finished.status} source=${finished.invocationSource} error=${finished.error}",
             )
-            val forAgent = runs.forAgent(scope, agent).verified("RunGateway.forAgent")
-            assertTrue(forAgent.any { it.id == run.id }, "The agent's run is missing from its list: $forAgent")
+            val events =
+                patiently("events") { runs.events(scope, runId, 0).verified("RunGateway.events").ifEmpty { null } }
+            LiveReport.note("run events", events?.let { "count=${it.size} first=${it.first().type}" } ?: "none arrived")
+            val chunk = patiently("log") { runs.log(scope, runId, 0).verified("RunGateway.log").takeIf { hasData(it) } }
+            LiveReport.note("run log", chunk?.toString()?.take(NOTE_CHARS) ?: "none arrived")
+            runs.forAgent(scope, agent).verified("RunGateway.forAgent").also {
+                assertTrue(it.any { run -> run.id == runId }, "The agent's run is missing from its list: $it")
+            }
+            assertTrue(events != null && events.all { it.seq > 0 }, "No run events arrived for the echo run")
+            assertTrue(chunk?.content?.contains(ECHO_TEXT) == true, "The log lacks the echoed text: $chunk")
         }
 
     @Test

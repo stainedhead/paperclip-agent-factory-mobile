@@ -19,8 +19,8 @@ internal class Seeded(
  * answer in the message (F-C-3): a refused seed is drift, not a reason to skip operations.
  */
 internal class Seeder(
-    private val raw: RawServer,
-    private val key: String,
+    internal val raw: RawServer,
+    internal val key: String,
 ) {
     fun company(name: String): Seeded =
         required("POST", "/api/companies", """{"name":"$name","budgetMonthlyCents":100000}""")
@@ -93,44 +93,7 @@ internal class Seeder(
         return reply
     }
 
-    /** A pending single-choice question on the issue thread. Returns the interaction id. */
-    fun question(issueId: String): String {
-        val body =
-            """{"kind":"ask_user_questions","title":"Contract question","payload":{"version":1,"questions":[""" +
-                """{"id":"go","prompt":"Proceed with the contract run?","selectionMode":"single","required":true,""" +
-                """"options":[{"id":"yes","label":"Yes"},{"id":"no","label":"No"}]}]}}"""
-        return required("POST", "/api/issues/$issueId/interactions", body).id
-    }
-
-    /** A small text attachment. Returns the attachment id. */
-    fun attachment(
-        companyId: String,
-        issueId: String,
-        fileName: String,
-        content: String,
-    ): String {
-        val reply =
-            raw.upload(
-                "/api/companies/$companyId/issues/$issueId/attachments",
-                fileName,
-                "text/plain",
-                content.toByteArray(),
-                key,
-            )
-        check(reply.status in CREATED) { "POST attachments answered ${reply.describe()}" }
-        return checkNotNull(reply.string("id")) { "The attachment reply has no id: ${reply.describe()}" }
-    }
-
-    /** A comment on an approval, through the raw client. */
-    fun approvalComment(
-        approvalId: String,
-        body: String,
-    ) {
-        val reply = raw.call("POST", "/api/approvals/$approvalId/comments", """{"body":"$body"}""", bearer = key)
-        check(reply.status in CREATED) { "POST approval comments answered ${reply.describe()}" }
-    }
-
-    private fun required(
+    internal fun required(
         method: String,
         path: String,
         body: String,
@@ -149,8 +112,9 @@ internal class Seeder(
             reply,
         )
 
-    private companion object {
+    internal companion object {
         const val NOTE = "Created by the contract test"
         val CREATED = 200..201
+        val ACCEPTED = 200..202
     }
 }

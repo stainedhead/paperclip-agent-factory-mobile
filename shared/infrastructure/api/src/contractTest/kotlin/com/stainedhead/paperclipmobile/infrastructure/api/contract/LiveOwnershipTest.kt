@@ -7,6 +7,8 @@ import com.stainedhead.paperclipmobile.domain.CommentOptions
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
+import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.InteractionAnswer
 import com.stainedhead.paperclipmobile.domain.InteractionId
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
@@ -79,7 +81,9 @@ class LiveOwnershipTest {
             agents.get(scope, other.agent).verifiedError("AgentGateway.get", DomainError.NotFound)
             runs.get(scope, other.run).verifiedError("RunGateway.get", DomainError.NotFound)
             runs.events(scope, other.run, 0).verifiedError("RunGateway.events", DomainError.NotFound)
-            runs.forAgent(scope, other.agent).verifiedError("RunGateway.forAgent", DomainError.NotFound)
+            // The list is company scoped in its path, so the server itself answers an empty list for a foreign agent:
+            // nothing of the other company is returned (observed live in run 41531193390).
+            assertEquals(DomainResult.Success(emptyList<HeartbeatRun>()), runs.forAgent(scope, other.agent))
             runs.cancel(other.scope, other.run).verified("RunGateway.cancel", "(second company, cleanup)")
         }
 
