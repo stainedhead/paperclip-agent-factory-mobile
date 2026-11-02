@@ -1,7 +1,9 @@
 name: contract
 
-# Starts the pinned Paperclip server (authenticated mode) in Docker and checks it. Phase 1b adds the Kotlin contract
-# tests to this job. Nightly it also checks the newest published image so API drift shows up early.
+# Starts the pinned Paperclip server (authenticated mode) in Docker and runs scripts/contract-smoke.sh against it: the
+# anonymous /api/health fields and the pairing challenge shapes the app relies on. Phase 1b adds the Kotlin contract
+# tests to this job. Nightly (and on manual dispatch, never on a pull request) the same script runs against the newest
+# published image; that job has no continue-on-error, so API drift turns the scheduled run red.
 on:
   workflow_dispatch:
   schedule:
@@ -26,8 +28,8 @@ jobs:
       - uses: actions/checkout@v7
       - name: Start the pinned Paperclip server
         run: ./scripts/paperclip-test-server.sh up
-      - name: Contract tests
-        run: echo "No contract tests yet; Phase 1b adds ./gradlew contractTest here."
+      - name: Contract smoke checks (health and pairing challenge shapes)
+        run: ./scripts/contract-smoke.sh
       - name: Server logs
         if: failure()
         run: ./scripts/paperclip-test-server.sh dump
@@ -40,13 +42,17 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
     env:
       PAPERCLIP_SERVER_VERSION: latest
     steps:
       - uses: actions/checkout@v7
       - name: Start the latest Paperclip server
         run: ./scripts/paperclip-test-server.sh up
+      - name: Contract smoke checks against latest (a failure here means the API drifted)
+        run: ./scripts/contract-smoke.sh
+      - name: Server logs
+        if: failure()
+        run: ./scripts/paperclip-test-server.sh dump
       - name: Stop the server
         if: always()
         run: ./scripts/paperclip-test-server.sh down
