@@ -12,7 +12,9 @@ import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.SpkiPin
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /**
  * The editable fields of a factory (PRD FR-006, FR-016, FR-017). [probed] is the accepted health probe of the NEW
@@ -89,7 +91,6 @@ class UpdateInstance(
         val current = repository.get(id) ?: return UpdateInstanceResult.NotFound
         val addressChanged = parsed.uri != current.baseUri
         if (addressChanged && !edit.isProbedFor(parsed.uri)) return UpdateInstanceResult.ProbeRequired
-        if (addressChanged) secrets.deleteNamespace(current.id)
         val edited =
             current.copy(
                 displayName = edit.displayName.trim(),
@@ -103,7 +104,12 @@ class UpdateInstance(
             } else {
                 edited
             }
-        repository.update(updated)
+        // Deleting the key and recording Signed out are one step: a cancellation between them would leave a Signed in
+        // factory without its key (F-R-2), so once the key is going the write is finished.
+        withContext(NonCancellable) {
+            if (addressChanged) secrets.deleteNamespace(current.id)
+            repository.update(updated)
+        }
         return UpdateInstanceResult.Updated(updated, credentialsCleared = addressChanged)
     }
 }
