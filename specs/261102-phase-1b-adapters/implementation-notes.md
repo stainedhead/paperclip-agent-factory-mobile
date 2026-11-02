@@ -69,3 +69,15 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 - An unknown idle period name reads as the domain default. `selectedInstanceId` is not cleared when its instance is
   deleted (the domain use cases do not do it either; the reader falls back); noted, not changed.
 - Red evidence: `Unresolved reference 'SqlAppSettingsStore'` before the class existed.
+
+## Group 3: schema version 2 and the migration test
+
+- Why a migration exists before any release: the machinery (`.sqm`, `N.db` snapshots, `verifyMigrations`, a runtime
+  test on every target) is worth proving while it is cheap. Version 2 adds `attention_cache.format` (the payload layout
+  that wrote a row) so a later layout change drops old rows in SQL instead of failing to decode them. Nothing shipped
+  at version 1, so the apps will only ever see version 2 on a fresh install; the path is exercised, not needed yet.
+- Test: `MigrationTest` builds the version 1 schema from hand-written DDL (never edited), inserts rows, calls
+  `Schema.migrate(driver, 1, Schema.version)` and reads the rows through `SqlInstanceRepository` and
+  `SqlAppSettingsStore`. It runs on JVM, the Android host test and the iOS simulator (native driver on a temp file).
+- `verifyCommonMainPaperclipDatabaseMigration` is wired into `check`; `1.db` and `2.db` are committed snapshots.
+- Red evidence: the schema-version and `format` tests failed (`Schema.version` was 1; no `format` column) before `1.sqm`.

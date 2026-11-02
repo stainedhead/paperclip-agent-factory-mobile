@@ -1,0 +1,3 @@
+-- Version 1 to 2: the cache rows say which payload layout wrote them, so a future layout change can drop old rows
+-- instead of failing to read them. Existing rows were written by layout 1.
+ALTER TABLE attention_cache ADD COLUMN format INTEGER NOT NULL DEFAULT 1;

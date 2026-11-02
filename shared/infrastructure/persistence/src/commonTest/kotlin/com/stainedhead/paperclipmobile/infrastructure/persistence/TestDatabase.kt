@@ -5,7 +5,7 @@ import app.cash.sqldelight.db.SqlDriver
 import com.stainedhead.paperclipmobile.infrastructure.persistence.db.PaperclipDatabase
 
 /** A fresh, empty database at the current schema version on this platform: JDBC in memory, or a native temp file. */
-expect fun newTestDriver(): SqlDriver
+expect fun newTestDriver(createSchema: Boolean = true): SqlDriver
 
 /** The database plus raw SQL access, so tests can look at what is really stored. */
 class TestDatabase(
