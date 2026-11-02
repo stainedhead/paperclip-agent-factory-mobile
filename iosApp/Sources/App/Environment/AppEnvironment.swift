@@ -8,12 +8,24 @@ enum ScreenKey: Hashable {
     case manageFactories
     case editFactory(id: String?)
     case settings
+    case decision(id: String)
+    case approval(id: String)
+    case budget(id: String)
+
+    init?(_ sheet: AppSheet) {
+        switch sheet {
+        case .budgetIncident(let id): self = .budget(id: id)
+        case .settings: return nil
+        }
+    }
 
     init?(_ route: AppRoute) {
         switch route {
         case .manageFactories: self = .manageFactories
         case .editFactory(let id): self = .editFactory(id: id)
         case .settings, .pairedDevices: self = .settings
+        case .decision(let id): self = .decision(id: id)
+        case .approval(let id): self = .approval(id: id)
         default: return nil
         }
     }
@@ -51,6 +63,10 @@ final class AppEnvironment {
     @ObservationIgnored private var inboxSession: RefreshSession?
     @ObservationIgnored private var observations: [Task<Void, Never>] = []
     @ObservationIgnored private var started = false
+    @ObservationIgnored private var wentOffline = false
+    @ObservationIgnored private var wentOfflineAfterDetail = false
+    @ObservationIgnored private var decisionHints: [String: DecisionHints] = [:]
+    @ObservationIgnored private var decisionIdentifiers: [String: String?] = [:]
 
     convenience init(configuration: LaunchConfiguration) {
         let page = ASWebAuthSessionPairingBrowser()
@@ -71,6 +87,7 @@ final class AppEnvironment {
         firstRun = FirstRunModel(holder: graph.createFirstRunStateHolder())
         pairingPage.onEvent = { [weak self] in self?.pairingPageEvent($0) }
         router.onChange = { [weak self] in self?.releaseScreenModels() }
+        router.onSheetDismissed = { [weak self] in self?.inbox?.refresh() }
     }
 
     private static func provider(
@@ -164,12 +181,67 @@ final class AppEnvironment {
         models.model(for: .settings) { graph.createSettingsStateHolder() }
     }
 
-    /// Keeps the tab roots and every model whose route is still on a stack; closes the rest.
+    /// What the Inbox card knew when it was tapped (agent name, decide-by, snooze key). The decision endpoint has none
+    /// of them, so the screen asks for them with its model; without hints it simply has no Snooze.
+    func rememberDecisionHints(_ hints: DecisionHints, for id: String, identifier: String? = nil) {
+        decisionHints[id] = hints
+        decisionIdentifiers[id] = identifier
+    }
+
+    /// The issue the card named ("PAP-1182"), when the screen was opened from a card.
+    func decisionIdentifier(for id: String) -> String? { decisionIdentifiers[id] ?? nil }
+
+    func decisionModel(id: String) -> HolderModel<DecisionStateHolder> {
+        let model = models.model(for: .decision(id: id)) {
+            let hints = decisionHints[id] ?? DecisionHints(originAgentName: nil, decideBy: nil, dismissalKey: nil)
+            return graph.attention.createDecisionStateHolder(
+                instanceId: selectedInstance, companyId: selectedCompany, decisionId: id, hints: hints)
+        }
+        if configuration.offlineAfterDetail {
+            model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) }
+        }
+        return model
+    }
+
+    func approvalModel(id: String) -> HolderModel<ApprovalStateHolder> {
+        let model = models.model(for: .approval(id: id)) {
+            graph.attention.createApprovalStateHolder(
+                instanceId: selectedInstance, companyId: selectedCompany, approvalId: id)
+        }
+        if configuration.offlineAfterDetail {
+            model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) }
+        }
+        return model
+    }
+
+    func budgetModel(id: String) -> HolderModel<BudgetIncidentStateHolder> {
+        let model = models.model(for: .budget(id: id)) {
+            graph.attention.createBudgetIncidentStateHolder(
+                instanceId: selectedInstance, companyId: selectedCompany, incidentId: id)
+        }
+        if configuration.offlineAfterDetail {
+            model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) }
+        }
+        return model
+    }
+
+    private var selectedInstance: String { app.state.selectedInstanceId ?? "" }
+    private var selectedCompany: String { app.state.selectedCompanyId ?? "" }
+
+    /// `-demo-offline-after-detail`: the phone goes offline once a detail screen shows its content.
+    private func detailLoaded(_ phase: DetailPhase) {
+        guard phase == .content, !wentOfflineAfterDetail else { return }
+        wentOfflineAfterDetail = true
+        graph.demoControls?.setOnline(online: false)
+    }
+
+    /// Keeps the tab roots and every model whose route (or sheet) is still showing; closes the rest.
     private func releaseScreenModels() {
         var keep: Set<ScreenKey> = [.factories]
         for route in router.activeRoutes {
             if let key = ScreenKey(route) { keep.insert(key) }
         }
+        if let sheet = router.sheet, let key = ScreenKey(sheet) { keep.insert(key) }
         models.retain(only: keep)
     }
 
@@ -217,7 +289,15 @@ final class AppEnvironment {
         let model = HolderModel(holder: holder)
         inbox = model
         inboxSession = graph.refresh.start(target: holder.refreshTarget)
+        model.didUpdate = { [weak self] state in self?.inboxChanged(state) }
         observe(model)
+    }
+
+    /// `-demo-offline`: the phone goes offline once, after the cards have loaded, so the offline Inbox keeps them.
+    private func inboxChanged(_ state: InboxState) {
+        guard configuration.goesOffline, !wentOffline, state.phase == .content else { return }
+        wentOffline = true
+        graph.demoControls?.setOnline(online: false)
     }
 
     private func stopInbox() {
@@ -234,22 +314,26 @@ final class AppEnvironment {
     private func applyStartLocation() {
         guard let tab = configuration.startTab else { return }
         router.select(tab)
-        guard let name = configuration.startRoute else { return }
-        let route: AppRoute? =
-            switch name {
-            case "settings": .settings
-            case "manage": .manageFactories
-            case "add": .editFactory(id: nil)
-            case let edit where edit.hasPrefix("edit:"): .editFactory(id: String(edit.dropFirst(5)))
-            default: nil
-            }
-        if let route { router.push(route, in: tab) }
+        guard let name = configuration.startRoute, let location = StartLocation.parse(name) else { return }
+        switch location {
+        case .route(let route): router.push(route, in: tab)
+        case .sheet(let sheet): router.present(sheet)
+        }
     }
 
     private func applyDemoLaunchOptions() {
         guard let controls = graph.demoControls else { return }
         for result in configuration.scriptedBiometrics {
             controls.scriptBiometrics(result: result)
+        }
+        if let spend = configuration.budgetServerSpend { controls.setBudgetServerSpend(minorUnits: spend) }
+        for kind in configuration.resolvedElsewhere {
+            switch kind {
+            case "decision": controls.resolveDecisionElsewhere(decisionId: "dec-1182", optionId: "wait")
+            case "approval": controls.resolveApprovalElsewhere(approvalId: "ap-hire-qa")
+            case "budget": controls.resolveIncidentElsewhere(incidentId: "inc-eng-2")
+            default: break
+            }
         }
         if let period = configuration.demoIdlePeriod {
             let settings = HolderModel(holder: graph.createSettingsStateHolder())

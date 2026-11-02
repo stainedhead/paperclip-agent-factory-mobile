@@ -61,3 +61,10 @@ struct StartTabLaunchTests {
         #expect(LaunchConfiguration(arguments: ["iosApp"]).startRoute == nil)
     }
 }
+
+struct OfflineLaunchTests {
+    @Test func theOfflineFlagAsksForTheDemoPhoneToGoOfflineOnceTheInboxHasLoaded() {
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo", "-demo-offline"]).goesOffline)
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).goesOffline == false)
+    }
+}

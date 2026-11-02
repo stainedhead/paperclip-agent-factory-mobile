@@ -36,6 +36,37 @@ struct LocalizationTests {
     @Test func everyIdlePeriodHasText() { check(IdlePeriod.allCases) }
     @Test func everyPairedDevicesStatusHasText() { check(PairedDevicesStatus.allCases) }
 
+    @Test func everySourceKindHasACardAndAChipLabel() {
+        check(SourceKindUi.allCases)
+        for kind in SourceKindUi.allCases {
+            #expect(L10n.resolve("kindPlural.\(kind)") != "kindPlural.\(kind)", "no chip label for \(kind)")
+        }
+    }
+    @Test func everySnoozePresetHasText() { check(SnoozePresetUi.allCases) }
+    @Test func everyInboxGroupHasText() { check(InboxGroupUi.allCases) }
+    @Test func everyInlineActionHasText() { check(InlineActionUi.allCases) }
+    @Test func everyInboxLabelHasText() { check(InboxLabel.allCases) }
+    @Test func everyDecisionLabelHasText() { check(DecisionLabel.allCases) }
+    @Test func everyDecisionFinalKindHasText() { check(DecisionFinalKind.allCases) }
+    @Test func everyEffectStatusHasText() { check(EffectStatusUi.allCases) }
+    @Test func everyExecutionStatusHasText() { check(ExecutionStatusUi.allCases) }
+    @Test func everyApprovalLabelHasText() { check(ApprovalLabel.allCases) }
+    @Test func everyDetailLabelHasText() { check(DetailLabel.allCases) }
+    @Test func everyApprovalTypeHasText() { check(ApprovalTypeUi.allCases) }
+    @Test func everyApprovalStatusHasText() { check(ApprovalStatusUi.allCases) }
+    @Test func everyApprovalActionHasText() { check(ApprovalActionUi.allCases) }
+    @Test func everyNotePromptHasText() { check(NotePromptKind.allCases) }
+    @MainActor @Test func everyApprovalStatusHasADoneSentence() {
+        for status in ApprovalStatusUi.allCases {
+            #expect(ApprovalPresentation.doneText(status) != "approvalDone.\(status)", "no sentence for \(status)")
+        }
+    }
+    @Test func everyBudgetLabelHasText() { check(BudgetLabel.allCases) }
+    @Test func everyBudgetThresholdHasText() { check(BudgetThresholdUi.allCases) }
+    @Test func everyBudgetChoiceHasText() { check(BudgetChoice.allCases) }
+    @Test func everyBudgetOutcomeHasText() { check(BudgetOutcomeUi.allCases) }
+    @Test func everyDecideByKindHasText() { check(DecideByKindUi.allCases) }
+
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {
         #expect(ErrorKey.certificateInvalid.catalogKey == "error.certificateInvalid")
         #expect(ActionsDisabledReason.viewerRole.catalogKey == "disabled.viewerRole")

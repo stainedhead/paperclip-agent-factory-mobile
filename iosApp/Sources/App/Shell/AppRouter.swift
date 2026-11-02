@@ -49,6 +49,9 @@ final class AppRouter {
     /// Called after every change to the stacks, so the owner can release models whose route is gone.
     @ObservationIgnored var onChange: (() -> Void)?
 
+    /// Called when a presented sheet goes away, so the owner can refresh what the sheet may have changed.
+    @ObservationIgnored var onSheetDismissed: (() -> Void)?
+
     var activeRoutes: [AppRoute] {
         AppTab.allCases.flatMap { paths[$0] ?? [] }
     }
@@ -91,9 +94,13 @@ final class AppRouter {
 
     func present(_ sheet: AppSheet) {
         self.sheet = sheet
+        onChange?()
     }
 
     func dismissSheet() {
+        let hadSheet = sheet != nil
         sheet = nil
+        onChange?()
+        if hadSheet { onSheetDismissed?() }
     }
 }

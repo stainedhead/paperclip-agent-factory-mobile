@@ -49,6 +49,18 @@ struct AppButtonStyle: ButtonStyle {
     }
 }
 
+/// A selectable card (an option, a choice) that is its own look: it shows the pressed state only. A disabled card is
+/// muted by its content (secondary text), never dimmed by the system, which would fail the contrast audit.
+struct CardSelectButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.opacity(configuration.isPressed ? 0.75 : 1)
+    }
+}
+
+extension ButtonStyle where Self == CardSelectButtonStyle {
+    static var cardSelect: CardSelectButtonStyle { CardSelectButtonStyle() }
+}
+
 extension ButtonStyle where Self == AppButtonStyle {
     static func app(_ kind: AppButtonStyle.Kind) -> AppButtonStyle { AppButtonStyle(kind: kind) }
 }

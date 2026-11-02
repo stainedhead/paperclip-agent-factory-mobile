@@ -12,12 +12,14 @@ import com.stainedhead.paperclipmobile.domain.Approval
 import com.stainedhead.paperclipmobile.domain.ApprovalComment
 import com.stainedhead.paperclipmobile.domain.ApprovalDetail
 import com.stainedhead.paperclipmobile.domain.ApprovalId
+import com.stainedhead.paperclipmobile.domain.ApprovalPayload
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.CompanyContext
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Permissions
+import com.stainedhead.paperclipmobile.domain.port.AgentGateway
 import com.stainedhead.paperclipmobile.domain.port.ApprovalGateway
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
@@ -25,6 +27,7 @@ import com.stainedhead.paperclipmobile.domain.port.Connectivity
 /** Loads an approval with its linked issues and comments (PRD FR-050). Reads are retried (FR-096). */
 class LoadApproval(
     private val gateway: ApprovalGateway,
+    private val agents: AgentGateway,
     private val connectivity: Connectivity,
 ) {
     suspend operator fun invoke(
@@ -43,9 +46,24 @@ class LoadApproval(
                 is DomainResult.Failure -> return read
             }
         return when (val read = retryingRead(budget) { gateway.comments(scope, id) }) {
-            is DomainResult.Success -> DomainResult.Success(ApprovalDetail(approval, issues, read.value))
-            is DomainResult.Failure -> read
+            is DomainResult.Success -> {
+                DomainResult.Success(ApprovalDetail(approval, issues, read.value, agentNames(scope, approval)))
+            }
+
+            is DomainResult.Failure -> {
+                read
+            }
         }
+    }
+
+    /** Best effort: a screen that cannot name the manager still shows everything else. */
+    private suspend fun agentNames(
+        scope: CompanyScope,
+        approval: Approval,
+    ): Map<String, String> {
+        val wanted = (approval.payload as? ApprovalPayload.HireAgent)?.reportsToAgentId ?: return emptyMap()
+        val list = (agents.list(scope) as? DomainResult.Success)?.value.orEmpty()
+        return list.filter { it.id.value == wanted }.associate { it.id.value to it.name }
     }
 }
 

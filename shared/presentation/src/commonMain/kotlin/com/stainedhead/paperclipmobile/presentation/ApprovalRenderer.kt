@@ -64,7 +64,7 @@ internal object ApprovalRenderer {
                 },
             type = approval?.type?.let(::type),
             status = approval?.status?.toUi(),
-            payload = approval?.payload?.let(::payload),
+            payload = approval?.payload?.let { payload(it, detail.agentNames) },
             requestedByAgentName = approval?.requestedByAgentName,
             decisionNote = approval?.decisionNote,
             decidedAtEpochMillis = approval?.decidedAt?.toEpochMilliseconds(),
@@ -114,7 +114,10 @@ internal object ApprovalRenderer {
             is ApprovalType.Unsupported -> ApprovalTypeUi.Unsupported
         }
 
-    private fun payload(payload: ApprovalPayload): ApprovalPayloadUi =
+    private fun payload(
+        payload: ApprovalPayload,
+        agentNames: Map<String, String>,
+    ): ApprovalPayloadUi =
         when (payload) {
             is ApprovalPayload.HireAgent -> {
                 ApprovalPayloadUi.HireAgent(
@@ -123,6 +126,7 @@ internal object ApprovalRenderer {
                     payload.title,
                     payload.adapterType,
                     payload.reportsToAgentId,
+                    payload.reportsToAgentId?.let { agentNames[it] },
                     payload.monthlyBudget?.toUi(),
                     payload.skills,
                     payload.capabilities,

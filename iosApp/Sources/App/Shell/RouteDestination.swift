@@ -11,7 +11,22 @@ struct RouteDestination: View {
         case .settings: SettingsView(environment: environment)
         case .pairedDevices: PairedDevicesView(environment: environment)
         case .manageFactories: ManageFactoriesView(environment: environment)
+        case .decision(let id): DecisionView(environment: environment, id: id)
+        case .approval(let id): ApprovalView(environment: environment, id: id)
         default: RoutePlaceholderView(route: route)
+        }
+    }
+}
+
+/// The sheet the router presents.
+struct SheetDestination: View {
+    let sheet: AppSheet
+    let environment: AppEnvironment
+
+    var body: some View {
+        switch sheet {
+        case .budgetIncident(let id): BudgetIncidentSheet(environment: environment, id: id)
+        case .settings: SettingsView(environment: environment)
         }
     }
 }

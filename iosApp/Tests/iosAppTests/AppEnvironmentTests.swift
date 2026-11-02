@@ -21,6 +21,15 @@ struct AppEnvironmentTests {
         environment.shutdown()
     }
 
+    @Test func theOfflineLaunchOptionGoesOfflineOnlyAfterTheInboxHasContent() async {
+        let environment = demo(["-demo-offline"])
+        environment.start()
+        #expect(await eventually { environment.inbox?.state.isOffline == true })
+        #expect(environment.inbox?.state.phase == .content, "the cards were loaded before the phone went offline")
+        #expect(environment.inbox?.state.actionsDisabledReason == .offline)
+        environment.shutdown()
+    }
+
     @Test func aLaunchWithoutTheDemoFlagStartsWithNoFactoryForFirstRun() async {
         let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
         environment.start()

@@ -82,8 +82,17 @@ internal fun demoPortsModule(seeded: Boolean = true) =
         }
         single { FakeBiometrics() }
         single<Biometrics> { get<FakeBiometrics>() }
-        single { DemoControls(get()) }
-        single<Connectivity> { FakeConnectivity() }
+        single {
+            DemoControls(
+                get(),
+                get(),
+                get<DecisionGateway>(RawPort) as FakeDecisionGateway,
+                get<ApprovalGateway>(RawPort) as FakeApprovalGateway,
+                get<BudgetGateway>(RawPort) as FakeBudgetGateway,
+            )
+        }
+        single { FakeConnectivity() }
+        single<Connectivity> { get<FakeConnectivity>() }
         single<PairingBrowser> { FakePairingBrowser() }
         single<HealthGateway> {
             FakeHealthGateway(
@@ -117,13 +126,30 @@ internal fun demoPortsModule(seeded: Boolean = true) =
     }
 
 private fun org.koin.core.module.Module.demoAttentionPorts() {
-    single<AttentionGateway>(RawPort) { FakeAttentionGateway(get(), DemoInbox.items()) }
-    single<AttentionCache> { FakeAttentionCache() }
-    single<DecisionGateway>(RawPort) { FakeDecisionGateway(DemoAttentionDetails.decisions()) }
-    single<ApprovalGateway>(RawPort) {
-        FakeApprovalGateway(DemoAttentionDetails.approvals()).apply { issues = DemoAttentionDetails.linkedIssues() }
+    single<AttentionGateway>(RawPort) {
+        FakeAttentionGateway(get(), DemoInbox.items()).apply {
+            firstFeedAge = DemoInbox.FIRST_READ_AGE
+            emptyCompanies = setOf(DemoIds.SIDE_PROJECT)
+        }
     }
-    single<BudgetGateway>(RawPort) { FakeBudgetGateway(DemoAttentionDetails.incidents()) }
+    single<AttentionCache> { FakeAttentionCache() }
+    single<DecisionGateway>(RawPort) {
+        FakeDecisionGateway(DemoAttentionDetails.decisions()).apply {
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
+    single<ApprovalGateway>(RawPort) {
+        FakeApprovalGateway(DemoAttentionDetails.approvals()).apply {
+            issues = DemoAttentionDetails.linkedIssues()
+            commentList = DemoAttentionDetails.approvalComments().toMutableList()
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
+    single<BudgetGateway>(RawPort) {
+        FakeBudgetGateway(DemoAttentionDetails.incidents()).apply {
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
 }
 
 private fun org.koin.core.module.Module.demoWorkPorts() {

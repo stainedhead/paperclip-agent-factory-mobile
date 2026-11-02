@@ -23,10 +23,18 @@ struct TabShellView: View {
                 .tag(tab)
             }
         }
+        .sheet(item: sheet) { SheetDestination(sheet: $0, environment: environment) }
+    }
+
+    private var sheet: Binding<AppSheet?> {
+        Binding(
+            get: { environment.router.sheet },
+            set: { if $0 == nil { environment.router.dismissSheet() } })
     }
 
     @ViewBuilder private func root(for tab: AppTab) -> some View {
         switch tab {
+        case .inbox: InboxView(environment: environment)
         case .factories: FactoriesView(environment: environment)
         default: PlaceholderRootView(tab: tab, environment: environment)
         }

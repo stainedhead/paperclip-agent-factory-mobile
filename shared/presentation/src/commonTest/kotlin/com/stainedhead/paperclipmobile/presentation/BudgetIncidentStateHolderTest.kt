@@ -89,6 +89,7 @@ class BudgetIncidentLoadingTest {
 
             holder.state.value.phase shouldBe DetailPhase.Content
             holder.state.value.outcome shouldBe BudgetOutcomeUi.NoLongerActive
+            holder.state.value.refreshIntervalSeconds shouldBe 0
             holder.state.value.canKeepPaused shouldBe false
             holder.state.value.canRaise shouldBe false
         }

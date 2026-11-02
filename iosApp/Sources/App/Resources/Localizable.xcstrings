@@ -90,6 +90,1326 @@
         }
       }
     },
+    "approval.adapter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adapter"
+          }
+        }
+      }
+    },
+    "approval.capabilities": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capabilities"
+          }
+        }
+      }
+    },
+    "approval.commentAgent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent"
+          }
+        }
+      }
+    },
+    "approval.commentLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment"
+          }
+        }
+      }
+    },
+    "approval.commentPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask for changes or add context"
+          }
+        }
+      }
+    },
+    "approval.commentPost": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post comment"
+          }
+        }
+      }
+    },
+    "approval.commentYou": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You"
+          }
+        }
+      }
+    },
+    "approval.decisionNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note: %@"
+          }
+        }
+      }
+    },
+    "approval.discussion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discussion"
+          }
+        }
+      }
+    },
+    "approval.guidance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guidance"
+          }
+        }
+      }
+    },
+    "approval.hireTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hire %@"
+          }
+        }
+      }
+    },
+    "approval.jobTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        }
+      }
+    },
+    "approval.kindLine": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approval"
+          }
+        }
+      }
+    },
+    "approval.limit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit"
+          }
+        }
+      }
+    },
+    "approval.linkedWork": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linked work"
+          }
+        }
+      }
+    },
+    "approval.monthlyBudget": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly budget"
+          }
+        }
+      }
+    },
+    "approval.name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "approval.navTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approval"
+          }
+        }
+      }
+    },
+    "approval.nextOnApproval": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If approved"
+          }
+        }
+      }
+    },
+    "approval.noDiscussion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No comments yet."
+          }
+        }
+      }
+    },
+    "approval.noteLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note"
+          }
+        }
+      }
+    },
+    "approval.observed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spent so far"
+          }
+        }
+      }
+    },
+    "approval.plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan"
+          }
+        }
+      }
+    },
+    "approval.proposedComment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proposed comment"
+          }
+        }
+      }
+    },
+    "approval.recommended": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended action"
+          }
+        }
+      }
+    },
+    "approval.rejectConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject"
+          }
+        }
+      }
+    },
+    "approval.rejectMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The requester sees your note."
+          }
+        }
+      }
+    },
+    "approval.rejectPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why are you rejecting it?"
+          }
+        }
+      }
+    },
+    "approval.rejectTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject this request?"
+          }
+        }
+      }
+    },
+    "approval.reportsTo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports to"
+          }
+        }
+      }
+    },
+    "approval.reviseConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send request"
+          }
+        }
+      }
+    },
+    "approval.reviseMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The requester sees your note and can revise the request."
+          }
+        }
+      }
+    },
+    "approval.revisePlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What should change?"
+          }
+        }
+      }
+    },
+    "approval.reviseTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask for changes"
+          }
+        }
+      }
+    },
+    "approval.risks": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risks"
+          }
+        }
+      }
+    },
+    "approval.role": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Role"
+          }
+        }
+      }
+    },
+    "approval.scope": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scope"
+          }
+        }
+      }
+    },
+    "approval.skills": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skills"
+          }
+        }
+      }
+    },
+    "approval.summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summary"
+          }
+        }
+      }
+    },
+    "approval.unsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This kind of approval can't be shown here. Open it in the web app to review it."
+          }
+        }
+      }
+    },
+    "approval.window": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window"
+          }
+        }
+      }
+    },
+    "approval.working": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        }
+      }
+    },
+    "approvalAction.approve": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approve"
+          }
+        }
+      }
+    },
+    "approvalAction.comment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment"
+          }
+        }
+      }
+    },
+    "approvalAction.reject": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject"
+          }
+        }
+      }
+    },
+    "approvalAction.requestRevision": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request revision"
+          }
+        }
+      }
+    },
+    "approvalDone.approved": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This approval was approved. Nothing more to do."
+          }
+        }
+      }
+    },
+    "approvalDone.cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This approval was cancelled. Nothing more to do."
+          }
+        }
+      }
+    },
+    "approvalDone.pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for a decision."
+          }
+        }
+      }
+    },
+    "approvalDone.rejected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This approval was rejected. Nothing more to do."
+          }
+        }
+      }
+    },
+    "approvalDone.revisionRequested": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes were requested. Waiting for a new version."
+          }
+        }
+      }
+    },
+    "approvalDone.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This approval is no longer open."
+          }
+        }
+      }
+    },
+    "approvalStatus.approved": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approved"
+          }
+        }
+      }
+    },
+    "approvalStatus.cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelled"
+          }
+        }
+      }
+    },
+    "approvalStatus.pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending"
+          }
+        }
+      }
+    },
+    "approvalStatus.rejected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected"
+          }
+        }
+      }
+    },
+    "approvalStatus.revisionRequested": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revision requested"
+          }
+        }
+      }
+    },
+    "approvalStatus.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown status"
+          }
+        }
+      }
+    },
+    "approvalType.approveCeoStrategy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CEO strategy"
+          }
+        }
+      }
+    },
+    "approvalType.budgetOverrideRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget override"
+          }
+        }
+      }
+    },
+    "approvalType.hireAgent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hire agent"
+          }
+        }
+      }
+    },
+    "approvalType.requestBoardApproval": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board approval"
+          }
+        }
+      }
+    },
+    "approvalType.unsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approval"
+          }
+        }
+      }
+    },
+    "budget.amountHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Must be more than %@, what has been spent."
+          }
+        }
+      }
+    },
+    "budget.amountLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New monthly budget"
+          }
+        }
+      }
+    },
+    "budget.amountPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For example 250"
+          }
+        }
+      }
+    },
+    "budget.choiceHeader": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What now?"
+          }
+        }
+      }
+    },
+    "budget.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "budget.keepPausedHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The agent stays paused. Nothing is spent until someone resumes it."
+          }
+        }
+      }
+    },
+    "budget.navTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget incident"
+          }
+        }
+      }
+    },
+    "budget.raiseHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raises the monthly budget and resumes the agent. Asks for Face ID."
+          }
+        }
+      }
+    },
+    "budget.scope": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "budget.submitKeep": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep paused"
+          }
+        }
+      }
+    },
+    "budget.submitRaise": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise and resume"
+          }
+        }
+      }
+    },
+    "budget.updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from the factory"
+          }
+        }
+      }
+    },
+    "budget.usage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of %@ monthly budget · %@ used"
+          }
+        }
+      }
+    },
+    "budget.working": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        }
+      }
+    },
+    "budgetChoice.keepPaused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep paused"
+          }
+        }
+      }
+    },
+    "budgetChoice.raiseAndResume": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise and resume"
+          }
+        }
+      }
+    },
+    "budgetOutcome.keptPaused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept paused. The agent stays paused."
+          }
+        }
+      }
+    },
+    "budgetOutcome.noLongerActive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No longer active. It was resolved elsewhere or has ended."
+          }
+        }
+      }
+    },
+    "budgetOutcome.raised": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget raised. The agent resumes."
+          }
+        }
+      }
+    },
+    "budgetThreshold.hard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hard stop reached"
+          }
+        }
+      }
+    },
+    "budgetThreshold.soft": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soft limit reached"
+          }
+        }
+      }
+    },
+    "decideBy.none": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No deadline"
+          }
+        }
+      }
+    },
+    "decideBy.onDate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide by %@"
+          }
+        }
+      }
+    },
+    "decideBy.thisWeek": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide this week"
+          }
+        }
+      }
+    },
+    "decideBy.today": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide by today"
+          }
+        }
+      }
+    },
+    "decideBy.whenever": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide whenever"
+          }
+        }
+      }
+    },
+    "decision.asksFaceID": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks for Face ID"
+          }
+        }
+      }
+    },
+    "decision.chosen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decided"
+          }
+        }
+      }
+    },
+    "decision.confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm choice"
+          }
+        }
+      }
+    },
+    "decision.confirmDestructive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm choice"
+          }
+        }
+      }
+    },
+    "decision.counter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ / %@"
+          }
+        }
+      }
+    },
+    "decision.destructive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destructive"
+          }
+        }
+      }
+    },
+    "decision.dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "decision.effectStrict": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped if the issue changed since it was proposed"
+          }
+        }
+      }
+    },
+    "decision.expires": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires %@"
+          }
+        }
+      }
+    },
+    "decision.finalDecidedNoOption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This decision was already made."
+          }
+        }
+      }
+    },
+    "decision.loadingTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the decision"
+          }
+        }
+      }
+    },
+    "decision.navTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decision"
+          }
+        }
+      }
+    },
+    "decision.noEffects": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes nothing on any issue"
+          }
+        }
+      }
+    },
+    "decision.optionHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double tap to choose this option. Nothing happens until you confirm."
+          }
+        }
+      }
+    },
+    "decision.options": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        }
+      }
+    },
+    "decision.proposedBy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proposed by %@"
+          }
+        }
+      }
+    },
+    "decision.reasonTargetChanged": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The issue changed after this was proposed."
+          }
+        }
+      }
+    },
+    "decision.results": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What happened"
+          }
+        }
+      }
+    },
+    "decision.selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        }
+      }
+    },
+    "decision.snooze": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snooze"
+          }
+        }
+      }
+    },
+    "decision.working": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        }
+      }
+    },
+    "decisionFinal.cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This decision was cancelled."
+          }
+        }
+      }
+    },
+    "decisionFinal.decided": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already decided: %@"
+          }
+        }
+      }
+    },
+    "decisionFinal.dismissed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This decision was dismissed."
+          }
+        }
+      }
+    },
+    "decisionFinal.expired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This decision expired."
+          }
+        }
+      }
+    },
+    "decisionFinal.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This decision is no longer open."
+          }
+        }
+      }
+    },
+    "detail.failedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load this screen"
+          }
+        }
+      }
+    },
+    "detail.offlineMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're offline and this screen has not been read yet. It loads when you're back online."
+          }
+        }
+      }
+    },
+    "detail.offlineTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not loaded yet"
+          }
+        }
+      }
+    },
+    "detail.requestedBy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requested by %@"
+          }
+        }
+      }
+    },
+    "detail.updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from the factory"
+          }
+        }
+      }
+    },
     "deviceAuth.cancelled": {
       "extractionState": "manual",
       "localizations": {
@@ -288,6 +1608,61 @@
         }
       }
     },
+    "effectStatus.claimed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Started"
+          }
+        }
+      }
+    },
+    "effectStatus.executed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "effectStatus.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        }
+      }
+    },
+    "effectStatus.skipped": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped"
+          }
+        }
+      }
+    },
+    "effectStatus.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        }
+      }
+    },
     "error.certificateInvalid": {
       "extractionState": "manual",
       "localizations": {
@@ -442,6 +1817,61 @@
         }
       }
     },
+    "execution.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No effect ran"
+          }
+        }
+      }
+    },
+    "execution.partial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some effects did not run"
+          }
+        }
+      }
+    },
+    "execution.running": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running the effects"
+          }
+        }
+      }
+    },
+    "execution.succeeded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All effects ran"
+          }
+        }
+      }
+    },
+    "execution.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The result is not known yet"
+          }
+        }
+      }
+    },
     "exposure.private": {
       "extractionState": "manual",
       "localizations": {
@@ -541,6 +1971,39 @@
         }
       }
     },
+    "group.decideNow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide now"
+          }
+        }
+      }
+    },
+    "group.thisWeek": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week"
+          }
+        }
+      }
+    },
+    "group.whenever": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Whenever"
+          }
+        }
+      }
+    },
     "idle.fifteenMinutes": {
       "extractionState": "manual",
       "localizations": {
@@ -603,6 +2066,413 @@
           "stringUnit": {
             "state": "translated",
             "value": "30 minutes"
+          }
+        }
+      }
+    },
+    "inbox.ageAgo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ago"
+          }
+        }
+      }
+    },
+    "inbox.allCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All %lld"
+          }
+        }
+      }
+    },
+    "inbox.chip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %lld"
+          }
+        }
+      }
+    },
+    "inbox.details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        }
+      }
+    },
+    "inbox.dueToday": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld new or due today"
+          }
+        }
+      }
+    },
+    "inbox.dueTodayNone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing new or due today"
+          }
+        }
+      }
+    },
+    "inbox.emptyMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New approvals, decisions and questions show up here."
+          }
+        }
+      }
+    },
+    "inbox.emptyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing needs you"
+          }
+        }
+      }
+    },
+    "inbox.filtersLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter by kind"
+          }
+        }
+      }
+    },
+    "inbox.loadMore": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load more"
+          }
+        }
+      }
+    },
+    "inbox.noteLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note"
+          }
+        }
+      }
+    },
+    "inbox.notePlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why are you rejecting it?"
+          }
+        }
+      }
+    },
+    "inbox.offlineEmptyMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to load your Inbox."
+          }
+        }
+      }
+    },
+    "inbox.offlineEmptyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're offline"
+          }
+        }
+      }
+    },
+    "inbox.openInWeb": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in the web app"
+          }
+        }
+      }
+    },
+    "inbox.placeholderAgent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent details arrive in a later update."
+          }
+        }
+      }
+    },
+    "inbox.placeholderApproval": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approval details arrive in a later update."
+          }
+        }
+      }
+    },
+    "inbox.placeholderBudget": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The budget incident sheet arrives in a later update."
+          }
+        }
+      }
+    },
+    "inbox.placeholderDecision": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decision details arrive in a later update."
+          }
+        }
+      }
+    },
+    "inbox.placeholderGeneric": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This screen arrives in a later update."
+          }
+        }
+      }
+    },
+    "inbox.placeholderIssue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issue details arrive in a later update."
+          }
+        }
+      }
+    },
+    "inbox.placeholderRun": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run details arrive in a later update."
+          }
+        }
+      }
+    },
+    "inbox.rejectConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject"
+          }
+        }
+      }
+    },
+    "inbox.rejectMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The requester sees your note."
+          }
+        }
+      }
+    },
+    "inbox.rejectTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject this request?"
+          }
+        }
+      }
+    },
+    "inbox.reviewOptions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review options"
+          }
+        }
+      }
+    },
+    "inbox.snoozeTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snooze until"
+          }
+        }
+      }
+    },
+    "inbox.swipeDismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "inbox.swipeSnooze": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snooze"
+          }
+        }
+      }
+    },
+    "inbox.switcherHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows your factories and companies"
+          }
+        }
+      }
+    },
+    "inbox.undoAction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        }
+      }
+    },
+    "inbox.undoMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed from your Inbox"
+          }
+        }
+      }
+    },
+    "inbox.webTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web app"
+          }
+        }
+      }
+    },
+    "inlineAction.approve": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approve"
+          }
+        }
+      }
+    },
+    "inlineAction.keepPaused": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep paused"
+          }
+        }
+      }
+    },
+    "inlineAction.raiseAndResume": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise and resume"
+          }
+        }
+      }
+    },
+    "inlineAction.reject": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject"
           }
         }
       }
@@ -889,6 +2759,270 @@
           "stringUnit": {
             "state": "translated",
             "value": "The server could not be reached, so the key may still be valid. Revoke it in the web app."
+          }
+        }
+      }
+    },
+    "kind.agentErrorAlert": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent error"
+          }
+        }
+      }
+    },
+    "kind.approval": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approval"
+          }
+        }
+      }
+    },
+    "kind.blockerAttention": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked work"
+          }
+        }
+      }
+    },
+    "kind.budgetAlert": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget alert"
+          }
+        }
+      }
+    },
+    "kind.decision": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decision"
+          }
+        }
+      }
+    },
+    "kind.failedRun": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed run"
+          }
+        }
+      }
+    },
+    "kind.issueThreadInteraction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent question"
+          }
+        }
+      }
+    },
+    "kind.joinRequest": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join request"
+          }
+        }
+      }
+    },
+    "kind.productivityReview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Productivity review"
+          }
+        }
+      }
+    },
+    "kind.recoveryAction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recovery action"
+          }
+        }
+      }
+    },
+    "kind.review": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review"
+          }
+        }
+      }
+    },
+    "kind.unsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        }
+      }
+    },
+    "kindPlural.agentErrorAlert": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent errors"
+          }
+        }
+      }
+    },
+    "kindPlural.approval": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approvals"
+          }
+        }
+      }
+    },
+    "kindPlural.blockerAttention": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked work"
+          }
+        }
+      }
+    },
+    "kindPlural.budgetAlert": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget alerts"
+          }
+        }
+      }
+    },
+    "kindPlural.decision": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decisions"
+          }
+        }
+      }
+    },
+    "kindPlural.failedRun": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed runs"
+          }
+        }
+      }
+    },
+    "kindPlural.issueThreadInteraction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questions"
+          }
+        }
+      }
+    },
+    "kindPlural.joinRequest": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join requests"
+          }
+        }
+      }
+    },
+    "kindPlural.productivityReview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Productivity reviews"
+          }
+        }
+      }
+    },
+    "kindPlural.recoveryAction": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recovery actions"
+          }
+        }
+      }
+    },
+    "kindPlural.review": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviews"
+          }
+        }
+      }
+    },
+    "kindPlural.unsupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
           }
         }
       }
@@ -2620,6 +4754,28 @@
         }
       }
     },
+    "notePrompt.reject": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject"
+          }
+        }
+      }
+    },
+    "notePrompt.requestRevision": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request revision"
+          }
+        }
+      }
+    },
     "pairing.cancelled": {
       "extractionState": "manual",
       "localizations": {
@@ -2847,6 +5003,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Viewer"
+          }
+        }
+      }
+    },
+    "snooze.nextWeek": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next week"
+          }
+        }
+      }
+    },
+    "snooze.oneHour": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 hour"
+          }
+        }
+      }
+    },
+    "snooze.tomorrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow"
+          }
+        }
+      }
+    },
+    "snooze.tonight": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tonight"
           }
         }
       }

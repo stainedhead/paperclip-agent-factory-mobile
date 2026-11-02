@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.testing.fakes
 
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.Decision
+import com.stainedhead.paperclipmobile.domain.DecisionEffect
 import com.stainedhead.paperclipmobile.domain.DecisionId
 import com.stainedhead.paperclipmobile.domain.DecisionOption
 import com.stainedhead.paperclipmobile.domain.DecisionOutcome
@@ -36,6 +37,9 @@ class FakeDecisionGateway(
     private val decidedKeys = mutableMapOf<DecisionId, String>()
     var serverChangesOnFailure: ((Decision) -> Decision)? = null
 
+    /** Called with the decision's id once a decide or dismiss took effect, so a demo feed can drop its card. */
+    var onResolved: ((String) -> Unit)? = null
+
     /** Runs after `get` has read the decision and before it answers: the answer is then older than what follows. */
     var afterRead: (suspend () -> Unit)? = null
 
@@ -45,6 +49,9 @@ class FakeDecisionGateway(
         val inputValues: Map<String, String>,
         val idempotencyKey: String,
     )
+
+    /** What the "server" holds now, for tests and demo controls. */
+    val stored: Map<DecisionId, Decision> get() = store
 
     fun count(name: String): Int = calls[name] ?: 0
 
@@ -143,6 +150,7 @@ class FakeDecisionGateway(
             }
         store[id] = stored
         if (idempotencyKey != null) decidedKeys[id] = idempotencyKey
+        onResolved?.invoke(id.value)
         return DomainResult.Success(stored)
     }
 
@@ -169,6 +177,7 @@ class FakeDecisionGateway(
                 outcome = DecisionOutcome(ExecutionStatus.Succeeded, emptyList()),
             )
         store[current.id] = dismissed
+        onResolved?.invoke(current.id.value)
         return DomainResult.Success(dismissed)
     }
 
@@ -220,7 +229,7 @@ private fun problem(
         else -> current.validateInputs(inputValues)?.let { DomainError.Rejected("Input ${it.inputId} is invalid") }
     }
 
-private fun outcomeFor(
+internal fun outcomeFor(
     option: DecisionOption,
     effectStatuses: List<EffectStatus>?,
 ): DecisionOutcome {
@@ -234,7 +243,43 @@ private fun outcomeFor(
         }
     val results =
         statuses.mapIndexed { index, status ->
-            EffectResult(index, "effect", status, "target_changed".takeIf { status == EffectStatus.Skipped })
+            EffectResult(
+                index,
+                option.effects.getOrNull(index)?.serverType() ?: "effect",
+                status,
+                "target_changed".takeIf {
+                    status ==
+                        EffectStatus.Skipped
+                },
+            )
         }
     return DecisionOutcome(execution, results)
 }
+
+/** Someone else decided [id] with [optionId]: the next read shows it decided, with its effects done. */
+fun FakeDecisionGateway.resolveElsewhere(
+    id: DecisionId,
+    optionId: String,
+) {
+    val current = stored[id] ?: return
+    val option = current.options.firstOrNull { it.id == optionId } ?: return
+    put(
+        current.copy(
+            status = DecisionStatus.Decided,
+            chosenOptionId = optionId,
+            outcome = outcomeFor(option, null),
+        ),
+    )
+}
+
+/** The server's name for the effect, as it appears in each effect result. */
+private fun DecisionEffect.serverType(): String =
+    when (this) {
+        is DecisionEffect.CommentOnIssue -> "comment_on_issue"
+        is DecisionEffect.CreateIssue -> "create_issue"
+        is DecisionEffect.UpdateIssueStatus -> "update_issue_status"
+        is DecisionEffect.AssignIssue -> "assign_issue"
+        is DecisionEffect.CancelIssueTree -> "cancel_issue_tree"
+        is DecisionEffect.ResolveBlocker -> "resolve_blockers"
+        is DecisionEffect.Unsupported -> raw
+    }
