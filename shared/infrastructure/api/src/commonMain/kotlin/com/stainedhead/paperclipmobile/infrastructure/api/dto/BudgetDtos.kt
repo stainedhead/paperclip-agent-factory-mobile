@@ -9,7 +9,10 @@ import com.stainedhead.paperclipmobile.domain.Money
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 
-/** `GET .../budgets/overview` (types/budget.ts:81-88); the app reads only the open incidents. */
+/** `GET .../budgets/overview` (types/budget.ts:81-88); the app reads only the open incidents. *
+ * Re-verified in 1b-4b against the pinned dist: `server/dist/services/budgets.js:395-428`,
+ * `db/dist/schema/budget_incidents.js`.
+ */
 @Serializable
 internal data class BudgetOverviewDto(
     val activeIncidents: List<BudgetIncidentDto>,

@@ -282,7 +282,7 @@ internal class StubAttention(
         return text in setOf("today", "this_week", "whenever") || isCalendarDate(text)
     }
 
-    /** `calendarDateSchema` (`shared/validators/decision-queue.js:28-31`): the date must exist. */
+    /** `calendarDateSchema` (`shared/dist/validators/decision-queue.js:28-31`): the date must exist. */
     private fun isCalendarDate(text: String): Boolean {
         if (!DATE.matches(text)) return false
         val (year, month, day) = text.split('-').map { it.toInt() }

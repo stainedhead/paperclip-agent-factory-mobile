@@ -8,7 +8,7 @@ import com.stainedhead.paperclipmobile.domain.TaskCounts
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
-// Shapes from the pinned release 2026.1023.0 (compiled dist): `server/dist/services/dashboard.js:150-195` for the
+// Shapes from the pinned release 2026.1023.0 (compiled dist): `server/dist/services/dashboard.js:150-190` for the
 // summary and `server/dist/services/costs.js:502-538` for the window rows (research, 1b-4b D1).
 
 /** `GET /companies/{c}/dashboard`. The groups are read by hand so one odd field cannot hide the others' meaning. */

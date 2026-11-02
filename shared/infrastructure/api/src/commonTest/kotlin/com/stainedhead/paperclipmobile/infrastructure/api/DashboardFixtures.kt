@@ -2,7 +2,7 @@ package com.stainedhead.paperclipmobile.infrastructure.api
 
 /**
  * Factory-home bodies in the shapes of the pinned release 2026.1023.0 (compiled dist, not recorded): `summary`
- * (`server/dist/services/dashboard.js:150-195`, `routes/dashboard.js:17-21`) and the window-spend rows
+ * (`server/dist/services/dashboard.js:150-190`, `routes/dashboard.js:17-21`) and the window-spend rows
  * (`services/costs.js:502-538`). `monthSpendCents` is a JS number and a window row's `costCents` is a
  * `::double precision` sum, so either may print as a fraction or in exponent form; `costCentsExact` is the exact text.
  */

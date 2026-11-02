@@ -13,6 +13,9 @@ import kotlinx.serialization.json.JsonPrimitive
  * `GET /decisions/{id}` and both mutations (`services/decisions.ts:277-281`): the decision row plus its `executions`.
  * Options, inputs and executions stay open objects and are read by hand, so an effect type this app does not know
  * cannot fail the whole decision (ADR-055). `signedSpec`, `targetSnapshots`, `ruleKey` and the rest are ignored.
+ *
+ * Re-verified in 1b-4b against the pinned dist: `server/dist/services/decisions.js:243-248`,
+ * `db/dist/schema/decisions.js`.
  */
 @Serializable
 internal data class DecisionDto(

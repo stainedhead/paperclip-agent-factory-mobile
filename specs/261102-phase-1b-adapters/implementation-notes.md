@@ -327,10 +327,10 @@ The previous milestone read `~/Code/Test/paperclip` (a newer dev tree). Everythi
 ## Not covered / not verified
 
 - No fixture was recorded from a running server and the contract test against the pinned container is CI only (1b-5); Docker does not run here.
-- Not verified from source: the reply of pause/resume (hydrated month spend?), whether `attention=blocked` returns non-`blocked` statuses, the status after `verdicts`, the unknown-parent answer of `POST /issues` (research, "Not verified").
+- Not verified from source (listed in research.md, "Not verified"): the pause/resume replies, a wake of an agent that cannot run, the unknown-agent and unknown-parent answers, the stub's 422 wordings, the status after `verdicts`, `attention=blocked` statuses. They meet the real server first in 1b-5.
 - `attachmentContent` has no Darwin or OkHttp byte-level test: the bytes are checked through the Ktor `MockEngine` only.
 - Real TLS, pins (still fail closed) and the WebSocket are unchanged and out of scope.
 
 ## Tests
 
-JUnit XML of the final run, module `shared/infrastructure/api`: 299 tests on each of JVM, Android host and iOS simulator (0 failed, 0 skipped); Konsist 55 (all modules). New or changed this milestone: Dashboard 11, Agent 18, Run 17, Issue reads 14, writes 15, attachments 9, Interaction 21, binary client 5, stub fidelity 5, audit 5 (was 4), mapper 3 (was 2). Kover from a fresh XML: Core 97.98% (2568 of 2621 lines), Presentation 98.02%; the infrastructure modules are outside the gates.
+JUnit XML of the final run (see the report for the module by target table); module `shared/infrastructure/api`: 299 tests on each of JVM, Android host and iOS simulator (0 failed, 0 skipped); Konsist 55 (all modules); Swift Testing in the app host 44 tests in 8 suites (including the 8 Keychain and 3 device-service tests) plus 1 XCUITest, all passed. New or changed this milestone: Dashboard 11, Agent 18, Run 17, Issue reads 14, writes 15, attachments 9, Interaction 21, binary client 5, stub fidelity 5, audit 5 (was 4), mapper 3 (was 2). Kover from a fresh XML: Core 97.98% (2568 of 2621 lines), Presentation 98.02%; the infrastructure modules are outside the gates.

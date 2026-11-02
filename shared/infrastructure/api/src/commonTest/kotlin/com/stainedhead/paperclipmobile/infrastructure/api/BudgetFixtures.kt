@@ -8,7 +8,7 @@ package com.stainedhead.paperclipmobile.infrastructure.api
  *
  * Re-verified in 1b-4b against the pinned release 2026.1023.0 (compiled dist): `server/dist/services/
  * budgets.js:395-428,597-626,697-790`, `db/dist/schema/budget_incidents.js`,
- * `server/dist/routes/costs.js:263-316,332-374`.
+ * `server/dist/routes/costs.js:139-148,296-302,318-340,363-377`.
  */
 internal object BudgetFixtures {
     fun incident(row: StubIncident): String {

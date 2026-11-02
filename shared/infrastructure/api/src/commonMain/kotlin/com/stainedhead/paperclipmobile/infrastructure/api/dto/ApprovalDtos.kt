@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 // Shapes from server/src/routes/approvals.ts and packages/db/src/schema/approvals.ts (research, approvals).
+// Re-verified in 1b-4b against the pinned dist: server/dist/routes/approvals.js:180-476, db/dist/schema/approvals.js.
 
 /** An approval row. `payload` is redacted by the server and its shape depends on `type`, so it stays open. */
 @Serializable

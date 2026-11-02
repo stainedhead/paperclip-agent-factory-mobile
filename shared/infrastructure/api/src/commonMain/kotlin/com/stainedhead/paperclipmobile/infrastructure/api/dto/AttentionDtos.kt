@@ -4,6 +4,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 // Shapes from packages/shared/src/types/attention.ts:221-277 and server/src/services/attention.ts (research, feed).
+// Re-verified in 1b-4b against the pinned dist: shared/dist/types/attention.d.ts,
+// server/dist/services/attention.js:393-420,1535-1625.
 // Everything is optional here: the mapper decides what a feed item cannot do without (ADR-059).
 
 /** `GET /companies/{c}/attention`. Counts are company-wide and computed before paging. */
