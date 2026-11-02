@@ -33,6 +33,8 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 class PaperclipGraph internal constructor(
     private val koin: Koin,
     private val resources: AutoCloseable? = null,
+    /** What the person must be told about this launch; the app shows it once (review1b F-B-2, ADR-078). */
+    val startupNotice: StartupNotice = StartupNotice(),
 ) {
     private val closed = AtomicInt(0)
 

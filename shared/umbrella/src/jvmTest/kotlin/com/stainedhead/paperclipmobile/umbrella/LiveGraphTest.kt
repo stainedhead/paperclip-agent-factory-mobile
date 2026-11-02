@@ -1,14 +1,19 @@
 package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.port.AttentionGateway
 import com.stainedhead.paperclipmobile.domain.port.LiveEvents
 import com.stainedhead.paperclipmobile.presentation.FirstRunStep
+import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.fakes.FakePairingBrowser
+import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.runTest
+import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 
 /** AD-040, AD-041: the live graph on a real database, with nothing from the fakes behind it. */
@@ -38,6 +43,33 @@ class LiveGraphTest {
             factories.close()
             graph.close()
         }
+
+    private fun orphanSecretStore() =
+        FakeSecretStore().also { it.seed(SecretKey(InstanceId("lost"), SecretName.BoardToken), TestData.TOKEN) }
+
+    @Test
+    fun `F-B-2 a recreated database is announced and the secrets of the lost factories are swept`() {
+        val file = createTempDirectory("pafm-live").toFile().resolve("paperclip.db")
+        file.writeText("this is not a sqlite database ".repeat(200))
+        val secrets = orphanSecretStore()
+
+        val graph = graphOn(LiveTestPlatform(file = file, secretStore = secrets))
+
+        graph.startupNotice shouldBe StartupNotice(databaseRecreated = true, orphanSecretsRemoved = 1)
+        secrets.paths shouldBe emptySet()
+        graph.close()
+    }
+
+    @Test
+    fun `F-B-2 an intact database announces nothing and leaves the secret store alone`() {
+        val secrets = orphanSecretStore()
+
+        val graph = graphOn(LiveTestPlatform(secretStore = secrets))
+
+        graph.startupNotice shouldBe StartupNotice(databaseRecreated = false, orphanSecretsRemoved = 0)
+        secrets.paths.size shouldBe 1
+        graph.close()
+    }
 
     @Test
     fun `every port the graph resolves is a real adapter, none comes from the testing module`() {

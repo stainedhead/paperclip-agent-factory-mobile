@@ -58,6 +58,19 @@ class KeychainSecretStore internal constructor(
             listed.accounts.forEach { writer.remove(it) }
         }
 
+    override suspend fun namespaces(): Set<InstanceId> =
+        withContext(Dispatchers.Default) {
+            val listed = backend.accounts(NAMESPACE_ROOT)
+            check(listed.status == errSecSuccess || listed.status == errSecItemNotFound) {
+                "the keychain could not list the factories that hold secrets (status ${listed.status})"
+            }
+            // Account = instance/{id}/{name}[#protected]; an id holding only a marker still counts, it is swept too.
+            listed.accounts
+                .mapNotNull { it.removePrefix(NAMESPACE_ROOT).substringBefore('/', "").takeIf(String::isNotEmpty) }
+                .map { InstanceId(it) }
+                .toSet()
+        }
+
     private fun getNow(
         account: String,
         reason: String,
@@ -83,4 +96,8 @@ class KeychainSecretStore internal constructor(
     }
 
     override fun toString(): String = "KeychainSecretStore"
+
+    private companion object {
+        const val NAMESPACE_ROOT = "instance/"
+    }
 }

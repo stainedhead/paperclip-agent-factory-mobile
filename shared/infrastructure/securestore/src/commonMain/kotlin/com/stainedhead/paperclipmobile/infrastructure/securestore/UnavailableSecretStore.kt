@@ -28,4 +28,6 @@ class UnavailableSecretStore : SecretStore {
     override suspend fun delete(key: SecretKey) = Unit
 
     override suspend fun deleteNamespace(instanceId: InstanceId) = Unit
+
+    override suspend fun namespaces(): Set<InstanceId> = emptySet()
 }

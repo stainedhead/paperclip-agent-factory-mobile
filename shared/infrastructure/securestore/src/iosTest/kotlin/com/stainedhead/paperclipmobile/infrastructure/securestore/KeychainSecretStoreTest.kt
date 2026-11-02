@@ -161,6 +161,23 @@ class KeychainSecretStoreTest {
         }
 
     @Test
+    fun `F-B-2 namespaces lists every instance with an item or a marker by names only`() =
+        runTest {
+            store.put(SecretKey(InstanceId("a"), SecretName.BoardToken), Secret.of("x"), protected)
+            store.put(SecretKey(InstanceId("ab"), SecretName.BoardToken), Secret.of("y"), open)
+            backend.items.remove("instance/a/boardToken")
+            store.namespaces() shouldBe setOf(InstanceId("a"), InstanceId("ab"))
+            backend.listedPrefixes.last() shouldBe "instance/"
+        }
+
+    @Test
+    fun `F-B-2 a namespaces listing failure is not swallowed`() =
+        runTest {
+            backend.listFailure = errSecInteractionNotAllowed
+            shouldThrow<IllegalStateException> { store.namespaces() }
+        }
+
+    @Test
     fun `AD-030 a deleteNamespace failure is not swallowed`() =
         runTest {
             store.put(key, Secret.of("v"), open)

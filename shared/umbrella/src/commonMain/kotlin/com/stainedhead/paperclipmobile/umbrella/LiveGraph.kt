@@ -1,7 +1,9 @@
 package com.stainedhead.paperclipmobile.umbrella
 
+import com.stainedhead.paperclipmobile.application.instance.SweepOrphanSecrets
 import com.stainedhead.paperclipmobile.domain.port.PairingBrowser
 import com.stainedhead.paperclipmobile.infrastructure.api.PaperclipHttpClient
+import kotlinx.coroutines.runBlocking
 import org.koin.dsl.koinApplication
 
 /**
@@ -24,7 +26,20 @@ internal fun PaperclipCore.createLiveGraph(
                 presentationModule(),
             )
         }
-    return PaperclipGraph(application.koin, LiveResources(client, platform))
+    return PaperclipGraph(application.koin, LiveResources(client, platform), startupNoticeOf(platform))
+}
+
+/**
+ * A recreated database means the factory list is gone while the secret store still holds the keys of those factories
+ * (an iOS Keychain item survives even a reinstall): they are removed here, once, and the person is told (F-B-2).
+ */
+private fun startupNoticeOf(platform: LivePlatform): StartupNotice {
+    if (!platform.persistence.recreated) return StartupNotice()
+    val removed =
+        runCatching {
+            runBlocking { SweepOrphanSecrets(platform.persistence.instances, platform.secretStore)() }
+        }.getOrDefault(0)
+    return StartupNotice(databaseRecreated = true, orphanSecretsRemoved = removed)
 }
 
 /** What a live graph owns and lets go of when it is closed, in order: the HTTP client, the database, the platform. */

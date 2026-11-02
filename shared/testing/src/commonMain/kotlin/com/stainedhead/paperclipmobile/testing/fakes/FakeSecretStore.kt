@@ -69,6 +69,8 @@ class FakeSecretStore : SecretStore {
         values.remove(key.path)
     }
 
+    override suspend fun namespaces(): Set<InstanceId> = values.keys.map { InstanceId(it.split('/')[1]) }.toSet()
+
     override suspend fun deleteNamespace(instanceId: InstanceId) {
         check(instanceId !in failNamespaceDeletes) { "the secure store is unavailable" }
         val prefix = SecretKey.namespacePrefix(instanceId)

@@ -298,8 +298,8 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Status:** Accepted (2026-11-02, Phase 1b-2, `specs/261102-phase-1b-adapters`)
 
 **Context.** SQLite opens a garbage file and fails on the first statement; a file may also come from a newer app version after a downgrade, or lack a table. The database holds only non-secret factory configuration, settings and an Inbox cache. The credentials are in the Keychain or Keystore under `instance/{id}/`.
-**Decision.** After opening, the app probes the file (`user_version` not newer than the code; the three tables exist). If opening or the probe fails, the database and its `-wal`/`-shm`/`-journal` files are deleted and a new empty one is created (`PaperclipPersistence.recreated` is true so the composition root can tell the person). Only a failure of that second open is fatal. No secret column or secret-typed parameter exists: a test pins the exact column list and scans every stored value for `pcp_board_`, and a Konsist rule forbids importing `Secret` or `SecretKey` in the module.
-**Consequences.** The person loses the factory list, not access control. Because `SecretStore` cannot list keys, recreating orphans the items under `instance/{id}/` until the same ids are reused (they are not: new ids are generated) or the app is reinstalled; they stay protected by the Keychain/Keystore and are never read. Failing closed was rejected: it would leave the app unusable with reinstalling as the only way out.
+**Decision.** After opening, the app probes the file (`user_version` not newer than the code; the three tables exist). If the probe shows the file is unusable (not a database, malformed, newer schema, a missing table), the database and its `-wal`/`-shm`/`-journal` files are deleted and a new empty one is created (`PaperclipPersistence.recreated` is true). Any other failure (busy, I/O, disk full, protected data unavailable, a migration that throws) deletes nothing and is reported as `StorageUnavailableException` (corrected by ADR-077). Only a failure of that second open is fatal. No secret column or secret-typed parameter exists: a test pins the exact column list and scans every stored value for `pcp_board_`, and a Konsist rule forbids importing `Secret` or `SecretKey` in the module.
+**Consequences.** The person loses the factory list, not access control. *Corrected by ADR-078:* the original text said recreating orphans the items under `instance/{id}/` until the app is reinstalled. That is false on iOS: Keychain items survive app deletion, and nothing would ever have removed them. `SecretStore` can now list the instance ids that hold secrets, and a recreated database triggers a sweep that deletes the namespaces with no factory row; the person is told through `PaperclipGraph.startupNotice`. Failing closed was rejected: it would leave the app unusable with reinstalling as the only way out.
 
 ## ADR-043: Persistence layout: payload mirror classes, one serial executor, orphan pruning
 
@@ -492,3 +492,43 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** The live contract run showed that Paperclip applies a pause or resume in steps: a resume answers `status paused`, no pause reason, `lifecycleState resuming`, and the very next read shows `idle`. `ResumeAgent` (application layer, a cross-ownership edit made test-first in its own commit) therefore reads the agent once when the reply says `resuming`, and reports that read; if the read fails it reports the server's reply. The resume itself is still sent exactly once. Pause is unchanged (its reply, `paused`/`manual`, is the state the person asked for). The adapter, the shared contract and the fake keep modelling the settled state; the stub has an opt-in `transitions` mode that reproduces the server.
 **Consequences.** The screen no longer shows a paused agent under a Resume button that was just pressed. An agent that is still `pausing` or `resuming` when a screen loads is shown with the server's status; a state holder that wants to hide the transition can use `Agent.lifecycleState`, which the mapper already carries (not done here).
+
+## ADR-075: Pairing, pending-key and health calls carry the pins of the factory at that address
+
+**Status:** Accepted (2026-11-02, review1b F-A-1, `specs/261102-phase-1b-adapters`)
+
+**Context.** The fail-closed pin rule (ADR-040) is `request.pins.isNotEmpty() && !pinsEnforced`. Calls with a stored key read the pins from the `Instance`. The calls made before a key exists (health probe, `createChallenge`, `pollChallenge`, `meWithKey`, `listBoardKeysWithKey`) take only a `BaseUri` on the port, so they built `Destination(baseUri)` with no pins and went out over system trust TLS. Those calls carry the new board token, the challenge token and the pending key: the most sensitive traffic.
+**Decision.** The ports keep their signatures. `HealthGatewayAdapter` and `AuthGatewayAdapter` look up the pins of the configured factory at the same `BaseUri` (`PinLookup` over `InstanceRepository.observeAll()`, union of the pins of every factory at that address) and put them in the `Destination`, so the same refusal applies. A first pairing of an address no factory uses yet has no pins to apply, which is correct: nothing was pinned. A re-pair or probe of a pinned factory is refused with `CertificateInvalid` while no engine enforces pins. `HealthGatewayAdapter` now takes the `InstanceRepository`.
+**Consequences.** One extra local read per pre-key call. When an engine enforces pins the same lookup supplies them.
+
+## ADR-076: The server's approvalUrl is opened only when it is the instance's own origin
+
+**Status:** Accepted (2026-11-02, review1b F-A-3)
+
+**Context.** The pinned server builds `approvalUrl` from `x-forwarded-proto` and `x-forwarded-host` (access.ts:73-80). Behind a TLS-terminating proxy that does not forward the protocol it is `http://`; a different forwarded host gives a foreign origin. The URL carries the challenge token and is opened in a system browser where the person signs in.
+**Decision.** `ApprovalOrigin.isOwn` accepts the server value only if it has the scheme, host and port of the `BaseUri` (default ports made explicit, case-insensitive host), no user info, no backslash or space in the authority and no control characters. Because a `BaseUri` already enforces https (or http for `localhost` and `10.0.2.2` in debug), requiring the same scheme enforces the same allow-list. Anything else is ignored and the URL is built from the `BaseUri`, with the challenge id and token percent-encoded.
+**Consequences.** A proxy setup that publishes the web UI under a different origin than the one the phone uses will always get the locally built URL, which is the address the person typed.
+
+## ADR-077: A database is wiped only on proof; any other open failure is StorageUnavailable
+
+**Status:** Accepted (2026-11-02, review1b F-B-1)
+
+**Context.** `openRecovering` treated every exception from the open and the probe as corruption and deleted the file. A busy or locked file, a full disk, an I/O error, protected data before the first unlock, and a migration that throws all looked like corruption, so the OS could cause the loss of the factory list.
+**Decision.** Wipe only when the failure message in the cause chain says the file is not a database, is malformed or corrupt, is a downgrade or "newer than" the code, or the probe finds a newer `user_version` or a missing table. Every other failure closes the driver, deletes nothing and throws `StorageUnavailableException` (public in the persistence module). The second open after a wipe also throws it. Message matching is used because the three drivers (sqlite-jdbc, Android, sqliter) raise untyped exceptions; each pattern is covered by a test, and the real garbage file and newer-schema file tests run on JVM and iOS.
+**Consequences.** The Swift launch path must handle the exception (review1b F-B-5, deferred to the iOS stream). A driver message that changes wording would turn a corrupt file into a persistent "storage unavailable" instead of a wipe; that fails safe.
+
+## ADR-078: A recreated database is announced and its orphaned secrets are swept
+
+**Status:** Accepted (2026-11-02, review1b F-B-2)
+
+**Context.** `PaperclipPersistence.recreated` was never read, so a recreated database looked like a first launch. ADR-042 claimed orphaned Keychain items last until reinstall; on iOS they survive reinstall, so the board tokens of lost factories stayed on the phone forever.
+**Decision.** `SecretStore.namespaces()` lists the instance ids that hold secrets (names only, no prompt). `SweepOrphanSecrets` deletes every namespace that has no factory row, continuing past one that cannot be deleted. `createLiveGraph` runs it once when `persistence.recreated` is true and exposes `PaperclipGraph.startupNotice` (`databaseRecreated`, `orphanSecretsRemoved`) for the app to show once; the SwiftUI banner is the iOS stream's job. The notice is per launch and is not stored.
+**Consequences.** A person who never opens the app after the recreation does not see the notice; they see an empty factory list. The port gained one method, implemented by the fake, the Keychain store, the unavailable store and the contract suite.
+
+## ADR-079: A declined or invalidated key read is not a 401
+
+**Status:** Accepted (2026-11-02, review1b F-A-2)
+
+**Context.** `StoredCredentials` turned `Denied` and `Invalidated` into `Unauthorized`. `SignedOutMarker` then marked the factory Signed out after a cancelled Face ID prompt, and `KeyRevoker` reported `AlreadyInvalid` and the sign-out deleted the local key while the server key was still live.
+**Decision.** Two domain errors: `DeviceAuthDeclined` (nothing changes, try again) and `KeyInvalidated` (re-pair; the server key may be live). `Missing` stays `Unauthorized`. `SignedOutMarker` marks `NeedsRePairing` for `KeyInvalidated` and ignores `DeviceAuthDeclined`. `KeyRevoker` returns `RevokeOutcome.Declined` for a declined read and `Unconfirmed` for an invalidated key. Sign out and remove stop on `Declined` without deleting anything (`SignOutResult.Declined`, `RemoveInstanceResult.NotAuthorized(Cancelled)`); sign out everywhere counts it as failed. Presentation adds `ErrorKey.AuthDeclined`, `ErrorKey.KeyInvalidated` and `ServerKeyOutcome.Declined`.
+**Consequences.** Swift code that switches over `ErrorKey` or `ServerKeyOutcome` exhaustively gains cases. A key read can still prompt once per HTTP call (not changed here).

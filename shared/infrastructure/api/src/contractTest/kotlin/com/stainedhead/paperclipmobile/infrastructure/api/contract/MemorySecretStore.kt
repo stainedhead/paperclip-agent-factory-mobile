@@ -36,4 +36,6 @@ internal class MemorySecretStore : SecretStore {
     override suspend fun deleteNamespace(instanceId: InstanceId) {
         values.keys.removeAll { it.startsWith(SecretKey.namespacePrefix(instanceId)) }
     }
+
+    override suspend fun namespaces(): Set<InstanceId> = values.keys.map { InstanceId(it.split('/')[1]) }.toSet()
 }
