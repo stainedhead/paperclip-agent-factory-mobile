@@ -21,7 +21,6 @@ import com.stainedhead.paperclipmobile.domain.BaseUriResult
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Exposure
-import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.domain.Secret
@@ -366,7 +365,7 @@ internal class FirstRunSaving(
                 if (existing ==
                     null
                 ) {
-                    add(name, address, probed.report)
+                    add(name, address, probed)
                 } else {
                     update(existing, name, address, probed)
                 }
@@ -377,9 +376,9 @@ internal class FirstRunSaving(
     private suspend fun add(
         name: String,
         address: String,
-        report: HealthReport,
+        probed: ProbeResult.Accepted,
     ): Boolean =
-        when (val result = useCases.add(name, address, report)) {
+        when (val result = useCases.add(name, address, probed)) {
             is AddInstanceResult.Added -> {
                 session.instanceId = result.instance.id
                 true
@@ -395,6 +394,10 @@ internal class FirstRunSaving(
 
             is AddInstanceResult.Refused -> {
                 fail { it.copy(probe = ProbeStatus.Refused, probeRefusal = result.reason) }
+            }
+
+            AddInstanceResult.ProbeRequired -> {
+                fail { it.copy(probe = ProbeStatus.Idle) }
             }
         }
 

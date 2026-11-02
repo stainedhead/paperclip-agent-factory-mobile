@@ -6,6 +6,7 @@ import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.DeploymentMode
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
@@ -26,7 +27,25 @@ class InstanceUseCasesTest {
 
     private fun accepted(address: String) = ProbeResult.Accepted(TestData.uri(address), FakeHealthGateway.healthy())
 
-    private fun add(env: Env) = AddInstance(env.repository, env.clock, env.ids, env.validate)
+    private fun add(env: Env) = ProbedAdd(AddInstance(env.repository, env.clock, env.ids, env.validate))
+
+    /** Adds as the holders do: the report is wrapped in a probe result for the address that is being added. */
+    private class ProbedAdd(
+        private val add: AddInstance,
+    ) {
+        suspend operator fun invoke(
+            name: String,
+            address: String,
+            report: HealthReport,
+        ) = add(
+            name,
+            address,
+            ProbeResult.Accepted(
+                TestData.uri(address.takeIf { it.startsWith("https") } ?: TestData.HOME_URI),
+                report,
+            ),
+        )
+    }
 
     @Test
     fun `FR-005 the probe accepts an authenticated server`() =
@@ -75,6 +94,52 @@ class InstanceUseCasesTest {
             added.sortOrder shouldBe 5
             added.status shouldBe InstanceStatus.SignedOut
             env.repository.addCalls shouldBe 1
+        }
+
+    @Test
+    fun `F-A-4 a probe taken for another address is not accepted for this one and nothing is written`() =
+        runTest {
+            val env = Env()
+            val addUseCase = AddInstance(env.repository, env.clock, env.ids, env.validate)
+
+            val result = addUseCase("Other", "https://never-probed.example.com", accepted(TestData.HOME_URI))
+
+            result shouldBe AddInstanceResult.ProbeRequired
+            env.repository.addCalls shouldBe 0
+            env.secrets.paths shouldBe emptySet()
+            env.health.probeCalls shouldBe 0
+        }
+
+    @Test
+    fun `F-A-4 a clean report probed for another address cannot add a local trusted address`() =
+        runTest {
+            val env = Env()
+            val addUseCase = AddInstance(env.repository, env.clock, env.ids, env.validate)
+            env.health.response = DomainResult.Success(FakeHealthGateway.healthy(DeploymentMode.LocalTrusted))
+
+            addUseCase("Local", "https://local.example.com", accepted(TestData.HOME_URI)) shouldBe
+                AddInstanceResult.ProbeRequired
+            env.repository.addCalls shouldBe 0
+        }
+
+    @Test
+    fun `F-A-4 the same address may be added twice because each factory has its own key and name`() =
+        runTest {
+            val env = Env()
+            val addUseCase = AddInstance(env.repository, env.clock, env.ids, env.validate)
+
+            addUseCase(
+                "Work",
+                TestData.HOME_URI,
+                accepted(TestData.HOME_URI),
+            ).shouldBeInstanceOf<AddInstanceResult.Added>()
+            addUseCase("Personal", TestData.HOME_URI, accepted(TestData.HOME_URI))
+                .shouldBeInstanceOf<AddInstanceResult.Added>()
+
+            env.repository.current
+                .map { it.id }
+                .toSet()
+                .size shouldBe 2
         }
 
     @Test

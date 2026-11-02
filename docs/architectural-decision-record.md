@@ -180,3 +180,15 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** No. `GET /api/companies/{c}/budgets/overview` lists only incidents with status `open` (`svc/budgets.ts:931`), and the resolve response is the only place the status is returned. The Budget screen shows `KeptPaused` or `Raised` from its own resolve response and `NoLongerActive` for an incident that disappeared (resolved here earlier, resolved on the web, or dismissed by the server). The data is not invented.
 **Consequences.** Documented as a known limitation in `docs/technical-details.md`; an upstream endpoint for one incident would remove it.
 
+
+## ADR-030: A probe result is bound to the address it was taken for, and the same address may be added more than once
+
+**Status:** Accepted (2026-11-01, review fixes F-B-1 and F-A-4)
+
+**Context.** `AddInstance` and `UpdateInstance` trusted a `HealthReport` the caller passed, and the holders applied a probe result that arrived after the address had been edited. An unprobed, possibly `local_trusted`, address could be saved.
+
+**Decision.** `ProbeResult` (Accepted, Refused, Failed) carries the `baseUri` it was taken for. `AddInstance` takes a `ProbeResult.Accepted` and answers `ProbeRequired` when its `baseUri` is not the validated address; it still refuses a `local_trusted` report. `UpdateInstance` answers `ProbeRequired` for an address change unless `InstanceEdit.probed` is an accepted probe of exactly the new address. The first-run and edit holders keep the probe job, cancel it when the address changes and drop a result whose `baseUri` is not the current address, so the rules live in the application layer and the UI flags only reflect them.
+
+**Duplicate addresses.** The same address is allowed more than once. Names are unique (ignoring case), but two factories may point at one server, for example two accounts or a work and a personal board key on one instance; each has its own `InstanceId`, secret namespace and key. Rejecting a repeated address would block that and protect nothing, because the key, not the address, is the credential.
+
+**Consequences.** A late probe can no longer be applied elsewhere; the check costs one value comparison. Wrapping a bare `HealthReport` for `AddInstance` is no longer possible outside tests.

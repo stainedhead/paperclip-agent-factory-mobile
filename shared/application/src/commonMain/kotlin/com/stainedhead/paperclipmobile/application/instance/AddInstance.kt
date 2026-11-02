@@ -30,9 +30,16 @@ sealed interface AddInstanceResult {
     data class Refused(
         val reason: ProbeRefusal,
     ) : AddInstanceResult
+
+    /** The probe was taken for another address than the one being added. Nothing was written. */
+    data object ProbeRequired : AddInstanceResult
 }
 
-/** Adds a factory after a successful probe (PRD FR-001, FR-003, FR-005). It starts Signed out until it is paired. */
+/**
+ * Adds a factory after a successful probe of exactly that address (PRD FR-001, FR-003, FR-005): the probe result names
+ * the address it was taken for, a result for any other address is refused, and `local_trusted` is refused here, not
+ * only in the UI. The same address may be added more than once (ADR-030). It starts Signed out until it is paired.
+ */
 class AddInstance(
     private val repository: InstanceRepository,
     private val clock: Clock,
@@ -42,25 +49,30 @@ class AddInstance(
     suspend operator fun invoke(
         name: String,
         address: String,
-        probed: HealthReport,
+        probed: ProbeResult.Accepted,
     ): AddInstanceResult =
         when (val parsed = validateAddress(address)) {
-            is BaseUriResult.Invalid -> AddInstanceResult.InvalidAddress(parsed.error)
-            is BaseUriResult.Valid -> addValid(name, parsed, probed)
+            is BaseUriResult.Invalid -> {
+                AddInstanceResult.InvalidAddress(parsed.error)
+            }
+
+            is BaseUriResult.Valid -> {
+                if (probed.baseUri != parsed.uri) AddInstanceResult.ProbeRequired else addValid(name, parsed, probed)
+            }
         }
 
     private suspend fun addValid(
         name: String,
         address: BaseUriResult.Valid,
-        probed: HealthReport,
+        probed: ProbeResult.Accepted,
     ): AddInstanceResult {
         val existing = repository.observeAll().first()
         val nameIssue = InstanceNames.issueFor(name, existing)
-        val refusal = probed.refusal()
+        val refusal = probed.report.refusal()
         if (nameIssue != null) return AddInstanceResult.InvalidName(nameIssue)
         if (refusal != null) return AddInstanceResult.Refused(refusal)
         val nextSortOrder = (existing.maxOfOrNull { it.sortOrder } ?: -1) + 1
-        val instance = build(name.trim(), address, probed, nextSortOrder)
+        val instance = build(name.trim(), address, probed.report, nextSortOrder)
         repository.add(instance)
         return AddInstanceResult.Added(instance)
     }

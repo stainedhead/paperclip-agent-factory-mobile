@@ -27,7 +27,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] FR-R02 (P0) F-A-2: Sign out and sign out everywhere can leave credentials behind when cancelled or when one factory thr
 - [x] FR-R03 (P0) F-B-1: A late probe result is applied to a different address, so an unprobed (possibly `local_trusted`) add
 - [ ] FR-R04 (P1) F-A-3: A 401 on any company-scoped read or mutation does not mark the factory Signed out (PRD FR-023)
-- [ ] FR-R05 (P1) F-A-4: `AddInstance` trusts a caller-supplied `HealthReport` that is not bound to the address
+- [x] FR-R05 (P1) F-A-4: `AddInstance` trusts a caller-supplied `HealthReport` that is not bound to the address
 - [ ] FR-R06 (P1) F-A-5: Failed enrollment and cancellation leave key, status and config inconsistent
 - [ ] FR-R07 (P1) F-A-6: Reconciled results for heartbeat and comments do not say whether the mutation took effect
 - [ ] FR-R08 (P1) F-A-8: Stale-snapshot writes and unvalidated caller-supplied entities in use cases
@@ -84,3 +84,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: spec created from the review PRD.
 - 2026-11-01: FR-R01 fixed (F-A-1 key host binding).
 - 2026-11-01: FR-R03 fixed (F-B-1 probe result bound to the probed address).
+- 2026-11-01: FR-R05 fixed (F-A-4 AddInstance requires a probe bound to the address).

@@ -22,7 +22,6 @@ import com.stainedhead.paperclipmobile.domain.BaseUriResult
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Exposure
-import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
@@ -488,7 +487,7 @@ internal class EditInstanceSaving(
             state.update { it.copy(isBusy = false) }
             return
         }
-        when (val result = useCases.add(current.name, current.address, probed.report)) {
+        when (val result = useCases.add(current.name, current.address, probed)) {
             is AddInstanceResult.Added -> {
                 saved(result.instance)
             }
@@ -503,6 +502,10 @@ internal class EditInstanceSaving(
 
             is AddInstanceResult.Refused -> {
                 state.update { it.copy(isBusy = false, probe = ProbeStatus.Refused, probeRefusal = result.reason) }
+            }
+
+            AddInstanceResult.ProbeRequired -> {
+                state.update { it.copy(isBusy = false, probe = ProbeStatus.Idle).revalidated() }
             }
         }
     }
