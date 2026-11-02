@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.umbrella
 
+import com.stainedhead.paperclipmobile.domain.port.PairingBrowser
 import com.stainedhead.paperclipmobile.presentation.AppStateHolder
 import com.stainedhead.paperclipmobile.presentation.ApprovalStateHolder
 import com.stainedhead.paperclipmobile.presentation.BudgetIncidentStateHolder
@@ -95,6 +96,19 @@ class PaperclipGraph internal constructor(
 internal fun newScreenScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
 object PaperclipCore {
+    /**
+     * The graph on the real adapters: the platform's Keychain or Keystore, its biometrics, network monitor and
+     * database, and the Paperclip REST API (AD-040). [pairingBrowser] opens the approval page; the app supplies it
+     * because a system browser session needs a window. An empty database yields no factories and the first-run flow
+     * (AD-041). Close the graph with `close()` when the process is done with it.
+     *
+     * @param allowInsecureLocal true only in debug builds; lets `http://localhost` and `http://10.0.2.2` be used.
+     */
+    fun createLiveGraph(
+        allowInsecureLocal: Boolean,
+        pairingBrowser: PairingBrowser,
+    ): PaperclipGraph = createLiveGraph(allowInsecureLocal, pairingBrowser, defaultLivePlatform())
+
     /** The graph on fakes seeded with the demo data set that matches the design mocks (demo mode, PRD FR-097). */
     fun createDemoGraph(): PaperclipGraph =
         PaperclipGraph(
