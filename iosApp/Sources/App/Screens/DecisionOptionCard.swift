@@ -49,7 +49,7 @@ struct DecisionOptionCard: View {
             )
             .contentShape(RoundedRectangle(cornerRadius: Radius.card))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.cardSelect)
         .accessibilityElement(children: .ignore)
         .disabled(isDisabled)
         .accessibilityLabel(DecisionPresentation.optionLabel(option))

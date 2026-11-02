@@ -165,4 +165,13 @@ final class DecisionUITests: XCTestCase {
         let findings = try auditDetailScreen(app, screen: "decision", barIdentifier: "decision-dismiss")
         XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
+
+    @MainActor
+    func testAccessibilityAuditOfTheOfflineDecisionScreen() throws {
+        let app = launchInbox(extra: ["-demo-offline-after-detail"])
+        app.buttons["inbox-card-\(DetailIds.decision)-review"].tap()
+        XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 20))
+        let findings = try auditDetailScreen(app, screen: "decision-offline", barIdentifier: "decision-dismiss")
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
+    }
 }

@@ -349,3 +349,39 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** Sections, cards and chips are shown in the order the state gives (shared grouping sorts Critical first, so the budget alert precedes the HIGH approval, unlike the mock; chips are in kind order). The state has no sub-kind ("Plans queue", "Hire agent"), so the kind line is the kind and identifier. A `List` is used because only list rows support swipe actions; Snooze opens a confirmation dialog listing `snoozeOptions`. The card's text block is one button with a combined spoken label; the action buttons stay separate elements. Kinds the app cannot show open `item.webUrl` in `SFSafariViewController`, only for http(s). Decision, approval, budget-incident, issue, run and agent targets map to routes or a sheet that are labelled placeholders until later milestones.
 
 **Consequences.** Mock-fidelity gaps (order, sub-kind) are shared-state decisions; changing them is a shared change.
+
+## ADR-095: Detail screens own their model by route, refresh while visible, and take their hints from the card that opened them
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Context.** The Decision, Approval and Budget screens each have a shared holder that polls (15 s while the item can change, none once final) and that needs, for a decision, facts only the Inbox card knows (agent name, decide-by, snooze key).
+
+**Decision.** `AppEnvironment` creates one model per `ScreenKey` (`decision`, `approval`, `budget`) in the existing `ModelStore` and closes it when its route leaves the stack; the Budget sheet's key is kept while the sheet is presented and released when it is dismissed (`AppRouter.present` and `dismissSheet` now report the change). A view starts `graph.refresh.start(target: holder.refreshTarget)` on appear and stops it on disappear (`refreshWhileVisible`), so the state's `refreshIntervalSeconds` is the only timer. The Inbox card's facts reach the Decision holder through `rememberDecisionHints` (the route carries ids only), mapped back to the strings the shared parser accepts (`DecisionHintMapping`). Dismissing the Budget sheet refreshes the Inbox so a resolved incident's card goes.
+
+**Consequences.** No Swift timers, no leaked holders (tested in `DetailScreenRoutingTests`). A screen opened without a card (a launch option) has no Snooze, as the shared rule says.
+
+## ADR-096: The demo can show a server that moved on: resolved elsewhere, offline after the detail loaded, the server's own spend
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Decision.** `DemoControls` gains `resolveDecisionElsewhere`, `resolveApprovalElsewhere`, `resolveIncidentElsewhere` (the Inbox feed still lists the card, as in a feed read a moment earlier) and `setBudgetServerSpend` (the server's spend is above what the incident showed, so a raise that clears the shown spend gets the server's 422 reason). Launch options: `-demo-resolved-elsewhere decision,approval,budget`, `-demo-offline-after-detail` (offline once the first detail screen has content, because all three holders refuse to load while offline), `-demo-budget-server-spend <cents>`, and `-demo-open decision:<id>|approval:<id>|budget:<id>`. Deciding or dismissing a decision removes its Inbox card through `FakeDecisionGateway.onResolved`; dec-1183 carries a required input with a 40 character limit; effect results carry the server's effect type.
+
+**Consequences.** All behaviour is in shared fakes with tests (`DemoDecisionFlowTest`); no UI-only fake state.
+
+## ADR-097: A hire approval's manager is named by the shared load, not by the view
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Context.** The payload holds only `reportsToAgentId`; the mock shows "Reports to CTO". Resolving an id to a name in Swift would be a rule in the app.
+
+**Decision.** `LoadApproval` reads the agents list best effort and `ApprovalDetail.agentNames` carries the hire's manager; `ApprovalPayloadUi.HireAgent.reportsToName` exposes it (the id remains the fallback). Role words ("qa" reads "QA") and money ("$150" for 15000 cents, cents kept when not whole) are presentation lookups in Swift (`ApprovalPresentation.roleName`, `MoneyFormat`), tested; the same formatter parses the amount typed on the Budget sheet into minor units.
+
+**Consequences.** Android will need the same two lookups; if they should be shared they move to presentation with the existing tests.
+
+## ADR-098: Face ID is the use case's; destructive controls show the lock, a plain Confirm does not; disabled cards are muted, not dimmed
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Decision.** No screen asks Face ID itself and none adds a second confirmation sheet for a destructive option or a budget raise: the confirm button (lock glyph only when the state says `confirmNeedsDeviceAuth` or `submitNeedsDeviceAuth`; the mock shows the lock on every Confirm, a deviation) sends the intent, and a cancelled prompt comes back as `feedback.deviceAuth` and is shown, with nothing changed. A reject or revision note is asked in a sheet that stays open after a cancelled prompt (`notePrompt` stays set). Selectable cards use `CardSelectButtonStyle`, which mutes a disabled card with secondary text instead of the system's dimming (which failed the contrast audit offline). Detail screens hide the tab bar and keep their action bar outside the scroll view; the UI audit helper reports elements that reach below the action bar's top as `DETAIL-AUDIT-BEHIND-BAR` (scrolled content the bar hides) and returns every other finding.
+
+**Consequences.** One gate for every platform. A reader of the state can tell why nothing happened.

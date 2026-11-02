@@ -148,4 +148,13 @@ final class ApprovalUITests: XCTestCase {
         let findings = try auditDetailScreen(app, screen: "approval", barIdentifier: "approval-approve")
         XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
+
+    @MainActor
+    func testAccessibilityAuditOfTheOfflineApprovalScreen() throws {
+        let app = launchInbox(extra: ["-demo-offline-after-detail"])
+        app.buttons["inbox-card-\(DetailIds.approval)-details"].tap()
+        XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 20))
+        let findings = try auditDetailScreen(app, screen: "approval-offline", barIdentifier: "approval-approve")
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
+    }
 }

@@ -231,9 +231,13 @@ final class InboxUITests: XCTestCase {
         XCTAssertTrue(unexplained(findings).isEmpty, unexplained(findings).joined(separator: "\n"))
     }
 
-    /// Listed in implementation-notes.md: "Contrast failed" on an element the audit reports with no label and a zero
-    /// frame (it samples pixels the system draws, not one of our views), and "Text clipped" on the offline banner's
-    /// two lines, whose frames fit their text on screen. Anything else fails the test.
+    /// Traced in implementation-notes.md (2i-3), not ignored. (1) "Contrast failed" on an element with no label
+    /// and a zero frame is the system tab bar's own labels, measured over the Liquid Glass with list content behind
+    /// it (the xcresult's element screenshot of the finding is the bar's "Inbox" and "Factory" labels; hiding the
+    /// tab bar makes it vanish; an opaque bar appearance and a visible bar background change nothing on this
+    /// runtime). (2) "Text clipped" on the two offline lines: their frames fit their text; the same two views pass the
+    /// audit inside the scroll-view detail screens, so it is specific to the List row that hosts them (removing
+    /// `fixedSize` and giving each header part its own row did not change it). Anything else fails the test.
     private func unexplained(_ findings: [String]) -> [String] {
         findings.filter { finding in
             let unlabelledContrast =

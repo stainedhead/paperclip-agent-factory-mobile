@@ -123,4 +123,13 @@ final class BudgetUITests: XCTestCase {
         let findings = try auditDetailScreen(app, screen: "budget", barIdentifier: "budget-submit")
         XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
+
+    @MainActor
+    func testAccessibilityAuditOfTheOfflineBudgetScreen() throws {
+        let app = launchInbox(extra: ["-demo-offline-after-detail"])
+        app.buttons["inbox-card-\(DetailIds.budget)-raise"].tap()
+        XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 20))
+        let findings = try auditDetailScreen(app, screen: "budget-offline", barIdentifier: "budget-submit")
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
+    }
 }

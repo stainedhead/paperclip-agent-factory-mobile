@@ -139,6 +139,7 @@ private struct BudgetScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.small) {
                     HStack(spacing: Spacing.medium) {
                         Text(L10n.text(choice)).font(Typography.cardTitle)
+                            .foregroundStyle((enabled ? Palette.textPrimary : Palette.textSecondary).color)
                         if locked {
                             Image(systemName: "lock.fill").font(Typography.secondary).accessibilityHidden(true)
                         }
@@ -157,7 +158,7 @@ private struct BudgetScreen: View {
             )
             .contentShape(RoundedRectangle(cornerRadius: Radius.card))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.cardSelect)
         .accessibilityElement(children: .ignore)
         .disabled(!enabled)
         .accessibilityLabel("\(L10n.text(choice)). \(help)")
