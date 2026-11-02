@@ -77,23 +77,6 @@ data class ErrorUi(
     val detail: String? = null,
 )
 
-internal fun DomainError.toErrorUi(): ErrorUi =
-    when (this) {
-        DomainError.Unreachable -> ErrorUi(ErrorKey.Unreachable)
-        DomainError.CertificateInvalid -> ErrorUi(ErrorKey.CertificateInvalid)
-        DomainError.Timeout -> ErrorUi(ErrorKey.Timeout)
-        DomainError.Unauthorized -> ErrorUi(ErrorKey.SignedOut)
-        DomainError.Forbidden -> ErrorUi(ErrorKey.NoPermission)
-        DomainError.NotFound -> ErrorUi(ErrorKey.NotFound)
-        DomainError.Conflict -> ErrorUi(ErrorKey.Conflict)
-        is DomainError.Rejected -> ErrorUi(ErrorKey.Rejected, reason)
-        DomainError.ServerError -> ErrorUi(ErrorKey.ServerError)
-        DomainError.RateLimited -> ErrorUi(ErrorKey.RateLimited)
-        DomainError.Malformed -> ErrorUi(ErrorKey.Malformed)
-        DomainError.DeviceAuthDeclined -> ErrorUi(ErrorKey.AuthDeclined)
-        DomainError.KeyInvalidated -> ErrorUi(ErrorKey.KeyInvalidated)
-    }
-
 /** Why device authentication did not go ahead. */
 enum class DeviceAuthIssue {
     Cancelled,

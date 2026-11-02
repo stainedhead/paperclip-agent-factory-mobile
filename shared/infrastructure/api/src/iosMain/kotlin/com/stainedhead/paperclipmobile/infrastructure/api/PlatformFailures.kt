@@ -16,6 +16,7 @@ internal fun classifyUrlError(
         domain != URL_ERROR_DOMAIN -> DomainError.Unreachable
         code in TLS_CODES -> DomainError.CertificateInvalid
         code == TIMED_OUT -> DomainError.Timeout
+        code == CONNECTION_LOST -> DomainError.ConnectionLost
         else -> DomainError.Unreachable
     }
 
@@ -23,5 +24,6 @@ internal fun classifyNsError(error: NSError): DomainError = classifyUrlError(err
 
 private const val URL_ERROR_DOMAIN = "NSURLErrorDomain"
 private const val TIMED_OUT = -1001L
+private const val CONNECTION_LOST = -1005L
 private const val ATS_REQUIRES_SECURE = -1022L
 private val TLS_CODES: Set<Long> = (-1206L..-1200L).toSet() + ATS_REQUIRES_SECURE

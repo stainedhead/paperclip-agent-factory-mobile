@@ -13,6 +13,7 @@ class ErrorMappingTest {
                 DomainError.Unreachable to ErrorKey.Unreachable,
                 DomainError.CertificateInvalid to ErrorKey.CertificateInvalid,
                 DomainError.Timeout to ErrorKey.Timeout,
+                DomainError.ConnectionLost to ErrorKey.Unreachable,
                 DomainError.Unauthorized to ErrorKey.SignedOut,
                 DomainError.Forbidden to ErrorKey.NoPermission,
                 DomainError.NotFound to ErrorKey.NotFound,

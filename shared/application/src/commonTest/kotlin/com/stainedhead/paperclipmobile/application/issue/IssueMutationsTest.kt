@@ -56,6 +56,17 @@ class CommentOnIssueTest {
         }
 
     @Test
+    fun `F-A-5 a lost connection on a comment is Unknown after one send and a thread read`() =
+        runTest {
+            val env = Env()
+            env.issues.failures["addComment"] = DomainError.ConnectionLost
+
+            CommentOnIssue(env.issues)(env.context(), id, "hi", CommentOptions()) shouldBe
+                MutationResult.Unknown(DomainError.ConnectionLost)
+            env.issues.count("addComment") shouldBe 1
+        }
+
+    @Test
     fun `FR-096 a timeout is sent once and the thread is compared with the one before the call`() =
         runTest {
             val env = Env()

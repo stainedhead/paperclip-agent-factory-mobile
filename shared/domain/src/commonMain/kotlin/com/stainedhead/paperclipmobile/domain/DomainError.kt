@@ -10,6 +10,13 @@ sealed interface DomainError {
 
     data object Timeout : DomainError
 
+    /**
+     * The connection broke, or a gateway failed (502, 504), after the request may have reached the server. Unlike
+     * [Unreachable] it does not say the request was never sent, so a mutation that ends here is read back and never
+     * sent again (review1b F-A-5). A read treats it like [Unreachable].
+     */
+    data object ConnectionLost : DomainError
+
     /** 401: the key is missing, revoked or expired. The factory shows as Signed out and keeps its configuration. */
     data object Unauthorized : DomainError
 

@@ -25,10 +25,14 @@ class PlatformFailuresTest {
 
     @Test
     fun `AD-003 cannot connect or find host and offline are Unreachable`() {
-        listOf(-1004L, -1003L, -1009L, -1005L).forEach {
+        listOf(-1004L, -1003L, -1009L).forEach {
             assertEquals(DomainError.Unreachable, ErrorMapper.fromTransport(darwin(it)), "code $it")
         }
     }
+
+    @Test
+    fun `F-A-5 a lost network connection after the request was sent is ConnectionLost`() =
+        assertEquals(DomainError.ConnectionLost, ErrorMapper.fromTransport(darwin(-1005L)))
 
     @Test
     fun `AD-003 an NSError from another domain is never read as a TLS failure`() {

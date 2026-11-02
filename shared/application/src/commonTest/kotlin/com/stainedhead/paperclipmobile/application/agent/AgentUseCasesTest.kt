@@ -142,6 +142,25 @@ class PauseAgentTest {
         }
 
     @Test
+    fun `F-A-5 a connection lost after the call was sent is read back and a refused one is not`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["pause"] = DomainError.ConnectionLost
+
+            val result = env.pause()(env.context(), env.agent("agent-eng-1"))
+
+            (result as MutationResult.Reconciled).error shouldBe DomainError.ConnectionLost
+            env.agents.count("pause") shouldBe 1
+            env.agents.count("get") shouldBe 1
+
+            val refused = Env()
+            refused.agents.failures["pause"] = DomainError.Unreachable
+            refused.pause()(refused.context(), refused.agent("agent-eng-1")) shouldBe
+                MutationResult.Failed(DomainError.Unreachable)
+            refused.agents.count("get") shouldBe 0
+        }
+
+    @Test
     fun `FR-096 a timeout is sent once and the agent is read again`() =
         runTest {
             val env = Env()
@@ -231,6 +250,18 @@ class ResumeAndRunNowTest {
                 MutationResult.Invalid(InvalidInput.WrongStatus)
             InvokeHeartbeat(env.agents, env.runs)(env.context(Role.Viewer), env.agent("agent-cto")) shouldBe
                 MutationResult.Denied
+            env.agents.count("invokeHeartbeat") shouldBe 1
+        }
+
+    @Test
+    fun `F-A-5 an unreadable reply to run now is Unknown and never Failed`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["invokeHeartbeat"] = DomainError.Malformed
+
+            val result = InvokeHeartbeat(env.agents, env.runs)(env.context(), env.agent("agent-eng-1"))
+
+            result shouldBe MutationResult.Unknown(DomainError.Malformed)
             env.agents.count("invokeHeartbeat") shouldBe 1
         }
 

@@ -34,4 +34,20 @@ class PlatformFailuresTest {
     @Test
     fun `AD-003 a socket read timeout is Timeout`() =
         assertEquals(DomainError.Timeout, ErrorMapper.fromTransport(java.net.SocketTimeoutException("Read timed out")))
+
+    @Test
+    fun `F-A-5 a reset or broken pipe after the request was written is ConnectionLost`() {
+        assertEquals(
+            DomainError.ConnectionLost,
+            ErrorMapper.fromTransport(java.net.SocketException("Connection reset")),
+        )
+        assertEquals(DomainError.ConnectionLost, ErrorMapper.fromTransport(java.net.SocketException("Broken pipe")))
+        assertEquals(DomainError.ConnectionLost, ErrorMapper.fromTransport(java.io.EOFException("end of stream")))
+    }
+
+    @Test
+    fun `F-A-5 a refused connection and an unroutable host were never sent so stay Unreachable`() {
+        assertEquals(DomainError.Unreachable, ErrorMapper.fromTransport(ConnectException("refused")))
+        assertEquals(DomainError.Unreachable, ErrorMapper.fromTransport(java.net.NoRouteToHostException("no route")))
+    }
 }

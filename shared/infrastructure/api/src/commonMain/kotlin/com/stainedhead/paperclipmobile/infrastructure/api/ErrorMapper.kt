@@ -26,6 +26,8 @@ internal object ErrorMapper {
     private const val CONFLICT = 409
     private const val RANGE_NOT_SATISFIABLE = 416
     private const val TOO_MANY_REQUESTS = 429
+    private const val BAD_GATEWAY = 502
+    private const val GATEWAY_TIMEOUT = 504
     private val CLIENT_ERRORS = 400..499
     private val SERVER_ERRORS = 500..599
     private const val MAX_CAUSE_DEPTH = 8
@@ -39,14 +41,26 @@ internal object ErrorMapper {
     ): DomainError =
         when (status) {
             UNAUTHORIZED -> DomainError.Unauthorized
+
             FORBIDDEN -> DomainError.Forbidden
+
             NOT_FOUND -> DomainError.NotFound
+
             REQUEST_TIMEOUT -> DomainError.Timeout
+
             CONFLICT -> DomainError.Conflict
+
             RANGE_NOT_SATISFIABLE -> DomainError.Rejected("The range is outside the file")
+
             TOO_MANY_REQUESTS -> DomainError.RateLimited
+
             in CLIENT_ERRORS -> DomainError.Rejected(reasonOf(status, body))
+
+            // A gateway that failed after forwarding the request does not say whether the server applied it.
+            BAD_GATEWAY, GATEWAY_TIMEOUT -> DomainError.ConnectionLost
+
             in SERVER_ERRORS -> DomainError.ServerError
+
             else -> DomainError.Malformed
         }
 

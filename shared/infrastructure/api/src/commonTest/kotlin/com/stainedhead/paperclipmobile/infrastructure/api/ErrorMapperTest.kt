@@ -46,13 +46,19 @@ class ErrorMapperTest {
         assertEquals(DomainError.Rejected("Validation error"), status(400, """{"error":"Validation error"}"""))
 
     @Test
-    fun `AD-003 every 5xx is ServerError whatever the body`() {
-        listOf(500, 502, 503, 504, 599).forEach { assertEquals(DomainError.ServerError, status(it), "status $it") }
+    fun `AD-003 a 5xx the server itself answered is ServerError whatever the body`() {
+        listOf(500, 501, 503, 599).forEach { assertEquals(DomainError.ServerError, status(it), "status $it") }
     }
 
     @Test
-    fun `AD-003 a 5xx HTML page from a proxy is ServerError not Malformed`() =
-        assertEquals(DomainError.ServerError, status(502, "<html><body>Bad Gateway</body></html>"))
+    fun `AD-003 a 5xx HTML page from a proxy is never Malformed`() =
+        assertEquals(DomainError.ServerError, status(503, "<html><body>Service Unavailable</body></html>"))
+
+    @Test
+    fun `F-A-5 a gateway failure may have reached the server so it is ConnectionLost`() {
+        listOf(502, 504).forEach { assertEquals(DomainError.ConnectionLost, status(it), "status $it") }
+        assertEquals(DomainError.ConnectionLost, status(502, "<html><body>Bad Gateway</body></html>"))
+    }
 
     @Test
     fun `AD-003 a 401 or 404 with an HTML or empty body keeps its status meaning`() {

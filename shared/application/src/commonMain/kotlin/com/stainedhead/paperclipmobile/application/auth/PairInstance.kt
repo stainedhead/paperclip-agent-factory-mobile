@@ -103,8 +103,8 @@ class PairInstance(
 
     /** A flaky network or a rate limit while waiting must not abort a pairing the person is approving. */
     private fun DomainResult.Failure.isKeepWaiting() =
-        error == DomainError.Unreachable || error == DomainError.Timeout || error == DomainError.ServerError ||
-            error == DomainError.RateLimited
+        error == DomainError.Unreachable || error == DomainError.ConnectionLost || error == DomainError.Timeout ||
+            error == DomainError.ServerError || error == DomainError.RateLimited
 }
 
 /** How the polling loop ended. Approval is stored outside the timed wait so a timeout cannot lose a key. */
