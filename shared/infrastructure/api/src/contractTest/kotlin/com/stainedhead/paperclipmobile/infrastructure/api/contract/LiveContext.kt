@@ -16,6 +16,7 @@ import com.stainedhead.paperclipmobile.infrastructure.api.AgentGatewayAdapter
 import com.stainedhead.paperclipmobile.infrastructure.api.ApprovalGatewayAdapter
 import com.stainedhead.paperclipmobile.infrastructure.api.AttentionGatewayAdapter
 import com.stainedhead.paperclipmobile.infrastructure.api.AuthGatewayAdapter
+import com.stainedhead.paperclipmobile.infrastructure.api.BudgetGatewayAdapter
 import com.stainedhead.paperclipmobile.infrastructure.api.DashboardGatewayAdapter
 import com.stainedhead.paperclipmobile.infrastructure.api.HealthGatewayAdapter
 import com.stainedhead.paperclipmobile.infrastructure.api.InteractionGatewayAdapter
@@ -61,6 +62,7 @@ internal class LiveContext private constructor(
     val attention = AttentionGatewayAdapter(client, world.instances, secrets)
     val approvals = ApprovalGatewayAdapter(client, world.instances, secrets)
     val dashboard = DashboardGatewayAdapter(client, world.instances, secrets)
+    val budgets = BudgetGatewayAdapter(client, world.instances, secrets)
     val issues = IssueGatewayAdapter(client, world.instances, secrets)
     val agents = AgentGatewayAdapter(client, world.instances, secrets)
     val runs = RunGatewayAdapter(client, world.instances, secrets)
@@ -110,12 +112,21 @@ internal class LiveContext private constructor(
         }
 
         private suspend fun build(): LiveContext {
-            val baseText = ContractTarget.adapterBase(requireNotNull(System.getenv("PAPERCLIP_CONTRACT_BASE_URL")))
+            val configured = requireNotNull(System.getenv("PAPERCLIP_CONTRACT_BASE_URL"))
+            // Before the first request of any kind: sign-up is already a mutation (F-C-8).
+            ContractTarget
+                .refusal(
+                    configured,
+                    System.getenv(ContractTarget.OPT_IN_VARIABLE),
+                    System.getenv("PAPERCLIP_TEST_PORT"),
+                )?.let { error(it) }
+            val baseText = ContractTarget.adapterBase(configured)
             val base = (BaseUri.parse(baseText, allowInsecureLocal = true) as BaseUriResult.Valid).uri
             val raw = RawServer(baseText)
             val health = HealthGatewayAdapter(world.client, world.instances)
             val auth = AuthGatewayAdapter(world.client, world.instances, world.secrets)
             val before = Pairing.value(health.probe(base), "probe before bootstrap")
+            ContractTarget.markerRefusal(before.deploymentMode, before.exposure)?.let { error(it) }
             val session = ServerBootstrap.establishSession(raw, System.getenv("PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE"))
             val paired = Pairing.pair(auth, raw, session, base, "pafm contract test")
             val company = Seeder(raw, paired.key).company("Contract Co")

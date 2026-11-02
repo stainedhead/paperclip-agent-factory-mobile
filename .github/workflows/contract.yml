@@ -4,7 +4,9 @@ name: contract
 # anonymous /api/health fields and the pairing challenge shapes the app relies on) and then the Kotlin contract test
 # (AD-050): the production adapters against the live server, after the first admin is created through the server's own
 # sign-up and bootstrap-invite flow. Nightly (and on manual dispatch, never on a pull request) the same two steps run
-# against the newest published image; those jobs have no continue-on-error, so API drift turns the scheduled run red.
+# against the newest published image; those jobs have no continue-on-error, and the contract task itself fails when the
+# run's verdict is FAIL (a failed call, a mismatch, a skipped or never-run operation, an operation that only ever
+# decoded an empty reply), so API drift turns the scheduled run red.
 on:
   workflow_dispatch:
   schedule:
@@ -17,6 +19,9 @@ on:
       - "scripts/contract-smoke.sh"
       - "shared/infrastructure/**"
       - "shared/umbrella/**"
+      - "shared/domain/**"
+      - "shared/application/**"
+      - "shared/testing/**"
       - ".github/workflows/contract.yml"
 
 permissions:
@@ -52,6 +57,9 @@ jobs:
           # localhost, not 127.0.0.1: plain http is allowed for localhost and 10.0.2.2 only.
           PAPERCLIP_CONTRACT_BASE_URL: http://localhost:3199
           PAPERCLIP_CONTRACT_REQUIRED: "true"
+          # The contract test mutates the server it talks to (sign-up, companies, agents, cancelled runs) and
+          # refuses to start without this opt-in, a loopback host and the test server's port (F-C-8).
+          PAPERCLIP_CONTRACT_I_KNOW_THIS_MUTATES: "true"
         run: ./gradlew :shared:infrastructure:api:contractTest --no-daemon
       - name: Upload the contract report
         if: always()
@@ -102,6 +110,9 @@ jobs:
           # localhost, not 127.0.0.1: plain http is allowed for localhost and 10.0.2.2 only.
           PAPERCLIP_CONTRACT_BASE_URL: http://localhost:3199
           PAPERCLIP_CONTRACT_REQUIRED: "true"
+          # The contract test mutates the server it talks to (sign-up, companies, agents, cancelled runs) and
+          # refuses to start without this opt-in, a loopback host and the test server's port (F-C-8).
+          PAPERCLIP_CONTRACT_I_KNOW_THIS_MUTATES: "true"
         run: ./gradlew :shared:infrastructure:api:contractTest --no-daemon
       - name: Upload the contract report
         if: always()

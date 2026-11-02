@@ -49,8 +49,13 @@ kotlin {
             classpath = contract.runtimeDependencyFiles + contract.output.allOutputs
             // A server run is never up to date: the same sources meet a new container.
             outputs.upToDateWhen { false }
-            listOf("PAPERCLIP_CONTRACT_BASE_URL", "PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE", "PAPERCLIP_CONTRACT_REQUIRED")
-                .forEach { name -> providers.environmentVariable(name).orNull?.let { environment(name, it) } }
+            listOf(
+                "PAPERCLIP_CONTRACT_BASE_URL",
+                "PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE",
+                "PAPERCLIP_CONTRACT_REQUIRED",
+                "PAPERCLIP_CONTRACT_I_KNOW_THIS_MUTATES",
+                "PAPERCLIP_TEST_PORT",
+            ).forEach { name -> providers.environmentVariable(name).orNull?.let { environment(name, it) } }
             systemProperty(
                 "pafm.reportDir",
                 layout.buildDirectory
@@ -66,6 +71,23 @@ kotlin {
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
             }
             useJUnitPlatform()
+            // The run is judged as a whole (F-C-3): the listener writes the report with a VERDICT line when the
+            // session closes, and this step turns a FAIL (or a missing verdict against a required server) into a
+            // red build, so the pull request job and the nightly latest-server job both go red on drift.
+            val liveReport = layout.buildDirectory.file("reports/contract/live-operations.txt")
+            val required = providers.environmentVariable("PAPERCLIP_CONTRACT_REQUIRED").orElse("")
+            doLast {
+                val report = liveReport.get().asFile
+                val text = if (report.exists()) report.readText() else ""
+                val verdict = text.lines().firstOrNull { it.startsWith("VERDICT:") }
+                if (verdict == null && required.get() == "true") {
+                    throw GradleException("The contract run wrote no VERDICT line: ${report.path}")
+                }
+                if (verdict != null && verdict.startsWith("VERDICT: FAIL")) {
+                    val problems = text.lines().filter { it.trimStart().startsWith("problem:") }
+                    throw GradleException("The live contract run failed:\n" + problems.joinToString("\n"))
+                }
+            }
         }
     }
 }
