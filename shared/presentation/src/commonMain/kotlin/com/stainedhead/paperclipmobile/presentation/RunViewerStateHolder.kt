@@ -107,7 +107,8 @@ class RunViewerStateHolder(
     private suspend fun readRun(started: Int) {
         when (val result = useCases.load(companyScope, id, model.value.events)) {
             is DomainResult.Failure -> {
-                model.update { it.copy(error = result.error.toErrorUi()) }
+                val role = context.roleAfter(result.error)
+                model.update { it.copy(error = result.error.toErrorUi(), role = role ?: it.role) }
             }
 
             is DomainResult.Success -> {

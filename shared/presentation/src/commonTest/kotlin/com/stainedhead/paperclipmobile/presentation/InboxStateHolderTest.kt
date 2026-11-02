@@ -808,4 +808,20 @@ class InboxInlineActionGuardTest {
                 .inlineActions shouldBe emptyList()
             holder.state.value.actionsDisabledReason shouldBe ActionsDisabledReason.ViewerRole
         }
+
+    @Test
+    fun `forbiddenReadReResolvesTheRole in Inbox`() =
+        runTest {
+            val env = env(Role.Operator)
+            val holder = loaded(env, listOf(AttentionFixtures.approvalItem("ap-1")))
+            env.auth.meResult = DomainResult.Success(TestData.access(Role.Viewer))
+            env.attention.failures["feed"] = DomainError.Forbidden
+            val resolved = env.auth.count("me")
+
+            holder.onIntent(InboxIntent.Refresh)
+            advanceUntilIdle()
+
+            env.auth.count("me") shouldBe resolved + 1
+            holder.state.value.actionsDisabledReason shouldBe ActionsDisabledReason.ViewerRole
+        }
 }

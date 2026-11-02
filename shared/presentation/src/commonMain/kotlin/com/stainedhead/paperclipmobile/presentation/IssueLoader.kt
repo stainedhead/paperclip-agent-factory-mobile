@@ -31,7 +31,8 @@ internal class IssueLoader(
     private suspend fun read(started: Int) {
         when (val issue = session.useCases.load(session.companyScope, session.id)) {
             is DomainResult.Failure -> {
-                model.update { it.copy(error = issue.error.toErrorUi()) }
+                val role = session.context.roleAfter(issue.error)
+                model.update { it.copy(error = issue.error.toErrorUi(), role = role ?: it.role) }
             }
 
             is DomainResult.Success -> {

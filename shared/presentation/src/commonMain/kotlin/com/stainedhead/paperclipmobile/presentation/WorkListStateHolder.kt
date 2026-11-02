@@ -123,7 +123,14 @@ class WorkListStateHolder(
                 val page = useCases.search(companyScope, model.value.filter, model.value.search)
                 when (page) {
                     is DomainResult.Failure -> {
-                        model.update { it.copy(error = page.error.toErrorUi(), loading = false) }
+                        val role = context.roleAfter(page.error)
+                        model.update {
+                            it.copy(
+                                error = page.error.toErrorUi(),
+                                loading = false,
+                                role = role ?: it.role,
+                            )
+                        }
                     }
 
                     is DomainResult.Success -> {

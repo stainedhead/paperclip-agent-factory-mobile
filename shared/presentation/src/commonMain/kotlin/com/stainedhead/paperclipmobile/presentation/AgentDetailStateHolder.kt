@@ -99,7 +99,8 @@ class AgentDetailStateHolder(
             } else {
                 when (val result = useCases.load(companyScope, id)) {
                     is DomainResult.Failure -> {
-                        model.update { it.copy(error = result.error.toErrorUi()) }
+                        val role = context.roleAfter(result.error)
+                        model.update { it.copy(error = result.error.toErrorUi(), role = role ?: it.role) }
                     }
 
                     is DomainResult.Success -> {

@@ -56,6 +56,7 @@ internal class InboxSession(
                     is InboxLoad.Failed -> it.copy(error = load.error.toErrorUi())
                 }
             }
+            if (load is InboxLoad.Failed) reResolveIfForbidden(load.error)
         }
         model.update { it.copy(refreshing = false) }
     }
@@ -76,7 +77,17 @@ internal class InboxSession(
 
             is DomainResult.Failure -> {
                 model.update { it.copy(error = result.error.toErrorUi(), refreshing = false) }
+                reResolveIfForbidden(result.error)
             }
+        }
+    }
+
+    /** A read that answers 403 reads the role once more, like a forbidden mutation (F-D-2). */
+    private suspend fun reResolveIfForbidden(error: DomainError) {
+        if (error ==
+            DomainError.Forbidden
+        ) {
+            model.refreshContext(useCases.resolveContext, companyScope) { copy(context = it) }
         }
     }
 

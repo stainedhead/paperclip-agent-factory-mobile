@@ -127,7 +127,7 @@ class BudgetIncidentStateHolder(
     }
 
     /** A resolved incident leaves the server's active list, so `NotFound` must not erase what the person just did. */
-    private fun noLongerActiveOrError(error: DomainError) {
+    private suspend fun noLongerActiveOrError(error: DomainError) {
         if (error == DomainError.NotFound) {
             model.update {
                 val kept = it.outcome?.takeIf { outcome -> outcome != BudgetOutcomeUi.NoLongerActive }
@@ -135,6 +135,9 @@ class BudgetIncidentStateHolder(
             }
         } else {
             model.update { it.copy(error = error.toErrorUi()) }
+            if (error == DomainError.Forbidden) {
+                model.refreshContext(useCases.resolveContext, companyScope) { copy(context = it) }
+            }
         }
     }
 

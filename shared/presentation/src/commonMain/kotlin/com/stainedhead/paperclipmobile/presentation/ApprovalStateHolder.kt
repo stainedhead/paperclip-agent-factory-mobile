@@ -9,6 +9,7 @@ import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.CompanyContext
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.CompanyScope
+import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Invalidation
@@ -121,6 +122,9 @@ class ApprovalStateHolder(
 
                     is DomainResult.Failure -> {
                         model.update { it.copy(error = result.error.toErrorUi()) }
+                        if (result.error == DomainError.Forbidden) {
+                            model.refreshContext(useCases.resolveContext, companyScope) { copy(context = it) }
+                        }
                     }
                 }
             }

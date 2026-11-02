@@ -35,6 +35,10 @@ internal fun mayAct(
     action: Action,
 ): Boolean = online && role != null && Permissions.allows(role, action)
 
+/** A read that answers 403 means the same: the role is read once more, and only for that error (F-D-2). */
+internal suspend fun ContextSource.roleAfter(error: DomainError): Role? =
+    if (error == DomainError.Forbidden) reResolve()?.role else null
+
 /** Resolves the role again after a 403, keeping the old one if that read fails (F-D-2). One read, no repeat. */
 internal suspend fun <M> MutableStateFlow<M>.refreshContext(
     resolve: ResolveCompanyContext,
