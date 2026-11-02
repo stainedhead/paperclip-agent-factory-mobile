@@ -67,3 +67,18 @@ Accessibility audit (performAccessibilityAudit, each screen asserts nothing beyo
 - A `.accessibilityIdentifier` on a `Text` inside a combined element is not reachable as a static text; query with
   `app.element(id)` (descendants of any type).
 - Keyboard return key labelled by `submitLabel`; type "\n" instead of tapping a named key.
+
+## UI test stabilisation: text entry (2026-11-02)
+
+- Cause 1: `clearAndTypeText` sent `value.count` deletes from wherever the focus tap put the caret, so the tail of
+  "Home factory" survived ("HomStudio factory"). Cause 2: `focus()` lived in FirstRunUITests and `typeText` still
+  failed on CI with "no keyboard focus" when the software keyboard had not appeared (a connected hardware keyboard
+  hides it). Cause 3 (found while fixing): the Edit name field's placeholder equals the demo name, so
+  `value == placeholderValue` cannot distinguish "empty" from "real text"; a first helper that skipped the clear in
+  that case typed after "Home factory".
+- Fix: one helper in `Tests/iosAppUITests/TextEntry.swift` (`focus`, `enterText`, `clearAndTypeText`): tap with retries
+  and keyboard waits, caret to the end (right-edge tap), `count + 5` deletes in up to 3 passes, then verify the field
+  shows the intended text. `scripts/ios-test.sh` now sets `ConnectHardwareKeyboard` off, boots the simulator
+  (`simctl bootstatus -b`) and switches off autocorrect, prediction and auto-capitalisation. The workflow runs that
+  script, so it needed no change.
+- Evidence: see the commit message / PR for the run counts.
