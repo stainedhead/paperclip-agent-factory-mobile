@@ -113,6 +113,18 @@ object PaperclipCore {
         pairingBrowser: PairingBrowser,
     ): PaperclipGraph = createLiveGraph(allowInsecureLocal, pairingBrowser, defaultLivePlatform())
 
+    /**
+     * Like [createLiveGraph] but every failure to build the graph reaches Swift as an `Error` to catch, not as an abort
+     * of the app (review1b F-B-5): `StorageUnavailableException` when the factory database cannot be opened right now
+     * (retry later, nothing was deleted), and the other exceptions the platform raises. The launch path should use this
+     * entry point and show a retry screen. Nothing is left open when it throws.
+     */
+    @Throws(Exception::class)
+    fun openLiveGraph(
+        allowInsecureLocal: Boolean,
+        pairingBrowser: PairingBrowser,
+    ): PaperclipGraph = createLiveGraph(allowInsecureLocal, pairingBrowser)
+
     /** The graph on fakes seeded with the demo data set that matches the design mocks (demo mode, PRD FR-097). */
     fun createDemoGraph(): PaperclipGraph =
         PaperclipGraph(

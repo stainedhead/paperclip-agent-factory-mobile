@@ -41,4 +41,38 @@ class LiveIosGraphTest {
         graph.close()
         graph.close()
     }
+
+    @Test
+    fun `F-B-5 openLiveGraph reports an unusable data folder as an exception and never as an abort`() {
+        // A plain file where the folder should be: the data directory cannot be created.
+        val blocker = NSTemporaryDirectory() + "pafm-blocker-${NSUUID().UUIDString}"
+        NSFileManager.defaultManager.createFileAtPath(blocker, contents = null, attributes = null)
+
+        val failure =
+            runCatching {
+                LiveIosGraph.openLiveGraph(
+                    allowInsecureLocal = false,
+                    FakePairingBrowser(),
+                    IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", blocker, "Unlock", "Confirm"),
+                )
+            }.exceptionOrNull()
+
+        (failure is Exception) shouldBe true
+        NSFileManager.defaultManager.removeItemAtPath(blocker, null)
+    }
+
+    @Test
+    fun `F-B-5 openLiveGraph on a usable folder gives the same graph as createLiveGraph`() {
+        val graph =
+            LiveIosGraph.openLiveGraph(
+                allowInsecureLocal = false,
+                FakePairingBrowser(),
+                IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", directory, "Unlock", "Confirm"),
+            )
+
+        graph
+            .createFirstRunStateHolder()
+            .state.value.step shouldBe FirstRunStep.Address
+        graph.close()
+    }
 }

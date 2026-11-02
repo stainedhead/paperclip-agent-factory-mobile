@@ -65,6 +65,20 @@ data class IosLiveSettings(
  * pairingBrowser)` is the same graph with the app's Keychain service, the default data folder and English prompt texts.
  */
 object LiveIosGraph {
+    /**
+     * Like [createLiveGraph] but a failure to build the graph (an unusable data folder, a database that is not
+     * available right now, a Keychain that cannot be opened) reaches Swift as an `Error` to catch and show, not as an
+     * abort of the app on every launch (review1b F-B-5). Prefer this entry point for the app's launch path; the
+     * graph is released when it throws.
+     */
+    @Throws(Exception::class)
+    fun openLiveGraph(
+        allowInsecureLocal: Boolean,
+        pairingBrowser: PairingBrowser,
+        settings: IosLiveSettings,
+    ): PaperclipGraph = createLiveGraph(allowInsecureLocal, pairingBrowser, settings)
+
+    /** Builds the graph; an unhandled failure here aborts the process when called from Swift, see [openLiveGraph]. */
     fun createLiveGraph(
         allowInsecureLocal: Boolean,
         pairingBrowser: PairingBrowser,

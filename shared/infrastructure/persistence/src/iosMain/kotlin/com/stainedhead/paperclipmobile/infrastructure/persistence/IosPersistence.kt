@@ -45,8 +45,14 @@ fun openIosPersistence(
             wipe = { SIDECAR_SUFFIXES.forEach { removeFile("$directory/$DATABASE_NAME$it") } },
         )
     val persistence = PaperclipPersistence(opened.driver, clock, opened.recreated)
-    // After the first write: on a database that was just recreated the file flag set before it was gone afterwards.
-    SIDECAR_SUFFIXES.map { "$directory/$DATABASE_NAME$it" }.filter(::fileExists).forEach(::protect)
+    try {
+        // After the first write: on a database that was just recreated the file flag set before it was gone afterwards.
+        // A sidecar (-wal, -journal) can vanish between the check and the call; that is not an error.
+        SIDECAR_SUFFIXES.map { "$directory/$DATABASE_NAME$it" }.forEach(::protectIfPresent)
+    } catch (failure: IllegalStateException) {
+        persistence.close()
+        throw failure
+    }
     return persistence
 }
 
@@ -100,6 +106,16 @@ private fun protect(path: String) {
 }
 
 private fun fileExists(path: String) = NSFileManager.defaultManager.fileExistsAtPath(path)
+
+/** [protect] for a file that may be gone by now: a missing file is skipped, any other failure still throws. */
+private fun protectIfPresent(path: String) {
+    if (!fileExists(path)) return
+    try {
+        protect(path)
+    } catch (failure: IllegalStateException) {
+        if (fileExists(path)) throw failure
+    }
+}
 
 @OptIn(ExperimentalForeignApi::class)
 private fun removeFile(path: String) {
