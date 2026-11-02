@@ -95,6 +95,7 @@ final class AppEnvironment {
         guard !started else { return }
         started = true
         applyDemoLaunchOptions()
+        applyStartLocation()
         app.didUpdate = { [weak self] state in self?.appStateChanged(state) }
         observe(app)
         firstRun.didUpdate = { [weak self] state in self?.firstRunChanged(state) }
@@ -228,6 +229,22 @@ final class AppEnvironment {
     }
 
     // MARK: - Demo launch options
+
+    /// For screenshots and UI tests: begin on a tab and, optionally, one pushed screen of the Factories family.
+    private func applyStartLocation() {
+        guard let tab = configuration.startTab else { return }
+        router.select(tab)
+        guard let name = configuration.startRoute else { return }
+        let route: AppRoute? =
+            switch name {
+            case "settings": .settings
+            case "manage": .manageFactories
+            case "add": .editFactory(id: nil)
+            case let edit where edit.hasPrefix("edit:"): .editFactory(id: String(edit.dropFirst(5)))
+            default: nil
+            }
+        if let route { router.push(route, in: tab) }
+    }
 
     private func applyDemoLaunchOptions() {
         guard let controls = graph.demoControls else { return }

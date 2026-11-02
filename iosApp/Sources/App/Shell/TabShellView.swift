@@ -10,8 +10,10 @@ struct TabShellView: View {
         TabView(selection: selection) {
             ForEach(AppTab.allCases) { tab in
                 NavigationStack(path: path(for: tab)) {
-                    PlaceholderRootView(tab: tab, environment: environment)
-                        .navigationDestination(for: AppRoute.self) { RoutePlaceholderView(route: $0) }
+                    root(for: tab)
+                        .navigationDestination(for: AppRoute.self) {
+                            RouteDestination(route: $0, environment: environment)
+                        }
                 }
                 .tabItem {
                     Label(tab.title, systemImage: tab.symbol)
@@ -20,6 +22,13 @@ struct TabShellView: View {
                 .badge(tab.badge(inboxBadgeCount: Int(environment.inbox?.state.badgeCount ?? 0)) ?? 0)
                 .tag(tab)
             }
+        }
+    }
+
+    @ViewBuilder private func root(for tab: AppTab) -> some View {
+        switch tab {
+        case .factories: FactoriesView(environment: environment)
+        default: PlaceholderRootView(tab: tab, environment: environment)
         }
     }
 

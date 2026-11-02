@@ -52,7 +52,7 @@ final class ShellUITests: XCTestCase {
             XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 5), "no \(title) root")
         }
         app.tabBars.firstMatch.buttons["Factories"].tap()
-        XCTAssertEqual(app.staticTexts["placeholder-factory-name"].label, "Home factory")
+        XCTAssertEqual(app.staticTexts["factory-name-demo-home"].label, "Home factory")
     }
 
     @MainActor

@@ -49,3 +49,15 @@ struct FirstRunDemoLaunchTests {
         #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).useFirstRunDemo == false)
     }
 }
+
+struct StartTabLaunchTests {
+    @Test func theStartTabAndStartRouteFlagsSelectWhereAScreenshotOrTestBegins() {
+        let config = LaunchConfiguration(arguments: [
+            "iosApp", "-demo", "-demo-tab", "factories", "-demo-open", "settings"
+        ])
+        #expect(config.startTab == .factories)
+        #expect(config.startRoute == "settings")
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo-tab", "nonsense"]).startTab == nil)
+        #expect(LaunchConfiguration(arguments: ["iosApp"]).startRoute == nil)
+    }
+}

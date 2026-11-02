@@ -20,6 +20,7 @@ struct RootView: View {
         }
         .background(Palette.background.color.ignoresSafeArea())
         .environment(\.referenceDate, environment.referenceDate)
+        .tint(Palette.accent.color)
     }
 
     private static let switcherBlur: CGFloat = 30
