@@ -464,3 +464,24 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `PairingBrowser` is a Kotlin suspend interface and `Secret.reveal()` is hidden from Swift, so a Swift class could neither read the approval address nor implement the method without the `__open` name SKIE generates (which fails SwiftLint and swift-format). `CallbackPairingBrowser` (in `infrastructure/api`, the only place that may reveal the address) turns a closure `(approvalUrl: String, finished: () -> Unit)` into the port; `PairingBrowsers.fromCallback` exposes it through the umbrella. The `finished` call ends the wait, cancelling the pairing cancels it, and a second call is harmless. The address is a secret, so the app opens it and does not log or keep it.
 **Consequences.** `CallbackPairingBrowser` is on the API module's public-surface allow-list. The real `ASWebAuthenticationSession` implementation belongs to the iPhone UI stream.
 
+
+## ADR-071: The first admin of the contract server is created through the server's own sign-up and bootstrap invite
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** A fresh authenticated Paperclip server has no user and no instance admin, and only an instance admin can create a company, so the contract test cannot seed anything until one exists. The test does what a person does: it signs up with Better Auth (`/api/auth/sign-up/email`, a fixed obviously fake test account), accepts a bootstrap CEO invite (`POST /api/invites/{token}/accept`, 202) and then approves its own pairing challenge with the session cookie. The invite is the one thing the image does not provide (it runs only the server, not `paperclipai run`, and the CLI needs a config file the container lacks), so `scripts/paperclip-test-server.sh invite` inserts the row `paperclipai auth bootstrap-ceo` would insert, using the image's own `postgres` client through `docker compose exec`: the token is generated on the host, only its sha256 goes into the container, and only the token is printed. This reaches into the database of a throwaway test container, never of a user's server; the INTENT boundary ("no reaching into its database") is about the app.
+**Consequences.** The script is coupled to the `invites` table and the embedded database credentials of the pinned release; the nightly `latest` job is where a change shows up. The token is masked in CI (`::add-mask::`) and handed to Gradle through the environment.
+
+## ADR-072: The contract test is a JVM compilation that `check` compiles but does not run
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** `shared/infrastructure/api` has a `contract` JVM compilation (associated with `main`, so it can use the internal client for error-shape comparisons) and a `contractTest` task. `check` depends on `compileContractKotlinJvm` only, so the sources cannot rot, but running needs a server. Without `PAPERCLIP_CONTRACT_BASE_URL` the live tests are skipped with a message; CI sets `PAPERCLIP_CONTRACT_REQUIRED=true`, which turns a missing server into a failure so a skip can never look like a pass. The task is never up to date, uses the production adapters on the real OkHttp engine (never MockEngine), a test-only in-memory `SecretStore`, and `http://localhost:3199` because plain http is allowed for `localhost` and `10.0.2.2` only (the allow-list was not widened for `127.0.0.1`).
+**Consequences.** A `LauncherSessionListener` prints, at the end of the run, which port operations were verified live and which are covered only by the MockEngine tests, and writes the same table to `build/reports/contract/live-operations.txt`.
+
+## ADR-073: Seeding failures and unverified operations are reported, not guessed
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** Seeding the company and the first issue is required; everything else the server may legitimately refuse (an agent that needs board approval, an approval type, a wake of a process agent) is attempted with `soft`, which records the server's answer in the run report and goes on. A step is asserted hard once a run has shown how the server behaves, and the stubs were corrected where the real server differed. Decisions, interactions to answer and budget incidents cannot be created by a board key at all (agent run context or real spend is needed), so they stay MockEngine-only and are listed as such, not simulated.
+**Consequences.** The report is the honest coverage statement; the status and notes files quote the CI run that produced it.

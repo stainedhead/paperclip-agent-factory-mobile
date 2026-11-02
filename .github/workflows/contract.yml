@@ -1,9 +1,10 @@
 name: contract
 
-# Starts the pinned Paperclip server (authenticated mode) in Docker and runs scripts/contract-smoke.sh against it: the
-# anonymous /api/health fields and the pairing challenge shapes the app relies on. Phase 1b adds the Kotlin contract
-# tests to this job. Nightly (and on manual dispatch, never on a pull request) the same script runs against the newest
-# published image; that job has no continue-on-error, so API drift turns the scheduled run red.
+# Starts the pinned Paperclip server (authenticated mode) in Docker, runs scripts/contract-smoke.sh against it (the
+# anonymous /api/health fields and the pairing challenge shapes the app relies on) and then the Kotlin contract test
+# (AD-050): the production adapters against the live server, after the first admin is created through the server's own
+# sign-up and bootstrap-invite flow. Nightly (and on manual dispatch, never on a pull request) the same two steps run
+# against the newest published image; those jobs have no continue-on-error, so API drift turns the scheduled run red.
 on:
   workflow_dispatch:
   schedule:
@@ -13,7 +14,9 @@ on:
       - "docker/paperclip-test/**"
       - "scripts/paperclip-test-server.sh"
       - "gradle/libs.versions.toml"
-      - "shared/infrastructure/api/**"
+      - "scripts/contract-smoke.sh"
+      - "shared/infrastructure/**"
+      - "shared/umbrella/**"
       - ".github/workflows/contract.yml"
 
 permissions:
@@ -23,13 +26,43 @@ jobs:
   pinned:
     name: pinned server
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Start the pinned Paperclip server
         run: ./scripts/paperclip-test-server.sh up
       - name: Contract smoke checks (health and pairing challenge shapes)
         run: ./scripts/contract-smoke.sh
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
+      - name: Install Android platform (the Android Gradle plugin configures every module)
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.0.0"
+      - name: Create the bootstrap invite in the container
+        run: |
+          token="$(./scripts/paperclip-test-server.sh invite)"
+          echo "::add-mask::${token}"
+          echo "PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE=${token}" >> "$GITHUB_ENV"
+      - name: Contract test (the real adapters against the live server)
+        env:
+          # localhost, not 127.0.0.1: plain http is allowed for localhost and 10.0.2.2 only.
+          PAPERCLIP_CONTRACT_BASE_URL: http://localhost:3199
+          PAPERCLIP_CONTRACT_REQUIRED: "true"
+        run: ./gradlew :shared:infrastructure:api:contractTest --no-daemon
+      - name: Upload the contract report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: contract-report-${{ github.job }}
+          path: |
+            shared/infrastructure/api/build/reports/contract/**
+            shared/infrastructure/api/build/reports/tests/contractTest/**
+            shared/infrastructure/api/build/test-results/contractTest/**
+          retention-days: 7
       - name: Server logs
         if: failure()
         run: ./scripts/paperclip-test-server.sh dump
@@ -41,7 +74,7 @@ jobs:
     name: latest server (drift check)
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     env:
       PAPERCLIP_SERVER_VERSION: latest
     steps:
@@ -50,6 +83,36 @@ jobs:
         run: ./scripts/paperclip-test-server.sh up
       - name: Contract smoke checks against latest (a failure here means the API drifted)
         run: ./scripts/contract-smoke.sh
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
+      - name: Install Android platform (the Android Gradle plugin configures every module)
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.0.0"
+      - name: Create the bootstrap invite in the container
+        run: |
+          token="$(./scripts/paperclip-test-server.sh invite)"
+          echo "::add-mask::${token}"
+          echo "PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE=${token}" >> "$GITHUB_ENV"
+      - name: Contract test (the real adapters against the live server, latest: a failure means the API drifted)
+        env:
+          # localhost, not 127.0.0.1: plain http is allowed for localhost and 10.0.2.2 only.
+          PAPERCLIP_CONTRACT_BASE_URL: http://localhost:3199
+          PAPERCLIP_CONTRACT_REQUIRED: "true"
+        run: ./gradlew :shared:infrastructure:api:contractTest --no-daemon
+      - name: Upload the contract report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: contract-report-${{ github.job }}
+          path: |
+            shared/infrastructure/api/build/reports/contract/**
+            shared/infrastructure/api/build/reports/tests/contractTest/**
+            shared/infrastructure/api/build/test-results/contractTest/**
+          retention-days: 7
       - name: Server logs
         if: failure()
         run: ./scripts/paperclip-test-server.sh dump
