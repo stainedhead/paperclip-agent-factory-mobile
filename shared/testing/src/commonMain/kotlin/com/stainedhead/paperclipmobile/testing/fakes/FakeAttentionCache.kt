@@ -4,7 +4,7 @@ import com.stainedhead.paperclipmobile.domain.AttentionFeed
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.port.AttentionCache
 
-/** An in-memory [AttentionCache]. Counts writes so tests can check what was cached. */
+/** An in-memory [AttentionCache] that cuts a long feed like the real one. Counts writes for assertions. */
 class FakeAttentionCache : AttentionCache {
     private val feeds = mutableMapOf<CompanyScope, AttentionFeed>()
     var writes = 0
@@ -17,7 +17,12 @@ class FakeAttentionCache : AttentionCache {
         feed: AttentionFeed,
     ) {
         writes += 1
-        feeds[scope] = feed
+        feeds[scope] =
+            if (feed.items.size <= AttentionCache.MAX_ITEMS) {
+                feed
+            } else {
+                feed.copy(items = feed.items.take(AttentionCache.MAX_ITEMS), nextCursor = null)
+            }
     }
 
     override suspend fun clear(scope: CompanyScope) {

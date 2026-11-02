@@ -13,6 +13,7 @@ abstract class AppSettingsStoreContract {
     suspend fun runAll() {
         savedSettingsAreObserved()
         theLatestSaveWins()
+        aNeverSavedStoreStillEmits()
     }
 
     private suspend fun savedSettingsAreObserved() {
@@ -27,5 +28,16 @@ abstract class AppSettingsStoreContract {
         store.save(AppSettings("One"))
         store.save(AppSettings("Two"))
         check(store.observe().first().deviceName == "Two") { "the latest save must win" }
+    }
+
+    /** A first launch has nothing saved: `observe()` must emit at once, or the app waits forever. */
+    private suspend fun aNeverSavedStoreStillEmits() {
+        check(
+            create()
+                .observe()
+                .first()
+                .deviceName
+                .isNotBlank(),
+        ) { "a never saved store must emit usable settings" }
     }
 }
