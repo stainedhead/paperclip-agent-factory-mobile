@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
 class PairInstanceTest {
@@ -94,7 +96,8 @@ class PairInstanceTest {
 
             env.pair()(unpaired.id, null) shouldBe SignInResult.Expired
 
-            env.auth.count("pollChallenge") shouldBe 5
+            // The wait is cut at the expiry instant, so no poll is made at 5 s (it would only answer "expired").
+            env.auth.count("pollChallenge") shouldBe 4
             env.secrets.putCalls shouldBe 0
             env.auth.lastPendingToken?.isWiped shouldBe true
         }
@@ -217,5 +220,53 @@ class PairInstanceTest {
             env.auth.authenticatedCalls
                 .mapNotNull { it.host }
                 .toSet() shouldBe setOf(unpaired.baseUri)
+        }
+
+    @Test
+    fun `F-A-7 a huge suggested poll interval is clamped to ten seconds`() =
+        runTest {
+            val env = env()
+            env.auth.createResult = DomainResult.Success(TestData.challenge(pollMs = 3_600_000))
+            env.script(ChallengeStatus.Pending, ChallengeStatus.Cancelled)
+
+            env.pair()(unpaired.id, null) shouldBe SignInResult.Cancelled
+
+            testScheduler.currentTime shouldBe 20_000
+        }
+
+    @Test
+    fun `F-A-7 an expiry far in the future ends the wait after fifteen minutes as expired`() =
+        runTest {
+            val env = env()
+            env.auth.createResult = DomainResult.Success(TestData.challenge(expiresIn = 1.hours))
+
+            env.pair()(unpaired.id, null) shouldBe SignInResult.Expired
+
+            testScheduler.currentTime shouldBe 900_000
+            env.secrets.putCalls shouldBe 0
+            env.auth.lastPendingToken?.isWiped shouldBe true
+        }
+
+    @Test
+    fun `F-A-7 an expiry a year away is capped too`() =
+        runTest {
+            val env = env()
+            env.auth.createResult = DomainResult.Success(TestData.challenge(expiresIn = 365.days, pollMs = 10_000))
+
+            env.pair()(unpaired.id, null) shouldBe SignInResult.Expired
+
+            testScheduler.currentTime shouldBe 900_000
+        }
+
+    @Test
+    fun `F-A-7 a rate limited poll keeps waiting and the next poll still happens`() =
+        runTest {
+            val env = env()
+            env.auth.pollResults.add(DomainResult.Failure(DomainError.RateLimited))
+            env.auth.pollResults.add(DomainResult.Success(ChallengeStatus.Approved))
+
+            env.pair()(unpaired.id, null).shouldBeInstanceOf<SignInResult.SignedIn>()
+
+            env.auth.count("pollChallenge") shouldBe 2
         }
 }

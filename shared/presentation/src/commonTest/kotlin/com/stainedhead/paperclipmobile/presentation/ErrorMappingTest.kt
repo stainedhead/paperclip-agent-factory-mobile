@@ -17,6 +17,7 @@ class ErrorMappingTest {
                 DomainError.NotFound to ErrorKey.NotFound,
                 DomainError.Conflict to ErrorKey.Conflict,
                 DomainError.ServerError to ErrorKey.ServerError,
+                DomainError.RateLimited to ErrorKey.RateLimited,
                 DomainError.Malformed to ErrorKey.Malformed,
             )
 

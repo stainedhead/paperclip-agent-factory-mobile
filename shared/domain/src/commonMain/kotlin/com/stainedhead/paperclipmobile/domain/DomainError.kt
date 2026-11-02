@@ -25,6 +25,9 @@ sealed interface DomainError {
 
     data object ServerError : DomainError
 
+    /** 429: the server asked the caller to slow down. A read may be tried again later; a mutation never is. */
+    data object RateLimited : DomainError
+
     /** The body could not be understood. */
     data object Malformed : DomainError
 }

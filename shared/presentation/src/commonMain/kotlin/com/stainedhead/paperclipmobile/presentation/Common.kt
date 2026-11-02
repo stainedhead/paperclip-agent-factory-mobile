@@ -47,6 +47,7 @@ enum class ErrorKey {
     Conflict,
     Rejected,
     ServerError,
+    RateLimited,
     Malformed,
 }
 
@@ -66,6 +67,7 @@ internal fun DomainError.toErrorUi(): ErrorUi =
         DomainError.Conflict -> ErrorUi(ErrorKey.Conflict)
         is DomainError.Rejected -> ErrorUi(ErrorKey.Rejected, reason)
         DomainError.ServerError -> ErrorUi(ErrorKey.ServerError)
+        DomainError.RateLimited -> ErrorUi(ErrorKey.RateLimited)
         DomainError.Malformed -> ErrorUi(ErrorKey.Malformed)
     }
 

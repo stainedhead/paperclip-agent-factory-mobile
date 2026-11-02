@@ -41,6 +41,12 @@ Red evidence: 'java.lang.IllegalStateException: secure store unavailable' propag
 Fix: SignOutEverywhere wraps each factory in runCatching, rethrows CancellationException, records failed ids in SignOutEverywhereResult.failed and continues; SettingsState.signOutFailures exposes the count (a plain Int, no prose). A cancelled sign out everywhere stops after the factory in progress has finished its own local deletion (shielded); remaining factories are not signed out, which is the cancel the person asked for.
 Test support: FakeSecretStore.failNamespaceDeletes.
 
+### 2026-11-01 F-A-7 bounded pairing wait (FR-R30)
+
+Red evidence: huge interval 'expected:<Cancelled> but was:<Expired>' (waited 2 x 1 h); far expiry 'expected:<900000L> but was:<3600000L>' and a year 'expected:<900000L> but was:<31536000000L>'; rate limit 'Failed(error=RateLimited) is of type Failed but expected SignedIn' (red taken with DomainError.RateLimited and its ErrorKey stubbed, since 429 had no representation).
+Fix: interval clamped 250 ms to 10 s; the wait is withTimeoutOrNull(min(expiresAt - now, 15 min)) around the polling only (approval is stored after the timed section so a timeout can never discard a key); DomainError.RateLimited (429) added with ErrorKey.RateLimited and tolerated while waiting. Existing test 'an expired challenge stops polling once the clock passes its expiry' expected 5 polls; the wait now ends at the expiry instant, so 4 polls happen (the 5th would only answer 'expired'); the test was changed with that comment, not weakened (it still asserts Expired, no secret, token wiped).
+Phase 1b adapters must map HTTP 429 to DomainError.RateLimited.
+
 ## Edge cases and solutions
 
 (none yet)

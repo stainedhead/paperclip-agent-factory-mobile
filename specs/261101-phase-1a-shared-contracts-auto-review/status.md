@@ -52,7 +52,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] FR-R27 (P2) F-A-10: `BaseUri` does not validate the path and accepts odd hosts
 - [ ] FR-R28 (P2) F-A-11: Retries stack up and `retryingRead` retries unreachable and certificate failures
 - [ ] FR-R29 (P2) F-A-12: Dead parameters and unused domain functions
-- [ ] FR-R30 (P1) F-A-7: `PairInstance` polling is unbounded by server-supplied values and ignores rate limiting
+- [x] FR-R30 (P1) F-A-7: `PairInstance` polling is unbounded by server-supplied values and ignores rate limiting
 - [ ] FR-R31 (P2) F-A-9: `Secret.startsWith` copies the whole key into an unwipeable String
 - [ ] FR-R32 (P2) F-B-10: `createGraph` and the demo graph hide real behaviour behind fakes with a frozen clock
 - [ ] FR-R33 (P2) F-B-11: UI mapping by enum ordinal or `valueOf` with no compile-time exhaustiveness
@@ -88,3 +88,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-01: FR-R06 fixed (F-A-5 enrollment failure and cancellation consistency).
 - 2026-11-01: FR-R02 fixed (F-A-2 (cancellation half, P0) sign out is cancellation-safe).
 - 2026-11-01: FR-R02 second commit (SignOutEverywhere continues past one failing factory) done.
+- 2026-11-01: FR-R30 fixed (F-A-7 bounded pairing wait).
