@@ -66,6 +66,7 @@ private struct InboxScreen: View {
     @State private var snoozeTarget: String?
     @State private var web: WebLink?
     @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var state: InboxState { model.state }
     private var isDisabled: Bool { state.actionsDisabledReason != nil || state.isMutating }
@@ -88,7 +89,7 @@ private struct InboxScreen: View {
         .safeAreaInset(edge: .bottom) {
             if state.undo != nil { UndoSnackbar { model.undo() }.padding(.bottom, Spacing.medium) }
         }
-        .animation(.default, value: state.undo != nil)
+        .animation(reduceMotion ? nil : .default, value: state.undo != nil)
         .sensoryFeedback(.success, trigger: state.totalCount)
         .confirmationDialog(InboxLabel.snoozeTitle.text, isPresented: snoozeBinding, presenting: snoozeTarget) { id in
             ForEach(state.snoozeOptions, id: \.self) { preset in

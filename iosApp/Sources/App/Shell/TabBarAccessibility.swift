@@ -43,8 +43,6 @@ struct TabBarAccessibilityValues: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: Applier, context: Context) {
         controller.values = values
         controller.applyValues()
-        // The bar comes back after the pop transition; once it has settled the items are the final ones.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak controller] in controller?.applyValues() }
     }
 
     final class Applier: UIViewController {
@@ -66,22 +64,30 @@ struct TabBarAccessibilityValues: UIViewControllerRepresentable {
         }
 
         // UIKit rebuilds the bar's items at moments no SwiftUI state announces (a sheet over the tabs closing, a
-        // detail screen's bar coming back). Looking again twice a second is cheap: nothing changes unless an item has
-        // lost its value.
-        private var timer: Timer?
+        // detail screen's bar coming back). Those moments are observed, not polled: the bar's `items`, its hidden
+        // state and the controller's view controllers are key-value observed, and the bar's layer position changes
+        // when it slides back in. Each change re-applies the values once.
+        private var observations: [NSKeyValueObservation] = []
+        private weak var observedBar: UITabBar?
 
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            timer?.invalidate()
-            timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-                MainActor.assumeIsolated { self?.applyValues() }
+        private func observeBar(of tabs: UITabBarController) {
+            guard observedBar !== tabs.tabBar else { return }
+            observedBar = tabs.tabBar
+            let reapply: @Sendable () -> Void = { [weak self] in
+                Task { @MainActor in self?.applyValues() }
             }
+            observations = [
+                tabs.tabBar.observe(\.items, options: [.new]) { _, _ in reapply() },
+                tabs.tabBar.observe(\.isHidden, options: [.new]) { _, _ in reapply() },
+                tabs.tabBar.layer.observe(\.position, options: [.new]) { _, _ in reapply() },
+                tabs.observe(\.viewControllers, options: [.new]) { _, _ in reapply() }
+            ]
         }
 
         override func viewDidDisappear(_ animated: Bool) {
             super.viewDidDisappear(animated)
-            timer?.invalidate()
-            timer = nil
+            observations = []
+            observedBar = nil
         }
 
         override func viewDidLayoutSubviews() {
@@ -98,6 +104,7 @@ struct TabBarAccessibilityValues: UIViewControllerRepresentable {
             var controller: UIViewController? = self
             while let current = controller, !(current is UITabBarController) { controller = current.parent }
             guard let tabs = (controller as? UITabBarController) ?? tabBarController else { return }
+            observeBar(of: tabs)
             TabBarAccessibility.apply(values, to: tabs)
         }
     }

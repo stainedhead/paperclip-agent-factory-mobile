@@ -33,6 +33,7 @@ private struct BudgetScreen: View {
     let model: BudgetModel
     let environment: AppEnvironment
     @State private var amountText = ""
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var state: BudgetIncidentState { model.state }
 
@@ -41,7 +42,9 @@ private struct BudgetScreen: View {
             ScrollViewReader { proxy in
                 scroll
                     .onChange(of: amountText) { _, _ in
-                        withAnimation { proxy.scrollTo("budget-amount-anchor", anchor: .bottom) }
+                        withAnimation(reduceMotion ? nil : .default) {
+                            proxy.scrollTo("budget-amount-anchor", anchor: .bottom)
+                        }
                     }
             }
             submitBar

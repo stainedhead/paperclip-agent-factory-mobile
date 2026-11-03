@@ -7,10 +7,6 @@ final class OperationsAuditUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Factory home and Agents scroll past the fold. At a larger text size the audit reports the text that moves below
-    /// the fold as "Dynamic Type font sizes are partially unsupported" and "Text clipped" (which text depends on the
-    /// scroll offset, so it is the audit's comparison, not a fixed font). Recorded in implementation-notes.md; the
-    /// expectation is non-strict so a change of runtime that makes them pass does not fail the test.
     private func assertCleanExceptScrollFold(
         _ findings: @autoclosure () throws -> [String], file: StaticString = #filePath, line: UInt = #line
     ) throws {
@@ -28,20 +24,20 @@ final class OperationsAuditUITests: XCTestCase {
     @MainActor
     func testAccessibilityAuditOfFactoryHome() throws {
         let app = launchFactoryHome()
-        try assertCleanExceptScrollFold(try auditTabRoot(app, screen: "factory"))
+        assertClean(try auditTabRoot(app, screen: "factory"))
     }
 
     @MainActor
     func testAccessibilityAuditOfOfflineFactoryHome() throws {
         let app = launchOperations(tab: "factory", root: "factory-root", extra: ["-demo-offline-after-detail"])
         XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 30))
-        try assertCleanExceptScrollFold(try auditTabRoot(app, screen: "factory-offline"))
+        assertClean(try auditTabRoot(app, screen: "factory-offline"))
     }
 
     @MainActor
     func testAccessibilityAuditOfAgents() throws {
         let app = launchAgents()
-        try assertCleanExceptScrollFold(try auditTabRoot(app, screen: "agents"))
+        assertClean(try auditTabRoot(app, screen: "agents"))
     }
 
     @MainActor
