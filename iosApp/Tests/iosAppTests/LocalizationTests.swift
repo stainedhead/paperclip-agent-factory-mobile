@@ -101,6 +101,26 @@ struct LocalizationTests {
         #expect(L10n.text(ShellLabel.firstRunWillConnect, "https://x.example.com").contains("https://x.example.com"))
     }
 
+    /// B-08: a count reads right at one and at many, from the String Catalog's plural variations (never "1 keys").
+    @Test func countsReadInTheSingularAndThePluralFromTheCatalog() {
+        #expect(ShellLabel.settingsUnconfirmedRevokes.plural(1) == "1 key could not be confirmed as revoked on its server.")
+        #expect(
+            ShellLabel.settingsUnconfirmedRevokes.plural(2)
+                == "2 keys could not be confirmed as revoked on their servers.")
+        #expect(ShellLabel.settingsSignOutFailures.plural(1) == "1 factory could not be signed out on this phone.")
+        #expect(ShellLabel.settingsSignOutFailures.plural(3) == "3 factories could not be signed out on this phone.")
+        #expect(IssueLabel.questionsMore.plural(1) == "1 question")
+        #expect(IssueLabel.questionsMore.plural(4) == "4 questions")
+        #expect(ShellLabel.expiryDays.plural(1) == "Board key expires in 1 day")
+        #expect(ShellLabel.expiryDays.plural(23) == "Board key expires in 23 days")
+        #expect(ShellLabel.manageCount.plural(1) == "1 factory")
+        #expect(ShellLabel.manageCount.plural(2) == "2 factories")
+        #expect(WorkLabel.count.plural(1) == "1 issue")
+        #expect(WorkLabel.count.plural(12) == "12 issues")
+        #expect(AgentsLabel.count.plural(1) == "1 agent")
+        #expect(AgentsLabel.count.plural(5) == "5 agents")
+    }
+
     @Test func anUnknownKeyIsVisibleAsItsKeyNotAsEmptyText() {
         #expect(L10n.resolve("no.such.key") == "no.such.key")
     }
