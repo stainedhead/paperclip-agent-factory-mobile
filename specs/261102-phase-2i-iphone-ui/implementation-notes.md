@@ -267,3 +267,19 @@ Each has its reason in the table above: A11 (Post button's blank-text look), B-1
 ### CI (review-fix round)
 
 Run 41604626498 (ios) on the second push: ios (1), (2), (3) and (audits) succeeded; shared 41604626225 succeeded; security 41604626375 failed. The first push (run 41601956075) failed ios (1) only on `swift-format lint --strict` (`forEach` in `HolderModelTests`), fixed. Cause of the security failure (C12): gitleaks rule `generic-api-key` on commit 3b204ae (a Phase 1b commit that is in this branch's history through the shared base) in `shared/infrastructure/api/src/commonTest/.../ErrorMapperTest.kt:137`, a test string `"SECRETVALUE"`; the fix is a fingerprint allowlist entry in `.gitleaks.toml` on the branch that owns that file. Not changed here. The audit leg is green only because its audit step is allowed to fail; the audit tests themselves fail (see Audit results); the audit step ran 24+ tests (the "Audits ran" step passed).
+
+### Second fix round (independent re-review, R1 to R11)
+
+| Id | Result |
+|---|---|
+| R1 | Fixed. The Settings, Edit factory, Factories and Manage audits had kept substring filters ("Text clipped", "\| Cancel", "Add a factory", ...) and so passed with exactly the findings listed above. They now assert an empty list. The "Audit results" counts above are now what these tests assert: all audit tests that report findings fail, in the non-blocking audit set. The earlier statement that the only remaining failures are audits stands; the four classes above are now part of those failures. |
+| R2 | Fixed: `.gitleaks.toml` allowlists commit 3b204ae (the same entry 1b has; the file that holds the string, `ErrorMapperTest.kt`, is not on this branch). |
+| R3 | Not rewritten (pushed branch). Merge mode matters: squash-merge, or accept that some intermediate commits of the first round do not build. Every commit of the second round was built. |
+| R4 | Fixed: each mutating screen state has `isWorking` in shared code (tested on constructed states in `StateIsWorkingTest`); Swift only forwards it. |
+| R5 | Fixed: `closeAll` cancels pending finish tasks and frees their keys (test). |
+| R6 | Deferred: the Release fake graph is built and closed immediately, no UI path reaches it; making the graph optional touches every `environment.graph` use. |
+| R7 | Fixed: any numeral set's digits are accepted, whitespace or a currency sign inside the number is refused, one edge sign is allowed. Rule documented and tested: "1,500" is 1500.00 where the decimal mark is a point and refused where it is a comma; the Raise button shows the parsed amount before Face ID. |
+| R8 | Fixed by removing the cap: every distinct issue is read, 4 at a time. The number of issues is bounded by the runs the screen lists. |
+| R9 | Fixed: `didUpdate` is assigned when the model is first made. No observable behaviour changed, so no new test. |
+| R10 | Fixed: `auditScreen` and `auditAccessibility` are no longer `@discardableResult`, so an ignored result warns at compile time. A warning, not an error. |
+| R11 | Deferred, as A11. |

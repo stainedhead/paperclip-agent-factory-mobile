@@ -43,7 +43,7 @@ Update this file after every task and phase. It is the single source of progress
 
 1. The live graph is not wired: `LiveGraphProvider.isAvailable` is false until Phase 1b (PR #7) merges. A build without `-demo` shows "Live factories are not available yet" (ADR-112). Merge checklist: implementation-notes.md.
 2. Accessibility audits fail honestly: the Phase 2i audit set reports findings on most screens (counts in implementation-notes.md, "Audit results"). They do not block CI (ADR-080) but 2i-6 is not accepted while they stand.
-3. The `security` workflow (gitleaks) fails on this and other branches; cause and fix not done (C12).
+3. (Cleared in the second fix round) the `security` workflow failed on one historical gitleaks finding; now allowlisted.
 4. ADR numbers 042 to 047 and 080 collide with 1b (C15).
 5. `/dev-flow:review-spec` was never run.
 
