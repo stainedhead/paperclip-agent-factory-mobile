@@ -1,6 +1,6 @@
 # User and developer guides
 
-The iPhone app is built on a demo factory; connecting to a real server arrives with Phase 1b. Developer guides come first, then end-user guides.
+The iPhone app connects to real Paperclip servers (Phase 1b adapters) and also has a Debug-only demo factory. Developer guides come first, then end-user guides.
 
 | Guide | What it covers | State |
 |---|---|---|

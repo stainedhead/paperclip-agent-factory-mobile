@@ -41,10 +41,10 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Blockers
 
-1. The live graph is not wired: `LiveGraphProvider.isAvailable` is false until Phase 1b (PR #7) merges. A build without `-demo` shows "Live factories are not available yet" (ADR-114). Merge checklist: implementation-notes.md.
-2. Accessibility audits: 16 of 24 audit tests fail locally (21 on the iOS 26.5 CI runtime at e432599). They are shown in the non-blocking `ios (audits)` job by decision of the owner (option C, ADR-119); nothing is filtered. The blocking guard for large text is `LargeTextUITests` (15 tests, accessibility XXXL). They do not block CI (ADR-094) but 2i-6 is not accepted while they stand.
+1. (Cleared on the 1b merge) The live graph is wired: a launch without `-demo` opens the real graph (ADR-120). Not exercised from the app against a live Paperclip server.
+2. Accessibility audits: 16 of 24 audit tests fail locally (21 on the iOS 26.5 CI runtime at e432599; ADR-117). They are shown in the non-blocking `ios (audits)` job by decision of the owner (option C, ADR-119); nothing is filtered. The blocking guard for large text is `LargeTextUITests` (15 tests, accessibility XXXL). 2i-6 is not accepted while they stand.
 3. (Cleared in the second fix round) the `security` workflow failed on one historical gitleaks finding; now allowlisted.
-4. ADR numbers 042 to 047 and 080 collide with 1b (C15).
+4. (Cleared on the 1b merge) the 2i ADRs were renumbered to ADR-088 to ADR-119 after 1b's ADR-087 (mapping in implementation-notes.md).
 5. `/dev-flow:review-spec` was never run.
 
 ## Recent activity
@@ -60,3 +60,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-03: milestone 2i-6 (polish, accessibility, screenshots, live seam notes, docs) implemented.
 
 - 2026-11-03: review-fix round for reviews A, B and C (no P0); new ADR-114 to 118; status and docs corrected.
+- 2026-11-03: Phase 1b (PR #7) merged into this branch; live graph wired; ADRs renumbered; 1b error, outcome and here-only cases added to the app.

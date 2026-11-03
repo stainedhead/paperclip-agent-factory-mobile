@@ -11,4 +11,4 @@ A **factory** is one Paperclip server. On first launch the app shows "Add your f
 
 **Try the demo factory** switches to a built-in demo factory with fake data (Acme Labs, PAP-1182, Engineer 1). Use it to look around; it never contacts a server.
 
-**Current state.** Connecting to a real server arrives with Phase 1b; until then a launch without the demo runs this flow on fakes. Private servers: see [Tailscale and allowed hostnames](./tailscale-and-hostnames.md). Problems: [troubleshooting](./troubleshooting.md).
+**Current state.** A launch without `-demo` runs this flow against the real server; `-demo-first-run` (Debug builds) runs it on fakes. Private servers: see [Tailscale and allowed hostnames](./tailscale-and-hostnames.md). Problems: [troubleshooting](./troubleshooting.md).

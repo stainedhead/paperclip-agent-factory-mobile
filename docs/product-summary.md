@@ -24,7 +24,7 @@ iPhone (iOS 17 and later) first, then Android (9 and later). Both use one shared
 
 - **Built and tested:** the shared Kotlin core and the whole iPhone app: setting up and managing factories, the Inbox, decisions, approvals, budget incidents, Factory home, agents and runs, issues and their interaction forms, settings and app lock. It enforces roles, asks for Face ID before destructive actions, never retries a change, keeps working from its last data when offline, and supports Dynamic Type, dark mode, VoiceOver labels, reduced motion and 44 pt targets.
 - **Runs on demo data:** every screen works end to end on a built-in demo factory (no server).
-- **Not built:** the connection to a real Paperclip server and secure storage on the device (Phase 1b, in review), notifications (Phase 3) and the Android app.
+- **Not built:** notifications (Phase 3) and the Android app. The connection to a real Paperclip server and key storage in the Keychain are built (Phase 1b) but have not yet been exercised end to end from the app against a live server.
 
 So the app cannot yet manage a real factory; it can be built, run and tried on the demo factory. See [user-docs/getting-started.md](../user-docs/getting-started.md) and [product-details.md](./product-details.md).
 

@@ -633,7 +633,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** One gate for every platform. Catalog keys are `<namespace>.<caseName>` for each exported key enum, verified by a completeness test (ADR for localisation scheme: this one).
 
-## ADR-091: A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
+## ADR-091: (superseded by ADR-120) A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-010)
 
@@ -641,7 +641,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** `shared/infrastructure/platform` offers `ApprovalPageOpener.open(url: String, onShown: () -> Unit)` (implemented by the shell, never throws) and `OpenerPairingBrowser`, the only place the link leaves its `Secret`. The Swift `ASWebAuthSessionPairingBrowser` opens only `https` links (plain `http` to a local host in debug builds), never logs or keeps the link, and calls back once the page is on screen. Closing the sheet is not a failure: it is how a person finishes approving, and the shared use case finds out by polling.
 
-**Consequences.** Phase 1b passes `OpenerPairingBrowser(opener)` to `createLiveGraph`; only the factory call changes. A sheet that could not be shown cancels the pairing on screen. Real `ASWebAuthenticationSession` behaviour is not exercised on CI.
+**Consequences.** Superseded on the 1b merge: 1b's `PairingBrowsers.onMainThread(show, dismiss)` is used instead and `ApprovalPageOpener`/`OpenerPairingBrowser` were deleted (the platform module may not see a `Secret`, a Konsist rule). Original text: Phase 1b passes `OpenerPairingBrowser(opener)` to `createLiveGraph`; only the factory call changes. A sheet that could not be shown cancels the pairing on screen. Real `ASWebAuthenticationSession` behaviour is not exercised on CI.
 
 ## ADR-092: Pairing completes on fakes through `approvePairings`, a first-run demo graph, and the graph clock
 
@@ -839,15 +839,15 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** The tests were characterisation tests: they passed on first run, no red step. The review-fix round (ADR-118) made the test fail when it measures nothing, and say which controls it cannot see.
 
-## ADR-114: A build without live adapters says so and runs nothing; demo flags exist in Debug builds only
+## ADR-114: A launch whose real graph cannot open says so and runs nothing; demo flags exist in Debug builds only
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A3, A7)
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A3, A7); amended on the 1b merge (ADR-120).
 
-**Context.** `LiveGraphProvider.isAvailable` was never read. A launch without `-demo` ran the shared graph on fakes (an in-memory secret store, a frozen clock and `FakeBiometrics`, which approves everything), so a Release build showed first-run pairing and approved destructive actions without Face ID while the confirm sheet promised it. All `-demo*` flags and the diagnostics overlay worked in every build.
+**Context.** Before Phase 1b the iPhone app could only build the graph on fakes. `LiveGraphProvider.isAvailable` was never read, so a Release launch ran first-run pairing on `FakeBiometrics` (always approves). All `-demo*` flags and the diagnostics overlay worked in every build.
 
-**Decision.** The rule lives in shared code: `StartupNotice.forLaunch(demo, liveAvailable)` returns `LiveFactoriesUnavailable` for a live launch whose adapters are not wired. `AppEnvironment` asks it once, closes the holders it had created (no refresh, no biometric port in use) and `RootView` shows the notice instead of first run or the tabs. `LaunchConfiguration` takes `allowsDemoControls`, true only when `DEBUG` is defined (CI and the UI tests build Debug), and ignores every `-demo*` argument otherwise; `DiagnosticsOverlay` is compiled into Debug only.
+**Decision.** The rule lives in shared code: `StartupNotice.forLaunch(demo, liveOpened)` returns `LiveGraphUnavailable` for a live launch whose graph did not open. `AppEnvironment` asks it once; on failure it holds a closed stand-in graph (no holder, refresh or biometric port runs) and `RootView` shows the notice with Try again. `LaunchConfiguration` takes `allowsDemoControls`, true only when `DEBUG` is defined, and ignores every `-demo*` argument otherwise; `DiagnosticsOverlay` and the first-run "Try the demo factory" button are Debug only.
 
-**Consequences.** Until Phase 1b is merged and `isAvailable` flips, a Release build can only show the notice. The fake graph is still constructed by the provider, then closed before any state holder runs; no UI path reaches it. A Debug build without `-demo` also shows the notice (the first-run flow is reached with `-demo-first-run`).
+**Consequences.** A Release build can reach only the real graph or the notice. The stand-in graph is still constructed (the environment needs a graph object) and closed before any holder runs; no UI path reaches it.
 
 ## ADR-115: Typed money is read by one strict shared parser; the app passes only the decimal separator and the currency's digits
 
@@ -901,3 +901,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 3. *Elements with no element* (Inbox and Shell, frame zero): the issue carries no element at all (`Element:(null)`), so it cannot be traced; the test prints the full issue and the hierarchy.
 
 **Consequences.** What remains (local, Large text): Approval 1 and offline 1, Factories 4, Inbox 3 and offline 9, Manage 5, Agents 3, Factory home 5 and offline 7, Run offline 1, Settings 2, Shell 3, Issue 2 and offline 2, Work 3 and offline 2. Almost all are text in the bottom band or clipped by a scroll view, for which the evidence in 2 applies. They are not hidden, filtered or allow-listed; the tests fail. Clearing them needs either screens whose content ends above the bottom band when audited (a scenario change, not a fix) or giving up an audit-wide empty assertion; that choice is the owner's.
+
+## ADR-120: The iPhone app opens the real graph through `LiveIosGraph.openLiveGraph` and a throwing provider
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, 1b integration)
+
+**Context.** Phase 1b (merged) provides `LiveIosGraph.openLiveGraph(allowInsecureLocal, pairingBrowser, settings)` (throws instead of aborting), `PairingBrowsers.onMainThread(show, dismiss)` and new outcomes: `AuthDeclined`, `KeyInvalidated`, `ServerKeyOutcome.Declined`, and the "here only" sign-out and removal when the key cannot be read.
+
+**Decision.** `AppGraphProvider.makeGraph()` throws; `LiveGraphProvider` passes `LiveSettings` (the board-key Keychain service, `Application Support/Paperclip`, the localised Face ID reasons) and a main-thread pairing browser that presents the approval page with `ASWebAuthSessionPairingBrowser` and closes it on cancel. The Edit factory sheets and the Manage removal sheet have "here only" variants that say the key stays live on the server. New errors and outcomes have catalog entries and are covered by the completeness tests.
+
+**Consequences.** Not verified from the app against a live Paperclip server; the adapters are covered by Kotlin and contract tests and the launch path by `LiveGraphLaunchTests` and `AppEnvironmentTests` (real graph on a temporary folder).

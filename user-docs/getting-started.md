@@ -1,6 +1,6 @@
 # Getting started
 
-For a developer adopting the shared Kotlin core of Paperclip Agent Factory Mobile. There is no end-user app to install yet. The iPhone app has every screen (Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Edit and Manage factories, Settings, first run), but only on the built-in demo data: until Phase 1b brings real adapters, a build launched without `-demo` shows "Live factories are not available yet". What you can do today is build the core, run its quality gates and tests, and run the app in demo mode (Debug build, launch argument `-demo`).
+For a developer adopting the shared Kotlin core of Paperclip Agent Factory Mobile. There is no end-user app to install yet. The iPhone app has every screen (Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Edit and Manage factories, Settings, first run), on the real Paperclip adapters (a launch without `-demo`; it starts at first run behind the app lock) or, in a Debug build, on the built-in demo data (launch argument `-demo`). What you can do today is build the core, run its quality gates and tests, and run the app either way.
 
 Developed with Kotlin 2.4.21, Gradle 9.8.2 and Xcode 27.2 on macOS. This page was last revised in the Phase 2i review-fix round (branch `feat/phase-2i-iphone-ui`); the commands were run then, the older prose was not re-checked line by line.
 
@@ -95,7 +95,7 @@ struct DemoAttentionInteropTests {
 }
 ```
 
-The iPhone app builds `PaperclipCore.shared.createGraph(allowInsecureLocal:)` (an empty, fakes-backed graph) only to find that live adapters are not wired, then closes it and shows the "not available in this build" screen; `-demo` (Debug builds) runs the app on the demo graph. To see a screen's logic on demo data from Swift, use the demo graph in a test as above.
+The iPhone app opens the real graph through `LiveIosGraph.openLiveGraph`; `-demo` (Debug builds) runs the app on the demo graph instead. To see a screen's logic on demo data from Swift, use the demo graph in a test as above.
 
 ## Where next
 

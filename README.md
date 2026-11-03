@@ -2,7 +2,7 @@
 
 Native iPhone and Android apps for deciding, monitoring and intervening in one or more [Paperclip](https://docs.paperclip.ing) AI-agent instances from anywhere, through the Paperclip REST API. All non-UI code is one shared Kotlin Multiplatform core; the iPhone UI is SwiftUI and the Android UI will be Jetpack Compose.
 
-**Status:** the shared Kotlin core (Phase 1a) and the iPhone app (Phase 2i, branch `feat/phase-2i-iphone-ui`) are built and run entirely on fakes in **demo mode**. The iPhone app has every main screen: first run, Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Manage factories, Edit factory and Settings. The real adapters (HTTP, SQLDelight, Keychain; Phase 1b, pull request #7) are not merged, so a launch without `-demo` starts the first-run flow on the fake graph and no Paperclip server is contacted yet. The Android app is not started. Details: [docs/technical-details.md](./docs/technical-details.md) and [specs/261102-phase-2i-iphone-ui/status.md](./specs/261102-phase-2i-iphone-ui/status.md).
+**Status:** the shared Kotlin core (Phase 1a) and the iPhone app (Phase 2i, branch `feat/phase-2i-iphone-ui`) are built. The iPhone app runs on the **real Paperclip adapters** (Phase 1b, merged: Ktor HTTP, SQLDelight, Keychain, LocalAuthentication) and, in Debug builds with `-demo`, on fakes in **demo mode**. It has every main screen: first run, Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Manage factories, Edit factory and Settings. A launch without `-demo` opens the real graph (empty database: first run, behind the app lock); if it cannot be opened the app says so and offers Try again, and never falls back to fakes. Not yet verified against a live Paperclip server from the app itself (the contract tests cover the adapters). The Android app is not started. Details: [docs/technical-details.md](./docs/technical-details.md) and [specs/261102-phase-2i-iphone-ui/status.md](./specs/261102-phase-2i-iphone-ui/status.md).
 
 | Inbox | Decision | Factory | Work |
 |---|---|---|---|
@@ -20,7 +20,7 @@ All screenshots are taken in demo mode (fake data, never a real factory); the pa
 | [docs/product-summary.md](./docs/product-summary.md) | What the app does, in plain words, and where it stands |
 | [docs/product-details.md](./docs/product-details.md) | The 16 screens: state holder, behaviour by role, device authentication, offline; mocks versus built |
 | [docs/technical-details.md](./docs/technical-details.md) | Modules, graph API, layering rules, mutation order, refresh policy, errors, tests and coverage, iOS interop, known limitations |
-| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-119 (the numbering is not contiguous): why we chose what we chose |
+| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-120 (the numbering is not contiguous): why we chose what we chose |
 | [user-docs/README.md](./user-docs/README.md) | Index of the guides below |
 | [user-docs/getting-started.md](./user-docs/getting-started.md) | Prerequisites, build, gates, XCFramework, iOS tests, demo graph |
 | [user-docs/configuration-reference.md](./user-docs/configuration-reference.md) | Every build and configuration knob and validation rule |

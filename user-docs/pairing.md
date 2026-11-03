@@ -1,7 +1,5 @@
 # Pairing this phone
 
-> **Demo only for now.** The real pairing flow (Keychain storage, the secure browser sheet and the factory's approval page) arrives with Phase 1b. Until then the app pairs only on its built-in demo data, where every pairing is approved at once and nothing is stored; a build without `-demo` shows "Live factories are not available yet". The description below is how pairing will work.
-
 Pairing gives this phone its own **board key** for one factory. The key is created after you approve the phone in the Paperclip web app, and it stays in the iPhone Keychain (this device only, never synced, never backed up). Nothing leaves the phone except requests to that factory.
 
 1. After the address step the app opens an approval page in a secure browser sheet.
@@ -11,4 +9,4 @@ Pairing gives this phone its own **board key** for one factory. The key is creat
 
 The screen that shows the approval is never captured in the documentation, so there is no screenshot here. A factory can have several phones; see Settings, "Paired devices and keys", to review or revoke them.
 
-Status: the real server flow arrives with Phase 1b. In demo mode every pairing is approved at once.
+Status: this is the real flow. In demo mode (Debug builds only) every pairing is approved at once and nothing is stored.

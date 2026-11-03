@@ -2,7 +2,7 @@
 
 Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent-factory-mobile-PRD.md). The numbered screen inventory is the PRD's; the order below follows it.
 
-**What exists today.** The shared Kotlin core has a tested state holder for every screen, and the iPhone app (Phase 2i) draws screens 1 to 13, 15 and 16 on the demo graph. Screen 14 (Notification settings) belongs to Phase 3. Without the Phase 1b adapters no real factory can be reached.
+**What exists today.** The shared Kotlin core has a tested state holder for every screen, and the iPhone app (Phase 2i) draws screens 1 to 13, 15 and 16 on the real Phase 1b adapters (and on the demo graph with `-demo` in Debug builds). Screen 14 (Notification settings) belongs to Phase 3.
 
 **About the images.** Screenshots in `docs/images/` without a `design-` prefix are real captures of the running iPhone app in **demo mode** (fake data only; the pairing screen is never captured). The `design-*.png` files are the original mocks, kept for comparison.
 
@@ -47,7 +47,7 @@ Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent
 
 What changed for the person using the app after the three reviews of the iPhone UI (see implementation-notes.md, "Review-fix round"):
 
-- **A build without live factories says so.** Launched without `-demo` (and in every Release build, where `-demo*` is ignored) the app shows "Live factories are not available yet" and starts nothing: no pairing, no approvals.
+- **Live graph.** A launch without `-demo` (and every Release build, where `-demo*` is ignored) opens the real graph behind the app lock. If the factory database or the Keychain cannot be opened, the app says "Paperclip cannot start yet" with Try again, changes nothing and never runs on fakes. When the phone cannot read a key (Face ID declined, locked), Sign out and Remove offer "here only" versions that say the key stays live on the server.
 - **Money you type is read strictly.** The Budget incident and Agent detail amounts are read by shared code with the phone's decimal mark. "250,50" typed where the decimal mark is "." is refused with a message (never read as 25,050); zero, negative, too-precise and too-large amounts are refused. The raise button reads "Raise to $250 and resume", and "Choose an option" until you choose.
 - **Times keep moving.** "Updated 12s ago", card ages and a running run's elapsed time keep counting while the screen is open, also offline. Ages are in your language; VoiceOver reads them as words ("8 minutes").
 - **Decision.** Shows when it expires; the bar above Confirm names the chosen option; effect lines show free text (a title or a comment excerpt) exactly as written.
