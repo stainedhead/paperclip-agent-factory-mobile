@@ -91,7 +91,8 @@ class AgentDetailActionsTest {
             advanceUntilIdle()
             holder.state.value.canSetBudget shouldBe true
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 1
@@ -108,7 +109,8 @@ class AgentDetailActionsTest {
             advanceUntilIdle()
             holder.state.value.canSetBudget shouldBe false
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 0
@@ -121,7 +123,8 @@ class AgentDetailActionsTest {
             val holder = detailHolder(env)
             advanceUntilIdle()
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(-1))
+            holder.enterBudget("-1")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 0
@@ -192,7 +195,8 @@ class AgentDetailActionsTest {
             val holder = detailHolder(env)
             advanceUntilIdle()
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 1
@@ -260,5 +264,67 @@ class AgentDetailStaleLoadTest {
 
             holder.state.value.agent
                 ?.status shouldBe AgentStatusUi.Paused
+        }
+}
+
+internal fun AgentDetailStateHolder.enterBudget(text: String) =
+    onIntent(AgentDetailIntent.BudgetAmountTyped(text, ".", 2))
+
+class AgentDetailBudgetInputTest {
+    @Test
+    fun `A4 the typed budget is parsed in shared code and says what is wrong`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AgentDetailIntent.BudgetAmountTyped("250,50", ".", 2))
+            runCurrent()
+            holder.state.value.budgetAmountIssue shouldBe InvalidKey.AmountNotANumber
+            holder.state.value.canSaveBudget shouldBe false
+
+            holder.onIntent(AgentDetailIntent.BudgetAmountTyped("250,50", ",", 2))
+            runCurrent()
+            holder.state.value.budgetAmountIssue shouldBe null
+            holder.state.value.budgetAmountMinorUnits shouldBe 25_050L
+            holder.state.value.canSaveBudget shouldBe true
+        }
+
+    @Test
+    fun `A11 zero is not a budget and nothing is sent`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.enterBudget("0")
+            runCurrent()
+            holder.state.value.canSaveBudget shouldBe false
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
+            advanceUntilIdle()
+
+            env.agents.count("setBudget") shouldBe 0
+        }
+
+    @Test
+    fun `B-06 a saved budget is reported once and a failed one keeps the amount`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            env.agents.failures["setBudget"] = DomainError.Timeout
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
+            advanceUntilIdle()
+
+            holder.state.value.budgetSavedCount shouldBe 0
+            holder.state.value.budgetAmountMinorUnits shouldBe 50_000L
+
+            env.agents.failures.remove("setBudget")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
+            advanceUntilIdle()
+
+            holder.state.value.budgetSavedCount shouldBe 1
+            holder.state.value.budgetAmountMinorUnits shouldBe null
         }
 }
