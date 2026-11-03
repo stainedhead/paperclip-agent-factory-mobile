@@ -47,7 +47,7 @@ private struct AgentDetailScreen: View {
             return state.feedback == nil ? .success : .error
         }
         .sheet(isPresented: pauseBinding) { pauseSheet }
-        .sheet(isPresented: $showsBudgetForm) { BudgetForm(model: model, state: state) }
+        .sheet(isPresented: $showsBudgetForm) { BudgetForm(model: model) }
     }
 
     // MARK: - Content
@@ -251,13 +251,12 @@ private struct AgentDetailScreen: View {
 /// "Set monthly budget" for an owner: one amount in dollars. The shared holder validates and sends it.
 private struct BudgetForm: View {
     let model: AgentDetailModel
-    let state: AgentDetailState
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
 
-    private var minorUnits: Int64? {
-        MoneyFormat.minorUnits(from: text, currency: state.monthlyBudget?.currency ?? "USD")
-    }
+    private var state: AgentDetailState { model.state }
+
+    private var currency: String { state.monthlyBudget?.currency ?? "USD" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.roomy) {
@@ -267,17 +266,12 @@ private struct BudgetForm: View {
                 .foregroundStyle(Palette.textSecondary.color)
             FormField(
                 title: AgentDetailLabel.budgetField.text, placeholder: AgentDetailLabel.budgetPlaceholder.text,
-                text: $text, issue: text.isEmpty || minorUnits != nil ? nil : AgentDetailLabel.budgetInvalid.text,
+                text: $text, issue: state.budgetAmountIssue.map { L10n.text($0) },
                 keyboard: .decimalPad, capitalization: .never, identifier: "agent-budget-amount")
-            Button(AgentDetailLabel.budgetSave.text) {
-                if let minorUnits {
-                    model.setBudget(minorUnits: minorUnits)
-                    dismiss()
-                }
-            }
-            .buttonStyle(.app(.primary))
-            .disabled(minorUnits == nil)
-            .accessibilityIdentifier("agent-budget-save")
+            Button(AgentDetailLabel.budgetSave.text) { model.saveBudget() }
+                .buttonStyle(.app(.primary))
+                .disabled(!state.canSaveBudget)
+                .accessibilityIdentifier("agent-budget-save")
             Button(AgentDetailLabel.budgetCancel.text) { dismiss() }
                 .buttonStyle(.app(.secondary))
                 .accessibilityIdentifier("agent-budget-cancel")
@@ -287,5 +281,9 @@ private struct BudgetForm: View {
         .presentationDetents([.medium, .large])
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("agent-budget-form")
+        // Nothing typed is lost on a failure: the form closes only when shared code says the budget was saved.
+        .onChange(of: text) { _, new in model.typeBudget(text: new, currency: currency) }
+        .onChange(of: state.budgetSavedCount) { _, _ in dismiss() }
+        .onAppear { model.typeBudget(text: "", currency: currency) }
     }
 }

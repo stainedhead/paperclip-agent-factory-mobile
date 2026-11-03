@@ -17,9 +17,9 @@ struct ApprovalPresentationTests {
     }
 
     @Test func theAmountFieldTellsSharedCodeOnlyTheLocalesSeparatorAndTheCurrencysDigits() {
-        let us = MoneyInputFormat(currency: "USD", locale: enUS)
-        #expect(us.decimalSeparator == ".")
-        #expect(us.fractionDigits == 2)
+        let american = MoneyInputFormat(currency: "USD", locale: enUS)
+        #expect(american.decimalSeparator == ".")
+        #expect(american.fractionDigits == 2)
         let germany = MoneyInputFormat(currency: "EUR", locale: Locale(identifier: "de_DE"))
         #expect(germany.decimalSeparator == ",")
         #expect(germany.fractionDigits == 2)

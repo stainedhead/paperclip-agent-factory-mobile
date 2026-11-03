@@ -17,26 +17,24 @@ enum MoneyFormat {
         return formatter.string(from: amount as NSDecimalNumber) ?? "\(money.minorUnits) \(money.currency)"
     }
 
-    /// What the person typed ("250", "$1,200", "250.50") in minor units, or `nil` when it is not a positive amount.
-    static func minorUnits(from text: String, currency: String = "USD", locale: Locale = .current) -> Int64? {
-        let cleaned = text.filter { $0.isNumber || String($0) == locale.decimalSeparator || String($0) == "-" }
-        guard !cleaned.isEmpty else { return nil }
-        let parser = NumberFormatter()
-        parser.numberStyle = .decimal
-        parser.locale = locale
-        parser.generatesDecimalNumbers = true
-        guard let number = parser.number(from: cleaned) as? NSDecimalNumber, number.compare(0) == .orderedDescending
-        else { return nil }
-        let scaled = number.multiplying(by: NSDecimalNumber(decimal: pow(10, fractionDigits(currency, locale: locale))))
-        return Int64(truncating: scaled.rounding(accordingToBehavior: nil))
-    }
-
-    private static func fractionDigits(_ currency: String, locale: Locale) -> Int {
+    static func fractionDigits(_ currency: String, locale: Locale) -> Int {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.locale = locale
         formatter.currencyCode = currency
         return formatter.maximumFractionDigits
+    }
+}
+
+/// What shared code needs to read a typed amount: the locale's decimal separator and the currency's fraction digits.
+/// Reading, validating and refusing the text is shared code's (`MoneyInput`); nothing is parsed here.
+struct MoneyInputFormat: Equatable {
+    let decimalSeparator: String
+    let fractionDigits: Int
+
+    init(currency: String, locale: Locale = .current) {
+        decimalSeparator = locale.decimalSeparator ?? "."
+        fractionDigits = MoneyFormat.fractionDigits(currency, locale: locale)
     }
 }
 

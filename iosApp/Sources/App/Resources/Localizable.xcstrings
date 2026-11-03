@@ -1476,6 +1476,17 @@
         }
       }
     },
+    "budget.submitChoose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an option"
+          }
+        }
+      }
+    },
     "budget.submitKeep": {
       "extractionState": "manual",
       "localizations": {
@@ -1494,6 +1505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raise and resume"
+          }
+        }
+      }
+    },
+    "budget.submitRaiseAmount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise to %@ and resume"
           }
         }
       }
@@ -3243,6 +3265,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "The new budget must be higher than what has been spent."
+          }
+        }
+      }
+    },
+    "invalid.amountNotNumeric": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That is not an amount. Use digits and one decimal mark, for example 250.50."
+          }
+        }
+      }
+    },
+    "invalid.amountNotPositive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The amount must be more than zero."
+          }
+        }
+      }
+    },
+    "invalid.amountTooLarge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That amount is too large."
+          }
+        }
+      }
+    },
+    "invalid.amountTooManyDecimals": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many decimal places for this currency."
           }
         }
       }

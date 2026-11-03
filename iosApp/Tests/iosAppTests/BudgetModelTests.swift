@@ -53,13 +53,13 @@ struct BudgetModelTests {
         let rig = await makeRig()
         rig.model.choose(.raiseAndResume)
         rig.model.setAmount(text: "250,50", locale: enUS)
-        #expect(await eventually { rig.model.state.amountIssue == .amountNotANumber })
+        #expect(await eventually { rig.model.state.amountIssue == .amountNotNumeric })
         #expect(rig.model.state.amountMinorUnits == nil)
         #expect(rig.model.state.canSubmit == false)
         rig.model.setAmount(text: "250,50", locale: Locale(identifier: "de_DE"))
         #expect(await eventually { rig.model.state.amountMinorUnits?.int64Value == 25_050 })
         rig.model.setAmount(text: "250.50", locale: Locale(identifier: "de_DE"))
-        #expect(await eventually { rig.model.state.amountIssue == .amountNotANumber })
+        #expect(await eventually { rig.model.state.amountIssue == .amountNotNumeric })
         rig.finish()
     }
 

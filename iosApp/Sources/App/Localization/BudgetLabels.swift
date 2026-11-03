@@ -20,6 +20,8 @@ enum BudgetLabel: String, CaseIterable, CatalogKey {
     case amountHelp
     case working
     case submitRaise
+    case submitRaiseAmount
+    case submitChoose
     case submitKeep
     case scope
     case updated

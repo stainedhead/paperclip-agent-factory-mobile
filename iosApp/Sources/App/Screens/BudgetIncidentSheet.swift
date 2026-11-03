@@ -78,7 +78,7 @@ private struct BudgetScreen: View {
         if let feedback = state.feedback { FeedbackBanner(feedback: feedback) { model.dismissMessage() } }
         if let error = state.error {
             ErrorBanner(
-                error: error, onRetry: { model.refresh() }, onSignInAgain: { environment.router.select(.factories) })
+                error: error, onRetry: { model.refresh() }, onSignInAgain: signInAgain)
         }
         if let outcome = state.outcome {
             ResultCard(
@@ -187,20 +187,34 @@ private struct BudgetScreen: View {
             identifier: "budget-amount")
     }
 
-    /// The text lives here while it is typed; each change tells the state the amount in minor units (or nothing).
+    /// The text lives here while it is typed; every change goes to the shared holder, which reads it and validates it.
     private var amountBinding: Binding<String> {
         Binding(
             get: { amountText },
             set: {
                 amountText = $0
-                model.setAmount(MoneyFormat.minorUnits(from: $0, currency: state.observed?.currency ?? "USD"))
+                model.setAmount(text: $0)
             })
+    }
+
+    /// What Raise says on the button: the amount that will be sent, once there is one (it is also what Face ID is for).
+    private var raiseTitle: String {
+        guard let minor = state.amountMinorUnits?.int64Value, let currency = state.observed?.currency else {
+            return BudgetLabel.submitRaise.text
+        }
+        return BudgetLabel.submitRaiseAmount.text(MoneyFormat.text(MoneyUi(minorUnits: minor, currency: currency)))
     }
 
     @ViewBuilder private var unavailable: some View {
         DetailUnavailableView(
             phase: state.phase, error: state.error, isOffline: state.isOffline,
-            onRetry: { model.refresh() }, onSignInAgain: { environment.router.select(.factories) })
+            onRetry: { model.refresh() }, onSignInAgain: signInAgain)
+    }
+
+    /// The sheet sits over the tab bar: it closes first, then the Factories tab shows where to sign in again.
+    private func signInAgain() {
+        environment.router.dismissSheet()
+        environment.router.select(.factories)
     }
 
     // MARK: - Submit
@@ -215,7 +229,9 @@ private struct BudgetScreen: View {
                     if state.isSubmitting {
                         Label(BudgetLabel.working.text, systemImage: "hourglass")
                     } else if state.submitNeedsDeviceAuth {
-                        Label(BudgetLabel.submitRaise.text, systemImage: "lock.fill")
+                        Label(raiseTitle, systemImage: "lock.fill")
+                    } else if state.choice == nil {
+                        Text(BudgetLabel.submitChoose.text)
                     } else {
                         Text(BudgetLabel.submitKeep.text)
                     }

@@ -1,3 +1,4 @@
+import Foundation
 import PaperclipKit
 
 /// Screen 5's adapter.
@@ -30,8 +31,14 @@ extension HolderModel where Holder == AgentDetailStateHolder {
     func cancelPause() { send(AgentDetailIntentPauseCancelled.shared) }
     func resume() { send(AgentDetailIntentResumeTapped.shared) }
     func runNow() { send(AgentDetailIntentRunNowTapped.shared) }
-    /// The new monthly budget in minor units.
-    func setBudget(minorUnits: Int64) { send(AgentDetailIntentBudgetSubmitted(minorUnits: minorUnits)) }
+    /// The budget field's text as typed; shared code reads and validates it.
+    func typeBudget(text: String, currency: String, locale: Locale = .current) {
+        let format = MoneyInputFormat(currency: currency, locale: locale)
+        send(
+            AgentDetailIntentBudgetAmountTyped(
+                text: text, decimalSeparator: format.decimalSeparator, fractionDigits: Int32(format.fractionDigits)))
+    }
+    func saveBudget() { send(AgentDetailIntentBudgetSubmitted.shared) }
     func dismissMessage() { send(AgentDetailIntentMessageDismissed.shared) }
 }
 
