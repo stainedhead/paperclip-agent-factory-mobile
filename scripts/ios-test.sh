@@ -23,7 +23,7 @@ echo "Using PaperclipKit.xcframework ($(cat "${framework%.xcframework}.configura
 shard_targets() {
   case "$1" in
     1) echo "iosAppTests iosAppUITests/FirstRunUITests iosAppUITests/EditFactoryUITests iosAppUITests/FactoriesUITests iosAppUITests/ManageFactoriesUITests iosAppUITests/SettingsUITests iosAppUITests/ShellUITests" ;;
-    2) echo "iosAppUITests/InboxUITests iosAppUITests/DecisionUITests iosAppUITests/HitTargetUITests" ;;
+    2) echo "iosAppUITests/InboxUITests iosAppUITests/DecisionUITests iosAppUITests/HitTargetUITests iosAppUITests/LargeTextUITests" ;;
     3) echo "iosAppUITests/ApprovalUITests iosAppUITests/BudgetUITests iosAppUITests/FactoryHomeUITests iosAppUITests/AgentsUITests iosAppUITests/AgentDetailUITests iosAppUITests/RunViewerUITests iosAppUITests/WorkUITests iosAppUITests/IssueUITests" ;;
     *) echo "error: SHARD must be 1, 2 or 3" >&2; exit 1 ;;
   esac
