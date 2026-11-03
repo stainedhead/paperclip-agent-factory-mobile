@@ -176,6 +176,22 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
+    fun `B-14 the state says when there is something typed that Cancel would throw away`() =
+        runTest {
+            val (holder, _) = loaded()
+            holder.state.value.hasUnsavedChanges shouldBe false
+
+            holder.onIntent(EditInstanceIntent.NameChanged("Renamed"))
+            holder.state.value.hasUnsavedChanges shouldBe true
+
+            holder.onIntent(EditInstanceIntent.NameChanged("Home factory"))
+            holder.state.value.hasUnsavedChanges shouldBe false
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://moved.example.com"))
+            holder.state.value.hasUnsavedChanges shouldBe true
+        }
+
+    @Test
     fun `FR-003 an invalid address shows its issue and blocks saving`() =
         runTest {
             val (holder, env) = loaded()
