@@ -98,4 +98,28 @@ class MoneyInputTest {
         parse("999999999999").minorUnits shouldBe 99_999_999_999_900L
         parse("000000000250").minorUnits shouldBe 25_000L
     }
+
+    @Test
+    fun `R7 native digits of the phone's numeral set read like Latin digits`() {
+        parse("\u0662\u0665\u0660\u066B\u0665\u0660", decimal = "\u066B").minorUnits shouldBe 25_050L
+        parse("\u06F1\u06F2\u06F3").minorUnits shouldBe 12_300L
+    }
+
+    @Test
+    fun `R7 whitespace inside the amount and a currency sign in the middle are refused`() {
+        parse("1 2 3").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("1\u00A0200").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("1$5").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("  250.50  ").minorUnits shouldBe 25_050L
+        parse("250.50 \$").minorUnits shouldBe 25_050L
+        parse("\$ 250").minorUnits shouldBe 25_000L
+    }
+
+    @Test
+    fun `R7 one comma then three digits is grouping where the locale's decimal mark is a point`() {
+        // The rule: the mark that is not the locale's decimal mark groups thousands. "1,500" is 1500.00 in a point
+        // locale and refused (three decimals) in a comma locale; the Raise button shows the parsed amount.
+        parse("1,500").minorUnits shouldBe 150_000L
+        parse("1,500", decimal = ",").issue shouldBe InvalidKey.AmountTooManyDecimals
+    }
 }
