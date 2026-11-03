@@ -18,7 +18,9 @@ struct TabShellView: View {
                 // The painted badge is not part of the tab button's accessibility element (iOS 26), so the count is
                 // also the button's accessibility value: VoiceOver and UI tests read "3 waiting". The helper must sit
                 // inside a tab's content to find the tab bar controller.
-                .background(TabBarAccessibilityValues(values: tabValues).frame(width: 0, height: 0))
+                .background(
+                    TabBarAccessibilityValues(values: tabValues, pathDepth: pathDepth).frame(width: 0, height: 0)
+                )
                 .tabItem {
                     Label(tab.title, systemImage: tab.symbol)
                         .accessibilityIdentifier("tab-\(tab.rawValue)")
@@ -31,6 +33,8 @@ struct TabShellView: View {
     }
 
     private var inboxBadgeCount: Int { Int(environment.inbox?.state.badgeCount ?? 0) }
+
+    private var pathDepth: Int { AppTab.allCases.reduce(0) { $0 + environment.router.path(for: $1).count } }
 
     private var tabValues: [String] {
         AppTab.allCases.map { $0.badgeAccessibilityValue(inboxBadgeCount: inboxBadgeCount) }

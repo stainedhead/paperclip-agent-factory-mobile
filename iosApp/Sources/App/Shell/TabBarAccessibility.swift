@@ -9,6 +9,14 @@ import UIKit
 enum TabBarAccessibility {
     /// Sets item `i`'s accessibility value to `values[i]` (empty clears it); extra values or items are ignored.
     @MainActor
+    static func apply(_ values: [String], to controller: UITabBarController) {
+        // The view controllers' own items are what UIKit rebuilds the bar from (it does so when a detail screen
+        // hides and shows the bar), the bar's items are what is on screen now: set both.
+        apply(values, to: (controller.viewControllers ?? []).map(\.tabBarItem))
+        apply(values, to: controller.tabBar.items ?? [])
+    }
+
+    @MainActor
     static func apply(_ values: [String], to items: [UITabBarItem]) {
         for (value, item) in zip(values, items) {
             item.accessibilityValue = value.isEmpty ? nil : value
@@ -19,12 +27,17 @@ enum TabBarAccessibility {
 /// An invisible view that finds the enclosing `UITabBarController` and applies `values` to its tab items.
 struct TabBarAccessibilityValues: UIViewControllerRepresentable {
     let values: [String]
+    /// Changes whenever a tab's navigation path does, so the values are set again once a detail screen has gone and
+    /// the tab bar is back (UIKit may have rebuilt its items meanwhile).
+    let pathDepth: Int
 
     func makeUIViewController(context: Context) -> Applier { Applier(values: values) }
 
     func updateUIViewController(_ controller: Applier, context: Context) {
         controller.values = values
         controller.applyValues()
+        // The bar comes back after the pop transition; once it has settled the items are the final ones.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak controller] in controller?.applyValues() }
     }
 
     final class Applier: UIViewController {
@@ -45,6 +58,11 @@ struct TabBarAccessibilityValues: UIViewControllerRepresentable {
             applyValues()
         }
 
+        override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            applyValues()
+        }
+
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
             applyValues()
@@ -54,7 +72,7 @@ struct TabBarAccessibilityValues: UIViewControllerRepresentable {
             var controller: UIViewController? = self
             while let current = controller, !(current is UITabBarController) { controller = current.parent }
             guard let tabs = (controller as? UITabBarController) ?? tabBarController else { return }
-            TabBarAccessibility.apply(values, to: tabs.tabBar.items ?? [])
+            TabBarAccessibility.apply(values, to: tabs)
         }
     }
 }
