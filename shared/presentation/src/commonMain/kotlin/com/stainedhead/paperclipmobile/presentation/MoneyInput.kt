@@ -9,11 +9,14 @@ data class ParsedMoney(
 private const val GROUP_SIZE = 3
 private const val MAX_WHOLE_DIGITS = 12
 private const val RADIX = 10L
+private const val ARABIC_GROUP = '\u066C'
 
 /**
  * Strict, locale-independent reading of an amount a person typed. The app passes only the locale's decimal separator
  * and the currency's fraction digits; the other of "." and "," is the grouping mark. Nothing is guessed: a mark in the
- * wrong place, a second decimal point or too many decimals is refused, never dropped (a dropped mark is a 100x error).
+ * wrong place, whitespace or a currency sign inside the number, a second decimal mark or too many decimals is refused,
+ * never dropped (a dropped mark is a 100x error). "1,500" is 1500.00 where the decimal mark is a point (the comma
+ * groups) and refused where it is a comma; the Raise button shows the parsed amount before anything is confirmed.
  */
 object MoneyInput {
     fun parse(
@@ -21,7 +24,7 @@ object MoneyInput {
         decimalSeparator: String,
         fractionDigits: Int,
     ): ParsedMoney {
-        val cleaned = text.filterNot { it.isWhitespace() || it.category == CharCategory.CURRENCY_SYMBOL }
+        val cleaned = latinDigits(withoutEdgeSigns(text.trim()))
         val decimal = decimalSeparator.singleOrNull() ?: '.'
         return when {
             cleaned.isEmpty() -> ParsedMoney(null, null)
@@ -29,6 +32,22 @@ object MoneyInput {
             else -> read(cleaned, decimal, fractionDigits)
         }
     }
+
+    /** One currency sign at either end (with the space beside it) is fine; anywhere else it is not part of a number. */
+    private fun withoutEdgeSigns(text: String): String {
+        val noLeading = if (text.firstOrNull()?.category == CharCategory.CURRENCY_SYMBOL) text.drop(1).trim() else text
+        return if (noLeading.lastOrNull()?.category == CharCategory.CURRENCY_SYMBOL) {
+            noLeading.dropLast(1).trim()
+        } else {
+            noLeading
+        }
+    }
+
+    /** Digits of any numeral set (Arabic-Indic, Persian, ...) become Latin digits; the Arabic thousands mark a comma. */
+    private fun latinDigits(text: String): String =
+        text
+            .map { ch -> ch.digitToIntOrNull()?.let { ('0' + it) } ?: if (ch == ARABIC_GROUP) ',' else ch }
+            .joinToString("")
 
     private fun negative(
         rest: String,
