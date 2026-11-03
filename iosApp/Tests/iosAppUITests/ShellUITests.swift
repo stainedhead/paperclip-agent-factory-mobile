@@ -98,7 +98,9 @@ final class ShellUITests: XCTestCase {
 
     @MainActor
     func testTryTheDemoFactoryFromFirstRunOpensTheShell() {
+        // A plain launch now shows the "not available in this build" notice; the first-run demo graph shows the button.
         let app = XCUIApplication()
+        app.launchArguments = ["-demo-first-run"]
         app.launch()
         let demo = app.buttons["try-demo-button"]
         XCTAssertTrue(demo.waitForExistence(timeout: 15))
@@ -106,22 +108,13 @@ final class ShellUITests: XCTestCase {
         waitForShell(app)
     }
 
-    /// Baseline for the shell (acceptance criterion 5). Findings are logged and attached, not failed on: the list in
-    /// implementation-notes.md records what remains and why.
+    /// The system audit of the tab shell (acceptance criterion 5). Every finding fails the test; the audit set does not
+    /// block CI (ADR-080), so what it finds is reported there and listed in implementation-notes.md.
     @MainActor
     func testAccessibilityAuditBaselineOfTheShell() throws {
         let app = launch()
         waitForShell(app)
-        var findings: [String] = []
-        try app.performAccessibilityAudit { issue in
-            findings.append("\(issue.auditType) | \(issue.compactDescription) | \(issue.element?.label ?? "-")")
-            return true
-        }
-        let attachment = XCTAttachment(string: findings.joined(separator: "\n"))
-        attachment.name = "accessibility-audit-baseline"
-        attachment.lifetime = .keepAlways
-        add(attachment)
-        print("ACCESSIBILITY-AUDIT-BASELINE count=\(findings.count)")
-        for finding in findings { print("ACCESSIBILITY-AUDIT-FINDING \(finding)") }
+        let findings = try auditScreen(app, screen: "shell")
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 }

@@ -91,9 +91,6 @@ final class FirstRunUITests: XCTestCase {
         let app = launch()
         XCTAssertTrue(app.textFields["address-field"].waitForExistence(timeout: 15))
         let findings = try auditAccessibility(app, screen: "first-run-address")
-        // One "Text clipped" finding with no element label remains (listed in implementation-notes.md); anything
-        // else, contrast above all, fails the test.
-        let others = findings.filter { !$0.contains("Text clipped") }
-        XCTAssertTrue(others.isEmpty, others.joined(separator: "\n"))
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 }
