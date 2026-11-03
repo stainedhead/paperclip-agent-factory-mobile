@@ -58,7 +58,7 @@ class DemoInboxFlowTest {
     fun `the first feed read is twelve seconds old and a refresh is current`() =
         runTest {
             val inbox = openInbox()
-            val now = graph.nowEpochMillis()
+            val now = graph.nowEpochMillis
             inbox.state.value.updatedAtEpochMillis shouldBe now - 12_000L
 
             inbox.onIntent(InboxIntent.Refresh)

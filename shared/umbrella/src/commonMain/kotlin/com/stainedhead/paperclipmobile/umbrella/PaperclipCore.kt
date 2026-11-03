@@ -64,7 +64,7 @@ class PaperclipGraph internal constructor(
     val demoControls: DemoControls? = koin.getOrNull()
 
     /** "Now" as this graph's `Clock` reports it, so a screen measures "Updated 12s ago" against the same instant. */
-    fun nowEpochMillis(): Long = koin.get<Clock>().now().toEpochMilliseconds()
+    val nowEpochMillis: Long get() = koin.get<Clock>().now().toEpochMilliseconds()
 
     internal inline fun <reified T : Any> resolve(): T = koin.get()
 

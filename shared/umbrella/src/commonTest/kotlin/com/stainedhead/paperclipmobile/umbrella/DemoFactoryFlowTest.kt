@@ -35,7 +35,7 @@ class DemoFactoryFlowTest {
 
             val state = factory.state.await { it.phase == DetailPhase.Content }
 
-            val reference = graph.nowEpochMillis()
+            val reference = graph.nowEpochMillis
             val rows =
                 state.liveRuns.associate {
                     it.agentName to
