@@ -5,3 +5,7 @@ useDefault = true
 [allowlist]
 description = "Obviously fake test-only values"
 regexes = ['''TESTONLY''']
+# The history keeps the first form of one fixture in ErrorMapperTest (made-up secret shapes that the default
+# generic-api-key rule flags). The file has since been rewritten with TESTONLY values; scanned history cannot change.
+# Same entry as on feat/phase-1b-adapters, which owns that file.
+commits = ["3b204ae004b7aca75d042240ba14d09337539360"]
