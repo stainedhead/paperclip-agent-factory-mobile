@@ -111,6 +111,85 @@ struct ModelStoreTests {
         #expect(store.keys == ["kept"])
     }
 
+    /// A6: leaving a screen while its mutation is in flight must not drop the outcome. The gate stands for the
+    /// request: open while it is in flight, closed once the outcome is recorded.
+    @MainActor
+    final class Gate {
+        var inFlight = true
+        private var waiters: [CheckedContinuation<Void, Never>] = []
+
+        func wait() async {
+            guard inFlight else { return }
+            await withCheckedContinuation { waiters.append($0) }
+        }
+
+        func finish() {
+            inFlight = false
+            waiters.forEach { $0.resume() }
+            waiters = []
+        }
+    }
+
+    private func gated(_ store: ModelStore<String>, _ gate: Gate) -> HolderModel<FirstRunStateHolder> {
+        store.model(
+            for: "screen", make: { graph.createFirstRunStateHolder() }, isWorking: { _ in gate.inFlight },
+            untilIdle: { _ in await gate.wait() })
+    }
+
+    @Test func aModelWhoseKeyLeftWhileItsMutationIsInFlightFinishesFirstAndThenCloses() async {
+        let store = ModelStore<String>()
+        let gate = Gate()
+        let screen = gated(store, gate)
+
+        store.retain(only: [])
+        #expect(screen.isClosed == false, "the outcome is still to be recorded")
+        #expect(store.keys == ["screen"])
+
+        gate.finish()
+        #expect(await eventually { screen.isClosed })
+        #expect(await eventually { store.keys.isEmpty })
+    }
+
+    @Test func aModelWhoseKeyReturnsWhileItsMutationIsInFlightIsKept() async {
+        let store = ModelStore<String>()
+        let gate = Gate()
+        let screen = gated(store, gate)
+
+        store.retain(only: [])
+        store.retain(only: ["screen"])
+        gate.finish()
+        try? await Task.sleep(for: .milliseconds(200))
+        #expect(screen.isClosed == false)
+        #expect(store.keys == ["screen"])
+        store.closeAll()
+        #expect(screen.isClosed)
+    }
+
+    @Test func shuttingDownClosesEvenAModelWithAMutationInFlight() {
+        let store = ModelStore<String>()
+        let screen = gated(store, Gate())
+        store.closeAll()
+        #expect(screen.isClosed)
+        #expect(store.keys.isEmpty)
+    }
+
+    @Test func aModelThatIsNotWorkingClosesAtOnce() {
+        let store = ModelStore<String>()
+        let gate = Gate()
+        gate.finish()
+        let screen = gated(store, gate)
+        store.retain(only: [])
+        #expect(screen.isClosed)
+    }
+
+    @Test func eachMutatingScreenNamesWhatCountsAsWork() {
+        let agent = graph.agents.createAgentDetailStateHolder(
+            instanceId: "demo-home", companyId: "company-acme", agentId: "agent-eng-1")
+        let model = HolderModel(holder: agent)
+        #expect(model.isWorking == false)
+        model.close()
+    }
+
     @Test func closeAllClosesEveryModelAndEmptiesTheStore() {
         let store = ModelStore<Int>()
         let one = store.model(for: 1) { graph.createFirstRunStateHolder() }
