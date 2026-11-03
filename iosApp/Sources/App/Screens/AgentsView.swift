@@ -37,7 +37,8 @@ private struct AgentsScreen: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Spacing.roomy) {
+            // Not lazy: lazy rows are realised and dropped as the text size changes (audit: unsupported Dynamic Type).
+            VStack(alignment: .leading, spacing: Spacing.roomy) {
                 header
                 if state.phase == .content { content } else { unavailable }
             }

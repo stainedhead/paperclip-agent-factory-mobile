@@ -30,6 +30,7 @@ extension XCTestCase {
     func auditScreen(_ app: XCUIApplication, screen: String) throws -> [String] {
         var findings: [String] = []
         var systemOwned: [String] = []
+        var untraceable = false
         let barButtons = AuditOwnership.tabBarButtons(in: app)
         try app.performAccessibilityAudit { issue in
             let element = issue.element
@@ -37,6 +38,12 @@ extension XCTestCase {
                 "\(issue.auditType.rawValue) | \(issue.compactDescription) | \(issue.detailedDescription) | "
                 + "type=\(element?.elementType.rawValue ?? 0) id=\(element?.identifier ?? "-") "
                 + "label=\(element?.label ?? "-") frame=\(element?.frame ?? .zero)"
+            if element == nil || element?.frame == .zero {
+                // An issue with no element cannot be traced from its description alone: print everything the issue has.
+                print("ACCESSIBILITY-AUDIT-UNTRACEABLE screen=\(screen) issue=\(issue.debugDescription)")
+                print("ACCESSIBILITY-AUDIT-UNTRACEABLE-ELEMENT \(element?.debugDescription ?? "nil")")
+                untraceable = true
+            }
             if AuditOwnership.isSystemTabBarButton(element, among: barButtons) {
                 systemOwned.append(described)
             } else {
@@ -44,6 +51,7 @@ extension XCTestCase {
             }
             return true
         }
+        if untraceable { print("ACCESSIBILITY-AUDIT-HIERARCHY screen=\(screen)\n\(app.debugDescription)") }
         let report = (["findings=\(findings.count)"] + findings + ["system-owned=\(systemOwned.count)"] + systemOwned)
         let attachment = XCTAttachment(string: report.joined(separator: "\n"))
         attachment.name = "accessibility-audit-\(screen)"

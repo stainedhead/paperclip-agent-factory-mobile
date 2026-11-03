@@ -119,24 +119,29 @@ private struct FactoryHomeScreen: View {
     // MARK: - Tiles
 
     private func tileGrid(_ tiles: FactoryTilesUi) -> some View {
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 160), spacing: Spacing.large, alignment: .top)],
-            spacing: Spacing.large
-        ) {
-            tile(
-                FactoryLabel.tileAgents.text, value: FactoryLabel.agentsRunning.text(Int(tiles.agentsRunning)),
-                detail: FactoryLabel.agentsErrorPaused.text(Int(tiles.agentsError), Int(tiles.agentsPaused)),
-                id: "agents", tab: .agents)
-            tile(
-                FactoryLabel.tileWork.text, value: FactoryLabel.workOpen.text(Int(tiles.tasksOpen)),
-                detail: FactoryLabel.workBlockedInProgress.text(Int(tiles.tasksBlocked), Int(tiles.tasksInProgress)),
-                id: "work", tab: .work)
-            tile(
-                FactoryLabel.tileApprovals.text, value: FactoryLabel.approvalsPending.text(Int(tiles.pendingApprovals)),
-                detail: nil, id: "approvals", tab: .inbox)
-            tile(
-                FactoryLabel.tileBudget.text, value: FactoryLabel.incidentsOpen.text(Int(tiles.budgetIncidents)),
-                detail: nil, id: "budget", tab: .inbox)
+        // Not a lazy grid: a lazy container realises and drops views as the text size changes, which the audit
+        // reports as unsupported Dynamic Type. Two rows of two tiles (one column at accessibility sizes).
+        VStack(spacing: Spacing.large) {
+            AdaptiveStack(alignment: .top, spacing: Spacing.large) {
+                tile(
+                    FactoryLabel.tileAgents.text, value: FactoryLabel.agentsRunning.text(Int(tiles.agentsRunning)),
+                    detail: FactoryLabel.agentsErrorPaused.text(Int(tiles.agentsError), Int(tiles.agentsPaused)),
+                    id: "agents", tab: .agents)
+                tile(
+                    FactoryLabel.tileWork.text, value: FactoryLabel.workOpen.text(Int(tiles.tasksOpen)),
+                    detail: FactoryLabel.workBlockedInProgress.text(
+                        Int(tiles.tasksBlocked), Int(tiles.tasksInProgress)),
+                    id: "work", tab: .work)
+            }
+            AdaptiveStack(alignment: .top, spacing: Spacing.large) {
+                tile(
+                    FactoryLabel.tileApprovals.text,
+                    value: FactoryLabel.approvalsPending.text(Int(tiles.pendingApprovals)),
+                    detail: nil, id: "approvals", tab: .inbox)
+                tile(
+                    FactoryLabel.tileBudget.text, value: FactoryLabel.incidentsOpen.text(Int(tiles.budgetIncidents)),
+                    detail: nil, id: "budget", tab: .inbox)
+            }
         }
     }
 
