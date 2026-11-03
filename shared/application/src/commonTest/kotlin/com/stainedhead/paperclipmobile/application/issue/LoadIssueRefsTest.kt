@@ -83,13 +83,13 @@ class LoadIssueRefsTest {
         }
 
     @Test
-    fun `A10 at most 25 distinct issues are read and the rest are left out`() =
+    fun `R8 no issue is silently left out however many runs there are`() =
         runTest {
             val env = Env()
             val ids = List(40) { IssueId("missing-$it") }
 
             LoadIssueRefs(env.issues)(env.scope, ids)
 
-            env.issues.count("get") shouldBe 25
+            env.issues.count("get") shouldBe 40
         }
 }
