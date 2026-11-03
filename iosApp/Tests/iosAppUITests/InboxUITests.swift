@@ -146,7 +146,8 @@ final class InboxUITests: XCTestCase {
 
     @MainActor
     func testPullToRefreshMakesTheUpdatedLabelCurrent() {
-        let app = launchInbox()
+        // The 15 s refresh timer is paused: a slow start must not age "12s" into "0s" before the first read.
+        let app = launchInbox(extra: ["-demo-no-auto-refresh"])
         let label = app.staticTexts["updated-label"]
         XCTAssertTrue(label.waitForExistence(timeout: 10))
         XCTAssertEqual(label.label, "Updated 12s ago", "the first read of the demo feed is 12 s old")

@@ -53,3 +53,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: milestone 2i-2 (Inbox screen, demo Inbox behaviour, Inbox UI tests) implemented; ADR-090 to 092.
 - 2026-11-02: milestone 2i-3 (Decision, Approval, Budget incident sheet, shared demo changes, detail UI tests) implemented.
 - 2026-11-02: milestone 2i-4 (Factory home, Agents, Agent detail, Run viewer, shared run/issue enrichment, demo run data) implemented.
+- 2026-11-02: fixed the iOS 26.5 CI failures (tab badge accessibility value, demo refresh timer pause); ADR-105.

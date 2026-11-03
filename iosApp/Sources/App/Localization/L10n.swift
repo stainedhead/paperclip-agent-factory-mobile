@@ -56,6 +56,7 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     static var catalogNamespace: String { "label" }
 
     case tabInbox
+    case tabBadgeValue
     case tabFactory
     case tabWork
     case tabAgents

@@ -19,12 +19,17 @@ struct TabShellView: View {
                     Label(tab.title, systemImage: tab.symbol)
                         .accessibilityIdentifier("tab-\(tab.rawValue)")
                 }
-                .badge(tab.badge(inboxBadgeCount: Int(environment.inbox?.state.badgeCount ?? 0)) ?? 0)
+                .badge(tab.badge(inboxBadgeCount: inboxBadgeCount) ?? 0)
+                // The painted badge is not part of the tab button's accessibility element (iOS 26), so the count
+                // is also its accessibility value: VoiceOver and UI tests read "3 waiting".
+                .accessibilityValue(tab.badgeAccessibilityValue(inboxBadgeCount: inboxBadgeCount))
                 .tag(tab)
             }
         }
         .sheet(item: sheet) { SheetDestination(sheet: $0, environment: environment) }
     }
+
+    private var inboxBadgeCount: Int { Int(environment.inbox?.state.badgeCount ?? 0) }
 
     private var sheet: Binding<AppSheet?> {
         Binding(
@@ -56,6 +61,11 @@ struct TabShellView: View {
 }
 
 extension AppTab {
+    /// What the tab button's accessibility value says about its badge; empty when there is no badge.
+    func badgeAccessibilityValue(inboxBadgeCount: Int) -> String {
+        badge(inboxBadgeCount: inboxBadgeCount).map { ShellLabel.tabBadgeValue.text($0) } ?? ""
+    }
+
     var title: String {
         switch self {
         case .inbox: ShellLabel.tabInbox.text

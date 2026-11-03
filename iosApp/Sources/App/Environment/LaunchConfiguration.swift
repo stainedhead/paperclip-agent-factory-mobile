@@ -16,6 +16,8 @@ import PaperclipKit
 /// - `-demo-offline-after-detail`: go offline once the first Decision, Approval or Budget screen has its content.
 /// - `-demo-open decision:<id>|approval:<id>|budget:<id>|run:<id>|agent:<id>`: also open one of those screens.
 /// - `-demo-server-error`: the demo factory answers every Factory home, Agents and Run read with a server error.
+/// - `-demo-no-auto-refresh`: do not start the Inbox's 15 s refresh timer (pull to refresh and returning to the
+///   screen still refresh), so a slow start cannot age the demo's "Updated 12s ago" before a test reads it.
 /// - `-demo-diagnostics`: show a small read-only counter overlay (prompt count) that UI tests can read.
 struct LaunchConfiguration {
     let useDemo: Bool
@@ -24,6 +26,7 @@ struct LaunchConfiguration {
     let demoIdlePeriod: IdlePeriod?
     let showsDiagnostics: Bool
     let goesOffline: Bool
+    let pausesAutoRefresh: Bool
     let offlineAfterDetail: Bool
     let failsReads: Bool
     let budgetServerSpend: Int64?
@@ -36,6 +39,7 @@ struct LaunchConfiguration {
         useFirstRunDemo = arguments.contains("-demo-first-run")
         showsDiagnostics = arguments.contains("-demo-diagnostics")
         goesOffline = arguments.contains("-demo-offline")
+        pausesAutoRefresh = arguments.contains("-demo-no-auto-refresh")
         offlineAfterDetail = arguments.contains("-demo-offline-after-detail")
         failsReads = arguments.contains("-demo-server-error")
         budgetServerSpend = Self.value(after: "-demo-budget-server-spend", in: arguments).flatMap { Int64($0) }

@@ -40,7 +40,7 @@ extension XCTestCase {
 }
 
 extension XCTestCase {
-    /// Waits for the Inbox tab's badge to read `count` (the value or the label, depending on the iOS release).
+    /// Waits for the Inbox tab's badge to read `count` (its accessibility value, "N waiting").
     @MainActor
     func waitForInboxBadge(_ app: XCUIApplication, _ count: Int, file: StaticString = #filePath, line: UInt = #line) {
         let tab = app.tabBars.firstMatch.buttons["Inbox"]

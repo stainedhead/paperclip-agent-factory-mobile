@@ -300,7 +300,7 @@ final class AppEnvironment {
         let holder = graph.attention.createInboxStateHolder(instanceId: instance, companyId: company)
         let model = HolderModel(holder: holder)
         inbox = model
-        inboxSession = graph.refresh.start(target: holder.refreshTarget)
+        inboxSession = configuration.pausesAutoRefresh ? nil : graph.refresh.start(target: holder.refreshTarget)
         model.didUpdate = { [weak self] state in self?.inboxChanged(state) }
         observe(model)
     }

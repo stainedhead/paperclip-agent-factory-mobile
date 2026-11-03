@@ -17,6 +17,11 @@ struct LaunchConfigurationTests {
         #expect(LaunchConfiguration(arguments: ["iosApp", "-demo", "-demo-server-error"]).failsReads)
     }
 
+    @Test func theDemoRefreshTimerRunsUnlessPaused() {
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).pausesAutoRefresh == false)
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo", "-demo-no-auto-refresh"]).pausesAutoRefresh)
+    }
+
     @Test func demoFlagSelectsTheDemoGraph() {
         #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).useDemo)
     }

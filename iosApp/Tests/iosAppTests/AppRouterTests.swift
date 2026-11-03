@@ -10,6 +10,12 @@ struct AppRouterTests {
         #expect(AppTab.allCases.count == 5)
     }
 
+    @Test func theBadgeIsAlsoTheTabsAccessibilityValue() {
+        #expect(AppTab.inbox.badgeAccessibilityValue(inboxBadgeCount: 3) == "3 waiting")
+        #expect(AppTab.inbox.badgeAccessibilityValue(inboxBadgeCount: 0) == "")
+        #expect(AppTab.factory.badgeAccessibilityValue(inboxBadgeCount: 3) == "")
+    }
+
     @Test func theInboxBadgeIsTheSharedBadgeCountAndOnlyOnTheInboxTab() {
         #expect(AppTab.inbox.badge(inboxBadgeCount: 3) == 3)
         #expect(AppTab.inbox.badge(inboxBadgeCount: 0) == nil)

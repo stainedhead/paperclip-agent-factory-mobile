@@ -433,3 +433,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `scripts/ios-test.sh` takes `SHARD=1|2|3` with `TEST_SET=functional` (a fixed list of test classes per shard, and a check that fails the script if a UI test class is in no shard). `ios.yml` runs a matrix `ios (1)`, `ios (2)`, `ios (3)` and `ios (audits)`; lint and the Kotlin/Native tests run in shard 1 only; the audits job is `continue-on-error` (ADR-080). Every `uses:` stays SHA-pinned. Required status checks named `ios` must be renamed to the four matrix names (audits not required).
 
 **Consequences.** Each shard repeats the setup and the XCFramework build (about 5 minutes) but the longest shard is about a third of the tests.
+
+## ADR-105: The Inbox tab exposes its badge as its accessibility value; the demo refresh timer can be paused for tests
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+
+**Context.** On the CI runner (Xcode 26.6, iOS 26.5) the Inbox tab button's accessibility element had label "Inbox" and no value, although the badge was painted (screenshot: red "3") and the state held badge=3. SwiftUI's `.badge` is drawn by the tab bar but not part of the button's accessibility element, so VoiceOver users and UI tests could not read it. Separately, `testPullToRefreshMakesTheUpdatedLabelCurrent` read "Updated 0s ago" instead of "12s": the shared refresh policy refreshes the visible Inbox every 15 s, a slow runner start (19 s to first read) let the timer fire before the test looked, and the demo clock is frozen so the refreshed read is exactly "0s".
+
+**Decision.** The tab item carries `.accessibilityValue("N waiting")` (catalog key `label.tabBadgeValue`, empty without a badge), a real accessibility improvement; the label stays "Inbox". UI tests keep reading the badge and now assert on that value. A launch option `-demo-no-auto-refresh` skips starting the Inbox refresh session (pull to refresh and returning to the screen still refresh) and that one test uses it, so its first read is deterministic. No assertion was weakened.
+
+**Consequences.** The Shell test now requires the tab to expose the count instead of accepting its absence. The timer is still covered by the shared RefreshVisibleScreen tests.
