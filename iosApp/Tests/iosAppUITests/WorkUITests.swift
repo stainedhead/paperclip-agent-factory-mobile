@@ -35,6 +35,7 @@ final class WorkUITests: XCTestCase {
     @MainActor
     func testCreatingAnIssueOpensItWithTheTitleAndPriority() {
         let app = launchWork(extra: ["-demo-biometrics", "approved"])
+        let prompts = app.promptCount()
         app.buttons["work-create"].tap()
         XCTAssertTrue(app.element("work-create-form").waitForExistence(timeout: 10))
         app.textFields["work-create-title"].enterText("Rotate the webhook secret")
@@ -43,7 +44,7 @@ final class WorkUITests: XCTestCase {
         XCTAssertTrue(app.element("issue-screen").waitForExistence(timeout: 20), "the new issue never opened")
         waitUntil(app.element("issue-title"), "label == 'Rotate the webhook secret'")
         XCTAssertEqual(app.text("issue-priority"), "High")
-        XCTAssertEqual(app.promptCount(), "0", "creating an issue asks nothing of the device")
+        XCTAssertEqual(app.promptCount(), prompts, "creating an issue asks nothing of the device")
     }
 
     @MainActor

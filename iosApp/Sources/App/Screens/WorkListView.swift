@@ -78,37 +78,36 @@ private struct WorkListScreen: View {
     }
 
     private var searchField: some View {
-        HStack(spacing: Spacing.medium) {
-            Image(systemName: "magnifyingglass").foregroundStyle(Palette.textSecondary.color)
-                .accessibilityHidden(true)
-            TextField(WorkLabel.searchPlaceholder.text, text: $searchText)
-                .font(Typography.body)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .onSubmit { model.search(searchText) }
-                .onChange(of: searchText) { _, text in
-                    // Searching is sent when the person submits; clearing the box shows the filter again at once.
-                    if text.isEmpty, !state.search.isEmpty { model.search("") }
-                }
-                .accessibilityLabel(WorkLabel.searchLabel.text)
-                .accessibilityIdentifier("work-search")
-        }
-        .padding(.horizontal, Spacing.extraLarge)
-        .frame(minHeight: Spacing.minimumTarget)
-        .background(Palette.surface.color, in: RoundedRectangle(cornerRadius: Radius.button))
-        .overlay(RoundedRectangle(cornerRadius: Radius.button).strokeBorder(Palette.border.color))
+        TextField(WorkLabel.searchPlaceholder.text, text: $searchText)
+            .font(Typography.body)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .submitLabel(.search)
+            .onSubmit { model.search(searchText) }
+            .onChange(of: searchText) { _, text in
+                // Searching is sent when the person submits; clearing the box shows the filter again at once.
+                if text.isEmpty, !state.search.isEmpty { model.search("") }
+            }
+            .padding(.leading, Spacing.page + Spacing.large)
+            .padding(.trailing, Spacing.extraLarge)
+            .frame(minHeight: Spacing.minimumTarget)
+            .background(Palette.surface.color, in: RoundedRectangle(cornerRadius: Radius.button))
+            .overlay(alignment: .leading) {
+                Image(systemName: "magnifyingglass").foregroundStyle(Palette.textSecondary.color)
+                    .padding(.leading, Spacing.extraLarge).accessibilityHidden(true)
+            }
+            .overlay(RoundedRectangle(cornerRadius: Radius.button).strokeBorder(Palette.border.color))
+            .accessibilityLabel(WorkLabel.searchLabel.text)
+            .accessibilityIdentifier("work-search")
     }
 
     private var chips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.medium) {
-                ForEach(IssueFilterOrder.chips, id: \.self) { filter in
-                    FilterChip(
-                        text: L10n.text(filter), isSelected: state.filter == filter,
-                        identifier: "work-filter-\(filter)"
-                    ) { model.select(filter) }
-                }
+        FlowLayout(spacing: Spacing.medium) {
+            ForEach(IssueFilterOrder.chips, id: \.self) { filter in
+                FilterChip(
+                    text: L10n.text(filter), isSelected: state.filter == filter,
+                    identifier: "work-filter-\(filter)"
+                ) { model.select(filter) }
             }
         }
         .accessibilityElement(children: .contain)

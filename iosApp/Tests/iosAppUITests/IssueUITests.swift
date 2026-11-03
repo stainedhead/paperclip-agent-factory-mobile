@@ -24,6 +24,7 @@ final class IssueUITests: XCTestCase {
     @MainActor
     func testAnsweringTheTwoQuestionsSendsOnceAndClearsTheInboxCard() {
         let app = launchIssue()
+        let prompts = app.promptCount()
         app.scrollIssue(to: "interaction-choice-q-policy-exponential")
         app.buttons["interaction-choice-q-policy-exponential"].tap()
         app.scrollIssue(to: "interaction-choice-q-attempts-5")
@@ -33,7 +34,7 @@ final class IssueUITests: XCTestCase {
         app.buttons["interaction-primary"].tap()
         waitUntil(app.element("interaction-kind-int-1204-questions"), "label CONTAINS 'ANSWERED'")
         XCTAssertFalse(app.buttons["interaction-primary"].exists, "an answered card has no buttons")
-        XCTAssertEqual(app.promptCount(), "0", "answering asks nothing of the device")
+        XCTAssertEqual(app.promptCount(), prompts, "answering asks nothing of the device")
 
         app.goBack()
         app.selectTab("Inbox")
@@ -44,6 +45,7 @@ final class IssueUITests: XCTestCase {
     @MainActor
     func testACommentIsAddedAtTheEndOfTheThread() {
         let app = launchIssue()
+        let prompts = app.promptCount()
         app.element("issue-comment-field").enterText("Go with exponential backoff")
         app.buttons["issue-comment-send"].tap()
         let comment = app.element("issue-comment-c3")
@@ -52,19 +54,20 @@ final class IssueUITests: XCTestCase {
         XCTAssertTrue(comment.label.hasPrefix("You"))
         XCTAssertNotEqual(
             app.element("issue-comment-field").shownText, "Go with exponential backoff", "the box is cleared")
-        XCTAssertEqual(app.promptCount(), "0", "commenting asks nothing of the device")
+        XCTAssertEqual(app.promptCount(), prompts, "commenting asks nothing of the device")
     }
 
     @MainActor
     func testTheStatusAndTheAssigneeCanBeChanged() {
         let app = launchIssue()
+        let prompts = app.promptCount()
         app.buttons["issue-status-menu"].tap()
         app.buttons["Done"].tap()
         waitUntil(app.element("issue-status"), "label == 'Done'")
         app.buttons["issue-assignee-menu"].tap()
         app.buttons["CTO"].tap()
         waitUntil(app.element("issue-assignee-menu"), "label CONTAINS 'CTO'")
-        XCTAssertEqual(app.promptCount(), "0")
+        XCTAssertEqual(app.promptCount(), prompts, "status and assignee ask nothing of the device")
     }
 
     @MainActor
@@ -103,7 +106,8 @@ final class IssueUITests: XCTestCase {
 
         let agent = launchOperations(
             tab: "inbox", root: "agent-detail-screen", extra: ["-demo-open", "agent:\(OpsIds.engineer1)"])
-        agent.buttons["agent-current-issue"].tap()
+        XCTAssertTrue(agent.element("agent-current-issue").waitForExistence(timeout: 30))
+        agent.element("agent-current-issue").tap()
         XCTAssertTrue(agent.element("issue-title").waitForExistence(timeout: 20))
         XCTAssertEqual(agent.text("issue-title"), "Add retries to webhook ingest")
     }
