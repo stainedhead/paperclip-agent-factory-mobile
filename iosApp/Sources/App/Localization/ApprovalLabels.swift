@@ -34,6 +34,7 @@ enum ApprovalLabel: String, CaseIterable, CatalogKey {
     case proposedComment
     case unsupported
     case linkedWork
+    case openIssueHint
     case discussion
     case noDiscussion
     case commentLabel

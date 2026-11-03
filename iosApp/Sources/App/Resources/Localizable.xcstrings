@@ -926,6 +926,17 @@
         }
       }
     },
+    "approval.openIssueHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the issue"
+          }
+        }
+      }
+    },
     "approval.plan": {
       "extractionState": "manual",
       "localizations": {

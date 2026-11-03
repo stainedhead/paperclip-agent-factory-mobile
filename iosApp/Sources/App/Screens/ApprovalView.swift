@@ -107,17 +107,28 @@ private struct ApprovalScreen: View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
             SectionHeader(title: ApprovalLabel.linkedWork.text)
             ForEach(state.issues, id: \.id) { issue in
-                HStack(alignment: .firstTextBaseline) {
-                    Text("\(issue.identifier ?? "") \(issue.title)")
-                        .font(Typography.body)
-                    Spacer(minLength: Spacing.medium)
-                    if let status = issue.status {
-                        Text(DecisionPresentation.prettify(status).capitalized)
-                            .font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
+                Button {
+                    environment.router.push(.issue(id: issue.id), in: environment.router.selectedTab)
+                } label: {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(issue.identifier ?? "") \(issue.title)")
+                            .font(Typography.body).foregroundStyle(Palette.textPrimary.color)
+                            .multilineTextAlignment(.leading)
+                        Spacer(minLength: Spacing.medium)
+                        if let status = issue.status {
+                            Text(DecisionPresentation.prettify(status).capitalized)
+                                .font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
+                        }
+                        Image(systemName: "chevron.right").font(Typography.micro)
+                            .foregroundStyle(Palette.textSecondary.color).accessibilityHidden(true)
                     }
+                    .frame(maxWidth: .infinity, minHeight: Spacing.minimumTarget, alignment: .leading)
+                    .cardSurface()
                 }
-                .cardSurface()
+                .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint(ApprovalLabel.openIssueHint.text)
                 .accessibilityIdentifier("approval-issue-\(issue.id)")
             }
         }
