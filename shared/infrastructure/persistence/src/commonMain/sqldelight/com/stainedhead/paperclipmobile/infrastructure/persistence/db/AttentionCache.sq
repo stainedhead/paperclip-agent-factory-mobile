@@ -1,0 +1,26 @@
+-- The last loaded Inbox page per instance and company (AD-020). The page is one serialised payload; updated_at is the
+-- device time of the write, from the Clock port, so the screen can say how old the cached page is. format says which
+-- payload layout wrote the row (added by migration 1.sqm); a row of a layout this version cannot read is a cache miss.
+CREATE TABLE attention_cache (
+    instance_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    format INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (instance_id, company_id)
+);
+
+selectOne:
+SELECT * FROM attention_cache WHERE instance_id = ? AND company_id = ?;
+
+upsert:
+INSERT OR REPLACE INTO attention_cache(instance_id, company_id, payload, updated_at, format) VALUES (?, ?, ?, ?, ?);
+
+deleteOne:
+DELETE FROM attention_cache WHERE instance_id = ? AND company_id = ?;
+
+deleteForInstance:
+DELETE FROM attention_cache WHERE instance_id = ?;
+
+deleteOrphans:
+DELETE FROM attention_cache WHERE instance_id NOT IN (SELECT id FROM instance_config);

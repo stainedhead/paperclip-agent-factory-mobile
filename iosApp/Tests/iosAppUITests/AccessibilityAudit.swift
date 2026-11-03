@@ -6,7 +6,7 @@ import XCTest
 /// a documented system-owned element and is counted, printed and attached. The only system-owned elements are the
 /// buttons of the system tab bar (the bar is UIKit's own glass and is not drawn by this app). Content that scrolls
 /// under the bar, and everything in the app's own bars (the Cancel run, Approve, Confirm and comment bars), is never
-/// set aside: the finding is returned, and the audit set, which does not block CI (ADR-080), carries it.
+/// set aside: the finding is returned, and the audit set, which does not block CI (ADR-094), carries it.
 enum AuditOwnership {
     /// The buttons of the system tab bar as (identifier, label) pairs, read when the audit runs.
     @MainActor

@@ -67,8 +67,11 @@ class RevokeBoardKey(
         val instance = repository.get(instanceId) ?: return RevokeKeyResult.Failed(DomainError.NotFound)
         if (instance.boardKeyId == null) return RevokeKeyResult.CurrentKeyUnknown
         if (instance.boardKeyId == keyId) {
-            val result = signOut(instanceId) as? SignOutResult.SignedOut
-            return RevokeKeyResult.SignedOutThisDevice(result?.serverKey ?: RevokeOutcome.NotAttempted)
+            val result = signOut(instanceId)
+            if (result == SignOutResult.Declined) return RevokeKeyResult.Failed(DomainError.DeviceAuthDeclined)
+            return RevokeKeyResult.SignedOutThisDevice(
+                (result as? SignOutResult.SignedOut)?.serverKey ?: RevokeOutcome.NotAttempted,
+            )
         }
         val result = auth.revokeBoardKey(instanceId, keyId)
         signedOut.noteIfUnauthorized(instanceId, result)

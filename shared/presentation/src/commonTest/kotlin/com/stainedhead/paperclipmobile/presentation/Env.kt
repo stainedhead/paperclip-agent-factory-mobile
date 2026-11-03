@@ -35,6 +35,7 @@ import com.stainedhead.paperclipmobile.application.auth.RevokeBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SaveManualBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SignOutEverywhere
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
+import com.stainedhead.paperclipmobile.application.auth.SignOutInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.auth.SignedOutMarker
 import com.stainedhead.paperclipmobile.application.budget.LoadBudgetIncident
 import com.stainedhead.paperclipmobile.application.budget.ResolveBudgetIncident
@@ -49,6 +50,7 @@ import com.stainedhead.paperclipmobile.application.instance.GetInstance
 import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
 import com.stainedhead.paperclipmobile.application.instance.ProbeInstance
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
+import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.ReorderInstances
 import com.stainedhead.paperclipmobile.application.instance.SwitchCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchInstance
@@ -158,6 +160,8 @@ class Env(
     val reorder = ReorderInstances(repository)
     val remove = RemoveInstance(repository, secrets, revoker, deviceAuth, locks)
     val signOut = SignOutInstance(repository, secrets, revoker, locks)
+    val removeHereOnly = RemoveInstanceHereOnly(repository, secrets, deviceAuth, locks)
+    val signOutHereOnly = SignOutInstanceHereOnly(repository, secrets, deviceAuth, locks)
     val signOutEverywhere = SignOutEverywhere(repository, signOut)
     val listKeys = ListBoardKeys(repository, auth, signedOutMarker)
     val revokeKey = RevokeBoardKey(repository, auth, signOut, signedOutMarker)

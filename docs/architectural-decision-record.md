@@ -261,7 +261,349 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** A build that reaches `createGraph` with the fakes still bound must not be released: Phase 1b's first acceptance criterion is a test that the graph binds no `FakeBiometrics` and no `FakeSecretStore`. Time-dependent rules are tested at the state-holder and use-case level with an advanceable `FakeClock` (the app lock re-engaging after the idle period is covered through the graph in `DemoGraphDeviceTest`), not by waiting in either graph.
 
-## ADR-042: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
+## ADR-038: HTTP statuses outside the PRD list map to `Rejected`, `Timeout` or `Malformed`, and the status always wins
+
+**Status:** Accepted (2026-11-02, Phase 1b-1, `specs/261102-phase-1b-adapters`)
+
+**Context.** The server answers 400 for validation failures, malformed ids and a `revoke-current` without a board key (`access.ts:2815, 2852, 2959, 2972`; `error-handler.ts:225-243`), and a reverse proxy can answer anything, including a 200 or 502 HTML page. `DomainError` has no bad-request case and the PRD lists only 401, 403, 404, 409, 422, 429 and 5xx.
+**Decision.** One `ErrorMapper` decides. The status wins over the body: 401 `Unauthorized`, 403 `Forbidden`, 404 `NotFound`, 409 `Conflict`, 429 `RateLimited`, 408 `Timeout`, any other 4xx (including 400 and 422) `Rejected(reason)` with the server's `{"error"}` text cut to 200 characters (`http_<status>` when there is none), every 5xx `ServerError` (so a 502 HTML page is a server error, not Malformed). A 2xx whose body is not JSON, is empty or does not fit the DTO is `Malformed`. 1xx, 3xx and statuses above 599 are `Malformed`. A key id that is not a UUID is `NotFound` without a request, because the server would answer 400 for an id that cannot exist. An unknown challenge `status` is `Malformed`: the app does not guess.
+**Consequences.** The UI shows `Rejected` reasons as the server wrote them and nothing else from a body. The mapping has one test per status and body shape (`ErrorMapperTest`).
+
+## ADR-039: The HTTP client sends once, never caches a key, follows no redirect and never copies an exception message
+
+**Status:** Accepted (2026-11-02, Phase 1b-1)
+
+**Context.** Ktor's `Auth` plugin caches tokens and re-sends after a 401; `HttpRequestRetry` would replay mutations; redirects carry the `Authorization` header to the new location; Ktor exception messages contain the request URL and a pairing poll carries its challenge token in the query (`access.ts:2812`). `retryingRead` is `internal` to `application`, which infrastructure may not import.
+**Decision.** `PaperclipHttpClient` installs only `HttpTimeout` (15 s connect, 30 s read, 60 s request), sets `expectSuccess = false` and `followRedirects = false`, and sets `Authorization` per request from a `Secret` the gateway reads from the `SecretStore` for that call and wipes afterwards. It sends each request exactly once: reads are retried by the use cases through `retryingRead` (they already are), mutations never. Failures become a `DomainError` from the exception type only, never its message; `CancellationException` is rethrown while the caller is active. There is no Ktor `Logging` plugin; an optional trace hook receives method, host, path and status. `http` is allowed only for `localhost` and `10.0.2.2` when `allowInsecureLocal` is set, enforced in the client as well as in `BaseUri`, and a refusal is `CertificateInvalid` with no request sent. The one `catch (Throwable)` of the codebase lives in this class and is allowed by name in `detekt.yml`.
+**Consequences.** "A board key never appears in a URL" is tested; "no secret in any URL" cannot be literally true because the challenge token is a query parameter by the server's design, so the test asserts it reaches only the issuing host and only in the poll query.
+
+## ADR-040: Certificate pins are stored and fail closed until an engine enforces them
+
+**Status:** Accepted (2026-11-02, Phase 1b-1). Enforcement deferred (spec stretch goal).
+
+**Context.** Ktor's Darwin engine has a `CertificatePinner` (SPKI sha256 per host pattern, installed through `handleChallenge`, `ktor-client-darwin-3.6.1` sources) and OkHttp has `CertificatePinner`, but both are configured per engine for a list of hosts, while pins belong to instances that can be added and edited while the app runs. Wiring them needs the live graph (1b-5) and a TLS test server on the simulator.
+**Decision.** `PaperclipHttpClient` takes `pinsEnforced` (false for now). A request to an instance whose `pins` list is not empty fails with `CertificateInvalid` and sends nothing while no engine enforces pins, so a stored pin can never silently be ignored. Turning enforcement on is one constructor argument plus the engine configuration.
+**Consequences.** No UI sets pins yet, so no user is affected. Real enforcement and its simulator test are listed as deferred.
+
+## ADR-041: Server fixtures are Kotlin strings, not resource files
+
+**Status:** Accepted (2026-11-02, Phase 1b-1)
+
+**Context.** The spec asks for fixtures under `src/commonTest/resources`. A Kotlin/Native test has no classpath, so a resource file cannot be read by `iosSimulatorArm64Test`, and the adapter tests must run on JVM, Android host and iOS simulator.
+**Decision.** `ServerFixtures` builds the JSON bodies of the pinned server's routes as Kotlin raw strings, each commented with the server file and line it follows; `StubPaperclipServer` serves them. The CI contract test (1b-5) checks the same shapes against the real container.
+**Consequences.** Fixtures run on every target. They are derived from server source, not recorded, until the contract test exists.
+
+## ADR-042: An unusable database is recreated empty; secrets are never in it
+
+**Status:** Accepted (2026-11-02, Phase 1b-2, `specs/261102-phase-1b-adapters`)
+
+**Context.** SQLite opens a garbage file and fails on the first statement; a file may also come from a newer app version after a downgrade, or lack a table. The database holds only non-secret factory configuration, settings and an Inbox cache. The credentials are in the Keychain or Keystore under `instance/{id}/`.
+**Decision.** After opening, the app probes the file (`user_version` not newer than the code; the three tables exist). If the probe shows the file is unusable (not a database, malformed, newer schema, a missing table), the database and its `-wal`/`-shm`/`-journal` files are deleted and a new empty one is created (`PaperclipPersistence.recreated` is true). Any other failure (busy, I/O, disk full, protected data unavailable, a migration that throws) deletes nothing and is reported as `StorageUnavailableException` (corrected by ADR-077). Only a failure of that second open is fatal. No secret column or secret-typed parameter exists: a test pins the exact column list and scans every stored value for `pcp_board_`, and a Konsist rule forbids importing `Secret` or `SecretKey` in the module.
+**Consequences.** The person loses the factory list, not access control. *Corrected by ADR-078:* the original text said recreating orphans the items under `instance/{id}/` until the app is reinstalled. That is false on iOS: Keychain items survive app deletion, and nothing would ever have removed them. `SecretStore` can now list the instance ids that hold secrets, and a recreated database triggers a sweep that deletes the namespaces with no factory row; the person is told through `PaperclipGraph.startupNotice`. Failing closed was rejected: it would leave the app unusable with reinstalling as the only way out.
+
+## ADR-043: Persistence layout: payload mirror classes, one serial executor, orphan pruning
+
+**Status:** Accepted (2026-11-02, Phase 1b-2)
+
+**Context.** The domain has no serialization annotations (AGENTS.md). The in-memory JDBC driver shares one connection and cannot run parallel transactions. A cache write can arrive after its factory was removed, and the cache contract requires writes for scopes with no factory row.
+**Decision.** (1) The cached Inbox page is one JSON row written through `internal` payload classes in `infrastructure.persistence.payload`, with a `format` column (added by migration 1.sqm) so an unreadable or newer layout is a cache miss that deletes the row. At most 200 items are kept; when a longer page is cut `nextCursor` is cleared, because the server cursor would skip the dropped items. (2) `PaperclipPersistence` runs the three ports on one `Dispatchers.Default.limitedParallelism(1)`, so statements and transactions of one database are ordered whatever the driver does. Deleting a factory removes its configuration and cache rows in one transaction (no reliance on foreign keys, which are off by default). (3) Opening deletes cache rows whose factory no longer exists. (4) The iOS file lives in `Application Support/PaperclipData`, excluded from backup (folder and files, reapplied on every open); Android uses `noBackupFilesDir`. (5) Generated SQLDelight classes are public by the plugin; the module hides them by making every adapter constructor `internal` and by a Konsist rule that no file outside the module names the generated package.
+**Consequences.** Reads are not parallel (fine at this size). A domain change to `AttentionItem` needs a payload change and, if the layout changes, a `format` bump.
+
+
+## ADR-050: Keychain tests run in the iOS app test host, and the iOS tests are signed ad hoc
+
+**Status:** Accepted (2026-11-02, Phase 1b-3, `specs/261102-phase-1b-adapters`)
+
+**Context.** The Keychain needs an app's entitlements. A Kotlin/Native `iosSimulatorArm64Test` binary is a bare executable: run standalone it gets `errSecNotAvailable` (-25291, no `securityd`), run on a booted simulator it gets `errSecMissingEntitlement` (-34018); signing it with a `keychain-access-groups` entitlement makes `simctl spawn` refuse it ("Security policy issue"). The app test host also gets -34018 when it is built with `CODE_SIGNING_ALLOWED=NO` (what `scripts/ios-test.sh` used), and succeeds when built ad-hoc signed.
+**Decision.** The store's decisions (which protection, replace on duplicate, status to result mapping, marker, wiping) run in Kotlin/Native tests against a scripted `KeychainBackend`, together with the shared `SecretStoreContract`. The real Keychain runs in Swift Testing tests in the app test host (`iosApp/Tests/iosAppTests`), which call the store through `PlatformServices` in the umbrella, run the same contract on the real Keychain and check the stored attributes with `SecItemCopyMatching`. `scripts/ios-test.sh` builds with `CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES`. Each test uses its own Keychain service and cleans up.
+**Consequences.** The real-Keychain tests run only through `ios-test.sh` / the iOS workflow, not through `./gradlew allTests`. The `PlatformServices` factory and the contract runner ship in the framework (the umbrella already ships the fakes for demo mode). Whether ad-hoc signing works on the CI macOS runner is confirmed only by the PR run.
+
+## ADR-051: Keychain item layout, protection and the port's four read results
+
+**Status:** Accepted (2026-11-02, Phase 1b-3)
+
+**Context.** `SecretReadResult` has Found, Missing, Invalidated and Denied; `SecretWriteResult` has Stored and Failed. `CheckCredentials` turns Missing into "pair again" and Invalidated into `NeedsRePairing`, so a transient error must never be reported as either. A `.biometryCurrentSet` item disappears when the enrolled biometrics change, which looks like "not found".
+**Decision.** One generic-password item per secret: service = a fixed id, account = `instance/{id}/{name}`, `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, and `kSecAttrSynchronizable = false` on every query (add, read, delete, list). With `requireUserPresence` the item is stored with `.biometryCurrentSet`, falling back to `.userPresence` when that is refused (no biometrics enrolled); if neither works the write is `Failed` and nothing is stored: never an unprotected copy. Accessibility is then part of the access control (the two attributes are never both set). A protected write also stores an unprotected marker item `{account}#protected` (one byte, no secret); a read that finds nothing but finds the marker is `Invalidated`, otherwise `Missing`. Mapping: success -> Found; `errSecItemNotFound` -> Missing or Invalidated as above; everything else on a read (device locked `errSecInteractionNotAllowed`, cancelled `errSecUserCanceled`, `errSecAuthFailed`, any storage error, or a marker check that fails) -> Denied; any failed write or a duplicate that cannot be replaced -> Failed. A duplicate is replaced by delete then add so a changed protection takes effect. A delete the Keychain refuses throws (like the fake), never silently. `deleteNamespace` lists accounts with an attributes-only query (no value read, no prompt) and deletes those starting with `instance/{id}/`, so `instance/a/` never touches `instance/ab/`. Blocking calls run on `Dispatchers.Default`.
+**Consequences.** The port is not extended (domain is outside this stream). "Locked" and "storage failure" on read share Denied with "declined". How an item looks after a real biometric-set change cannot be produced on a simulator: the marker logic is tested by removing the item directly. `Secret.reveal()` makes a `String` that cannot be wiped; the byte and `NSMutableData` copies made by the store are zeroed, the framework-owned `NSData` returned by a read is not.
+
+## ADR-052: Biometrics and connectivity adapters
+
+**Status:** Accepted (2026-11-02, Phase 1b-3)
+
+**Context.** The simulator can evaluate the device-owner policy (it pretends to have a passcode), so a live prompt waits for a person; a bare Kotlin/Native test binary has no LocalAuthentication daemon and gets an XPC error (code 4099, not an `LAError`).
+**Decision.** `LocalAuthenticationBiometrics` uses `LAPolicyDeviceOwnerAuthentication` (Face ID or Touch ID with passcode fallback), a fresh `LAContext` per prompt, `canEvaluatePolicy` first. Mapping: success -> Approved; user/system/app cancel and user fallback -> Cancelled; authentication failed and every unknown code -> Failed; biometry lockout -> LockedOut; passcode not set, biometry not enrolled or not available, not interactive, and any error outside `LAErrorDomain` -> Unavailable. No passcode therefore means no approval (fail closed). The prompt text comes from the app (`ReasonTexts`, localized by the app; the default is English). Cancelling the coroutine invalidates the context. `NwConnectivity` wraps `nw_path_monitor` on its own serial dispatch queue; it is online until the first path arrives (optimistic, like the JVM), then follows `nw_path_status_satisfied`, and `close()` cancels the monitor. The AppLifecycle needs no new adapter: the umbrella's `AppLifecycleBridge` is driven by the app. Android and the JVM use `UnavailableBiometrics` and `OptimisticConnectivity` until their app phase.
+**Consequences.** Real Face ID, lockout and an enrolled-biometrics prompt are not verifiable on a simulator or in CI. `NSFaceIDUsageDescription` must be in the app's Info.plist (iosApp, deferred to the UI stream) or Face ID is refused on a device.
+
+## ADR-053: System services and the fail-closed Android and JVM actuals
+
+**Status:** Accepted (2026-11-02, Phase 1b-3)
+
+**Decision.** `SystemClock` (`kotlin.time.Clock.System`), `UuidIdGenerator` (`kotlin.uuid.Uuid.random()`, lower-case v4) and `SystemDeviceTimeZone` (`TimeZone.currentSystemDefault()`, which on Darwin resets and re-reads `NSTimeZone.systemTimeZone` on every call, so a zone change is seen) are plain common classes, proven by the shared `ClockContract`, `IdGeneratorContract` and `DeviceTimeZoneContract` on JVM, Android host and iOS. `UnavailableSecretStore` (writes `Failed`, reads `Missing`, holds nothing) and `UnavailableBiometrics` (always `Unavailable`) are common classes used on Android and the JVM, where no Keystore or BiometricPrompt bridge exists yet; a test pins that nothing is retained, not even by a second instance. They deliberately do not satisfy `SecretStoreContract`. They are plain classes rather than `expect`/`actual` pairs because there is nothing platform-specific in them.
+**Consequences.** An Android build of the app cannot store a board key until the Keystore adapter exists (a later phase), which is the safe default.
+
+## ADR-054: Server money is read as an exact decimal literal and rounded up to whole cents
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** Budget amounts are cents, but `amountObserved` is a `numeric(24,7)` column read as a JS number (`packages/db/src/schema/budget_incidents.ts:21`), so the JSON can be `9999.0000001`. Approval payloads and feed metadata carry the same numbers. A `Double` cannot hold a cent-exact comparison.
+**Decision.** DTOs keep amounts as `JsonPrimitive` and `ceilToCents(literal)` parses the text: digits, an optional `.digits` fraction, at most 15 whole digits; a sign, an exponent, a second dot or no digits is null. Any non-zero fraction rounds up (ADR-016), so the app never shows less spend than the server holds. The currency is always `USD`: no server type has a currency field. A raise is refused locally (`Rejected`, nothing sent) for another currency or for more than 2,147,483,647 cents, the schema's maximum (`validators/budget.ts:24`).
+**Consequences.** The domain's "must exceed observed" pre-check is conservative by up to one cent; the server stays the authority. A literal in exponent form (JS prints numbers of 1e21 and above that way) is Malformed or an absent payload field, never a wrong amount.
+
+## ADR-055: Open-ended parts of a reply are read by hand and never fail the whole reply
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** Detail kinds, effect types, approval payloads and subject metadata are polymorphic, redacted by the server, and extended by newer servers. A kotlinx sealed discriminator throws on an unknown type; a typed payload DTO fails on one wrongly typed field.
+**Decision.** Those parts are `JsonObject`s read by the small helpers in `dto/JsonReading.kt` (`text`, `cents`, `whole`, `texts`, `obj`, ...): a field of the wrong type is null. Known types are always mapped even with fields missing (a `cancel_issue_tree` can never degrade to an unknown effect and escape the destructive check); unknown types become `Unsupported`; unknown enum values use the domain's `fromServer` (Medium, Unknown, ...). A response that is not JSON, is empty, is not the expected top-level shape, or lacks the identity of the thing asked for is `Malformed`.
+**Consequences.** A redacted hire payload shows fewer fields instead of an error. The cost is that a server renaming a field silently shows less; the contract test in CI against the pinned container (1b-5) is where that is caught.
+
+## ADR-056: A budget incident is resolved only while it is still active
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** `resolveIncident` (`services/budgets.ts:951-1052`) looks the incident up by id with no status filter: `keep_paused` updates it again and a raise re-runs against the policy, so resolving twice answers 200. The port and the shared contract say a second resolve is `NotFound`, because the incident is "no longer active". There is no single-incident endpoint.
+**Decision.** `resolve` reads `budgets/overview` first and returns `NotFound`, with no mutation sent, when the id is not in `activeIncidents`; only then does it post once. `incident` is the same read. The stub deliberately models the permissive server so the test proves the guard.
+**Consequences.** One extra read per resolve, and a race window of one round trip in which another operator can resolve it first (the server then answers 200 again, which is harmless: keep paused is idempotent and a raise to the same amount is rejected as not exceeding spend).
+
+## ADR-057: Id-addressed approvals and decisions are checked against the scope's company
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Context.** `/api/approvals/{id}` and `/api/decisions/{id}` carry no company in the path. A key with access to two companies could be handed company B's id under company A's scope, and the server would answer it. A company with no membership answers 404 there (`getAccessibleResource`, `authz.ts:182-195`) but 403 on company paths (`assertCompanyAccess`). Server ids are UUID columns, so a non-UUID id is a database error on the server, not a 404.
+**Decision.** Every read checks the `companyId` of the row it got: another company is `NotFound`, a missing `companyId` is `Malformed` (tenancy is not guessed). Every write reads the resource first, checks it, and only then posts, once. An id that is not a UUID is `NotFound` without a request (like board key ids in 1b-1, see implementation-notes). Lists (comments, linked issues) are `NotFound` when any row names another company.
+**Consequences.** A write costs a read. An empty list cannot prove ownership; the id is checked by the preceding use-case read.
+
+## ADR-058: Port gaps are recorded, not patched in the adapter
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Decision.** Four things the port or the wire cannot express are left as they are and listed as deviations: (1) `AttentionGateway` has no list-dismissals method although `GET inbox-dismissals` exists, so it is not called; (2) there is no poll method: polling is the use case calling `DecisionGateway.get` again; (3) `get` returns `originAgentName = null` and `decideBy = None`, because the decision row has neither and filling them would cost a second and third request; the use case takes them from the feed card; (4) an `assign_issue` effect names the assignee by id only, so `assigneeName` is null until a later phase resolves names from the agent list.
+**Consequences.** None of these changes a domain port, which this stream does not own.
+
+## ADR-059: One unreadable feed card fails the page
+
+**Status:** Accepted (2026-11-02, Phase 1b-4a)
+
+**Decision.** A card without an id, source kind, dismissal key, subject id or readable `activityAt`/`createdAt` makes the whole page `Malformed`. Skipping it would hide something that needs a decision and make the page disagree with its own `totalCount`; the Inbox shows its error state and the cached first page. Missing optional parts (verbs, detail, dismissal, resolver audience) never fail a card. `countsBySourceKind` keeps unknown kinds as `Unsupported` keys. The cursor is never inspected or validated: it is passed back as received and the server's rejection arrives as `Rejected` with its own reason.
+**Consequences.** A server that adds a required-looking field breaks nothing; a server that drops an identity field breaks the Inbox loudly instead of quietly.
+
+## ADR-060: The pinned release's compiled dist is the source of truth, and the stub follows it
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** Server facts for the adapters are read from the pinned release 2026.1023.0 as installed (`@paperclipai/{server,shared,db}/dist`), not from a newer development working tree. Before the 1b-4b gateways were built, every 1b-4a assumption was re-read there; the differences were fixed test first (research, "1b-4a corrections vs pinned release"). Each fixture and stub header names the dist file it follows. The stub server follows the server's permissiveness and quirks, not the port's strictness, so a test can only pass if the adapter itself compensates (a cancel of an ended run answers 200 with the run unchanged; a log read omits `nextOffset` on its last chunk; comments come newest first; a create may be answered `deduplicated`).
+**Consequences.** The one production defect found was an exponent number literal (`5e-7`) that `ceilToCents` refused; the rest were stub differences. Facts that cannot be read from source (the status after `verdicts`, the reply of a pause) are listed as not verified and wait for the container run in CI (1b-5).
+
+## ADR-061: Every id-addressed call proves the company first; lists prove it row by row
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b); extends ADR-057
+
+**Decision.** Issues, agents, runs, attachments and interaction answers are addressed by id with no company in the path, and a board key that belongs to several companies can read all of them. So each call is made under the scope's company like this: an id that is not a uuid is NotFound without a request; a single-resource read checks the `companyId` of the reply; every mutation is preceded by a read of the resource (a board key must not be able to pause, comment on or cancel the work of a company the person did not select); a reply to a mutation that names another company is not trusted. A list whose rows each name their company (comments, attachments, interactions) is checked row by row, and an empty list, which proves nothing, asks the issue once (`provingOwnership`). Lists of rows that do not name a company (`issues/{id}/runs`) are preceded by the issue read. The audit test calls every method of the five gateways against a Globex resource under an Acme scope and asserts NotFound, no write and no body read.
+**Consequences.** A mutation costs one more read; a thread that really is empty costs one more read per poll. Both are cheap next to a wrong-company write.
+
+## ADR-062: Runs: the guard is ours, the log offset is counted in bytes
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** Cancelling a run that has already ended is answered 200 with the run unchanged by the pinned server, so `cancel` reads the run first and returns Conflict for one that is not active without sending a mutation; a reply that comes back neither active nor cancelled is also Conflict, a `null` body is NotFound. The log is read in chunks of 64 KiB by byte offset. The server sends `nextOffset` only when more bytes follow, so on the last, short chunk the adapter computes the next offset as the start plus the UTF-8 byte length of the content (not its character count), and an empty read has none; a 404 on the log of a run that was just read means "no log written yet" and is an empty chunk. Events are read in pages of 500 after the last sequence number and returned oldest first without repeats.
+**Consequences.** A chunk boundary can fall inside a multi-byte character; the server decodes both halves with replacement characters. This is accepted: the tail is for reading progress, and the replacement shows at most once per 64 KiB.
+
+## ADR-063: Issue requests are written for the pinned server's rules
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** The list uses `view=compact` with the saved filter's parameters and never claims a description (the server sends a 1200-character preview). Comments are asked `order=asc` (the default is newest first) and deleted comments, which come back empty, are left out. Create always sends `allowDuplicate: true`, because the default silently returns an existing open issue with the same title and parent created in the last 48 hours; a `deduplicated` reply anyway is a Conflict. Assignee changes send both assignee fields every time (the other one as an explicit null) because the server merges with the stored values and refuses two assignees. A status the app does not know and an agent id that is not a uuid are refused before any request. The server's own 422 texts (`blocked` needs a blocker or a pending card, `in_progress` needs an assignee) arrive as the reason. Detail is two reads: the issue, then its subtasks by `parentId`.
+**Consequences.** Two quick taps on Create make two issues; the presentation layer disables the action while it is pending.
+
+## ADR-064: Attachment content is an adapter-only, ranged call
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** `IssueGateway` has no method for file content, and adding one is a domain change outside this stream. The adapter therefore has a public, non-port method `IssueGatewayAdapter.attachmentContent(scope, issueId, attachmentId, start, endInclusive)` that sends `Range: bytes=a-b` through a new byte path of the shared client (`sendBytes`, which never decodes the body as text). The attachment must be in the issue's own list, which proves its company before any byte is asked for. 206 is read from `Content-Range`; a 200 (the server ignored the range) is the whole file from byte zero; 416 is Rejected with a reason. Its result type is nested in the adapter so that the Konsist rule about the public surface of `api` still holds.
+**Consequences.** Nothing above infrastructure can reach it until a port is added (recorded as deferred); the byte path is tested at the client (non-UTF-8 bytes survive, no key or query in the trace) and at the adapter.
+
+## ADR-065: Interactions: five kinds are answered, everything else is shown and never sent
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** `suggest_tasks`, `ask_user_questions`, `request_confirmation`, `request_checkbox_confirmation` and `request_item_verdicts` are mapped to their domain types. `connection_intent`, a kind from a newer server, a confirmation that carries `toolAction`, `secretProposal` or `connectionAuthorization` (it gates a tool call, a secret or an external login that a phone prompt cannot describe), and a supported kind whose payload cannot be read all become `UnsupportedInteraction` with their real kind; one bad payload never hides the rest of the thread. An answer first reads the thread: an unknown interaction is NotFound, an unsupported one is refused, an answer that does not fit the kind (a plain accept for tasks would accept every task) or an empty task selection is refused, and one for an interaction that is no longer pending is a Conflict, each without a mutation. The answer then goes once to its endpoint (`accept`, `reject`, `respond`, `verdicts`, `skip`). `required` is true only when the server says so, `allowOther` false only when it says so. The resolver audience is read with the attention mapper's `resolverAudienceOf`.
+**Consequences.** The server stays the authority on everything the app cannot know (the creator rule, the addressee, a closed issue): its 403 and 409 arrive as `Forbidden` and `Conflict`.
+
+## ADR-066: Dashboard and agents: tiles and money are all or nothing
+
+**Status:** Accepted (2026-11-02, Phase 1b-4b)
+
+**Decision.** A dashboard with a missing, negative or non-integer count, or money that is not a number, is Malformed, not a tile of zeros. Window spend prefers `costCentsExact` (text) over the double next to it, rounds each row up to whole cents, and keeps rows of windows the app does not know for the domain to ignore. The agent list sends no query (the server answers 400 to any), maps an unknown status to `Unknown`, and fails as a whole if one row is unreadable (ADR-059). A wake answers 202 with either the started run or `{status:"skipped"}`; anything else is Malformed. A budget over 2,147,483,647 cents or in another currency is refused before any request, as for incidents. The reply of a pause or resume is mapped as sent; whether its month spend is the hydrated figure is not verified.
+**Consequences.** After a pause the Agents tab should reload the list for the month figure.
+
+## ADR-067: The live graph is built on an internal `LivePlatform`, and the stub server is shared by copying its sources
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** `PaperclipCore.createLiveGraph(allowInsecureLocal, pairingBrowser)` builds the graph from an internal `LivePlatform` (clock, ids, time zone, `SecretStore`, `Biometrics`, `Connectivity`, `PaperclipPersistence`, the HTTP client factory and `release()`). The public overload gets its platform from `defaultLivePlatform()` (`expect`/`actual`); an internal overload takes one explicitly, which is the test seam and what `LiveIosGraph` uses. The interface is internal because it carries database and Ktor types that must not appear in the Swift header. The live-graph tests need the pinned-server stand-in that lives in the API module's test source set: the `sharedStubSources` task in `shared/umbrella/build.gradle.kts` copies only `Stub*.kt` and `*Fixtures.kt` into the umbrella's JVM test compilation. The stub no longer calls the adapter's `isServerId` (it has `isStubUuid`) and offers `newEngine()` because a client now closes the engine it is given.
+**Consequences.** The stub is compiled twice and the live flows are JVM tests (`jvmTest`); on Android host and iOS they are not repeated. Moving the stub to a published test-fixtures module would need its internal types made public and is not worth it yet. Rejected: a public platform interface (leaks types to Swift); copying the whole API test source set (the adapter suites would run again inside the umbrella).
+
+## ADR-068: No fake in the live graph, polling instead of live events, and one close that runs once
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** The live ports module binds only adapters and platform pieces. `LiveEvents` is a "polling only" object with an empty flow, because the pinned server rejects board keys on the WebSocket; the refresh policy then works from its timer and from coming back online or to the foreground (`LiveRefreshTest`). `signalPorts()` (which bound `FakeLiveEvents`) was split: `lifecyclePorts()` is shared, the fake event binding stays with the fake graphs. Two checks keep fakes out: a Konsist rule that no `Live*.kt` file imports `shared.testing` or calls `portsModule`, `demoPortsModule`, `sliceThreePorts` or `signalPorts` (with a self-test that the files are selected and the predicate flags a synthetic import), and `LiveGraphTest`, which resolves ports from a live graph and checks none belongs to the testing package. `PaperclipGraph.close()` is idempotent and releases the HTTP client (now also its engine), the database, then the platform, each once, even if one step throws. An empty database is the first-run state; nothing is seeded (AD-041).
+**Consequences.** A file named `PlatformServices.kt` (the iOS Keychain contract hook, which imports the testing module on purpose) is deliberately outside the rule. Holders must be closed before the graph.
+
+## ADR-069: Platform actuals: iOS real, JVM fails closed, Android refused
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** iOS builds `KeychainSecretStore`, `LocalAuthenticationBiometrics`, `NwConnectivity`, the system clock, UUID ids, the device time zone and `openIosPersistence` (default folder `Application Support/PaperclipData`, excluded from backups). Its first argument set comes from `IosLiveSettings` (Keychain service, data folder, localized prompt texts) through `LiveIosGraph.createLiveGraph`; the two-argument public call uses the app's service, the default folder and English texts. The JVM default is `UnavailableSecretStore`, `UnavailableBiometrics`, `OptimisticConnectivity` and an in-memory database: pairing fails (the key cannot be stored) and no destructive action is approved. Android has no `Context` and no Keystore yet, so `createLiveGraph` throws `IllegalStateException` there instead of running on a pretend secret store.
+**Consequences.** An Android build that calls it crashes at start-up, which is the right signal until the Android app phase supplies its platform. The device-service decisions were already tested in 1b-3; the new tests prove only the wiring.
+
+## ADR-070: The pairing browser is supplied as a callback
+
+**Status:** Accepted (2026-11-02, Phase 1b-5a)
+
+**Decision.** `PairingBrowser` is a Kotlin suspend interface and `Secret.reveal()` is hidden from Swift, so a Swift class could neither read the approval address nor implement the method without the `__open` name SKIE generates (which fails SwiftLint and swift-format). `CallbackPairingBrowser` (in `infrastructure/api`, the only place that may reveal the address) turns a closure `(approvalUrl: String, finished: () -> Unit)` into the port; `PairingBrowsers.fromCallback` exposes it through the umbrella. The `finished` call ends the wait, cancelling the pairing cancels it, and a second call is harmless. The address is a secret, so the app opens it and does not log or keep it.
+**Consequences.** `CallbackPairingBrowser` is on the API module's public-surface allow-list. The real `ASWebAuthenticationSession` implementation belongs to the iPhone UI stream.
+
+
+## ADR-071: The first admin of the contract server is created through the server's own sign-up and bootstrap invite
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** A fresh authenticated Paperclip server has no user and no instance admin, and only an instance admin can create a company, so the contract test cannot seed anything until one exists. The test does what a person does: it signs up with Better Auth (`/api/auth/sign-up/email`, a fixed obviously fake test account), accepts a bootstrap CEO invite (`POST /api/invites/{token}/accept`, 202) and then approves its own pairing challenge with the session cookie. The invite is the one thing the image does not provide (it runs only the server, not `paperclipai run`, and the CLI needs a config file the container lacks), so `scripts/paperclip-test-server.sh invite` inserts the row `paperclipai auth bootstrap-ceo` would insert, using the image's own `postgres` client through `docker compose exec`: the token is generated on the host, only its sha256 goes into the container, and only the token is printed. This reaches into the database of a throwaway test container, never of a user's server; the INTENT boundary ("no reaching into its database") is about the app.
+**Consequences.** The script is coupled to the `invites` table and the embedded database credentials of the pinned release; the nightly `latest` job is where a change shows up. The token is masked in CI (`::add-mask::`) and handed to Gradle through the environment.
+
+## ADR-072: The contract test is a JVM compilation that `check` compiles but does not run
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** `shared/infrastructure/api` has a `contract` JVM compilation (associated with `main`, so it can use the internal client for error-shape comparisons) and a `contractTest` task. `check` depends on `compileContractKotlinJvm` only, so the sources cannot rot, but running needs a server. Without `PAPERCLIP_CONTRACT_BASE_URL` the live tests are skipped with a message; CI sets `PAPERCLIP_CONTRACT_REQUIRED=true`, which turns a missing server into a failure so a skip can never look like a pass. The task is never up to date, uses the production adapters on the real OkHttp engine (never MockEngine), a test-only in-memory `SecretStore`, and `http://localhost:3199` because plain http is allowed for `localhost` and `10.0.2.2` only (the allow-list was not widened for `127.0.0.1`).
+**Consequences.** A `LauncherSessionListener` prints, at the end of the run, which port operations were verified live and which are covered only by the MockEngine tests, and writes the same table to `build/reports/contract/live-operations.txt`.
+
+## ADR-073: Seeding failures and unverified operations are reported, not guessed
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** Seeding the company and the first issue is required; the first runs attempted everything else the server may legitimately refuse (an agent that needs board approval, an approval type, a wake of a process agent) as optional, recording the server's answer in the run report and going on (`Seeder.optional`; `soft` was used only for `observe`). A step is asserted hard once a run has shown how the server behaves, and the stubs were corrected where the real server differed. **Superseded in part by ADR-082:** optional seeds, `soft` and `observe`-without-failure were removed (a refused seed or a mismatch now fails the run), and interactions and budget incidents turned out to be seedable by a board key (a question through `POST /issues/{id}/interactions`; an over-budget cost event through `POST /companies/{c}/cost-events`). Only decisions stay unseedable (agent run context).
+**Consequences.** The report is the honest coverage statement; the status and notes files quote the CI run that produced it.
+
+## ADR-074: A resume is followed by one read, because the server answers it mid-transition
+
+**Status:** Accepted (2026-11-02, Phase 1b-5b)
+
+**Decision.** The live contract run showed that Paperclip applies a pause or resume in steps: a resume answers `status paused`, no pause reason, `lifecycleState resuming`, and the very next read shows `idle`. `ResumeAgent` (application layer, a cross-ownership edit made test-first in its own commit) therefore reads the agent once when the reply says `resuming`, and reports that read; if the read fails it reports the server's reply. The resume itself is still sent exactly once. Pause is unchanged (its reply, `paused`/`manual`, is the state the person asked for). The adapter, the shared contract and the fake keep modelling the settled state; the stub has an opt-in `transitions` mode that reproduces the server.
+**Consequences.** The screen no longer shows a paused agent under a Resume button that was just pressed. An agent that is still `pausing` or `resuming` when a screen loads is shown with the server's status; a state holder that wants to hide the transition can use `Agent.lifecycleState`, which the mapper already carries (not done here).
+
+## ADR-075: Pairing, pending-key and health calls carry the pins of the factory at that address
+
+**Status:** Accepted (2026-11-02, review1b F-A-1, `specs/261102-phase-1b-adapters`)
+
+**Context.** The fail-closed pin rule (ADR-040) is `request.pins.isNotEmpty() && !pinsEnforced`. Calls with a stored key read the pins from the `Instance`. The calls made before a key exists (health probe, `createChallenge`, `pollChallenge`, `meWithKey`, `listBoardKeysWithKey`) take only a `BaseUri` on the port, so they built `Destination(baseUri)` with no pins and went out over system trust TLS. Those calls carry the new board token, the challenge token and the pending key: the most sensitive traffic.
+**Decision.** The ports keep their signatures. `HealthGatewayAdapter` and `AuthGatewayAdapter` look up the pins of the configured factory at the same `BaseUri` (`PinLookup` over `InstanceRepository.observeAll()`, union of the pins of every factory at that address) and put them in the `Destination`, so the same refusal applies. A first pairing of an address no factory uses yet has no pins to apply, which is correct: nothing was pinned. A re-pair or probe of a pinned factory is refused with `CertificateInvalid` while no engine enforces pins. `HealthGatewayAdapter` now takes the `InstanceRepository`.
+**Consequences.** One extra local read per pre-key call. When an engine enforces pins the same lookup supplies them.
+
+## ADR-076: The server's approvalUrl is opened only when it is the instance's own origin
+
+**Status:** Accepted (2026-11-02, review1b F-A-3)
+
+**Context.** The pinned server builds `approvalUrl` from `x-forwarded-proto` and `x-forwarded-host` (access.ts:73-80). Behind a TLS-terminating proxy that does not forward the protocol it is `http://`; a different forwarded host gives a foreign origin. The URL carries the challenge token and is opened in a system browser where the person signs in.
+**Decision.** `ApprovalOrigin.isOwn` accepts the server value only if it has the scheme, host and port of the `BaseUri` (default ports made explicit, case-insensitive host), no user info, no backslash or space in the authority and no control characters. Because a `BaseUri` already enforces https (or http for `localhost` and `10.0.2.2` in debug), requiring the same scheme enforces the same allow-list. Anything else is ignored and the URL is built from the `BaseUri`, with the challenge id and token percent-encoded.
+**Consequences.** A proxy setup that publishes the web UI under a different origin than the one the phone uses will always get the locally built URL, which is the address the person typed.
+
+## ADR-077: A database is wiped only on proof; any other open failure is StorageUnavailable
+
+**Status:** Accepted (2026-11-02, review1b F-B-1)
+
+**Context.** `openRecovering` treated every exception from the open and the probe as corruption and deleted the file. A busy or locked file, a full disk, an I/O error, protected data before the first unlock, and a migration that throws all looked like corruption, so the OS could cause the loss of the factory list.
+**Decision.** Wipe only when the failure message in the cause chain says the file is not a database, is malformed or corrupt, is a downgrade or "newer than" the code, or the probe finds a newer `user_version` or a missing table. Every other failure closes the driver, deletes nothing and throws `StorageUnavailableException` (public in the persistence module). The second open after a wipe also throws it. Message matching is used because the three drivers (sqlite-jdbc, Android, sqliter) raise untyped exceptions; each pattern is covered by a test, and the real garbage file and newer-schema file tests run on JVM and iOS.
+**Consequences.** The Swift launch path must handle the exception (review1b F-B-5, deferred to the iOS stream). A driver message that changes wording would turn a corrupt file into a persistent "storage unavailable" instead of a wipe; that fails safe.
+
+## ADR-078: A recreated database is announced and its orphaned secrets are swept
+
+**Status:** Accepted (2026-11-02, review1b F-B-2)
+
+**Context.** `PaperclipPersistence.recreated` was never read, so a recreated database looked like a first launch. ADR-042 claimed orphaned Keychain items last until reinstall; on iOS they survive reinstall, so the board tokens of lost factories stayed on the phone forever.
+**Decision.** `SecretStore.namespaces()` lists the instance ids that hold secrets (names only, no prompt). `SweepOrphanSecrets` deletes every namespace that has no factory row, continuing past one that cannot be deleted. `createLiveGraph` runs it once when `persistence.recreated` is true and exposes `PaperclipGraph.startupNotice` (`databaseRecreated`, `orphanSecretsRemoved`) for the app to show once; the SwiftUI banner is the iOS stream's job. The notice is per launch and is not stored.
+**Consequences.** A person who never opens the app after the recreation does not see the notice; they see an empty factory list. The port gained one method, implemented by the fake, the Keychain store, the unavailable store and the contract suite.
+
+## ADR-079: A declined or invalidated key read is not a 401
+
+**Status:** Accepted (2026-11-02, review1b F-A-2)
+
+**Context.** `StoredCredentials` turned `Denied` and `Invalidated` into `Unauthorized`. `SignedOutMarker` then marked the factory Signed out after a cancelled Face ID prompt, and `KeyRevoker` reported `AlreadyInvalid` and the sign-out deleted the local key while the server key was still live.
+**Decision.** Two domain errors: `DeviceAuthDeclined` (nothing changes, try again) and `KeyInvalidated` (re-pair; the server key may be live). `Missing` stays `Unauthorized`. `SignedOutMarker` marks `NeedsRePairing` for `KeyInvalidated` and ignores `DeviceAuthDeclined`. `KeyRevoker` returns `RevokeOutcome.Declined` for a declined read and `Unconfirmed` for an invalidated key. Sign out and remove stop on `Declined` without deleting anything (`SignOutResult.Declined`, `RemoveInstanceResult.NotAuthorized(Cancelled)`); sign out everywhere counts it as failed. Presentation adds `ErrorKey.AuthDeclined`, `ErrorKey.KeyInvalidated` and `ServerKeyOutcome.Declined`.
+**Consequences.** Swift code that switches over `ErrorKey` or `ServerKeyOutcome` exhaustively gains cases. A key read can still prompt once per HTTP call (not changed here).
+
+**Addendum, same review (decisions that did not need their own number).**
+- *F-C-1.* A protected Keychain write whose access control cannot be created is refused by the backend (`errSecParam`) before `SecItemAdd`; it used to be added with the default, backup-eligible accessibility and reported Stored. Accessibility cannot also be set on a protected item, so refusing is the fail-closed choice. The access-control factory is injectable so a bare Kotlin/Native test can force the failure.
+- *F-B-3.* A Keychain replacement adds the new value under a spare account (`...#new`) first, deletes the old item only when that worked, then adds under the real name (two attempts) and always removes the spare. A failed or refused new item leaves the old secret readable. The short step between the delete and the final add can still lose the old secret; it cannot be closed because an update in place keeps the old access control.
+- *F-B-4.* The graph closes the dependency container first, then the HTTP client, the database and the platform. A graph that cannot be built releases the platform and database. `IosLivePlatform` opens the database before it starts the network monitor.
+- *F-A-4.* `ack()` accepts a 204, a 205 or a JSON body; an HTML or empty 200 is Malformed.
+- *F-A-5.* `DomainError.ConnectionLost` (reset, broken pipe, early end of stream, NSURLError -1005, 502 and 504) says the request may have reached the server. Mutations that end in it, in Timeout, Conflict or an unreadable 2xx (Malformed) are read back once and never sent again; reads retry it like Unreachable. A plain 500 or 503 stays a definite ServerError because the server answered itself and the decision use case pins that; a 5xx the server's own proxy produced is therefore only covered for 502 and 504.
+- *F-A-6.* `Agent.isResuming` and `Agent.isPausing` live in the domain; `canResume` and `canPause` are false while they hold, so a failed or stale follow-up read can no longer leave a live Resume button.
+
+## ADR-081: The contract test refuses to run against anything but the throwaway test server
+
+**Status:** Accepted (2026-11-02, review1b F-C-8)
+
+**Context.** `PAPERCLIP_CONTRACT_BASE_URL` accepted any url. The run signs up a fixed account, accepts an invite, pairs devices, creates companies and agents, posts cost events and cancels runs: against an operator's own Paperclip (one runs on port 3100 on the developer machine) a mistyped variable would have created admin-capable state there.
+**Decision.** Before the first request the run requires all of: `PAPERCLIP_CONTRACT_I_KNOW_THIS_MUTATES=true` (contract.yml sets it, the documented run line shows it); plain `http` on `localhost` or `127.0.0.1` (never a remote host, a lookalike host or userinfo); the port of the test compose (3199, or `PAPERCLIP_TEST_PORT`); and, after the first read-only probe, a `/api/health` that reports authenticated and private. Every refusal names the missing condition and echoes no part of the url's credentials. The pure checks are unit tested in `ContractHelpersTest` (which runs without a server); the opt-in variable is forwarded by the `contractTest` task like the other variables.
+**Consequences.** The throwaway compose has no health field that identifies it, so the "marker" is the combination above, not a server-side flag; a developer who maps a real server to port 3199 and sets the opt-in defeats it. An HTTPS test server is not supported by the guard.
+
+## ADR-082: A live run verifies an operation only with data, and fails on anything else
+
+**Status:** Accepted (2026-11-02, review1b F-C-2, F-C-3, F-C-9)
+
+**Context.** The report counted an operation as verified live when the adapter returned `Success`, even for an empty list or empty log (about a fifth of the 46); seed refusals, `observe` mismatches and early `return@live` all ended green, so the nightly "API drift turns red" promise was partly false; ownership was proven live only on the success path.
+**Decision.** `LiveLedger` records per operation: data (a non-empty decoded reply; sticky over empty whatever the test order), empty (reachable, not verification), error path, failed (sticky), skipped (with reason), and MISMATCH (counted, printed as `MISMATCH n` even at 0). The verdict fails the run for every failed call, mismatch, skip not on the skip allow list, operation never run, operation that only ever decoded an empty reply (unless on the empty allow list) and error path alone. The two allow lists live in `LiveOperations.kt`, each entry with its reason; today only the three `DecisionGateway` operations are listed (decisions need an agent run context, pinned dist `routes/decisions.js`). The report ends with `VERDICT: PASS|FAIL`; a `doLast` on `contractTest` turns FAIL (or no verdict against a required server) into a failed build, so the `pinned` and the nightly `latest` job both go red. Seeds are required, not optional. Seeded for data: window spend (a cost event), run events and log (an `echo` process agent whose issue is assigned to it), `forIssue` and `forAgent`, `live` (a `sleep` agent), attachments (multipart upload), a pending question (and its answer), linked issues and approval comments, a budget incident (an agent over a 100 cent limit; resolved with keep-paused, which the server records as `dismissed`). A second company proves the ownership checks live on failure paths: reads and writes of its issue, approval, agent, run and question through the first company's scope are `NotFound`, and a raw read afterwards shows nothing changed; the company-scoped run list answers an empty list for a foreign agent (the server filters by the company in the path).
+**Consequences.** A server change that makes a seed fail or a field disappear fails the run instead of shrinking the count quietly. The run is longer (polling for runs, up to 90 s per wait) and depends on the process adapter running `echo` and `sleep` in the container image.
+
+## ADR-083: Key invalidation is `item not found` plus a marker; everything else is Denied
+
+**Status:** Accepted (2026-11-02, review1b F-B-7, F-B-10)
+
+**Context.** The re-pair path (PRD FR-015) assumes iOS answers a read after a biometric-set change with `errSecItemNotFound` while the `#protected` marker survives. Nobody has seen that on a device (the simulator has no Face ID); the review feared that `errSecAuthFailed` could be what a device returns, which would loop on Denied.
+**Decision.** Keep the mapping: only `errSecItemNotFound` plus the marker is `Invalidated`; `errSecAuthFailed`, `errSecInteractionNotAllowed`, `errSecUserCanceled` and `errSecNotAvailable` are `Denied`, which deletes nothing and offers a retry. This is pinned by tests (`F-B-7`) and a device check list in `docs/technical-details.md` says what to verify by hand; if step 4 of the list loops on Denied, the mapping changes in its own commit. A delete removes the marker first and the item second, so a failure between them leaves a readable secret, never a marker without an item (which would read as `Invalidated`).
+**Consequences.** The invalidation path stays unverified on hardware until the check list is run and recorded.
+
+## ADR-084: New throwing launch entry points instead of changing the existing signatures
+
+**Status:** Accepted (2026-11-02, review1b F-B-5, F-B-8, F-B-9)
+
+**Context.** `createLiveGraph` throws `StorageUnavailableException` or `IllegalStateException` on a bad data folder; thrown into Swift without `@Throws` that aborts the app on every launch. Adding `@Throws` to the existing functions would make every Swift caller (the stream building the iPhone UI, and `LiveGraphInteropTests`) fail to compile at once; default arguments and `Result` are not allowed on the Swift surface. The pairing browser also showed the approval page on a background thread and kept it up after a cancelled pairing.
+**Decision.** Add, do not change: `PaperclipCore.openLiveGraph(allowInsecureLocal, pairingBrowser)` and `LiveIosGraph.openLiveGraph(allowInsecureLocal, pairingBrowser, settings)` with `@Throws(Exception::class)` (Swift `throws`); `PairingBrowsers.onMainThread(show:dismiss:)` which shows and dismisses on the main dispatcher and dismisses when the pairing is cancelled; `CallbackPairingBrowser` takes an optional dismiss and dispatcher (its one-argument form is unchanged). The existing `createLiveGraph` and `fromCallback` keep working and are documented as the non-throwing, background forms. `openIosPersistence` ignores a sidecar file that vanishes between the check and the call and closes the database when protecting a file fails. The app target declares `NSFaceIDUsageDescription` (English text; no localized InfoPlist exists yet), tested through the generated plist.
+**Consequences.** The iPhone UI stream should call `openLiveGraph` and `onMainThread`, show a retry screen on the error and may then delete the old forms. ADR-070 and the other stream's `ApprovalPageOpener` (ADR-045) describe two callback mechanisms for the same Swift limitation: one will be dropped at merge. No exhaustive Swift `switch` over a shared type changed in this group.
+
+
+## ADR-085: A pending-sweep marker, written before the wipe, outlives the launch until the orphan sweep completed
+
+**Status:** Accepted (2026-11-02, rereview1b F-R-1)
+
+**Context.** `PaperclipPersistence.recreated` existed only in memory of the process that wiped the file. If the reopen after the wipe failed, or the process died before `SweepOrphanSecrets` ran, the next launch found an empty valid file, `recreated = false`, no startup notice and no sweep: the lost factories' board keys stayed in the Keychain for good.
+
+**Decision.** `openRecovering` takes a `SweepMarker` (a file `paperclip.db.sweep-pending` next to the database on JVM, Android `noBackupFilesDir` and iOS `PaperclipData`; in memory for in-memory databases). The marker is set BEFORE the wipe (a marker that cannot be written stops the wipe with `StorageUnavailableException`), and a healthy open reports `recreated = marker.isSet()`. `LiveGraph` clears it (`PaperclipPersistence.sweepCompleted()`) only after `SweepOrphanSecrets` returned a `SweepResult` with `failed == 0`; a sweep that threw or left a namespace behind keeps the marker and the next launch tries again (the notice is then shown again, which is the honest outcome). `SweepOrphanSecrets` now returns `SweepResult(removed, failed)` instead of an `Int`.
+
+**Consequences.** One tiny file with no data. A normal launch with factories never has a marker and sweeps nothing. The notice can repeat until a sweep completes.
+
+## ADR-086: A key read that stays denied has an explicit "here only" way out; declined and locked are not told apart
+
+**Status:** Accepted (2026-11-02, rereview1b F-R-2)
+
+**Context.** After F-A-2 a `Denied` key read (cancelled prompt, locked device, `errSecAuthFailed`, lockout) no longer counted as a 401, so sign out and remove did nothing while it lasted. If a device reports an invalidated biometric-set key as `errSecAuthFailed` (unverified, ADR-083) the person could neither use, sign out nor remove the factory.
+
+**Decision.** Two new use cases, both behind `DeviceAuthGuard(Action.RemoveFactory)` and never calling the server: `RemoveInstanceHereOnly` (every secret, configuration and cache of the factory) and `SignOutInstanceHereOnly` (local key dropped, factory marked signed out). A factory that was signed in reports `RevokeOutcome.Unconfirmed` (the key stays live on the server; the screen shows the paired-devices hint). `RemoveInstance` now answers a denied read with the typed `RemoveInstanceResult.KeyReadDenied` (was `NotAuthorized(Cancelled)`); `SignOutResult.Declined` is unchanged. Presentation turns the denial into the offer: Manage factories sets `RemovalConfirmationUi.hereOnly` and `ErrorKey.AuthDeclined`, Settings sets `SettingsConfirmation.SignOutHereOnly`, the Edit screen sets `EditConfirmation.SignOutHereOnly` or `RemoveHereOnly`; confirming runs the here-only use case, dismissing deletes nothing. `SettingsState` and `ManageFactoriesState` gained `deviceAuthIssue`/`error` for a refused second authentication. The Keychain read keeps one `Denied` result: `mapReadFailure` collapses every status except item-not-found, so "declined" and "device locked" are not distinguishable to the app (`errSecInteractionNotAllowed` and `errSecUserCanceled` would be, but `SecretReadResult.Denied` carries no reason). `ErrorKey.AuthDeclined` is documented as "declined or device locked".
+
+**Consequences.** The person is never trapped. A second device authentication is asked (the first one guarded the attempt that failed). Splitting locked from declined would add a case to `SecretReadResult` and every `when`; deferred until a device check shows it matters.
+
+## ADR-087: Canonical forms and a positive identity for the live run
+
+**Status:** Accepted (2026-11-02, rereview1b F-R-3, F-R-4, F-R-5, F-R-6)
+
+**Context.** (3) `https://h` and `https://h:443` were two `BaseUri`s, so a pinned factory probed as `:443` was sent unpinned. (4) The live guard of ADR-081 had no positive identity: with `PAPERCLIP_TEST_PORT=3100` plus the opt-in, or an ssh tunnel to local 3199, any authenticated private server passed. (5) The last redaction regex removed lower case snake and hyphen words of 24 or more characters from server reasons. (6) An `InstanceId` such as `a/b` would be listed by the secret store as the namespace `a`.
+
+**Decision.** (3) `BaseUri.parse` drops the default port of the scheme (443 for https, 80 for http) and leading zeros of any port; every stored row is parsed again on read, so older rows need no migration. (4) The compose file cannot echo a marker (anonymous `/api/health` exposes no environment value), so identity is proved by what only the test container holds: a server that is `bootstrap_pending` must accept the invite minted inside the container by `scripts/paperclip-test-server.sh invite` (without it the run refuses before any call that creates something); a server already in use must accept sign-in with the fixed `TESTONLY` account, and the run never signs up on it. Port 3100 is refused even when `PAPERCLIP_TEST_PORT` names it. (5) The 24+ run is removed only when it holds a digit, a capital letter or `+/=`. (6) `InstanceId` rejects `/`, `\` and control characters.
+
+**Consequences.** A server that already holds the fixed TESTONLY account could still be mutated; that account exists only where an earlier run of this test created it. Hex or base64 runs without any digit, capital or `+/=` (24 or more lower case letters only) are no longer redacted; real tokens carry digits.
+## ADR-088: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-001/UI-002)
 
@@ -271,7 +613,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** A screen model is `HolderModel<XStateHolder>` plus an extension of typed intent helpers. Tests cover mirroring, no stale read, cancel and restart, and exactly-once close.
 
-## ADR-043: A launch without `-demo` starts at first run on the live seam; the demo graph is opt-in, with scripted Face ID through `DemoControls`
+## ADR-089: A launch without `-demo` starts at first run on the live seam; the demo graph is opt-in, with scripted Face ID through `DemoControls`
 
 **Status:** Accepted (2026-11-02, UI-001/UI-004)
 
@@ -281,7 +623,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Real Face ID (LocalAuthentication) arrives with Phase 1b's adapter; until then the graph's `Biometrics` is the fake.
 
-## ADR-044: Destructive Face ID gating stays inside the shared use case; the Swift sheet only forwards and reports
+## ADR-090: Destructive Face ID gating stays inside the shared use case; the Swift sheet only forwards and reports
 
 **Status:** Accepted (2026-11-02, UI-004)
 
@@ -291,7 +633,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** One gate for every platform. Catalog keys are `<namespace>.<caseName>` for each exported key enum, verified by a completeness test (ADR for localisation scheme: this one).
 
-## ADR-045: A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
+## ADR-091: A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-010)
 
@@ -301,7 +643,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Phase 1b passes `OpenerPairingBrowser(opener)` to `createLiveGraph`; only the factory call changes. A sheet that could not be shown cancels the pairing on screen. Real `ASWebAuthenticationSession` behaviour is not exercised on CI.
 
-## ADR-046: Pairing completes on fakes through `approvePairings`, a first-run demo graph, and the graph clock
+## ADR-092: Pairing completes on fakes through `approvePairings`, a first-run demo graph, and the graph clock
 
 **Status:** Accepted (2026-11-02, UI-010)
 
@@ -311,7 +653,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** First-run, pairing and re-pair flows run in demo mode and UI tests with no server. The live graph uses the wall clock.
 
-## ADR-047: Sign out, revoke and sign out everywhere ask for confirmation but not Face ID
+## ADR-093: Sign out, revoke and sign out everywhere ask for confirmation but not Face ID
 
 **Status:** Accepted (2026-11-02, UI-010)
 
@@ -322,7 +664,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Consequences.** Nothing claims a prompt that does not happen. If the owner wants these gated, that is a shared change (use case plus tests) first; the sheets then switch.
 
 
-## ADR-080: The system accessibility audits must pass locally and report, without blocking, in CI
+## ADR-094: The system accessibility audits must pass locally and report, without blocking, in CI
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
 
@@ -332,7 +674,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** A real accessibility regression shows in the audit step's summary and locally, not as a red check, until the runner has an Xcode whose audit agrees with local development. Revisit when the runner image gains Xcode 27.
 
-## ADR-090: The Inbox screen shows the one app-wide Inbox holder; the refresh session stays with the environment
+## ADR-095: The Inbox screen shows the one app-wide Inbox holder; the refresh session stays with the environment
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
 
@@ -342,7 +684,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** The refresh timer runs while the app is in the foreground on any tab, which keeps the badge current (ADR-010). Pull to refresh sends `Refresh` and waits for `isRefreshing` to end.
 
-## ADR-091: The demo Inbox behaves like a server: resolving removes the card, the first read is 12 s old, Side Project is empty, and the phone can go offline
+## ADR-096: The demo Inbox behaves like a server: resolving removes the card, the first read is 12 s old, Side Project is empty, and the phone can go offline
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
 
@@ -352,7 +694,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Decisions are not wired the same way (the Decision screen arrives in 2i-3). All of it is in shared fakes and covered by `DemoInboxFlowTest`.
 
-## ADR-092: The Inbox renders the state's order and kinds; cards are a List with swipe actions and a combined text block
+## ADR-097: The Inbox renders the state's order and kinds; cards are a List with swipe actions and a combined text block
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
 
@@ -360,7 +702,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Mock-fidelity gaps (order, sub-kind) are shared-state decisions; changing them is a shared change.
 
-## ADR-095: Detail screens own their model by route, refresh while visible, and take their hints from the card that opened them
+## ADR-098: Detail screens own their model by route, refresh while visible, and take their hints from the card that opened them
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
 
@@ -370,7 +712,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** No Swift timers, no leaked holders (tested in `DetailScreenRoutingTests`). A screen opened without a card (a launch option) has no Snooze, as the shared rule says.
 
-## ADR-096: The demo can show a server that moved on: resolved elsewhere, offline after the detail loaded, the server's own spend
+## ADR-099: The demo can show a server that moved on: resolved elsewhere, offline after the detail loaded, the server's own spend
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
 
@@ -378,7 +720,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** All behaviour is in shared fakes with tests (`DemoDecisionFlowTest`); no UI-only fake state.
 
-## ADR-097: A hire approval's manager is named by the shared load, not by the view
+## ADR-100: A hire approval's manager is named by the shared load, not by the view
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
 
@@ -388,7 +730,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Android will need the same two lookups; if they should be shared they move to presentation with the existing tests.
 
-## ADR-098: Face ID is the use case's; destructive controls show the lock, a plain Confirm does not; disabled cards are muted, not dimmed
+## ADR-101: Face ID is the use case's; destructive controls show the lock, a plain Confirm does not; disabled cards are muted, not dimmed
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
 
@@ -396,7 +738,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** One gate for every platform. A reader of the state can tell why nothing happened.
 
-## ADR-100: Runs and agent rows name their issue through a best-effort shared read, not a Swift guess
+## ADR-102: Runs and agent rows name their issue through a best-effort shared read, not a Swift guess
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
 
@@ -406,35 +748,35 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** One extra read per distinct live issue (N+1, small N). A cheaper batch read would need an upstream change. Android gets the same fields.
 
-## ADR-101: Agent rows follow the shared rules, not the mock: a budget pause offers Budget, View run replaces Run now, Budget is the owner's
+## ADR-103: Agent rows follow the shared rules, not the mock: a budget pause offers Budget, View run replaces Run now, Budget is the owner's
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** The Agents row offers exactly the state's actions plus two navigation buttons: View run (when the agent has a run in progress; it replaces Run now, as the mock's CTO row) and Budget (only when `canSetBudget`; it opens Agent detail, where "Set monthly budget" lives). A budget-paused agent (Engineer 2) has no Resume because the shared rule says a budget pause is lifted by the budget incident (research A1); the mock's Resume is a deviation. Pause is the only row action with the lock glyph (it is the one that asks Face ID; Resume and Run now do not). The mock's "Next heartbeat in 8m" and "last run timed out" are not in the state; rows show "last heartbeat 2m ago".
 
-## ADR-102: Factory home and Agents models belong to a company; Run viewer and Agent detail to their route
+## ADR-104: Factory home and Agents models belong to a company; Run viewer and Agent detail to their route
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** `ScreenKey` gains `factoryHome` and `agents` (keyed by factory and company, kept while selected, closed when the company changes) and `agent(id)`, `run(id)` (closed when the route leaves the stack). Views start the shared refresh policy while visible (`refreshWhileVisible`); the Run viewer's 5 s interval while a run is live is the state's. Auto-scroll is the state's: the log toggle and a drag that leaves the bottom send `UserScrolled`/`JumpToLatest`. The cancelled Face ID result is shown as feedback on the screen (the confirm sheet closes when the intent is sent).
 
-## ADR-103: The demo is honest about runs: Run now starts one, and a launch option breaks the reads
+## ADR-105: The demo is honest about runs: Run now starts one, and a launch option breaks the reads
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** `FakeAgentGateway.invokeHeartbeat` puts the agent to work and reports the run (`onRunStarted`); the demo wiring adds it to the run store. `DemoControls.failReads` makes the Factory, Agents and Run reads fail with a server error; launch options `-demo-server-error` and `-demo-open run:<id>|agent:<id>` expose them. The demo's Running-now data, events and log are the mock's.
 
-## ADR-104: The functional iOS tests run as three parallel CI jobs by test class
+## ADR-106: The functional iOS tests run as three parallel CI jobs by test class
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
 
 **Context.** The functional step took 40.5 minutes on the runner for the 2i-3 head (run 41542545380, 52 minutes in all, 60 minute timeout) and 2i-4 adds about 13 UI tests plus Swift Testing cases.
 
-**Decision.** `scripts/ios-test.sh` takes `SHARD=1|2|3` with `TEST_SET=functional` (a fixed list of test classes per shard, and a check that fails the script if a UI test class is in no shard). `ios.yml` runs a matrix `ios (1)`, `ios (2)`, `ios (3)` and `ios (audits)`; lint and the Kotlin/Native tests run in shard 1 only; the audits job is `continue-on-error` (ADR-080). Every `uses:` stays SHA-pinned. Required status checks named `ios` must be renamed to the four matrix names (audits not required).
+**Decision.** `scripts/ios-test.sh` takes `SHARD=1|2|3` with `TEST_SET=functional` (a fixed list of test classes per shard, and a check that fails the script if a UI test class is in no shard). `ios.yml` runs a matrix `ios (1)`, `ios (2)`, `ios (3)` and `ios (audits)`; lint and the Kotlin/Native tests run in shard 1 only; the audits job is `continue-on-error` (ADR-094). Every `uses:` stays SHA-pinned. Required status checks named `ios` must be renamed to the four matrix names (audits not required).
 
 **Consequences.** Each shard repeats the setup and the XCFramework build (about 5 minutes) but the longest shard is about a third of the tests.
 
-## ADR-105: The Inbox tab exposes its badge as its accessibility value; the demo refresh timer can be paused for tests
+## ADR-107: The Inbox tab exposes its badge as its accessibility value; the demo refresh timer can be paused for tests
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
 
@@ -444,7 +786,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** The Shell test now requires the tab to expose the count instead of accepting its absence. The timer is still covered by the shared RefreshVisibleScreen tests.
 
-## ADR-106: Work list and Issue are built on the existing holders; text input stays in the view
+## ADR-108: Work list and Issue are built on the existing holders; text input stays in the view
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
 
@@ -454,50 +796,50 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Tab counts ("Runs 3") appear once a tab has been read, because the holder reads those tabs lazily; the mock shows them at once.
 
-## ADR-107: The new Work and Issue audits are blocking-free but honest
+## ADR-109: The new Work and Issue audits are blocking-free but honest
 
 **Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
 
-**Decision.** `WorkAuditUITests` asserts the audit returns no findings with plain assertions (no expected failure, no allow-list) and is listed in the audit set of `scripts/ios-test.sh` (non-blocking in CI, ADR-080). The new functional classes `WorkUITests` and `IssueUITests` join shard 3.
+**Decision.** `WorkAuditUITests` asserts the audit returns no findings with plain assertions (no expected failure, no allow-list) and is listed in the audit set of `scripts/ios-test.sh` (non-blocking in CI, ADR-094). The new functional classes `WorkUITests` and `IssueUITests` join shard 3.
 
 
-## ADR-108: The tab bar's accessibility values follow key-value observation, not a timer
+## ADR-110: The tab bar's accessibility values follow key-value observation, not a timer
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
 
-**Context.** ADR-105 set the Inbox badge's accessibility value on the `UITabBarItem`s. UIKit rebuilds those items at moments SwiftUI gives no signal for (a sheet closing, a detail screen's bar returning), so the first version re-checked twice a second with a `Timer`. AGENTS.md and the brief forbid polling timers in views.
+**Context.** ADR-107 set the Inbox badge's accessibility value on the `UITabBarItem`s. UIKit rebuilds those items at moments SwiftUI gives no signal for (a sheet closing, a detail screen's bar returning), so the first version re-checked twice a second with a `Timer`. AGENTS.md and the brief forbid polling timers in views.
 
 **Decision.** The invisible `Applier` controller observes with KVO the bar's `items` and `isHidden`, the bar layer's `position` and the tab controller's `viewControllers`, and re-applies the values (idempotent) on each change, in addition to layout and appearance callbacks. The timer and the 0.6 s one-shot are gone.
 
 **Consequences.** All 50 UI tests of the Inbox, Decision, Approval, Budget and Shell classes that read the badge pass locally on iOS 27.2. Whether UIKit posts these KVO changes on every rebuild of the iOS 26.5 runtime used by CI was verified only by the CI run (see implementation-notes.md); if a rebuild bypasses KVO the badge test is the detector.
 
-## ADR-109: Factory home and Agents audit findings are reported honestly, not expected
+## ADR-111: Factory home and Agents audit findings are reported honestly, not expected
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
 
 **Context.** Three audits (Factory home, offline Factory home, Agents) used a non-strict `XCTExpectFailure` for "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text in the lower part of the screen (y about 575 to 775 of 874 pt).
 
-**Decision.** No `XCTExpectFailure` remains anywhere (the last dead helper that called it was deleted in the review-fix round, C4). The audits assert an empty finding list like the others and stay in the non-blocking audit set (ADR-080), so CI reports their findings instead of hiding them. Investigated without effect: making the tile and row buttons single elements (`accessibilityElement(.ignore)` on the button, the pattern the Work rows use and which pass), and `contentMargins(.bottom)` for the floating tab bar. The findings track screen position (a tile row is clean at y 540 and flagged at y 620), not a font: the Work list, built the same way, passes. Cause not found.
+**Decision.** No `XCTExpectFailure` remains anywhere (the last dead helper that called it was deleted in the review-fix round, C4). The audits assert an empty finding list like the others and stay in the non-blocking audit set (ADR-094), so CI reports their findings instead of hiding them. Investigated without effect: making the tile and row buttons single elements (`accessibilityElement(.ignore)` on the button, the pattern the Work rows use and which pass), and `contentMargins(.bottom)` for the floating tab bar. The findings track screen position (a tile row is clean at y 540 and flagged at y 620), not a font: the Work list, built the same way, passes. Cause not found.
 
 **Consequences.** The three tests fail locally and in the audit job until the cause is found; they do not block the merge. Findings: Factory home (2 to 4 texts of the Approvals and Budget incidents tiles), offline Factory home (all tiles), Agents (the CTO row, Pause, section header).
 
-## ADR-110: The live seam stays a provider; the real graph is plugged in when Phase 1b merges
+## ADR-112: The live seam stays a provider; the real graph is plugged in when Phase 1b merges
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, G5)
 
 **Decision.** `createLiveGraph`, `openLiveGraph` and `LivePlatform` exist only on `feat/phase-1b-adapters` (PR #7), so this branch does not call them (the Kotlin would not compile into the framework). `LiveGraphProvider` already has the Swift half (pairing browser, debug-only insecure local) and its `makeGraph()` is the single line to change. The exact steps are the "Merge checklist" in implementation-notes.md.
 
-**Consequences.** A launch without `-demo` used to show the first-run flow on empty fakes with Face ID that always approved; ADR-112 replaced that with a "not available in this build" screen.
+**Consequences.** A launch without `-demo` used to show the first-run flow on empty fakes with Face ID that always approved; ADR-114 replaced that with a "not available in this build" screen.
 
-## ADR-111: Hit targets and reduce motion are checked by UI test and environment, not by a shared rule
+## ADR-113: Hit targets and reduce motion are checked by UI test and environment, not by a shared rule
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
 
 **Decision.** `HitTargetUITests` reads every button, switch and text field on each tab root and asserts at least 43.9 x 43.9 pt (rounding tolerance). Explicit animations read `accessibilityReduceMotion`. These are presentation rules with no shared state, so no Kotlin changed.
 
-**Consequences.** The tests were characterisation tests: they passed on first run, no red step. The review-fix round (ADR-116) made the test fail when it measures nothing, and say which controls it cannot see.
+**Consequences.** The tests were characterisation tests: they passed on first run, no red step. The review-fix round (ADR-118) made the test fail when it measures nothing, and say which controls it cannot see.
 
-## ADR-112: A build without live adapters says so and runs nothing; demo flags exist in Debug builds only
+## ADR-114: A build without live adapters says so and runs nothing; demo flags exist in Debug builds only
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A3, A7)
 
@@ -507,7 +849,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Until Phase 1b is merged and `isAvailable` flips, a Release build can only show the notice. The fake graph is still constructed by the provider, then closed before any state holder runs; no UI path reaches it. A Debug build without `-demo` also shows the notice (the first-run flow is reached with `-demo-first-run`).
 
-## ADR-113: Typed money is read by one strict shared parser; the app passes only the decimal separator and the currency's digits
+## ADR-115: Typed money is read by one strict shared parser; the app passes only the decimal separator and the currency's digits
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A4, A11, B-19, B-06)
 
@@ -517,7 +859,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** An ambiguous input ("250,50" in a point-decimal locale) is refused with a message instead of guessed. The Face ID reason string does not carry the amount: the `Biometrics` port takes a fixed reason; the amount is on the button the person taps.
 
-## ADR-114: Relative times are a function of a clock the view receives, not a value computed once
+## ADR-116: Relative times are a function of a clock the view receives, not a value computed once
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A1, B-01, B-09)
 
@@ -527,7 +869,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Offline and final screens keep ageing. Unit tests move the clock (`ClockDrivenLabelTests`); no UI test can, because the demo clock is pinned.
 
-## ADR-115: A screen left while its mutation is in flight is closed after the outcome is recorded
+## ADR-117: A screen left while its mutation is in flight is closed after the outcome is recorded
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A6)
 
@@ -537,7 +879,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** The back button is not blocked. A model can outlive its screen by one request; a Face ID prompt left unanswered keeps it until the prompt ends.
 
-## ADR-116: Audits set aside only the system tab bar's buttons, and say how many
+## ADR-118: Audits set aside only the system tab bar's buttons, and say how many
 
 **Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review C1 to C4)
 
@@ -547,11 +889,11 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Audit findings that were hidden are now reported in the non-blocking audit set; their counts are in implementation-notes.md. `ios.yml` lets only the audit step fail without failing its leg, and fails the leg if no audit test ran.
 
-## ADR-117: What the accessibility audit reports on scrolling screens, and what was changed because of it
+## ADR-119: What the accessibility audit reports on scrolling screens, and what was changed because of it
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, round 3). The audit job is still non-blocking (ADR-080).
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, round 3). The audit job is still non-blocking (ADR-094).
 
-**Context.** After ADR-116 made the audits honest, 16 of 24 audit tests failed. A bisect on the Agents screen found two causes.
+**Context.** After ADR-118 made the audits honest, 16 of 24 audit tests failed. A bisect on the Agents screen found two causes.
 
 **Evidence and decisions.**
 1. *Lazy containers.* "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text disappeared when `LazyVStack` and `LazyVGrid` were replaced by `VStack` and non-lazy rows (Agents 7 findings to 3, Factory home 10 to 5, offline 21 to 7). A lazy container realises and drops views as the audit changes the text size and the audit reads that as unsupported scaling. Agents, Work and the Factory home tiles are now eager (their lists are short or paged).

@@ -28,6 +28,17 @@ class RetryingReadTest {
         }
 
     @Test
+    fun `F-A-5 a read treats a lost connection like an unreachable server`() =
+        runTest {
+            var attempts = 0
+            retryingRead {
+                attempts += 1
+                DomainResult.Failure(DomainError.ConnectionLost)
+            }
+            attempts shouldBe 4
+        }
+
+    @Test
     fun `a read that recovers stops retrying and a permanent failure is not retried`() =
         runTest {
             var attempts = 0

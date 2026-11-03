@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Generates the Xcode project and runs the iOS unit and UI tests on an installed iPhone simulator.
+# Builds ad-hoc signed (not unsigned): an unsigned simulator app gets errSecMissingEntitlement from the Keychain.
 # Needs PaperclipKit.xcframework first: scripts/build-kit.sh
 #   IOS_SIMULATOR_ID=<udid>  pick a specific simulator (default: first available iPhone on the newest iOS runtime)
 #   TEST_SET=all|functional|audits  which tests run (default all). CI runs `functional` as the blocking step and
-#                            `audits` as a separate, non-blocking one (docs/architectural-decision-record.md, ADR-080).
+#                            `audits` as a separate, non-blocking one (docs/architectural-decision-record.md, ADR-094).
 #   SHARD=1|2|3             with TEST_SET=functional, run only that third of the functional tests (CI runs the three in
-#                            parallel jobs to stay well under the job timeout, ADR-104). Unset runs them all.
+#                            parallel jobs to stay well under the job timeout, ADR-106). Unset runs them all.
 #   RESULT_BUNDLE=<path>     also write the .xcresult (failure screenshots and element hierarchies) there
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -73,7 +74,9 @@ xcodebuild build-for-testing \
   -scheme iosApp \
   -destination "id=${device_id}" \
   -derivedDataPath "$derived" \
-  CODE_SIGNING_ALLOWED=NO
+  CODE_SIGN_IDENTITY=- \
+  CODE_SIGNING_REQUIRED=NO \
+  CODE_SIGNING_ALLOWED=YES
 
 # Warm-up: a freshly booted simulator makes the first launch of the app very slow (first-run caches, keychain, font and
 # accessibility services), which the first UI tests of a run used to absorb as 15 to 30 s waits. Install the app, launch
@@ -124,4 +127,6 @@ xcodebuild test-without-building \
   -derivedDataPath "$derived" \
   ${filter_args[@]+"${filter_args[@]}"} \
   ${result_bundle_args[@]+"${result_bundle_args[@]}"} \
-  CODE_SIGNING_ALLOWED=NO
+  CODE_SIGN_IDENTITY=- \
+  CODE_SIGNING_REQUIRED=NO \
+  CODE_SIGNING_ALLOWED=YES

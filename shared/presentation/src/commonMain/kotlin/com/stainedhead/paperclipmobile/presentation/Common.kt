@@ -61,6 +61,16 @@ enum class ErrorKey {
     /** The phone's secure store refused to keep the key. */
     StorageFailed,
 
+    /**
+     * The phone could not read the key: the person declined Face ID or the passcode, or the device is locked. The
+     * Keychain cannot tell these apart to the app (one "unreadable" status class, ADR-085). Nothing was sent or
+     * changed; try again, or sign out / remove "here only" (F-A-2, F-R-2).
+     */
+    AuthDeclined,
+
+    /** The phone's key was invalidated (for example a new fingerprint): the factory needs re-pairing (FR-015). */
+    KeyInvalidated,
+
     /** This phone does not know which server key is its own, so it will not revoke keys (PRD FR-025). */
     CurrentKeyUnknown,
 }
@@ -70,21 +80,6 @@ data class ErrorUi(
     val key: ErrorKey,
     val detail: String? = null,
 )
-
-internal fun DomainError.toErrorUi(): ErrorUi =
-    when (this) {
-        DomainError.Unreachable -> ErrorUi(ErrorKey.Unreachable)
-        DomainError.CertificateInvalid -> ErrorUi(ErrorKey.CertificateInvalid)
-        DomainError.Timeout -> ErrorUi(ErrorKey.Timeout)
-        DomainError.Unauthorized -> ErrorUi(ErrorKey.SignedOut)
-        DomainError.Forbidden -> ErrorUi(ErrorKey.NoPermission)
-        DomainError.NotFound -> ErrorUi(ErrorKey.NotFound)
-        DomainError.Conflict -> ErrorUi(ErrorKey.Conflict)
-        is DomainError.Rejected -> ErrorUi(ErrorKey.Rejected, reason)
-        DomainError.ServerError -> ErrorUi(ErrorKey.ServerError)
-        DomainError.RateLimited -> ErrorUi(ErrorKey.RateLimited)
-        DomainError.Malformed -> ErrorUi(ErrorKey.Malformed)
-    }
 
 /** Why device authentication did not go ahead. */
 enum class DeviceAuthIssue {
@@ -177,6 +172,9 @@ enum class ServerKeyOutcome {
     AlreadyInvalid,
     Unconfirmed,
     NotAttempted,
+
+    /** The person declined the key prompt: nothing was revoked or deleted (F-A-2). */
+    Declined,
 }
 
 internal fun RevokeOutcome.toUi() =
@@ -185,6 +183,7 @@ internal fun RevokeOutcome.toUi() =
         RevokeOutcome.AlreadyInvalid -> ServerKeyOutcome.AlreadyInvalid
         RevokeOutcome.Unconfirmed -> ServerKeyOutcome.Unconfirmed
         RevokeOutcome.NotAttempted -> ServerKeyOutcome.NotAttempted
+        RevokeOutcome.Declined -> ServerKeyOutcome.Declined
     }
 
 /** Which factory and company a screen is for. Strings, because Swift passes ids it got from the screen before. */

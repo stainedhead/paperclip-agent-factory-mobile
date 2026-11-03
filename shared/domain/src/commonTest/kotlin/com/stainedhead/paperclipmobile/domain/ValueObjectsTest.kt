@@ -15,6 +15,15 @@ class ValueObjectsTest {
     }
 
     @Test
+    fun `F-R-6 an instance id cannot hold a namespace separator or a control character`() {
+        listOf("a/b", "/a", "a/", "a\\b", "a\nb", "a\u0000b").forEach { bad ->
+            assertFailsWith<IllegalArgumentException> { InstanceId(bad) }
+        }
+        InstanceId("123e4567-e89b-12d3-a456-426614174000").value shouldBe "123e4567-e89b-12d3-a456-426614174000"
+        InstanceId("inst-1_a.b").value shouldBe "inst-1_a.b"
+    }
+
+    @Test
     fun `FR-016 a pin is a base64 SHA-256 digest`() {
         val valid = "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
 

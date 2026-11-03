@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.umbrella
 
 import com.stainedhead.paperclipmobile.domain.port.Clock
+import com.stainedhead.paperclipmobile.domain.port.PairingBrowser
 import com.stainedhead.paperclipmobile.presentation.AppStateHolder
 import com.stainedhead.paperclipmobile.presentation.ApprovalStateHolder
 import com.stainedhead.paperclipmobile.presentation.BudgetIncidentStateHolder
@@ -19,6 +20,8 @@ import kotlinx.coroutines.SupervisorJob
 import org.koin.core.Koin
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * The composition root. Platform apps create one graph and ask it for screen state holders.
@@ -27,9 +30,15 @@ import org.koin.dsl.koinApplication
  * without a server. Each `create...StateHolder` call returns a new holder that the screen owns; call `close()` on it
  * when the screen goes away.
  */
+@OptIn(ExperimentalAtomicApi::class)
 class PaperclipGraph internal constructor(
     private val koin: Koin,
+    private val resources: AutoCloseable? = null,
+    /** What the person must be told about this launch; the app shows it once (review1b F-B-2, ADR-078). */
+    val startupNotice: StartupNotice = StartupNotice(),
 ) {
+    private val closed = AtomicInt(0)
+
     /** The Inbox, Decision, Approval and Budget incident screens (slice 1a-2). */
     val attention: AttentionScreens = AttentionScreens(koin)
 
@@ -78,11 +87,51 @@ class PaperclipGraph internal constructor(
         koin.get { parametersOf(instanceId, newScope()) }
 
     private fun newScope() = newScreenScope()
+
+    /**
+     * Lets go of what the graph owns, the dependency container first and then, for a live graph, the HTTP client,
+     * the database and the network monitor, each once, however often this is called. Close the screens' state
+     * holders first. Nothing may be used afterwards.
+     */
+    fun close() {
+        if (!closed.compareAndSet(0, 1)) return
+        // Reverse of creation: the container that uses the adapters goes first, then what the adapters stand on.
+        try {
+            koin.close()
+        } finally {
+            resources?.close()
+        }
+    }
 }
 
 internal fun newScreenScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
 object PaperclipCore {
+    /**
+     * The graph on the real adapters: the platform's Keychain or Keystore, its biometrics, network monitor and
+     * database, and the Paperclip REST API (AD-040). [pairingBrowser] opens the approval page; the app supplies it
+     * because a system browser session needs a window. An empty database yields no factories and the first-run flow
+     * (AD-041). Close the graph with `close()` when the process is done with it.
+     *
+     * @param allowInsecureLocal true only in debug builds; lets `http://localhost` and `http://10.0.2.2` be used.
+     */
+    fun createLiveGraph(
+        allowInsecureLocal: Boolean,
+        pairingBrowser: PairingBrowser,
+    ): PaperclipGraph = createLiveGraph(allowInsecureLocal, pairingBrowser, defaultLivePlatform())
+
+    /**
+     * Like [createLiveGraph] but every failure to build the graph reaches Swift as an `Error` to catch, not as an abort
+     * of the app (review1b F-B-5): `StorageUnavailableException` when the factory database cannot be opened right now
+     * (retry later, nothing was deleted), and the other exceptions the platform raises. The launch path should use this
+     * entry point and show a retry screen. Nothing is left open when it throws.
+     */
+    @Throws(Exception::class)
+    fun openLiveGraph(
+        allowInsecureLocal: Boolean,
+        pairingBrowser: PairingBrowser,
+    ): PaperclipGraph = createLiveGraph(allowInsecureLocal, pairingBrowser)
+
     /** The graph on fakes seeded with the demo data set that matches the design mocks (demo mode, PRD FR-097). */
     fun createDemoGraph(): PaperclipGraph =
         PaperclipGraph(

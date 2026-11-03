@@ -11,11 +11,11 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 - Swift red evidence: all new test files failed to compile (`cannot find 'HolderModel'/'AppEnvironment'/'Palette' in scope`, 232 errors) before any production Swift; then green: 84 tests. One test bug found and fixed (a model must be observed before reading its mirrored state).
 - Design tokens come from the decoded mock pages (colors #F4F4F1, #FFFFFF, #15171C, #5B606B, #2649C9, #B3261E, #A84300, #1F7A4D; radii 14/10/16; spacing 14/20; type 32/16/14/13/12). Dark values are derived and contrast-tested (WCAG AA).
 - Container identifiers: `.accessibilityIdentifier` on a plain container overwrites its children's ids; containers use `.accessibilityElement(children: .contain)`.
-- Decisions: ADR-042, 039, 040 (renumber if stream 1b also added 038).
+- Decisions: ADR-088, 039, 040 (renumber if stream 1b also added 038).
 
 ## Edge cases and solutions
 
-- Default launch is first run, not demo (ADR-043), contrary to the brief wording; matches acceptance criterion 8 and the existing UI test.
+- Default launch is first run, not demo (ADR-089), contrary to the brief wording; matches acceptance criterion 8 and the existing UI test.
 - The Swift Biometrics adapter is not built: the graph has no injection point; real Face ID comes with Phase 1b's Kotlin adapter.
 
 ## Deviations from plan
@@ -28,7 +28,7 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 Commits: 013e2e9 (shared: scripted pairing approval, first-run demo graph, graph clock), 9423bfc and 9296a92 (platform
 `ApprovalPageOpener` bridge, then callback form), 7c4cc09 (Swift pairing browser, providers, screen model ownership),
 26a6968 (First run), b2de778 (Factories), e5afc7e (Manage), f071f31 (Edit/Add), 4cbaac7 (Settings), plus the Dynamic
-Type fix commit after it. Decisions: ADR-045, 046, 047 (and the 2i-0 ADRs renumbered to 042 to 044).
+Type fix commit after it. Decisions: ADR-091, 092, 093 (and the 2i-0 ADRs renumbered to 042 to 044).
 
 Red evidence: each Swift group's tests first failed to compile for the missing types (`useFirstRunDemo`,
 `ASWebAuthSessionPairingBrowser`, the new `CatalogKey` conformances, `FactoriesModel`, `ManageModel`, `EditModel`,
@@ -42,7 +42,7 @@ rows were squeezed (fixed with `AdaptiveStack`). A first-run flow bug: saving th
 swapped the flow for the tab shell half way; `firstRunInProgress` keeps the screen until Done.
 
 Deviations from the mocks and brief
-- Sign out, revoke and sign out everywhere ask a plain confirmation, not Face ID (FR-014 does not list them; ADR-047).
+- Sign out, revoke and sign out everywhere ask a plain confirmation, not Face ID (FR-014 does not list them; ADR-093).
   The mock's lock glyph on Sign out everywhere is not shown. Raise with the owner if they should be gated.
 - Manage rows carry no key expiry, so Cloud factory reads "Signed out", not "Key expired"; the status label from
   status plus expiry is a Swift lookup (`FactoryStatusPresentation`) and belongs in shared if Android needs it.
@@ -102,9 +102,9 @@ Commits: bf32a4e (demo behaviour), 95da624 (Inbox screen and unit tests), then t
 
 Red evidence: `InboxModelTests`/`InboxPresentationTests` first failed to compile (no `InboxModel`, `InboxDestination`, labels). The probe run of the model tests against the demo then showed the real gap: approving left the card (20 s timeout) because the approval and attention fakes were separate; `DemoInboxFlowTest` was red for approve, keep paused and the 12 s first read (timeouts and `expected 1793793588000 but was 1793793600000`) before `bf32a4e`. The empty Side Project test timed out before its fix.
 
-Decisions: ADR-090 to 092. Shared/demo edits (outside iosApp, test-first, own commits): `FakeAttentionGateway` (`resolveSubject`, `firstFeedAge`, `emptyCompanies`), `FakeApprovalGateway`/`FakeBudgetGateway` (`onResolved`), `DemoControls.setOnline`, `DemoModules` wiring.
+Decisions: ADR-095 to 097. Shared/demo edits (outside iosApp, test-first, own commits): `FakeAttentionGateway` (`resolveSubject`, `firstFeedAge`, `emptyCompanies`), `FakeApprovalGateway`/`FakeBudgetGateway` (`onResolved`), `DemoControls.setOnline`, `DemoModules` wiring.
 
-Deviations from the mock and brief: state order puts the budget alert before the HIGH approval; no sub-kind text; "Updated" label is measured against the frozen demo clock (12 s then 0 s); the whole screen has one holder (see ADR-090), so there is no visibility-driven session start/stop; factory switcher is a header row (a toolbar item failed the Dynamic Type and hit-area audits) and opens the Factories tab. Budget "Keep paused" runs without a confirm sheet (it keeps the agent paused; Face ID is the shared use case's decision). Decision, Approval and the Budget incident sheet are labelled placeholders (`route-placeholder-id` shows `decision:<id>`).
+Deviations from the mock and brief: state order puts the budget alert before the HIGH approval; no sub-kind text; "Updated" label is measured against the frozen demo clock (12 s then 0 s); the whole screen has one holder (see ADR-095), so there is no visibility-driven session start/stop; factory switcher is a header row (a toolbar item failed the Dynamic Type and hit-area audits) and opens the Factories tab. Budget "Keep paused" runs without a confirm sheet (it keeps the agent paused; Face ID is the shared use case's decision). Decision, Approval and the Budget incident sheet are labelled placeholders (`route-placeholder-id` shows `decision:<id>`).
 
 Accessibility audit exceptions (Inbox, normal, offline, empty): "Contrast failed" on an unlabelled element with a zero frame (1 normal, 5 offline) and "Text clipped" on the two offline lines whose frames fit their text. Not investigated further; the screenshots show correct contrast. Everything else must be empty.
 
@@ -124,7 +124,7 @@ Deviations from the mocks and brief
 - Comments show "Agent" or "You", not the author's name (the state has no name).
 - The Confirm button shows the lock only for a destructive option (state's `confirmNeedsDeviceAuth`), the mock shows it on every Confirm.
 - Budget has no mock in the HTML bundle; the sheet is designed from the state and the shared mock tokens.
-- Budget "Keep paused" from the sheet needs no confirm; Face ID is the shared use case's decision (ADR-047/098).
+- Budget "Keep paused" from the sheet needs no confirm; Face ID is the shared use case's decision (ADR-093/098).
 - The Decision and Approval screens hide the tab bar (like the Edit form) and keep a fixed action bar.
 - Not built: the unsupported approval type's web link, markdown block rendering beyond inline markdown, run/issue links from effects.
 
@@ -140,23 +140,23 @@ Not verified: real Face ID, live server data, VoiceOver by ear, an unsupported a
 
 ## Milestone 2i-4: Factory home, Agents, Agent detail, Run viewer (UI-040), 2026-11-02
 
-Commits: see `git log` (shared enrichment f7560e4, then the Swift group, the UI tests, polish). Decisions: ADR-100 to 103.
+Commits: see `git log` (shared enrichment f7560e4, then the Swift group, the UI tests, polish). Decisions: ADR-102 to 105.
 
 Shared edits (test first, own commit): `LoadIssueRefs`; `RunRowUi`/`AgentRowUi`/`AgentsState` fields; Agents re-read after Run now; demo data (Running now rows, events, `pnpm test webhooks` log, PAP-1199, 4m12s run); `FakeAgentGateway.onRunStarted`; `DemoControls.failReads`. Red evidence: application, presentation and umbrella tests failed to compile (unresolved `LoadIssueRefs`, `issueIdentifier`, `currentRun`, `canSetBudget`); `AgentsStateHolderTest` reload test and `DemoFactoryFlowTest` were red before their code. A later bug found by a screenshot: `failReads` used a `mapOf` keyed by two mutable maps (equal when empty, so one entry was lost); `DemoFactoryFlowTest` "failing reads break the Agents and Run viewer screens" timed out (red) before the fix. Swift: the test files were written before the production Swift but I did not capture a separate red run (they fail to compile by construction); one model-test lesson repeated: read state with `eventually` after an intent.
 
-Deviations: no Resume on Engineer 2 (shared rule, ADR-101); no "Next heartbeat in 8m" or "last run timed out" (not in state); Factory header is the shared factory switcher plus a navigation title, not a company title; Agent detail has no avatar (it failed the contrast audit); the Run viewer and Agent detail hide the tab bar like other detail screens; Factory tiles select the matching tab. The "Updated 0s ago" is the frozen demo clock. Issue taps from Run viewer and Agent detail open the 2i-5 placeholder route.
+Deviations: no Resume on Engineer 2 (shared rule, ADR-103); no "Next heartbeat in 8m" or "last run timed out" (not in state); Factory header is the shared factory switcher plus a navigation title, not a company title; Agent detail has no avatar (it failed the contrast audit); the Run viewer and Agent detail hide the tab bar like other detail screens; Factory tiles select the matching tab. The "Updated 0s ago" is the frozen demo clock. Issue taps from Run viewer and Agent detail open the 2i-5 placeholder route.
 
 Accessibility audits: Run viewer (normal, offline) and Agent detail: zero findings. Factory home (normal 5, offline 15) and Agents (5): the findings are "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text low on the screen (Factory: the Approvals and Budget incidents tiles, and Agents/Work tiles when the offline banner pushes them down; Agents: the CTO row). Fixed: caption2 text (the audit flags it), uppercase via `textCase`, avatar contrast. Remaining: scrolling the screen moves which tiles are flagged (a throwaway test scrolled Factory home and the tiles at y 441 to 620 were flagged instead), so it is the audit's larger-text comparison of content that moves below the fold, not a fixed font; Inbox lists and the detail screens with a fixed bar do not show it. Those three tests used `XCTExpectFailure` (non-strict) with this reason when this was written; the 2i-6 round removed it from them, and the review-fix round deleted the last dead helper that still called it (C4); they are in the audit set in `scripts/ios-test.sh` (non-blocking in CI).
 
 Screenshots read (iPhone 18 Pro simulator, demo graph): Factory normal, XXXL, error; Agents normal, dark; Run viewer normal; Run viewer dark offline and Agent detail were captured but not read. Defects found and fixed: failReads did not break Agents (above); the spend header stacked three lines at XXXL (now an adaptive stack). Not verified: real Face ID, live data, VoiceOver by ear, Agent detail and offline screenshots by eye.
 
-CI (run 41549393354 on 0b5e34c, three shards plus audits): shard 1 passed (20.5 min); the longest job was shard 3 at 30.9 min (the unsharded baseline 41542545380 spent 40.5 min in the functional step, 52 in all). All 10 new UI tests passed on the runner. The 8 failing tests were all from earlier milestones: the Inbox badge reads on iOS 26.5 (InboxUITests 2, DecisionUITests 1, ApprovalUITests 1, BudgetUITests 1: the badge never read the expected count) and the Approval audits (2); this was already failing in the baseline run. The Inbox/Decision/Approval/Budget audit tests moved to the non-blocking audit set (ADR-080). The badge failures are not investigated. Local, three shards in turn on iPhone 18 Pro: 26 + 25 + 28 = 79 functional UI tests passed, 281 Swift Testing cases passed.
+CI (run 41549393354 on 0b5e34c, three shards plus audits): shard 1 passed (20.5 min); the longest job was shard 3 at 30.9 min (the unsharded baseline 41542545380 spent 40.5 min in the functional step, 52 in all). All 10 new UI tests passed on the runner. The 8 failing tests were all from earlier milestones: the Inbox badge reads on iOS 26.5 (InboxUITests 2, DecisionUITests 1, ApprovalUITests 1, BudgetUITests 1: the badge never read the expected count) and the Approval audits (2); this was already failing in the baseline run. The Inbox/Decision/Approval/Budget audit tests moved to the non-blocking audit set (ADR-094). The badge failures are not investigated. Local, three shards in turn on iPhone 18 Pro: 26 + 25 + 28 = 79 functional UI tests passed, 281 Swift Testing cases passed.
 
-Badge and "Updated" CI failures (ADR-105): the tab bar painted the badge but its accessibility element had only the label "Inbox" (iOS 26.5), so the UI tests could not read it. The tab now exposes "N waiting" as its accessibility value. The pull-to-refresh test read "0s" because the 15 s refresh timer fired during a slow runner start; it launches with `-demo-no-auto-refresh`.
+Badge and "Updated" CI failures (ADR-107): the tab bar painted the badge but its accessibility element had only the label "Inbox" (iOS 26.5), so the UI tests could not read it. The tab now exposes "N waiting" as its accessibility value. The pull-to-refresh test read "0s" because the 15 s refresh timer fired during a slow runner start; it launches with `-demo-no-auto-refresh`.
 
 ## Milestone 2i-5: Work list and Issue (UI-050), 2026-11-02
 
-Commits: see `git log` (shared demo fixes 25a5b64 and the clock-property follow-up, the Swift screens, the UI tests, the audit fixes). Decisions: ADR-106, 107.
+Commits: see `git log` (shared demo fixes 25a5b64 and the clock-property follow-up, the Swift screens, the UI tests, the audit fixes). Decisions: ADR-108, 109.
 
 Shared edits (test first, own commits): a probe test (`DemoWorkFlowTest`) was written first and was red for the two gaps it found: a new demo comment sorted first (the fake stamped the epoch) and answering the questions left the Inbox card (`FakeInteractionGateway` had no hook). Fixed with `FakeIssueGateway.now` and `FakeInteractionGateway.onAnswered`, wired in `DemoModules`; both have fake behaviour tests. Two of my first demo-test versions were wrong, not the code (a second intent sent while the first was busy is dropped by design; the chip changes before the rows do) and were fixed in the test. Swift: unit tests (19 new) were written after the views, not before: that is a deviation from red-green for the Swift side of this milestone; the shared side was test first.
 
@@ -181,10 +181,10 @@ CI (run 41577997731 on 9a87a6c; runner Xcode 26.6, iOS 26.5, 402x874): shard 3 (
 
 ## Milestone 2i-6: Polish, accessibility, screenshots, live seam, docs (UI-060), 2026-11-03
 
-Decisions: ADR-108 to 111.
+Decisions: ADR-110 to 113.
 
 - **Audits.** `XCTExpectFailure` removed from `OperationsAuditUITests`; the Factory home (normal, offline) and Agents audits assert empty and fail honestly in the non-blocking audit job. Local findings on a 402x874 iPhone 18 Pro, iOS 27.2: Factory home 6 (Dynamic Type partially unsupported and Text clipped on "APPROVALS", "BUDGET INCIDENTS", "2 pending", "1 open"), offline Factory home 15 (all tiles), Agents 5 (CTO row: "CTO" avatar and name, "Running . PAP-1182 . 1m", "Pause", "RUNNING" header). Tried: single-element buttons and bottom content margins; neither changed the set. Note: a leftover accessibility-XXXL simulator text size made `launchAgents` fail ("agents never loaded"); reset with `xcrun simctl ui <id> content_size large` before runs.
-- **Tab bar.** Timer replaced with KVO (ADR-108). 50 UI tests passed locally (Inbox, Decision, Approval, Budget, Shell) plus Swift Testing.
+- **Tab bar.** Timer replaced with KVO (ADR-110). 50 UI tests passed locally (Inbox, Decision, Approval, Budget, Shell) plus Swift Testing.
 - **Polish.** Reduce Motion on the two explicit animations; `HitTargetUITests` (5 tests, in shard 2); characterisation tests, no red step (deviation from strict TDD, stated).
 - **Screenshots.** Captured with `simctl` from demo launches (status bar 9:41), into `docs/images/` and `user-docs/images/`; read: inbox, decision, approval, budget incident, issue, edit factory, settings, run viewer, first run, factory dark. Not read by eye: agent detail, agents, work, factories, manage, inbox offline, large-text shots.
 
@@ -207,17 +207,17 @@ No P0. Every finding was verified against the code first. Shared rules got a fai
 
 | Id | Result |
 |---|---|
-| A1, B-01 | Fixed: `TickingReference`/`LiveClock`, `UpdatedLabel`, cards, run rows, comments, devices (ADR-114). Unit tests move the clock; no UI test can (the demo clock is pinned). |
+| A1, B-01 | Fixed: `TickingReference`/`LiveClock`, `UpdatedLabel`, cards, run rows, comments, devices (ADR-116). Unit tests move the clock; no UI test can (the demo clock is pinned). |
 | A2 | Fixed: `IssueState.commentSentCount`; the box clears only on it. |
-| A3 | Fixed: `StartupNotice` (shared), notice screen, holders closed (ADR-112). UI test: plain launch shows it and offers no button. |
-| A4, B-19 | Fixed: `MoneyInput` (shared), tests for 250.50, 250,50, 1,200.50, 1.200,50, overflow, negative, zero (ADR-113). Not done: the Face ID reason string does not carry the amount (the `Biometrics` port takes a fixed reason); the amount is on the button instead. |
+| A3 | Fixed: `StartupNotice` (shared), notice screen, holders closed (ADR-114). UI test: plain launch shows it and offers no button. |
+| A4, B-19 | Fixed: `MoneyInput` (shared), tests for 250.50, 250,50, 1,200.50, 1.200,50, overflow, negative, zero (ADR-115). Not done: the Face ID reason string does not carry the amount (the `Biometrics` port takes a fixed reason); the amount is on the button instead. |
 | A5 | Fixed: `ApprovalState.commentPostedCount`. |
-| A6 | Fixed: `ModelStore` keeps a working model until idle (ADR-115). Unit-tested with a gate; not tested with a real back swipe. |
+| A6 | Fixed: `ModelStore` keeps a working model until idle (ADR-117). Unit-tested with a gate; not tested with a real back swipe. |
 | A7 | Fixed: `LaunchConfiguration.allowsDemoControls` (DEBUG), overlay compiled in Debug only. The overlay still uses a 0.25 s `TimelineView` for its counter (Debug and test only). |
 | A8 | Fixed: `PrivacyShieldController`, a window above alerts (unit-tested that the window exists and goes away; not seen in the app switcher). |
 | A9 | Fixed: `PairingPagePolicy` closes the page on cancelled, expired, failed. |
 | A10 | Fixed: `LoadIssueRefs` runs 4 at a time, at most 25. This exposed a race in `FakeIssueGateway` call counts (a Kotlin/Native crash in the Swift tests), fixed with an atomic copy-on-write map. |
-| A11 | Partly fixed: `canCheckAddress`, `canSaveBudget` and positive-only budgets are shared. Deferred: the Approval comment Post button's "trimmed text is empty" check stays in Swift, because the text lives in the view (ADR-106); shared refuses a blank comment (`BodyRequired`), so only the enabled look is duplicated. |
+| A11 | Partly fixed: `canCheckAddress`, `canSaveBudget` and positive-only budgets are shared. Deferred: the Approval comment Post button's "trimmed text is empty" check stays in Swift, because the text lives in the view (ADR-108); shared refuses a blank comment (`BodyRequired`), so only the enabled look is duplicated. |
 | B-02 | Fixed: "Expires ..." line. |
 | B-03 | Fixed: the budget sheet closes before "Sign in again" selects Factories. |
 | B-04 | Fixed: `SwitcherDot`. |
@@ -238,11 +238,11 @@ No P0. Every finding was verified against the code first. Shared rules got a fai
 | B-20 | Fixed: `NSFaceIDUsageDescription` and `InfoPlistTests`, identical to 1b (merges cleanly). Portrait lock kept. |
 | C1, C2 | Fixed: one `auditScreen`; only the system tab bar's buttons are set aside (counted and attached); content under the bar and the app's own bars are findings. The old rule had also dropped every finding on screens that hide the tab bar. FirstRun's "Text clipped" filter and the Shell baseline (which never failed) now assert empty. |
 | C3 | Fixed: `HitTargetUITests` waits, handles an infinite bar frame, fails below a per-tab minimum and prints not-visible counts. Measured (examined / not visible): Inbox 11/10, Factory 6/7, Work 12/19, Agents 13/17, Factories 7/8; controls below the fold are not covered. |
-| C4 | Fixed: helper deleted; ADR-109 and the 2i-4 note corrected. |
+| C4 | Fixed: helper deleted; ADR-111 and the 2i-4 note corrected. |
 | C5 | Fixed: status.md rewritten. |
 | C6 | Fixed: getting-started, README, configuration, testing and usage pages. "Verified" claims dropped. |
 | C7 | Recorded: earlier shared commits combined tests and production, and several Swift suites were written after their views (2i-5, 2i-6). Red steps for those cannot be shown from history. From this round on tests and production are separate commits. A few commits in this round mix a production file that a later commit in the round needs (for example the Work list count line), so not every intermediate commit compiles; the branch tip does. |
-| C8 | Partly fixed: `Motion.animation(reduceMotion:)` is unit-tested. Deferred: tab bar KVO (covered by `TabBarAccessibilityTests` and the UI tests), view-only text input (ADR-106). |
+| C8 | Partly fixed: `Motion.animation(reduceMotion:)` is unit-tested. Deferred: tab bar KVO (covered by `TabBarAccessibilityTests` and the UI tests), view-only text input (ADR-108). |
 | C9 | Deferred: the 300 ms sleeps assert that something did not happen and have a positive control; a deterministic signal needs test-only hooks in shared code. They can only pass vacuously, never fail falsely. The 15 s simulator warm-up and the 0.5 s focus retry are kept. |
 | C10 | Fixed: the shard check runs before the build and matches any `XCTestCase` subclass. |
 | C11 | Fixed: step-level `continue-on-error`, and a step that fails the leg if no audit ran. |
@@ -254,7 +254,7 @@ No P0. Every finding was verified against the code first. Shared rules got a fai
 
 ### Audit results (local, iPhone 18 Pro, iOS 27.2, 402x874, honest helper)
 
-24 audit tests became 29 findings groups; 116 UI tests ran, 18 failed before the discard-test and demo-test fixes, all but two were audits. After the fixes the remaining failures are audits only. Findings per screen: Approval 1 and offline 1 (comment text partly behind the action bar), Edit factory 4 (Save contrast, Cancel and Save "Dynamic Type partially unsupported", address field "Text clipped"), Factories 6, First run 1 (address field clipped), Inbox 3 and offline 9, Manage 7, Agents 7, Factory home 10 and offline 21, Run viewer offline 1, Settings 2, Issue 2 and offline 2, Work 3 and offline 2, Shell 3. Budget, Decision (both), Agent detail and Run viewer: 0. None were on the system tab bar's buttons. Earlier counts were lower because the old rule hid everything under the tab bar and everything on screens without one. Per-finding detail is in the `accessibility-audit-<screen>` attachments and the `ACCESSIBILITY-AUDIT-FINDING` log lines of the audit job. These tests are in the non-blocking audit set (ADR-080, ADR-116).
+24 audit tests became 29 findings groups; 116 UI tests ran, 18 failed before the discard-test and demo-test fixes, all but two were audits. After the fixes the remaining failures are audits only. Findings per screen: Approval 1 and offline 1 (comment text partly behind the action bar), Edit factory 4 (Save contrast, Cancel and Save "Dynamic Type partially unsupported", address field "Text clipped"), Factories 6, First run 1 (address field clipped), Inbox 3 and offline 9, Manage 7, Agents 7, Factory home 10 and offline 21, Run viewer offline 1, Settings 2, Issue 2 and offline 2, Work 3 and offline 2, Shell 3. Budget, Decision (both), Agent detail and Run viewer: 0. None were on the system tab bar's buttons. Earlier counts were lower because the old rule hid everything under the tab bar and everything on screens without one. Per-finding detail is in the `accessibility-audit-<screen>` attachments and the `ACCESSIBILITY-AUDIT-FINDING` log lines of the audit job. These tests are in the non-blocking audit set (ADR-094, ADR-118).
 
 ### Counts
 
@@ -299,15 +299,15 @@ Not fixed, and what was learned (local counts): Approval 1 and offline 1, Factor
 - "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text (Agents' running row, Factory home tiles) appear only when the text size is below the maximum: with the simulator at accessibility XXXL the same Agents screen has 1 finding instead of 7. All fonts are text styles; no fixed sizes, scale limits or line limits are involved. The audit seems to flag elements that its larger-text pass pushes off screen. A tab-bar-hidden Agents screen and a solid tab bar background gave the same findings, so it is not the tab bar. A hard scroll edge effect changed nothing.
 - At XXXL a different set of contrast findings appears on plain text (including navigation titles), so the contrast check is not stable across sizes.
 - Inbox and Shell findings have no element (frame zero): they cannot be traced.
-Nothing was filtered, allow-listed or set aside beyond ADR-116. The audit job stays non-blocking (ADR-080). Two consecutive green CI runs were not achieved, so it was not promoted.
+Nothing was filtered, allow-listed or set aside beyond ADR-118. The audit job stays non-blocking (ADR-094). Two consecutive green CI runs were not achieved, so it was not promoted.
 
 ### Round 3, second part
 
-Cause found for "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text: lazy stacks and grids (ADR-117). Fixed by making Agents, Work and the Factory home tiles eager. Local audit result after this: 8 audit tests pass (Budget, Budget offline, Decision, Decision offline, Edit factory, First run, Agent detail, Run viewer), 16 fail, with the findings listed in ADR-117. The audit helper now prints the whole issue and the hierarchy for an issue with no element. 116 UI tests ran; every functional test passes.
+Cause found for "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text: lazy stacks and grids (ADR-119). Fixed by making Agents, Work and the Factory home tiles eager. Local audit result after this: 8 audit tests pass (Budget, Budget offline, Decision, Decision offline, Edit factory, First run, Agent detail, Run viewer), 16 fail, with the findings listed in ADR-119. The audit helper now prints the whole issue and the hierarchy for an issue with no element. 116 UI tests ran; every functional test passes.
 
 ### Round 3, decision and large-text guard
 
-Decision (owner): option C of ADR-117. `ios (audits)` stays non-blocking and unfiltered; the guard is `LargeTextUITests` in shard 2 (14 screens and a growth check, launched with `-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`): key text exists, lies inside the screen width, has no ellipsis, and every primary action can be reached by scrolling and is hittable. I read XXXL screenshots of Agents, Edit factory and Budget: text grows and wraps, nothing is cut off (Agents hyphenates "Engi-neer 2" in the name column at this size).
+Decision (owner): option C of ADR-119. `ios (audits)` stays non-blocking and unfiltered; the guard is `LargeTextUITests` in shard 2 (14 screens and a growth check, launched with `-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`): key text exists, lies inside the screen width, has no ellipsis, and every primary action can be reached by scrolling and is hittable. I read XXXL screenshots of Agents, Edit factory and Budget: text grows and wraps, nothing is cut off (Agents hyphenates "Engi-neer 2" in the name column at this size).
 
 Audit tests failing locally (16): Approval, Approval offline, Factories, Inbox, Inbox offline, Manage, Agents, Factory home, Factory home offline, Run offline, Settings, Shell, Issue, Issue offline, Work, Work offline.
 

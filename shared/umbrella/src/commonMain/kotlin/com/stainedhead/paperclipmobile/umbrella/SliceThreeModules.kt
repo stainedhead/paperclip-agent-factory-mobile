@@ -67,6 +67,11 @@ internal fun Module.sliceThreePorts() {
 /** Live events and the app lifecycle (slice 1a-4). The WebSocket has no real adapter: board keys fail on it. */
 internal fun Module.signalPorts() {
     single<LiveEvents> { FakeLiveEvents() }
+    lifecyclePorts()
+}
+
+/** The app lifecycle and the refresh policy: shared by the fake and the live graph, which differ in live events. */
+internal fun Module.lifecyclePorts() {
     single { AppLifecycleBridge() }
     single<AppLifecycle> { get<AppLifecycleBridge>() }
     single { RefreshVisibleScreen(get(), get(), get()) }

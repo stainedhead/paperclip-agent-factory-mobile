@@ -1,7 +1,7 @@
 import XCTest
 
 /// The system accessibility audit of Factory home, Agents, Agent detail and the Run viewer, normal and offline.
-/// There is no allow-list: every finding fails the test. CI runs these as the non-blocking audit set (ADR-080).
+/// There is no allow-list: every finding fails the test. CI runs these as the non-blocking audit set (ADR-094).
 final class OperationsAuditUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false

@@ -29,20 +29,20 @@ Update this file after every task and phase. It is the single source of progress
 ## Notes
 
 2i-0 done: 84 Swift Testing cases, 7 XCUITests (see implementation-notes.md).
-2i-1 done: see implementation-notes.md (ADR-045 to 047); counts are in the milestone report.
+2i-1 done: see implementation-notes.md (ADR-091 to 093); counts are in the milestone report.
 
-2i-3 done: Decision, Approval and Budget incident sheet (ADR-095 to 098); see implementation-notes.md.
+2i-3 done: Decision, Approval and Budget incident sheet (ADR-098 to 101); see implementation-notes.md.
 
-2i-4 done: Factory home, Agents, Agent detail, Run viewer (ADR-100 to 103); see implementation-notes.md.
+2i-4 done: Factory home, Agents, Agent detail, Run viewer (ADR-102 to 105); see implementation-notes.md.
 
-2i-5 done: Work list and Issue (ADR-106, 107); see implementation-notes.md.
+2i-5 done: Work list and Issue (ADR-108, 109); see implementation-notes.md.
 
-2i-6 done: polish, KVO tab bar, honest audits, screenshots, docs, merge checklist for 1b (ADR-108 to 111).
+2i-6 done: polish, KVO tab bar, honest audits, screenshots, docs, merge checklist for 1b (ADR-110 to 113).
 
 ## Blockers
 
-1. The live graph is not wired: `LiveGraphProvider.isAvailable` is false until Phase 1b (PR #7) merges. A build without `-demo` shows "Live factories are not available yet" (ADR-112). Merge checklist: implementation-notes.md.
-2. Accessibility audits: 16 of 24 audit tests fail locally (21 on the iOS 26.5 CI runtime at e432599). They are shown in the non-blocking `ios (audits)` job by decision of the owner (option C, ADR-117); nothing is filtered. The blocking guard for large text is `LargeTextUITests` (15 tests, accessibility XXXL). They do not block CI (ADR-080) but 2i-6 is not accepted while they stand.
+1. The live graph is not wired: `LiveGraphProvider.isAvailable` is false until Phase 1b (PR #7) merges. A build without `-demo` shows "Live factories are not available yet" (ADR-114). Merge checklist: implementation-notes.md.
+2. Accessibility audits: 16 of 24 audit tests fail locally (21 on the iOS 26.5 CI runtime at e432599). They are shown in the non-blocking `ios (audits)` job by decision of the owner (option C, ADR-119); nothing is filtered. The blocking guard for large text is `LargeTextUITests` (15 tests, accessibility XXXL). They do not block CI (ADR-094) but 2i-6 is not accepted while they stand.
 3. (Cleared in the second fix round) the `security` workflow failed on one historical gitleaks finding; now allowlisted.
 4. ADR numbers 042 to 047 and 080 collide with 1b (C15).
 5. `/dev-flow:review-spec` was never run.
@@ -52,11 +52,11 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: spec created from the PRD.
 - 2026-11-02: milestone 2i-0 (shell, design system, catalog, lock) implemented.
 - 2026-11-02: milestone 2i-1 (First run, Factories, Manage, Edit/Add, Settings, pairing browser) implemented.
-- 2026-11-02: milestone 2i-2 (Inbox screen, demo Inbox behaviour, Inbox UI tests) implemented; ADR-090 to 092.
+- 2026-11-02: milestone 2i-2 (Inbox screen, demo Inbox behaviour, Inbox UI tests) implemented; ADR-095 to 097.
 - 2026-11-02: milestone 2i-3 (Decision, Approval, Budget incident sheet, shared demo changes, detail UI tests) implemented.
 - 2026-11-02: milestone 2i-4 (Factory home, Agents, Agent detail, Run viewer, shared run/issue enrichment, demo run data) implemented.
 - 2026-11-02: milestone 2i-5 (Work list, Issue, demo answer and comment fixes) implemented.
-- 2026-11-02: fixed the iOS 26.5 CI failures (tab badge accessibility value, demo refresh timer pause); ADR-105.
+- 2026-11-02: fixed the iOS 26.5 CI failures (tab badge accessibility value, demo refresh timer pause); ADR-107.
 - 2026-11-03: milestone 2i-6 (polish, accessibility, screenshots, live seam notes, docs) implemented.
 
-- 2026-11-03: review-fix round for reviews A, B and C (no P0); new ADR-112 to 116; status and docs corrected.
+- 2026-11-03: review-fix round for reviews A, B and C (no P0); new ADR-114 to 118; status and docs corrected.

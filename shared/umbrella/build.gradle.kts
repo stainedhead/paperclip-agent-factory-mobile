@@ -5,6 +5,16 @@ plugins {
     alias(libs.plugins.skie)
 }
 
+// The pinned-server stand-in the API adapter tests use, shared (copied, not moved) so the live-graph tests can drive
+// real flows through a Ktor MockEngine. Only the stub and its fixtures, never the adapter tests (ADR-067).
+val sharedStubSources =
+    tasks.register<Sync>("sharedStubSources") {
+        from(project(":shared:infrastructure:api").layout.projectDirectory.dir("src/commonTest/kotlin")) {
+            include("**/Stub*.kt", "**/*Fixtures.kt")
+        }
+        into(layout.buildDirectory.dir("generated/sharedStub/kotlin"))
+    }
+
 kotlin {
     val xcframework = XCFramework("PaperclipKit")
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
@@ -18,6 +28,8 @@ kotlin {
             export(project(":shared:infrastructure:platform"))
             xcframework.add(this)
         }
+        // SQLDelight links sqlite only into the module that applies its plugin; the framework and its tests use it too.
+        binaries.all { linkerOpts("-lsqlite3") }
     }
 
     // Architecture rules (Konsist) run on the JVM from their own compilation so they stay out of the product build.
@@ -57,5 +69,17 @@ kotlin {
         api(project(":shared:infrastructure:platform"))
         implementation(project(":shared:testing"))
         implementation(libs.koin.core)
+        // The live graph (AD-040): the real adapters behind the ports.
+        implementation(project(":shared:infrastructure:api"))
+        implementation(project(":shared:infrastructure:persistence"))
+        implementation(project(":shared:infrastructure:securestore"))
+        implementation(project(":shared:infrastructure:platform"))
+    }
+    sourceSets.jvmTest {
+        kotlin.srcDir(sharedStubSources)
+        dependencies {
+            implementation(libs.ktor.client.mock)
+            implementation(libs.serialization.json)
+        }
     }
 }

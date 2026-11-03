@@ -49,7 +49,7 @@ final class ShellUITests: XCTestCase {
         let counts = app.element("inbox-due-count")
         XCTAssertTrue(counts.waitForExistence(timeout: 30), "the Inbox count line never appeared")
         XCTAssertTrue(counts.label.hasPrefix("3 "), "the Inbox badge count is not 3: \(counts.label)")
-        // The tab button exposes its badge as its accessibility value (ADR-105), so the tab agrees with the state.
+        // The tab button exposes its badge as its accessibility value (ADR-107), so the tab agrees with the state.
         waitForInboxBadge(app, 3)
         XCTAssertTrue(app.navigationBars["Inbox"].exists)
     }
@@ -109,7 +109,7 @@ final class ShellUITests: XCTestCase {
     }
 
     /// The system audit of the tab shell (acceptance criterion 5). Every finding fails the test; the audit set does not
-    /// block CI (ADR-080), so what it finds is reported there and listed in implementation-notes.md.
+    /// block CI (ADR-094), so what it finds is reported there and listed in implementation-notes.md.
     @MainActor
     func testAccessibilityAuditBaselineOfTheShell() throws {
         let app = launch()

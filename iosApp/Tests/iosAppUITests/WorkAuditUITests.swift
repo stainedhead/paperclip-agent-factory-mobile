@@ -1,7 +1,7 @@
 import XCTest
 
 /// The system accessibility audit of the Work list and the Issue screen, normal and offline. No allow-list and no
-/// expected failure: every finding fails the test. CI runs these as the non-blocking audit set (ADR-080).
+/// expected failure: every finding fails the test. CI runs these as the non-blocking audit set (ADR-094).
 final class WorkAuditUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false

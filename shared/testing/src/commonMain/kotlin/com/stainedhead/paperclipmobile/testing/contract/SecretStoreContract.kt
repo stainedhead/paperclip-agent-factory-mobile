@@ -23,6 +23,7 @@ abstract class SecretStoreContract {
         aMissingSecretIsReportedAsMissing()
         deleteRemovesOnlyThatKey()
         deleteNamespaceRemovesOnlyThatInstance()
+        namespacesListsEveryInstanceThatHoldsASecret()
     }
 
     private suspend fun SecretStore.read(key: SecretKey): SecretReadResult = get(key, "contract test")
@@ -48,6 +49,19 @@ abstract class SecretStoreContract {
         store.delete(token)
         check(store.read(token) == SecretReadResult.Missing) { "delete must remove the key" }
         check(store.read(password) is SecretReadResult.Found) { "delete must keep the other keys" }
+    }
+
+    private suspend fun namespacesListsEveryInstanceThatHoldsASecret() {
+        val store = create()
+        check(store.namespaces().isEmpty()) { "an empty store lists no namespace" }
+        store.put(SecretKey(a, SecretName.BoardToken), Secret.of("x"), policy)
+        store.put(SecretKey(a, SecretName.ClientCertificatePassword), Secret.of("x"), policy)
+        store.put(SecretKey(b, SecretName.BoardToken), Secret.of("y"), policy)
+        check(store.namespaces() == setOf(a, b)) { "namespaces must list each instance once" }
+        store.deleteNamespace(a)
+        check(store.namespaces() == setOf(b)) { "a deleted namespace is no longer listed" }
+        store.delete(SecretKey(b, SecretName.BoardToken))
+        check(store.namespaces().isEmpty()) { "a namespace without secrets is not listed" }
     }
 
     private suspend fun deleteNamespaceRemovesOnlyThatInstance() {

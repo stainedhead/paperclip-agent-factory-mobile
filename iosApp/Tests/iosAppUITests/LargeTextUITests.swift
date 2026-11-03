@@ -1,6 +1,6 @@
 import XCTest
 
-/// Every screen at the largest accessibility text size (XXXL). These are the blocking guard for large text (ADR-117):
+/// Every screen at the largest accessibility text size (XXXL). These are the blocking guard for large text (ADR-119):
 /// the system accessibility audit stays visible in its own non-blocking job, and these tests assert what a person needs
 /// at this size: the screen's key text is there, whole, inside the screen, and every primary action can be reached by
 /// scrolling and tapped.

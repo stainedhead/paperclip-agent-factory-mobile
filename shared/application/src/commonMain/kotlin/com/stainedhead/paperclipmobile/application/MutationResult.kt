@@ -90,7 +90,15 @@ internal fun <T> DomainResult<T>.toMutation(): MutationResult<T> =
         is DomainResult.Failure -> MutationResult.Failed(error)
     }
 
-internal fun DomainError.needsReread(): Boolean = this == DomainError.Timeout || this == DomainError.Conflict
+/**
+ * Errors after which a mutation may or may not have taken effect: a timeout, a connection that broke after the request
+ * was written, a 2xx the app could not read, and a conflict. The entity is read once; the call is never sent again.
+ */
+internal fun DomainError.needsReread(): Boolean =
+    this == DomainError.Timeout ||
+        this == DomainError.Conflict ||
+        this == DomainError.ConnectionLost ||
+        this == DomainError.Malformed
 
 /**
  * Turns a failed mutation into [MutationResult.Reconciled] when [error] says the state may have changed, by reading the
