@@ -53,13 +53,13 @@ final class EditFactoryUITests: XCTestCase {
         let again = open("edit:demo-home")
         again.textFields["edit-name"].clearAndTypeText("Studio factory")
         again.buttons["edit-cancel-button"].tap()
-        XCTAssertTrue(again.buttons["edit-discard-keep"].waitForExistence(timeout: 5), "typed changes need a prompt")
-        again.buttons["edit-discard-keep"].tap()
+        XCTAssertTrue(again.buttons["Keep editing"].waitForExistence(timeout: 5), "typed changes need a prompt")
+        again.buttons["Keep editing"].tap()
         XCTAssertTrue(again.element("edit-factory").exists, "Keep editing stays on the form")
         XCTAssertEqual(again.textFields["edit-name"].value as? String, "Studio factory")
 
         again.buttons["edit-cancel-button"].tap()
-        again.buttons["edit-discard-confirm"].tap()
+        again.buttons["Discard changes"].tap()
         XCTAssertTrue(again.element("factories-root").waitForExistence(timeout: 10))
         XCTAssertEqual(again.staticTexts["factory-name-demo-home"].label, "Home factory")
     }

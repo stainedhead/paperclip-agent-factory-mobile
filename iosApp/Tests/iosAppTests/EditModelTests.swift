@@ -43,6 +43,17 @@ struct EditModelTests {
         finish(rig)
     }
 
+    @Test func typingOverTheSavedValuesIsUnsavedUntilItMatchesAgain() async {
+        let rig = makeRig("demo-home")
+        #expect(await eventually { rig.model.state.name == "Home factory" })
+        #expect(rig.model.state.hasUnsavedChanges == false)
+        rig.model.nameChanged("Studio factory")
+        #expect(rig.model.state.hasUnsavedChanges)
+        rig.model.nameChanged("Home factory")
+        #expect(rig.model.state.hasUnsavedChanges == false)
+        finish(rig)
+    }
+
     @Test func renamingEnablesSaveAndSavingMarksItSaved() async {
         let rig = makeRig("demo-home")
         #expect(await eventually { rig.model.state.name == "Home factory" })
