@@ -182,12 +182,42 @@ struct ModelStoreTests {
         #expect(screen.isClosed)
     }
 
-    @Test func eachMutatingScreenNamesWhatCountsAsWork() {
-        let agent = graph.agents.createAgentDetailStateHolder(
-            instanceId: "demo-home", companyId: "company-acme", agentId: "agent-eng-1")
-        let model = HolderModel(holder: agent)
-        #expect(model.isWorking == false)
-        model.close()
+    /// R4: the iPhone's `isWorking` for each screen is the shared state's own flag.
+    @Test func everyMutatingScreensWorkingFlagIsTheSharedStatesOwn() async {
+        let agent = HolderModel(
+            holder: graph.agents.createAgentDetailStateHolder(
+                instanceId: "demo-home", companyId: "company-acme", agentId: "agent-eng-1"))
+        let watching = Task { await agent.observe() }
+        #expect(await eventually { agent.state.phase == .content })
+        watching.cancel()
+        #expect(AgentDetailStateHolder.isWorking(agent.state) == agent.state.isWorking)
+        #expect(agent.isWorking == false)
+        agent.close()
+        let agents = HolderModel(
+            holder: graph.agents.createAgentsStateHolder(instanceId: "demo-home", companyId: "company-acme"))
+        let watchingAgents = Task { await agents.observe() }
+        #expect(await eventually { agents.state.phase == .content })
+        watchingAgents.cancel()
+        #expect(AgentsStateHolder.isWorking(agents.state) == agents.state.isWorking)
+        agents.close()
+    }
+
+    /// R5: shutting down while a screen is finishing leaves nothing behind, and the key can be used again.
+    @Test func closingEverythingWhileAModelIsFinishingFreesItsKey() async {
+        let store = ModelStore<String>()
+        let first = Gate()
+        let old = gated(store, first)
+        store.retain(only: [])
+        store.closeAll()
+        #expect(old.isClosed)
+
+        let second = Gate()
+        let again = gated(store, second)
+        store.retain(only: [])
+        #expect(again.isClosed == false)
+        second.finish()
+        #expect(await eventually { again.isClosed })
+        first.finish()
     }
 
     @Test func closeAllClosesEveryModelAndEmptiesTheStore() {
