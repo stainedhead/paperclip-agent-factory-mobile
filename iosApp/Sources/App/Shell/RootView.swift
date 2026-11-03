@@ -14,9 +14,11 @@ struct RootView: View {
             if environment.isObscured {
                 PrivacyShield()
             }
-            if environment.configuration.showsDiagnostics {
-                DiagnosticsOverlay(environment: environment)
-            }
+            #if DEBUG
+                if environment.configuration.showsDiagnostics {
+                    DiagnosticsOverlay(environment: environment)
+                }
+            #endif
         }
         .background(Palette.background.color.ignoresSafeArea())
         .environment(\.referenceDate, environment.referenceDate)
@@ -65,43 +67,45 @@ struct PrivacyShield: View {
     }
 }
 
-/// Launch-argument only (`-demo-diagnostics`): a small readout UI tests use to see how often the phone asked for
-/// Face ID. It never ships on by default.
-struct DiagnosticsOverlay: View {
-    let environment: AppEnvironment
+#if DEBUG
+    /// Launch-argument only (`-demo-diagnostics`): a small readout UI tests use to see how often the phone asked for
+    /// Face ID. It is compiled into Debug builds only, so a shipped binary has no such overlay and no English in it.
+    struct DiagnosticsOverlay: View {
+        let environment: AppEnvironment
 
-    /// Seconds since the overlay was created, then the lock, the load and the Inbox as the shell sees them: a failing
-    /// UI test's hierarchy shows how far a slow cold start had got.
-    private static let started = ProcessInfo.processInfo.systemUptime
+        /// Seconds since the overlay was created, then the lock, the load and the Inbox as the shell sees them: a
+        /// failing UI test's hierarchy shows how far a slow cold start had got.
+        private static let started = ProcessInfo.processInfo.systemUptime
 
-    private var trace: String {
-        let app = environment.app.state
-        let inbox = environment.inbox?.state
-        let seconds = Int(ProcessInfo.processInfo.systemUptime - Self.started)
-        return "t\(seconds)s lock=\(app.lock) loaded=\(app.isLoaded) factories=\(app.hasFactories) "
-            + "inbox=\(inbox.map { "\($0.phase) badge=\($0.badgeCount) total=\($0.totalCount)" } ?? "none")"
-    }
-
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { _ in
-            VStack {
-                Text("prompts \(environment.biometricPromptCount)")
-                    .font(Typography.micro)
-                    .padding(Spacing.extraSmall)
-                    .background(.thinMaterial)
-                    .accessibilityIdentifier("diagnostics-biometric-prompts")
-                    .accessibilityLabel("Biometric prompts")
-                    .accessibilityValue("\(environment.biometricPromptCount)")
-                Text(trace)
-                    .font(Typography.micro)
-                    .padding(Spacing.extraSmall)
-                    .background(.thinMaterial)
-                    .accessibilityIdentifier("diagnostics-trace")
-                    .accessibilityLabel(trace)
-                Spacer()
-            }
+        private var trace: String {
+            let app = environment.app.state
+            let inbox = environment.inbox?.state
+            let seconds = Int(ProcessInfo.processInfo.systemUptime - Self.started)
+            return "t\(seconds)s lock=\(app.lock) loaded=\(app.isLoaded) factories=\(app.hasFactories) "
+                + "inbox=\(inbox.map { "\($0.phase) badge=\($0.badgeCount) total=\($0.totalCount)" } ?? "none")"
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .allowsHitTesting(false)
+
+        var body: some View {
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                VStack {
+                    Text("prompts \(environment.biometricPromptCount)")
+                        .font(Typography.micro)
+                        .padding(Spacing.extraSmall)
+                        .background(.thinMaterial)
+                        .accessibilityIdentifier("diagnostics-biometric-prompts")
+                        .accessibilityLabel("Biometric prompts")
+                        .accessibilityValue("\(environment.biometricPromptCount)")
+                    Text(trace)
+                        .font(Typography.micro)
+                        .padding(Spacing.extraSmall)
+                        .background(.thinMaterial)
+                        .accessibilityIdentifier("diagnostics-trace")
+                        .accessibilityLabel(trace)
+                    Spacer()
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .allowsHitTesting(false)
+        }
     }
-}
+#endif

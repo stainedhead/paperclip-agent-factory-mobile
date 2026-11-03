@@ -220,11 +220,14 @@ private struct InboxScreen: View {
         }
     }
 
+    /// Redacted anyway and hidden from VoiceOver: a shape of text, not words in any language.
+    private static let placeholder = "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}"
+
     private var skeleton: some View {
         ForEach(0..<3, id: \.self) { _ in
             AttentionCard(
-                severity: .medium, kind: "Loading", age: "0m", title: "Loading your Inbox",
-                subtitle: "Reading the latest cards"
+                severity: .medium, kind: Self.placeholder, age: Self.placeholder, title: Self.placeholder,
+                subtitle: Self.placeholder
             ) {
                 EmptyView()
             }
