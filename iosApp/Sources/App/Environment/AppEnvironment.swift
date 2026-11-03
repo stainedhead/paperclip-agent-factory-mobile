@@ -337,7 +337,9 @@ final class AppEnvironment {
         inbox = nil
         inboxKey = nil
     }
+}
 
+extension AppEnvironment {
     // MARK: - Demo launch options
 
     /// For screenshots and UI tests: begin on a tab and, optionally, one pushed screen of the Factories family.

@@ -49,10 +49,7 @@ struct ErrorBanner: View {
             .font(Typography.body)
             .foregroundStyle(Palette.destructive.color)
             .accessibilityIdentifier("error-message")
-            if let button = ErrorBannerButton.choose(
-                signedOut: error.key == .signedOut, signIn: onSignInAgain != nil, retry: onRetry != nil,
-                dismiss: onDismiss != nil)
-            {
+            if let button = button {
                 Button(button.title) { act(button) }
                     .buttonStyle(.app(button == .signIn ? .primary : .secondary))
                     .accessibilityIdentifier(button.identifier)
@@ -63,6 +60,12 @@ struct ErrorBanner: View {
         .background(Palette.destructiveSoft.color, in: RoundedRectangle(cornerRadius: Radius.card))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("error-banner")
+    }
+
+    private var button: ErrorBannerButton? {
+        ErrorBannerButton.choose(
+            signedOut: error.key == .signedOut, signIn: onSignInAgain != nil, retry: onRetry != nil,
+            dismiss: onDismiss != nil)
     }
 
     private func act(_ button: ErrorBannerButton) {
