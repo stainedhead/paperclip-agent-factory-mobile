@@ -103,6 +103,8 @@ data class ApprovalState(
     val decidedAtEpochMillis: Long? = null,
     val issues: List<LinkedIssueUi> = emptyList(),
     val comments: List<CommentUi> = emptyList(),
+    /** Counts the person's own comments that reached the thread; the comment box clears when it changes (A5). */
+    val commentPostedCount: Int = 0,
     /** What can be tapped now: by status, role and connectivity (PRD FR-051). */
     val actions: List<ApprovalActionUi> = emptyList(),
     val rejectNeedsDeviceAuth: Boolean = false,

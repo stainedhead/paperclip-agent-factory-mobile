@@ -24,13 +24,17 @@ internal data class ApprovalModel(
     /** Counts finished actions. A read that started before one finished must not replace its result (F-B-7). */
     val version: Int = 0,
     val notePrompt: NotePromptKind? = null,
+    val commentsPosted: Int = 0,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
 ) {
     fun withApproval(approval: Approval): ApprovalModel = copy(detail = detail?.copy(approval = approval), error = null)
 
     fun withComment(comment: ApprovalComment): ApprovalModel =
-        copy(detail = detail?.let { it.copy(comments = it.comments + comment) })
+        copy(
+            detail = detail?.let { it.copy(comments = it.comments + comment) },
+            commentsPosted = commentsPosted + 1,
+        )
 
     fun mayAct(
         action: Action,
@@ -69,6 +73,7 @@ internal object ApprovalRenderer {
             decisionNote = approval?.decisionNote,
             decidedAtEpochMillis = approval?.decidedAt?.toEpochMilliseconds(),
             issues = detail?.issues.orEmpty().map { LinkedIssueUi(it.id, it.identifier, it.title, it.status) },
+            commentPostedCount = model.commentsPosted,
             comments =
                 detail?.comments.orEmpty().map {
                     CommentUi(it.id, it.body, it.createdAt.toEpochMilliseconds(), it.authorAgentId != null)
