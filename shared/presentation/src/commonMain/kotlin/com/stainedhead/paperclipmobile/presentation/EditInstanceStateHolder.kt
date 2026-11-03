@@ -77,6 +77,8 @@ data class EditInstanceState(
     val isOffline: Boolean = false,
     val isBusy: Boolean = false,
     val canSave: Boolean = false,
+    /** The address is valid and no check is running, so Check address can be tapped. */
+    val canCheckAddress: Boolean = false,
     val saved: Boolean = false,
     val removed: Boolean = false,
     val error: ErrorUi? = null,
@@ -285,7 +287,10 @@ class EditInstanceStateHolder(
 private fun EditInstanceState.revalidated(): EditInstanceState {
     val addressOk = addressIssue == null && address.isNotBlank()
     val needsProbe = mode == EditMode.Add || addressChangeClearsKey
-    return copy(canSave = name.isNotBlank() && addressOk && (!needsProbe || probe == ProbeStatus.Accepted))
+    return copy(
+        canSave = name.isNotBlank() && addressOk && (!needsProbe || probe == ProbeStatus.Accepted),
+        canCheckAddress = addressOk && probe != ProbeStatus.Probing,
+    )
 }
 
 /** What the parts of the edit screen share: the loaded factory, the probe report and the state. */
