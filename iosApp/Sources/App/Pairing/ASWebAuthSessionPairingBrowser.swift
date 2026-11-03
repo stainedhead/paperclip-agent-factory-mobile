@@ -71,7 +71,7 @@ private final class SystemWebAuthSession: WebAuthSessionHandle {
 ///   Kotlin boundary would end the app. Whether the person approved is found by the use case polling the server.
 /// - Only `https` links open, plus plain `http` to a local host in debug builds (the same rule as factory addresses).
 @MainActor
-final class ASWebAuthSessionPairingBrowser: NSObject, ApprovalPageOpener {
+final class ASWebAuthSessionPairingBrowser: NSObject {
     private static let localHosts: Set<String> = ["localhost", "127.0.0.1", "10.0.2.2"]
 
     fileprivate let anchor: @MainActor () -> ASPresentationAnchor?
@@ -108,15 +108,6 @@ final class ASWebAuthSessionPairingBrowser: NSObject, ApprovalPageOpener {
             .compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows)
             .first(where: \.isKeyWindow)
-    }
-
-    /// The Kotlin side's entry point: show the page, then call `onShown`. It never throws and always calls back.
-    nonisolated func open(url: String, onShown: @escaping () -> Void) {
-        nonisolated(unsafe) let done = onShown
-        Task { @MainActor in
-            self.present(url: url)
-            done()
-        }
     }
 
     func present(url: String) {
