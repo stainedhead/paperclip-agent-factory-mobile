@@ -45,7 +45,8 @@ private struct ApprovalScreen: View {
         .task { await model.observe() }
         .refreshWhileVisible(graph: environment.graph, target: model.holder.refreshTarget)
         .sheet(isPresented: noteBinding) { noteSheet }
-        .onChange(of: state.comments.count) { _, _ in commentText = "" }
+        // Only the person's own posted comment clears the box, never a comment that arrives from someone else.
+        .onChange(of: state.commentPostedCount) { _, _ in commentText = "" }
     }
 
     // MARK: - Content
