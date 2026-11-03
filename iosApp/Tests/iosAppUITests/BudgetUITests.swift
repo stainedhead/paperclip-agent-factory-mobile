@@ -120,7 +120,7 @@ final class BudgetUITests: XCTestCase {
     @MainActor
     func testAccessibilityAuditOfTheBudgetSheet() throws {
         let app = openSheet()
-        let findings = try auditDetailScreen(app, screen: "budget", barIdentifier: "budget-submit")
+        let findings = try auditDetailScreen(app, screen: "budget")
         XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 
@@ -129,7 +129,7 @@ final class BudgetUITests: XCTestCase {
         let app = launchInbox(extra: ["-demo-offline-after-detail"])
         app.buttons["inbox-card-\(DetailIds.budget)-raise"].tap()
         XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 20))
-        let findings = try auditDetailScreen(app, screen: "budget-offline", barIdentifier: "budget-submit")
+        let findings = try auditDetailScreen(app, screen: "budget-offline")
         XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 }

@@ -21,29 +21,10 @@ extension XCUIApplication {
 }
 
 extension XCTestCase {
-    /// The system audit on a detail screen with every finding described (type, text, frame). There is no allow-list
-    /// of finding types. The one geometric rule: an element that reaches below the top of the fixed action bar
-    /// (`barIdentifier`) is scrolled content the bar hides, so the audit would measure it against the bar's pixels;
-    /// those are printed as `DETAIL-AUDIT-BEHIND-BAR` and not returned. Everything else is returned.
+    /// The system audit on a detail screen. No finding is set aside because of where it is: the fixed action bar's own
+    /// buttons are audited like everything else (see `AuditOwnership`).
     @MainActor
-    func auditDetailScreen(_ app: XCUIApplication, screen: String, barIdentifier: String? = nil) throws -> [String] {
-        var findings: [String] = []
-        let bar = barIdentifier.map { app.element($0) }
-        let barTop = (bar?.exists ?? false) ? (bar?.frame.minY ?? .greatestFiniteMagnitude) : .greatestFiniteMagnitude
-        try app.performAccessibilityAudit { issue in
-            let element = issue.element
-            let described =
-                "\(issue.compactDescription) | \(issue.detailedDescription) | id=\(element?.identifier ?? "-") "
-                + "label=\(element?.label ?? "-") frame=\(element?.frame ?? .zero)"
-            if let frame = element?.frame, frame.maxY > barTop {
-                print("DETAIL-AUDIT-BEHIND-BAR screen=\(screen) \(described)")
-                return true
-            }
-            findings.append(described)
-            return true
-        }
-        print("DETAIL-AUDIT screen=\(screen) count=\(findings.count)")
-        for finding in findings { print("DETAIL-AUDIT-FINDING screen=\(screen) \(finding)") }
-        return findings
+    func auditDetailScreen(_ app: XCUIApplication, screen: String) throws -> [String] {
+        try auditScreen(app, screen: screen)
     }
 }

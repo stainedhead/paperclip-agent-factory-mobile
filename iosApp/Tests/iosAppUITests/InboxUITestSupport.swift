@@ -88,27 +88,9 @@ extension XCUIApplication {
 }
 
 extension XCTestCase {
-    /// The system audit with each finding's element described (type, identifier, frame), so a finding that carries no
-    /// label can still be traced. Findings under the floating tab bar are logged, not returned (the bar's own glass).
+    /// The system audit; see `AuditOwnership` for the one kind of element whose findings are counted apart.
     @MainActor
     func auditInboxScreen(_ app: XCUIApplication, screen: String) throws -> [String] {
-        var findings: [String] = []
-        let firstTab = app.tabBars.firstMatch.buttons.firstMatch
-        let barTop = firstTab.exists ? firstTab.frame.minY : CGFloat.greatestFiniteMagnitude
-        try app.performAccessibilityAudit { issue in
-            let element = issue.element
-            let described =
-                "\(element?.elementType.rawValue ?? 0) id=\(element?.identifier ?? "-") "
-                + "label=\(element?.label ?? "-") frame=\(element?.frame ?? .zero)"
-            if let frame = element?.frame, frame.maxY > barTop {
-                print("INBOX-AUDIT-UNDER-TAB-BAR \(issue.compactDescription) | \(described)")
-                return true
-            }
-            findings.append("\(issue.compactDescription) | \(described)")
-            return true
-        }
-        print("INBOX-AUDIT screen=\(screen) count=\(findings.count)")
-        for finding in findings { print("INBOX-AUDIT-FINDING screen=\(screen) \(finding)") }
-        return findings
+        try auditScreen(app, screen: screen)
     }
 }

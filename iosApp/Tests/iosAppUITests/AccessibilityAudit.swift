@@ -1,33 +1,65 @@
 import XCTest
 
+/// The one place an accessibility audit is run and its findings are sorted.
+///
+/// Nothing the audit reports is dropped. A finding is either returned (and the calling test fails on it) or it is on
+/// a documented system-owned element and is counted, printed and attached. The only system-owned elements are the
+/// buttons of the system tab bar (the bar is UIKit's own glass and is not drawn by this app). Content that scrolls
+/// under the bar, and everything in the app's own bars (the Cancel run, Approve, Confirm and comment bars), is never
+/// set aside: the finding is returned, and the audit set, which does not block CI (ADR-080), carries it.
+enum AuditOwnership {
+    /// The buttons of the system tab bar as (identifier, label) pairs, read when the audit runs.
+    @MainActor
+    static func tabBarButtons(in app: XCUIApplication) -> Set<String> {
+        let buttons = app.tabBars.firstMatch.buttons.allElementsBoundByIndex
+        return Set(buttons.map { "\($0.identifier)|\($0.label)" })
+    }
+
+    @MainActor
+    static func isSystemTabBarButton(_ element: XCUIElement?, among buttons: Set<String>) -> Bool {
+        guard let element, element.elementType == .button else { return false }
+        return buttons.contains("\(element.identifier)|\(element.label)")
+    }
+}
+
 extension XCTestCase {
-    /// Runs the system accessibility audit on the current screen, prints and attaches every finding, and returns the
-    /// findings. Findings are listed in implementation-notes.md; fixed ones make the count go to zero and the call
-    /// sites assert on it.
+    /// Runs the system accessibility audit on the current screen. Every finding is described (type, text, element
+    /// type, identifier, label, frame), printed and attached; the ones on the system tab bar are counted separately as
+    /// `system-owned`. Returns the findings that count; call sites assert it is empty.
     @MainActor
     @discardableResult
-    func auditAccessibility(_ app: XCUIApplication, screen: String) throws -> [String] {
+    func auditScreen(_ app: XCUIApplication, screen: String) throws -> [String] {
         var findings: [String] = []
-        // The bar's own frame can be reported as infinite on iOS 26; its buttons carry the real position.
-        let firstTab = app.tabBars.firstMatch.buttons.firstMatch
-        let barTop = firstTab.exists ? firstTab.frame.minY : CGFloat.greatestFiniteMagnitude
+        var systemOwned: [String] = []
+        let barButtons = AuditOwnership.tabBarButtons(in: app)
         try app.performAccessibilityAudit { issue in
-            // Content scrolled under the floating tab bar is measured against the bar's glass and dimming, not
-            // against its own background; that is the bar's rendering, so it is logged but not a finding (ADR-080).
-            if let frame = issue.element?.frame, frame.maxY > barTop {
-                print("ACCESSIBILITY-AUDIT-UNDER-TAB-BAR \(issue.compactDescription) | \(issue.element?.label ?? "-")")
-                return true
+            let element = issue.element
+            let described =
+                "\(issue.auditType.rawValue) | \(issue.compactDescription) | \(issue.detailedDescription) | "
+                + "type=\(element?.elementType.rawValue ?? 0) id=\(element?.identifier ?? "-") "
+                + "label=\(element?.label ?? "-") frame=\(element?.frame ?? .zero)"
+            if AuditOwnership.isSystemTabBarButton(element, among: barButtons) {
+                systemOwned.append(described)
+            } else {
+                findings.append(described)
             }
-            findings.append("\(issue.auditType) | \(issue.compactDescription) | \(issue.element?.label ?? "-")")
             return true
         }
-        let attachment = XCTAttachment(string: findings.joined(separator: "\n"))
+        let report = (["findings=\(findings.count)"] + findings + ["system-owned=\(systemOwned.count)"] + systemOwned)
+        let attachment = XCTAttachment(string: report.joined(separator: "\n"))
         attachment.name = "accessibility-audit-\(screen)"
         attachment.lifetime = .keepAlways
         add(attachment)
-        print("ACCESSIBILITY-AUDIT screen=\(screen) count=\(findings.count)")
+        print("ACCESSIBILITY-AUDIT screen=\(screen) findings=\(findings.count) system-owned=\(systemOwned.count)")
         for finding in findings { print("ACCESSIBILITY-AUDIT-FINDING screen=\(screen) \(finding)") }
+        for item in systemOwned { print("ACCESSIBILITY-AUDIT-SYSTEM-OWNED screen=\(screen) \(item)") }
         return findings
+    }
+
+    @MainActor
+    @discardableResult
+    func auditAccessibility(_ app: XCUIApplication, screen: String) throws -> [String] {
+        try auditScreen(app, screen: screen)
     }
 }
 

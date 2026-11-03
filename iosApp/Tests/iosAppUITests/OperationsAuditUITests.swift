@@ -7,16 +7,6 @@ final class OperationsAuditUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func assertCleanExceptScrollFold(
-        _ findings: @autoclosure () throws -> [String], file: StaticString = #filePath, line: UInt = #line
-    ) throws {
-        let options = XCTExpectedFailure.Options()
-        options.isStrict = false
-        XCTExpectFailure(
-            "the audit's larger-text pass flags content below the fold of a scrolling screen", options: options)
-        assertClean(try findings(), file: file, line: line)
-    }
-
     private func assertClean(_ findings: [String], file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"), file: file, line: line)
     }
@@ -53,7 +43,7 @@ final class OperationsAuditUITests: XCTestCase {
         let app = launchOperations(
             tab: "inbox", root: "run-screen", extra: ["-demo-open", "run:\(OpsIds.liveRun)"])
         XCTAssertTrue(app.element("run-log").waitForExistence(timeout: 30))
-        assertClean(try auditDetailScreen(app, screen: "run", barIdentifier: "run-cancel-bar"))
+        assertClean(try auditDetailScreen(app, screen: "run"))
     }
 
     @MainActor
@@ -62,6 +52,6 @@ final class OperationsAuditUITests: XCTestCase {
             tab: "inbox", root: "run-screen",
             extra: ["-demo-open", "run:\(OpsIds.liveRun)", "-demo-offline-after-detail"])
         XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 30))
-        assertClean(try auditDetailScreen(app, screen: "run-offline", barIdentifier: "run-cancel-bar"))
+        assertClean(try auditDetailScreen(app, screen: "run-offline"))
     }
 }

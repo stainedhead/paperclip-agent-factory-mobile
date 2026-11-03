@@ -23,13 +23,13 @@ final class WorkAuditUITests: XCTestCase {
     @MainActor
     func testAccessibilityAuditOfTheIssue() throws {
         let app = launchIssue()
-        XCTAssertEqual(try auditDetailScreen(app, screen: "issue", barIdentifier: "issue-comment-bar"), [])
+        XCTAssertEqual(try auditDetailScreen(app, screen: "issue"), [])
     }
 
     @MainActor
     func testAccessibilityAuditOfTheOfflineIssue() throws {
         let app = launchIssue(extra: ["-demo-offline-after-detail"])
         XCTAssertTrue(app.element("offline-banner").waitForExistence(timeout: 30))
-        XCTAssertEqual(try auditDetailScreen(app, screen: "issue-offline", barIdentifier: "issue-comment-bar"), [])
+        XCTAssertEqual(try auditDetailScreen(app, screen: "issue-offline"), [])
     }
 }
