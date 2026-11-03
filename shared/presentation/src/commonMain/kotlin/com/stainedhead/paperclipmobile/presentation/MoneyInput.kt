@@ -43,7 +43,7 @@ object MoneyInput {
         }
     }
 
-    /** Digits of any numeral set (Arabic-Indic, Persian, ...) become Latin digits; the Arabic thousands mark a comma. */
+    /** Digits of any numeral set (Arabic-Indic, Persian, ...) become Latin; the Arabic thousands mark is a comma. */
     private fun latinDigits(text: String): String =
         text
             .map { ch -> ch.digitToIntOrNull()?.let { ('0' + it) } ?: if (ch == ARABIC_GROUP) ',' else ch }
