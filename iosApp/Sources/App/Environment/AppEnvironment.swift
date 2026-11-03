@@ -194,8 +194,11 @@ final class AppEnvironment {
 
     func editModel(id: String?) -> HolderModel<EditInstanceStateHolder> {
         let model = models.model(for: .editFactory(id: id)) { graph.createEditInstanceStateHolder(instanceId: id) }
-        model.didUpdate = { [weak self] state in
-            if PairingPagePolicy.closesPage(for: state.pairing) { self?.pairingPage.cancelPresentedPage() }
+        // Once, when the model is made: `body` calls this on every render.
+        if model.didUpdate == nil {
+            model.didUpdate = { [weak self] state in
+                if PairingPagePolicy.closesPage(for: state.pairing) { self?.pairingPage.cancelPresentedPage() }
+            }
         }
         return model
     }
@@ -221,7 +224,7 @@ final class AppEnvironment {
                 instanceId: selectedInstance, companyId: selectedCompany, decisionId: id, hints: hints)
         }
         if configuration.offlineAfterDetail {
-            model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) }
+            if model.didUpdate == nil { model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) } }
         }
         return model
     }
@@ -232,7 +235,7 @@ final class AppEnvironment {
                 instanceId: selectedInstance, companyId: selectedCompany, approvalId: id)
         }
         if configuration.offlineAfterDetail {
-            model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) }
+            if model.didUpdate == nil { model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) } }
         }
         return model
     }
@@ -243,7 +246,7 @@ final class AppEnvironment {
                 instanceId: selectedInstance, companyId: selectedCompany, incidentId: id)
         }
         if configuration.offlineAfterDetail {
-            model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) }
+            if model.didUpdate == nil { model.didUpdate = { [weak self] in self?.detailLoaded($0.phase) } }
         }
         return model
     }
