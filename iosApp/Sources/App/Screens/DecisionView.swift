@@ -95,6 +95,12 @@ private struct DecisionScreen: View {
                     .foregroundStyle(Palette.textSecondary.color)
                     .accessibilityIdentifier("decision-meta")
             }
+            if let expiry = state.expiresAtEpochMillis?.int64Value, state.finalState == nil {
+                Text(DecisionPresentation.expiryText(epochMillis: expiry))
+                    .font(Typography.secondary)
+                    .foregroundStyle(Palette.warn.color)
+                    .accessibilityIdentifier("decision-expires")
+            }
             if !state.body.isEmpty {
                 Text(state.body)
                     .font(Typography.body)

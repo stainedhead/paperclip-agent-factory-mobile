@@ -32,8 +32,18 @@ enum DecisionPresentation {
         raw.replacingOccurrences(of: "_", with: " ")
     }
 
+    /// Only a status is a server word ("in_progress"); a title, a comment excerpt or a name is shown as written, so the
+    /// line says exactly what the option will do.
     static func effectLine(_ effect: EffectSummaryUi) -> String {
-        L10n.text(effect.kind, prettify(effect.detail ?? ""))
+        let detail = effect.detail ?? ""
+        return L10n.text(effect.kind, effect.kind == .updateIssueStatus ? prettify(detail) : detail)
+    }
+
+    /// "Expires Nov 3, 2026 at 5:00 PM": when the decision lapses by itself.
+    static func expiryText(epochMillis: Int64, locale: Locale = .current, timeZone: TimeZone = .current) -> String {
+        let date = Date(timeIntervalSince1970: Double(epochMillis) / 1000)
+        let style = Date.FormatStyle(date: .abbreviated, time: .shortened, locale: locale, timeZone: timeZone)
+        return DecisionLabel.expires.text(date.formatted(style))
     }
 
     /// "update_issue_status" reads "Update issue status".
