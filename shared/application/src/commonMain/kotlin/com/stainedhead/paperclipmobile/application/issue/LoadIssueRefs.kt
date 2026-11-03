@@ -12,12 +12,12 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 
 private const val MAX_IN_FLIGHT = 4
-private const val MAX_ISSUES = 25
 
 /**
  * Names the issues that runs work on ("PAP-1204 Add retries to webhook ingest"): a run only carries the issue id.
  * Best effort: an issue that cannot be read is left out and the screen shows the run without it. Each id is read once,
- * a few at a time, and at most [MAX_ISSUES] of them, so a refresh over a busy factory stays short and light (A10).
+ * a few at a time (A10). Nothing is dropped: a cap would leave later rows without a name and no one would know why (R8);
+ * the number of distinct issues is bounded by the runs the screen lists.
  */
 class LoadIssueRefs(
     private val issues: IssueGateway,
@@ -31,7 +31,6 @@ class LoadIssueRefs(
             ids
                 .filterNotNull()
                 .distinct()
-                .take(MAX_ISSUES)
                 .map { id -> async { gate.withPermit { read(scope, id) } } }
                 .awaitAll()
                 .filterNotNull()
