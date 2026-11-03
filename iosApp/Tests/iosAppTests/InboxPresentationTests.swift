@@ -88,6 +88,16 @@ struct InboxPresentationTests {
         #expect(InboxDestination(target: target, webUrl: "not a url") == .none)
     }
 
+    @Test func aPlainHttpLinkIsNeverOpenedExceptOnTheLocalDevelopmentHosts() {
+        let target = OpenTargetUi(kind: .webOnly, id: "x", issueId: nil)
+        #expect(InboxDestination(target: target, webUrl: "http://home.example.com/PAP/join/1") == .none)
+        #expect(InboxDestination(target: target, webUrl: "http://192.168.1.5:3100/x") == .none)
+        #expect(WebAddress.url("https://home.example.com/x") != nil)
+        // A Debug build may talk to a local factory over http (AGENTS.md security rules).
+        #expect((WebAddress.url("http://localhost:3100/x") != nil) == WebAddress.allowsLocalHttp)
+        #expect((WebAddress.url("http://10.0.2.2:3100/x") != nil) == WebAddress.allowsLocalHttp)
+    }
+
     @Test func cardsOfferTheInlineActionsTheStateGivesAndTheNavigationThatFitsTheirKind() async {
         let all = await items()
         let decision = InboxCardActions(item: item("decision:dec-1182", in: all))
