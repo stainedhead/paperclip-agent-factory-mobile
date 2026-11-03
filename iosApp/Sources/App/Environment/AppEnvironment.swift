@@ -16,6 +16,9 @@ enum ScreenKey: Hashable {
     case agents(instance: String, company: String)
     case agent(id: String)
     case run(id: String)
+    /// The Work tab root belongs to one company of one factory; the Issue screen to its route.
+    case work(instance: String, company: String)
+    case issue(id: String)
 
     init?(_ sheet: AppSheet) {
         switch sheet {
@@ -33,7 +36,7 @@ enum ScreenKey: Hashable {
         case .approval(let id): self = .approval(id: id)
         case .agent(let id): self = .agent(id: id)
         case .run(let id): self = .run(id: id)
-        default: return nil
+        case .issue(let id): self = .issue(id: id)
         }
     }
 }
@@ -248,6 +251,7 @@ final class AppEnvironment {
         if !selectedInstance.isEmpty, !selectedCompany.isEmpty {
             keep.insert(.factoryHome(instance: selectedInstance, company: selectedCompany))
             keep.insert(.agents(instance: selectedInstance, company: selectedCompany))
+            keep.insert(.work(instance: selectedInstance, company: selectedCompany))
         }
         for route in router.activeRoutes {
             if let key = ScreenKey(route) { keep.insert(key) }

@@ -14,7 +14,8 @@ import PaperclipKit
 /// - `-demo-budget-server-spend <minor units>`: the server's own figure for the spend is that high (above what the
 ///   incident showed), so a raise that clears the shown spend can still be refused with the server's reason.
 /// - `-demo-offline-after-detail`: go offline once the first Decision, Approval or Budget screen has its content.
-/// - `-demo-open decision:<id>|approval:<id>|budget:<id>|run:<id>|agent:<id>`: also open one of those screens.
+/// - `-demo-open decision:<id>|approval:<id>|budget:<id>|run:<id>|agent:<id>|issue:<id>`: also open one of those
+///   screens.
 /// - `-demo-server-error`: the demo factory answers every Factory home, Agents and Run read with a server error.
 /// - `-demo-no-auto-refresh`: do not start the Inbox's 15 s refresh timer (pull to refresh and returning to the
 ///   screen still refresh), so a slow start cannot age the demo's "Updated 12s ago" before a test reads it.
@@ -112,6 +113,7 @@ enum StartLocation: Equatable {
         case "approval": .approval(id: id)
         case "run": .run(id: id)
         case "agent": .agent(id: id)
+        case "issue": .issue(id: id)
         default: nil
         }
     }

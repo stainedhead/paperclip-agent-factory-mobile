@@ -50,6 +50,36 @@ struct ScreenModelOwnershipTests {
         environment.shutdown()
     }
 
+    @Test func theWorkRootSurvivesNavigationAndAnIssueModelClosesWhenItsRouteLeaves() async {
+        let environment = demo()
+        #expect(await eventually { !environment.selectedCompany.isEmpty })
+        let work = environment.workModel()
+        environment.router.push(.issue(id: "pap-1204"), in: .work)
+        let issue = environment.issueModel(id: "pap-1204")
+        #expect(environment.issueModel(id: "pap-1204") === issue)
+        #expect(environment.workModel() === work)
+
+        environment.router.popToRoot(.work)
+        #expect(issue.isClosed)
+        #expect(work.isClosed == false, "the Work root keeps its filter and search")
+        #expect(environment.workModel() === work)
+        environment.shutdown()
+        #expect(work.isClosed)
+    }
+
+    @Test func theIssueOpenedFromTwoTabsIsOneModelKeptUntilBothLeave() async {
+        let environment = demo()
+        #expect(await eventually { !environment.selectedCompany.isEmpty })
+        environment.router.push(.issue(id: "pap-1204"), in: .inbox)
+        environment.router.push(.issue(id: "pap-1204"), in: .agents)
+        let issue = environment.issueModel(id: "pap-1204")
+        environment.router.popToRoot(.inbox)
+        #expect(issue.isClosed == false)
+        environment.router.popToRoot(.agents)
+        #expect(issue.isClosed)
+        environment.shutdown()
+    }
+
     @Test func leavingTheGraphClosesEveryScreenModel() async {
         let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
         environment.start()

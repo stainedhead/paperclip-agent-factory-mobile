@@ -15,7 +15,7 @@ struct RouteDestination: View {
         case .approval(let id): ApprovalView(environment: environment, id: id)
         case .agent(let id): AgentDetailView(environment: environment, id: id)
         case .run(let id): RunViewerView(environment: environment, id: id)
-        default: RoutePlaceholderView(route: route)
+        case .issue(let id): IssueView(environment: environment, id: id)
         }
     }
 }

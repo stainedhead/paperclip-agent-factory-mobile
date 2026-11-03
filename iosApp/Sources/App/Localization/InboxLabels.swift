@@ -42,13 +42,6 @@ enum InboxLabel: String, CaseIterable, CatalogKey {
     case loadMore
     case ageAgo
     case filtersLabel
-    case placeholderDecision
-    case placeholderApproval
-    case placeholderBudget
-    case placeholderIssue
-    case placeholderRun
-    case placeholderAgent
-    case placeholderGeneric
     case webTitle
 
     var text: String { L10n.text(self) }

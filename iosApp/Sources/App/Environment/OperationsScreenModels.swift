@@ -36,6 +36,22 @@ extension AppEnvironment {
         return model
     }
 
+    func workModel() -> WorkListModel {
+        let model = models.model(for: .work(instance: selectedInstance, company: selectedCompany)) {
+            graph.work.createWorkListStateHolder(instanceId: selectedInstance, companyId: selectedCompany)
+        }
+        watchForOfflineAfterDetail(model)
+        return model
+    }
+
+    func issueModel(id: String) -> IssueScreenModel {
+        let model = models.model(for: .issue(id: id)) {
+            graph.work.createIssueStateHolder(instanceId: selectedInstance, companyId: selectedCompany, issueId: id)
+        }
+        watchForOfflineAfterDetail(model)
+        return model
+    }
+
     private func watchForOfflineAfterDetail<Holder: StateHolderProtocol>(_ model: HolderModel<Holder>) {
         guard configuration.offlineAfterDetail else { return }
         model.didUpdate = { [weak self] state in
@@ -49,6 +65,8 @@ extension AppEnvironment {
         case let state as AgentsState: state.phase
         case let state as AgentDetailState: state.phase
         case let state as RunViewerState: state.phase
+        case let state as WorkListState: state.phase
+        case let state as IssueState: state.phase
         default: nil
         }
     }

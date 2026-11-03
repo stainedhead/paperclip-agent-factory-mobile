@@ -61,8 +61,6 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case tabWork
     case tabAgents
     case tabFactories
-    case placeholderTitle
-    case placeholderMessage
     case lockTitle
     case lockMessage
     case lockUnlock

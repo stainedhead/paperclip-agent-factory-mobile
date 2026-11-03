@@ -146,6 +146,7 @@ struct DetailLaunchOptionsTests {
         #expect(StartLocation.parse("budget:inc-eng-2") == .sheet(.budgetIncident(id: "inc-eng-2")))
         #expect(StartLocation.parse("run:run-1204-live") == .route(.run(id: "run-1204-live")))
         #expect(StartLocation.parse("agent:agent-cto") == .route(.agent(id: "agent-cto")))
+        #expect(StartLocation.parse("issue:pap-1204") == .route(.issue(id: "pap-1204")))
         #expect(StartLocation.parse("settings") == .route(.settings))
         #expect(StartLocation.parse("edit:demo-home") == .route(.editFactory(id: "demo-home")))
         #expect(StartLocation.parse("nonsense") == nil)

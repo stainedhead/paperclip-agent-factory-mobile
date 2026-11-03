@@ -52,7 +52,7 @@ struct TabShellView: View {
         case .factories: FactoriesView(environment: environment)
         case .factory: FactoryHomeView(environment: environment)
         case .agents: AgentsView(environment: environment)
-        default: PlaceholderRootView(tab: tab, environment: environment)
+        case .work: WorkListView(environment: environment)
         }
     }
 

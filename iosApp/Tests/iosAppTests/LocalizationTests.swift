@@ -75,6 +75,18 @@ struct LocalizationTests {
     @Test func everyAgentDetailLabelHasText() { check(AgentDetailLabel.allCases) }
     @Test func everyRunLabelHasText() { check(RunLabel.allCases) }
     @Test func everyDecideByKindHasText() { check(DecideByKindUi.allCases) }
+    @Test func everyIssueStatusHasText() { check(IssueStatusUi.allCases) }
+    @Test func everyIssuePriorityHasText() { check(IssuePriorityUi.allCases) }
+    @Test func everyIssueFilterHasText() { check(IssueFilterUi.allCases) }
+    @Test func everyIssueTabHasText() { check(IssueTab.allCases) }
+    @Test func everyCommentAuthorHasText() { check(CommentAuthorUi.allCases) }
+    @Test func everyInteractionKindHasText() { check(InteractionKindUi.allCases) }
+    @Test func everyInteractionStatusHasText() { check(InteractionStatusUi.allCases) }
+    @Test func everyInteractionReadOnlyReasonHasText() { check(InteractionReadOnlyUi.allCases) }
+    @Test func everyInteractionPrimaryHasText() { check(InteractionPrimaryUi.allCases) }
+    @Test func everyVerdictHasText() { check(VerdictUi.allCases) }
+    @Test func everyWorkLabelHasText() { check(WorkLabel.allCases) }
+    @Test func everyIssueLabelHasText() { check(IssueLabel.allCases) }
 
     @Test func keysFollowTheNamespaceDotCaseNameScheme() {
         #expect(ErrorKey.certificateInvalid.catalogKey == "error.certificateInvalid")
