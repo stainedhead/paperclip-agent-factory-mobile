@@ -241,9 +241,7 @@ struct InteractionCardView: View {
 
     /// Only a web address is opened: a link the server sent is never handed to the system as anything else.
     private var webLink: WebLink? {
-        guard let address = card.openInWebUrl, let url = URL(string: address) else { return nil }
-        let isWeb = ["http", "https"].contains(url.scheme?.lowercased()) && url.host != nil
-        return isWeb ? WebLink(url: url) : nil
+        WebAddress.url(card.openInWebUrl).map { WebLink(url: $0) }
     }
 
     // MARK: - Buttons and why not

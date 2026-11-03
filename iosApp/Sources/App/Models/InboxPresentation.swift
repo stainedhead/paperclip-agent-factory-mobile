@@ -21,12 +21,9 @@ enum InboxDestination: Equatable {
         }
     }
 
-    /// Only a web address is opened: a link the server sent is never handed to the system as anything else.
+    /// Only an https address is opened: a link the server sent is never handed to the system as anything else.
     private static func web(_ address: String?) -> InboxDestination {
-        guard let address, let url = URL(string: address), ["http", "https"].contains(url.scheme?.lowercased()),
-            url.host != nil
-        else { return .none }
-        return .web(url)
+        WebAddress.url(address).map { .web($0) } ?? .none
     }
 }
 
