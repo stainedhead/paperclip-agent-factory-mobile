@@ -54,11 +54,9 @@ struct EditFactoryView: View {
                     .accessibilityIdentifier("edit-save-button")
             }
         }
-        .confirmationDialog(ShellLabel.editDiscardTitle.text, isPresented: $showsDiscard, titleVisibility: .visible) {
+        .alert(ShellLabel.editDiscardTitle.text, isPresented: $showsDiscard) {
             Button(ShellLabel.editDiscardConfirm.text, role: .destructive) { environment.router.pop(.factories) }
-                .accessibilityIdentifier("edit-discard-confirm")
             Button(ShellLabel.editDiscardKeep.text, role: .cancel) {}
-                .accessibilityIdentifier("edit-discard-keep")
         }
         .onChange(of: state.saved) { _, saved in if saved { environment.router.pop(.factories) } }
         .onChange(of: state.removed) { _, removed in if removed { environment.router.popToRoot(.factories) } }
