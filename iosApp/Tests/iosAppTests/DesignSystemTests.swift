@@ -148,3 +148,21 @@ struct ClockDrivenLabelTests {
         #expect(!card.accessibilityLabel.contains("8m ago"))
     }
 }
+
+/// B-05: a button that says Retry retries; a banner that can only be closed says Dismiss.
+struct ErrorBannerButtonTests {
+    @Test func aBannerThatCanOnlyBeClosedOffersDismissNeverRetry() {
+        #expect(ErrorBannerButton.choose(signedOut: false, signIn: false, retry: false, dismiss: true) == .dismiss)
+        #expect(ErrorBannerButton.dismiss.title == "Dismiss")
+    }
+
+    @Test func retryWinsOverDismissAndSignInWinsWhenSignedOut() {
+        #expect(ErrorBannerButton.choose(signedOut: false, signIn: true, retry: true, dismiss: true) == .retry)
+        #expect(ErrorBannerButton.choose(signedOut: true, signIn: true, retry: true, dismiss: true) == .signIn)
+        #expect(ErrorBannerButton.choose(signedOut: true, signIn: false, retry: true, dismiss: false) == .retry)
+    }
+
+    @Test func nothingToDoOffersNoButton() {
+        #expect(ErrorBannerButton.choose(signedOut: false, signIn: false, retry: false, dismiss: false) == nil)
+    }
+}
