@@ -7,9 +7,9 @@ How the code is organised and built, as it exists on the branch `feat/phase-1a-s
 | Area | State |
 |---|---|
 | Shared core: domain, application, presentation, testing fakes, umbrella | Built (Phase 1a). Runs entirely on fakes. |
-| Real adapters (`shared/infrastructure/*`) | Not built. The five modules exist as Gradle stubs with no source. Phase 1b. |
-| iPhone app | One screen: the first-run address check. Every other screen has a tested state holder and no UI. |
-| Android app | Not started. There is no `androidApp/` directory. The shared modules do build an Android library target. |
+| Real adapters (`shared/infrastructure/*`) | Not on this branch. Phase 1b is pull request #7 (branch `feat/phase-1b-adapters`). |
+| iPhone app | All main screens built on the demo graph (Phase 2i, milestones 2i-0 to 2i-6). |
+| Android app | Not started. |
 | Push relay | Not started. |
 
 No Paperclip server is contacted by either `PaperclipCore.createGraph` or `PaperclipCore.createDemoGraph`; both are wired to the fakes in `shared/testing`.
@@ -256,6 +256,12 @@ Decisions are in ADR-030 to ADR-037; the fix spec is `specs/archive/261101-phase
 | Concurrency | State holders claim their in-flight flags atomically; a late read never overwrites a finished action (version counters); the Decision screen has one execution poller. |
 | Role gating | Every flag goes through `Permissions` and `DeviceAuthPolicy` (`RoleGating.kt`); a 403 on a read or a mutation re-resolves the role once. |
 | CI | `contract-smoke.sh`, SHA-pinned actions and a digest-pinned scanner (see CI). |
+
+## iPhone polish, tab bar and the live seam (2i-6)
+
+- **Tab bar values.** SwiftUI paints `.badge` but, on iOS 26, does not give the tab button an accessibility value. `TabBarAccessibility` sets it on the `UITabBarItem`s. UIKit rebuilds items at moments SwiftUI does not announce, so an invisible controller key-value observes the bar's `items`, its hidden state and layer position and the controller's `viewControllers`, and re-applies once per change. There is no timer (ADR-108).
+- **Live seam.** `AppGraphProvider` is the one switch: `DemoGraphProvider`, `FirstRunDemoGraphProvider` and `LiveGraphProvider`. `LiveGraphProvider` already takes the pairing browser and is marked unavailable; it builds the fakes graph (`createGraph`) until Phase 1b merges. The calls to plug in then are in `specs/261102-phase-2i-iphone-ui/implementation-notes.md`, "Merge checklist".
+- **Audits.** Factory home and Agents fail the system audit's Dynamic Type and Text clipped checks on text low on the screen; they are asserted clean, run in the non-blocking audit set, and the findings are recorded honestly (ADR-109).
 
 ## Work list and Issue on iPhone (2i-5)
 

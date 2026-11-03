@@ -30,7 +30,7 @@ Update this file after every task and phase. It is the single source of progress
 - [x] 2i-3 Decision, Approval, Budget incident sheet (UI-030)
 - [x] 2i-4 Factory home, Agents, Agent detail, Run viewer (UI-040)
 - [x] 2i-5 Work list and Issue with interactions (UI-050)
-- [ ] 2i-6 Polish, accessibility, screenshots into docs, live seam, documentation (UI-060, acceptance 5 to 10)
+- [x] 2i-6 Polish, accessibility, screenshots into docs, live seam, documentation (UI-060, acceptance 5 to 10)
 
 ## Notes
 
@@ -42,6 +42,8 @@ Update this file after every task and phase. It is the single source of progress
 2i-4 done: Factory home, Agents, Agent detail, Run viewer (ADR-100 to 103); see implementation-notes.md.
 
 2i-5 done: Work list and Issue (ADR-106, 107); see implementation-notes.md.
+
+2i-6 done: polish, KVO tab bar, honest audits, screenshots, docs, merge checklist for 1b (ADR-108 to 111).
 
 ## Blockers
 
@@ -57,3 +59,4 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: milestone 2i-4 (Factory home, Agents, Agent detail, Run viewer, shared run/issue enrichment, demo run data) implemented.
 - 2026-11-02: milestone 2i-5 (Work list, Issue, demo answer and comment fixes) implemented.
 - 2026-11-02: fixed the iOS 26.5 CI failures (tab badge accessibility value, demo refresh timer pause); ADR-105.
+- 2026-11-03: milestone 2i-6 (polish, accessibility, screenshots, live seam notes, docs) implemented.

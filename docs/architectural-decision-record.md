@@ -460,3 +460,39 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** `WorkAuditUITests` asserts the audit returns no findings with plain assertions (no expected failure, no allow-list) and is listed in the audit set of `scripts/ios-test.sh` (non-blocking in CI, ADR-080). The new functional classes `WorkUITests` and `IssueUITests` join shard 3.
 
+
+## ADR-108: The tab bar's accessibility values follow key-value observation, not a timer
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+
+**Context.** ADR-105 set the Inbox badge's accessibility value on the `UITabBarItem`s. UIKit rebuilds those items at moments SwiftUI gives no signal for (a sheet closing, a detail screen's bar returning), so the first version re-checked twice a second with a `Timer`. AGENTS.md and the brief forbid polling timers in views.
+
+**Decision.** The invisible `Applier` controller observes with KVO the bar's `items` and `isHidden`, the bar layer's `position` and the tab controller's `viewControllers`, and re-applies the values (idempotent) on each change, in addition to layout and appearance callbacks. The timer and the 0.6 s one-shot are gone.
+
+**Consequences.** All 50 UI tests of the Inbox, Decision, Approval, Budget and Shell classes that read the badge pass locally on iOS 27.2. Whether UIKit posts these KVO changes on every rebuild of the iOS 26.5 runtime used by CI was verified only by the CI run (see implementation-notes.md); if a rebuild bypasses KVO the badge test is the detector.
+
+## ADR-109: Factory home and Agents audit findings are reported honestly, not expected
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+
+**Context.** Three audits (Factory home, offline Factory home, Agents) used a non-strict `XCTExpectFailure` for "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text in the lower part of the screen (y about 575 to 775 of 874 pt).
+
+**Decision.** No `XCTExpectFailure` remains anywhere. The audits assert an empty finding list like the others and stay in the non-blocking audit set (ADR-080), so CI reports their findings instead of hiding them. Investigated without effect: making the tile and row buttons single elements (`accessibilityElement(.ignore)` on the button, the pattern the Work rows use and which pass), and `contentMargins(.bottom)` for the floating tab bar. The findings track screen position (a tile row is clean at y 540 and flagged at y 620), not a font: the Work list, built the same way, passes. Cause not found.
+
+**Consequences.** The three tests fail locally and in the audit job until the cause is found; they do not block the merge. Findings: Factory home (2 to 4 texts of the Approvals and Budget incidents tiles), offline Factory home (all tiles), Agents (the CTO row, Pause, section header).
+
+## ADR-110: The live seam stays a provider; the real graph is plugged in when Phase 1b merges
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, G5)
+
+**Decision.** `createLiveGraph`, `openLiveGraph` and `LivePlatform` exist only on `feat/phase-1b-adapters` (PR #7), so this branch does not call them (the Kotlin would not compile into the framework). `LiveGraphProvider` already has the Swift half (pairing browser, debug-only insecure local) and its `makeGraph()` is the single line to change. The exact steps are the "Merge checklist" in implementation-notes.md.
+
+**Consequences.** A launch without `-demo` shows the first-run flow on empty fakes today.
+
+## ADR-111: Hit targets and reduce motion are checked by UI test and environment, not by a shared rule
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+
+**Decision.** `HitTargetUITests` reads every button, switch and text field on each tab root and asserts at least 43.9 x 43.9 pt (rounding tolerance). Explicit animations read `accessibilityReduceMotion`. These are presentation rules with no shared state, so no Kotlin changed.
+
+**Consequences.** The tests were characterisation tests: they passed on first run, no red step.

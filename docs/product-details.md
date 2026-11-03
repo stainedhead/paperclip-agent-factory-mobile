@@ -2,9 +2,9 @@
 
 Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent-factory-mobile-PRD.md). The numbered screen inventory is the PRD's; the order below follows it.
 
-**What exists today.** All 15 Phase 1a screens have a tested state holder in the shared Kotlin core, so the behaviour below is built and verified by tests on the demo data. Only one screen has a UI: the first step of First-run setup on iPhone. Every other screen has no SwiftUI or Compose view yet (Phase 2). Screen 14 (Notification settings) belongs to Phase 3 and has no state holder.
+**What exists today.** The shared Kotlin core has a tested state holder for every screen, and the iPhone app (Phase 2i) draws screens 1 to 13, 15 and 16 on the demo graph. Screen 14 (Notification settings) belongs to Phase 3. Without the Phase 1b adapters no real factory can be reached.
 
-**About the images.** The images in `docs/images/design-*.png` are **design mocks** rendered from [Paperclip-Remote-mobile-UI-design.html](../Paperclip-Remote-mobile-UI-design.html); they show demo data and are a target, not the product. `docs/images/ios-first-run.png` is the only **built** screenshot (the running iPhone app). Mocks exist for seven screens; the other screens have none. Real screenshots replace mocks as the screens are built.
+**About the images.** Screenshots in `docs/images/` without a `design-` prefix are real captures of the running iPhone app in **demo mode** (fake data only; the pairing screen is never captured). The `design-*.png` files are the original mocks, kept for comparison.
 
 ## Roles, device authentication, offline: rules that apply everywhere
 
@@ -17,22 +17,31 @@ Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent
 | Text | State holders emit keys (enums), not sentences; the UI owns wording and localisation. |
 | Refresh | 15 s while visible, 5 s for a live run, none when the item is final (see [technical-details.md](./technical-details.md#refresh-policy)). |
 
-## Built UI
+## Built UI (iPhone, demo mode)
 
-### Screen 15: First-run setup, step 1 (address check)
-
-State holder `FirstRunStateHolder`. FR-003 and FR-009. The address of the Paperclip server is checked as you type, by the shared core:
-
-- it must start with `https://`; `http://` is accepted only for `localhost` and `10.0.2.2` in debug builds;
-- scheme and host are lower-cased and a trailing `/` is removed; a path prefix such as `/paperclip` and an explicit port are kept;
-- user names and passwords, query strings and fragments are refused, with a message saying what to remove;
-- a path with spaces, control characters, `..`, empty parts (`//`) or a broken `%` escape, and a host with an empty part, a trailing dot, non-ASCII letters (use the punycode form) or a malformed IP address are refused too.
-
-"Continue to pairing" is enabled for a valid address and does nothing yet. The rest of the flow (name, server check, pairing, company, app lock) is in the state holder and tested, with no view.
-
-| Built (iPhone, running) | Design mock (target) |
+| Screen | Image |
 |---|---|
-| <img src="images/ios-first-run.png" alt="Built: the first-run screen with an address field and a disabled Continue button" width="240"> | <img src="images/design-first-run.png" alt="Design mock of the first-run setup screen" width="240"> |
+| First run, address step (15) | <img src="images/first-run.png" alt="First-run screen: Add your first factory, with address and name fields and a Try the demo factory button" width="200"> |
+| Inbox (1) | <img src="images/inbox.png" alt="Inbox with Decide now cards" width="200"> <img src="images/inbox-offline.png" alt="Inbox offline with saved cards and disabled actions" width="200"> |
+| Decision (2) | <img src="images/decision.png" alt="Decision with three options, effects and a locked destructive option" width="200"> |
+| Approval (3) | <img src="images/approval.png" alt="Approval of a hire request with its payload" width="200"> |
+| Budget incident (12) | <img src="images/budget-incident.png" alt="Budget incident sheet with keep paused and raise and resume" width="200"> |
+| Factory home (5) | <img src="images/factory-home.png" alt="Factory home with spend and tiles" width="200"> |
+| Agents (6) and Agent detail (11) | <img src="images/agents.png" alt="Agents grouped by state with row buttons" width="200"> <img src="images/agent-detail.png" alt="Agent detail" width="200"> |
+| Run viewer (7) | <img src="images/run-viewer.png" alt="Run viewer with events, log tail and Cancel run" width="200"> |
+| Work (10) and Issue (4) | <img src="images/work.png" alt="Work list" width="200"> <img src="images/issue.png" alt="Issue thread with a questions card" width="200"> |
+| Factories (8), Manage (16) | <img src="images/factories.png" alt="Factories tab" width="200"> <img src="images/manage-factories.png" alt="Manage factories" width="200"> |
+| Edit factory (9), Settings (13) | <img src="images/edit-factory.png" alt="Edit factory" width="200"> <img src="images/settings.png" alt="Settings with app lock" width="200"> |
+| Dark mode, large text | <img src="images/factory-home-dark.png" alt="Factory home in dark mode" width="200"> <img src="images/decision-large-text.png" alt="Decision at the largest accessibility text size" width="200"> |
+
+### Polish and accessibility (UI-060)
+
+- **Text size.** Fonts scale with Dynamic Type; layouts switch to stacked arrangements at accessibility sizes; the app is exercised at the largest accessibility size in screenshots and audits.
+- **Dark mode.** One palette with a tested dark variant.
+- **VoiceOver.** Controls carry labels and hints, cards read as one element, the Inbox tab reads "N waiting" as its value.
+- **Targets.** Every control is at least 44 x 44 pt (`HitTargetUITests`).
+- **Motion and haptics.** The two explicit animations are off when Reduce Motion is on; success and failure haptics follow each action's outcome.
+- **States.** Every screen has loading, empty, error and offline states; offline keeps the last data with its time and disables actions with a reason.
 
 ### Screens 10 and 4: Work list and Issue (iPhone, milestone 2i-5)
 
