@@ -47,8 +47,9 @@ private struct CommentCard: View {
                 .foregroundStyle(Palette.textPrimary.color)
         }
         .cardSurface()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(line). \(comment.body)")
+        // Combined, not replaced by a label: VoiceOver reads the words (never the marks) and a link in the comment
+        // stays reachable through the Links rotor.
+        .accessibilityElement(children: .combine)
         .accessibilityIdentifier("issue-comment-\(comment.id)")
     }
 }
