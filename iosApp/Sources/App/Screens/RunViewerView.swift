@@ -143,6 +143,7 @@ private struct RunViewerScreen: View {
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isStaticText)
         .accessibilityLabel([offset, message].compactMap { $0 }.joined(separator: ", "))
         .accessibilityIdentifier("run-event-\(event.seq)")
     }
