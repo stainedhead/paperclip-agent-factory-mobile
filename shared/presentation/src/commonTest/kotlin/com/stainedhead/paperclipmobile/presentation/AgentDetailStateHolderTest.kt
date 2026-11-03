@@ -280,7 +280,7 @@ class AgentDetailBudgetInputTest {
 
             holder.onIntent(AgentDetailIntent.BudgetAmountTyped("250,50", ".", 2))
             runCurrent()
-            holder.state.value.budgetAmountIssue shouldBe InvalidKey.AmountNotANumber
+            holder.state.value.budgetAmountIssue shouldBe InvalidKey.AmountNotNumeric
             holder.state.value.canSaveBudget shouldBe false
 
             holder.onIntent(AgentDetailIntent.BudgetAmountTyped("250,50", ",", 2))

@@ -35,8 +35,8 @@ object MoneyInput {
         decimal: Char,
         fractionDigits: Int,
     ): ParsedMoney =
-        if (read(rest, decimal, fractionDigits).issue == InvalidKey.AmountNotANumber || rest.isEmpty()) {
-            ParsedMoney(null, InvalidKey.AmountNotANumber)
+        if (read(rest, decimal, fractionDigits).issue == InvalidKey.AmountNotNumeric || rest.isEmpty()) {
+            ParsedMoney(null, InvalidKey.AmountNotNumeric)
         } else {
             ParsedMoney(null, InvalidKey.AmountNotPositive)
         }
@@ -56,7 +56,7 @@ object MoneyInput {
                 !wellFormedWhole(whole, group) ||
                 !fraction.all { it in '0'..'9' }
         return when {
-            invalid -> ParsedMoney(null, InvalidKey.AmountNotANumber)
+            invalid -> ParsedMoney(null, InvalidKey.AmountNotNumeric)
             fraction.length > fractionDigits -> ParsedMoney(null, InvalidKey.AmountTooManyDecimals)
             else -> amount(whole.filter { it != group }.trimStart('0'), fraction, fractionDigits)
         }

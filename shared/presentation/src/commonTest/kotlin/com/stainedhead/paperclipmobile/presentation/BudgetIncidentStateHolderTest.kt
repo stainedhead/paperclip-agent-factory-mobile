@@ -383,7 +383,7 @@ class BudgetAmountInputTest {
             holder.onIntent(BudgetIntent.AmountTyped("250,50", ".", 2))
             runCurrent()
 
-            holder.state.value.amountIssue shouldBe InvalidKey.AmountNotANumber
+            holder.state.value.amountIssue shouldBe InvalidKey.AmountNotNumeric
             holder.state.value.amountMinorUnits shouldBe null
             holder.state.value.canSubmit shouldBe false
         }

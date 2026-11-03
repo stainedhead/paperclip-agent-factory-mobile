@@ -33,7 +33,7 @@ enum class InvalidKey {
     InputTooLong,
     AmountMustExceedObserved,
     WrongCurrency,
-    AmountNotANumber,
+    AmountNotNumeric,
     AmountNotPositive,
     AmountTooLarge,
     AmountTooManyDecimals,

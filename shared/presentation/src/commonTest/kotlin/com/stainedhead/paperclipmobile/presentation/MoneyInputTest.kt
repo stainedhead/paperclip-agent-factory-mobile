@@ -26,14 +26,14 @@ class MoneyInputTest {
     fun `a point in a comma locale is not silently dropped`() {
         val parsed = parse("250.50", decimal = ",")
         parsed.minorUnits shouldBe null
-        parsed.issue shouldBe InvalidKey.AmountNotANumber
+        parsed.issue shouldBe InvalidKey.AmountNotNumeric
     }
 
     @Test
     fun `a comma in a point locale is not silently dropped`() {
         val parsed = parse("250,50")
         parsed.minorUnits shouldBe null
-        parsed.issue shouldBe InvalidKey.AmountNotANumber
+        parsed.issue shouldBe InvalidKey.AmountNotNumeric
     }
 
     @Test
@@ -54,18 +54,18 @@ class MoneyInputTest {
 
     @Test
     fun `misplaced grouping is refused`() {
-        parse("12,34.00").issue shouldBe InvalidKey.AmountNotANumber
-        parse("1,2,3").issue shouldBe InvalidKey.AmountNotANumber
-        parse("1.2.3").issue shouldBe InvalidKey.AmountNotANumber
-        parse("1.2.3", decimal = ",").issue shouldBe InvalidKey.AmountNotANumber
+        parse("12,34.00").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("1,2,3").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("1.2.3").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("1.2.3", decimal = ",").issue shouldBe InvalidKey.AmountNotNumeric
     }
 
     @Test
     fun `letters and lone separators are not a number`() {
-        parse("abc").issue shouldBe InvalidKey.AmountNotANumber
-        parse("12a").issue shouldBe InvalidKey.AmountNotANumber
-        parse(".").issue shouldBe InvalidKey.AmountNotANumber
-        parse("--5").issue shouldBe InvalidKey.AmountNotANumber
+        parse("abc").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("12a").issue shouldBe InvalidKey.AmountNotNumeric
+        parse(".").issue shouldBe InvalidKey.AmountNotNumeric
+        parse("--5").issue shouldBe InvalidKey.AmountNotNumeric
     }
 
     @Test
