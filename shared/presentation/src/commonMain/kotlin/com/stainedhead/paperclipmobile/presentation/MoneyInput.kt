@@ -33,7 +33,7 @@ object MoneyInput {
         }
     }
 
-    /** One currency sign at either end (with the space beside it) is fine; anywhere else it is not part of a number. */
+    /** One currency sign at either end (and the space beside it) is fine; elsewhere it is not part of a number. */
     private fun withoutEdgeSigns(text: String): String {
         val noLeading = if (text.firstOrNull()?.category == CharCategory.CURRENCY_SYMBOL) text.drop(1).trim() else text
         return if (noLeading.lastOrNull()?.category == CharCategory.CURRENCY_SYMBOL) {
