@@ -43,7 +43,7 @@ struct FactoriesView: View {
         .navigationTitle(ShellLabel.tabFactories.text)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                // An icon, not text: bar text is capped by the system and drawn on glass (audit: Dynamic Type, contrast).
+                // An icon, not text: bar text is capped by the system and drawn on glass (audit findings).
                 Button {
                     environment.router.push(.manageFactories, in: .factories)
                 } label: {
@@ -103,7 +103,7 @@ struct FactoryCard: View {
                 .accessibilityLabel(ShellLabel.editTitleEdit.text)
                 .accessibilityIdentifier("factory-details-\(row.id)")
             }
-            Text(row.address)
+            Text(BreakableAddress.text(row.address))
                 .font(Typography.secondary)
                 .foregroundStyle(Palette.textSecondary.color)
                 .accessibilityLabel("\(ShellLabel.fieldAddressLabel.text): \(row.address)")

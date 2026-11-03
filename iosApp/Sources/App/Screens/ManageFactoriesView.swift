@@ -24,18 +24,25 @@ struct ManageFactoriesView: View {
                 }
             } header: {
                 Text(countText(state.rows.count))
+                    .font(Typography.secondary)
+                    .textCase(nil)
                     .foregroundStyle(Palette.textSecondary.color)
                     .accessibilityIdentifier("manage-count")
             } footer: {
                 VStack(alignment: .leading, spacing: Spacing.medium) {
                     Text(ShellLabel.manageHint.text)
+                        .font(Typography.secondary)
+                        .foregroundStyle(Palette.textSecondary.color)
                     if state.reorderRejected {
                         Text(ShellLabel.manageReorderRejected.text)
+                            .font(Typography.secondary)
                             .foregroundStyle(Palette.destructive.color)
                             .accessibilityIdentifier("manage-reorder-rejected")
                     }
                     if let outcome = state.lastRemovedKey {
                         Text(L10n.text(outcome))
+                            .font(Typography.secondary)
+                            .foregroundStyle(Palette.textSecondary.color)
                             .accessibilityIdentifier("manage-key-outcome")
                     }
                 }
@@ -45,6 +52,7 @@ struct ManageFactoriesView: View {
                     environment.router.push(.editFactory(id: nil), in: .factories)
                 } label: {
                     Label(ShellLabel.factoriesAdd.text, systemImage: "plus")
+                        .font(Typography.body)
                         .frame(minHeight: Spacing.minimumTarget, alignment: .leading)
                 }
                 .accessibilityIdentifier("add-factory-button")
@@ -119,7 +127,9 @@ private struct ManageRow: View {
                 VStack(alignment: .leading, spacing: Spacing.hairline) {
                     Text(row.name).font(Typography.cardTitle).foregroundStyle(Palette.textPrimary.color)
                         .accessibilityIdentifier("manage-name-\(row.id)")
-                    Text(row.address).font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
+                    Text(BreakableAddress.text(row.address)).font(Typography.secondary)
+                        .foregroundStyle(Palette.textSecondary.color)
+                        .accessibilityLabel(row.address)
                         .accessibilityIdentifier("manage-address-\(row.id)")
                     Text(status.text).font(Typography.label).foregroundStyle(status.tone.foreground.color)
                         .accessibilityIdentifier("manage-status-\(row.id)")
