@@ -39,9 +39,26 @@ Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent
 - **Text size.** Fonts scale with Dynamic Type; layouts switch to stacked arrangements at accessibility sizes; the app is exercised at the largest accessibility size in screenshots and audits.
 - **Dark mode.** One palette with a tested dark variant.
 - **VoiceOver.** Controls carry labels and hints, cards read as one element, the Inbox tab reads "N waiting" as its value.
-- **Targets.** Every control is at least 44 x 44 pt (`HitTargetUITests`).
+- **Targets.** Every control that is on screen between the navigation bar and the tab bar is at least 44 x 44 pt (`HitTargetUITests`, which fails when it measures too few controls and prints how many it could not see: below the fold or under the bars).
 - **Motion and haptics.** The two explicit animations are off when Reduce Motion is on; success and failure haptics follow each action's outcome.
 - **States.** Every screen has loading, empty, error and offline states; offline keeps the last data with its time and disables actions with a reason.
+
+### Review-fix round (iPhone)
+
+What changed for the person using the app after the three reviews of the iPhone UI (see implementation-notes.md, "Review-fix round"):
+
+- **A build without live factories says so.** Launched without `-demo` (and in every Release build, where `-demo*` is ignored) the app shows "Live factories are not available yet" and starts nothing: no pairing, no approvals.
+- **Money you type is read strictly.** The Budget incident and Agent detail amounts are read by shared code with the phone's decimal mark. "250,50" typed where the decimal mark is "." is refused with a message (never read as 25,050); zero, negative, too-precise and too-large amounts are refused. The raise button reads "Raise to $250 and resume", and "Choose an option" until you choose.
+- **Times keep moving.** "Updated 12s ago", card ages and a running run's elapsed time keep counting while the screen is open, also offline. Ages are in your language; VoiceOver reads them as words ("8 minutes").
+- **Decision.** Shows when it expires; the bar above Confirm names the chosen option; effect lines show free text (a title or a comment excerpt) exactly as written.
+- **Approval.** Linked issues open the Issue screen. Your comment box clears only when your own comment is posted, never because someone else's arrived.
+- **Issue.** The comment box keeps your text until the comment is sent; a failed or refused send loses nothing and a sent one is never put back. The create-issue and subtask sheets stay open with your text when the server refuses, and close when it worked.
+- **Agent detail.** "Working" shows while Pause, Resume or Run now runs. The budget form closes only when the budget was saved.
+- **Edit factory and Settings.** Cancel asks before throwing away typed changes. The device name is saved when you leave the field or the screen, not only on Done.
+- **Leaving a screen mid-request.** Going back during a request or a Face ID prompt does not lose the outcome: the screen finishes first, then goes away.
+- **Privacy.** The app-switcher shield is a window above everything, so open sheets and the in-app browser are covered too. A pairing that ends (cancelled, expired, failed) closes its approval page.
+- **Switcher dot.** Green only for a working key on a connected phone; amber for an expired key, re-pairing or an offline phone; grey when signed out.
+- **Web links.** Only https links are opened (plain http only for `localhost` and `10.0.2.2` in Debug builds). Counts read right in the singular ("1 key", "1 factory").
 
 ### Screens 10 and 4: Work list and Issue (iPhone, milestone 2i-5)
 
