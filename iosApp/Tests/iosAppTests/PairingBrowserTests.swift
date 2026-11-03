@@ -5,7 +5,7 @@ import Testing
 @testable import iosApp
 
 @MainActor
-private final class FakeWebAuthSession: WebAuthSessionHandle {
+final class FakeWebAuthSession: WebAuthSessionHandle {
     let url: URL
     let complete: @MainActor (WebAuthSessionOutcome) -> Void
     var startResult = true
@@ -37,7 +37,7 @@ private func openLink(_ port: Unchecked<any PairingBrowser>, _ link: Unchecked<S
 private func ignoreCompletion(_ url: URL?, _ error: Error?) {}
 
 @MainActor
-private final class Harness {
+final class Harness {
     var sessions: [FakeWebAuthSession] = []
     var events: [PairingBrowserEvent] = []
     var startResult = true

@@ -109,6 +109,39 @@ struct ScreenModelOwnershipTests {
         environment.shutdown()
     }
 
+    /// A9: when pairing ends without the approval being used, the page is not left open for someone to approve a
+    /// challenge nobody is waiting on.
+    @Test func cancellingThePairingOnScreenClosesTheOpenApprovalPage() async {
+        let harness = Harness()
+        let environment = AppEnvironment(
+            configuration: LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"]),
+            provider: FirstRunDemoGraphProvider(), page: harness.browser)
+        environment.start()
+        #expect(await eventually { environment.app.state.isLoaded })
+        let observing = Task { await environment.firstRun.observe() }
+        environment.firstRun.send(FirstRunIntentAddressChanged(text: "https://paperclip.example.org"))
+        environment.firstRun.send(FirstRunIntentProbeRequested.shared)
+        #expect(await eventually { environment.firstRun.state.probe == .accepted })
+        environment.firstRun.send(FirstRunIntentContinueRequested.shared)
+        #expect(await eventually { environment.firstRun.state.step == .pair })
+        environment.firstRun.send(FirstRunIntentPairRequested.shared)
+        harness.browser.present(url: "https://paperclip.example.org/cli-auth/challenge-TESTONLY")
+        #expect(harness.sessions.first?.cancelCount == 0)
+
+        environment.firstRun.send(FirstRunIntentPairCancelled.shared)
+        #expect(await eventually { harness.sessions.first?.cancelCount == 1 })
+        observing.cancel()
+        environment.shutdown()
+    }
+
+    @Test func thePageStaysOpenWhileAPairingIsWaiting() {
+        #expect(PairingPagePolicy.closesPage(for: .waiting) == false)
+        #expect(PairingPagePolicy.closesPage(for: .idle) == false)
+        for ended in [PairingStatus.cancelled, .expired, .failed] {
+            #expect(PairingPagePolicy.closesPage(for: ended))
+        }
+    }
+
     @Test func theFirstRunDemoGraphStartsEmptyAndShowsDemoTimeAsTheReferenceDate() async {
         let environment = AppEnvironment(
             configuration: LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"]))
