@@ -64,8 +64,8 @@ struct FormField: View {
                 .keyboardType(keyboard)
                 .disabled(isDisabled)
                 .padding(.horizontal, Spacing.extraLarge)
+                .frame(minHeight: Spacing.minimumTarget - 2 * Spacing.small)
                 .padding(.vertical, Spacing.small)
-                .frame(minHeight: Spacing.minimumTarget)
                 .background(Palette.surface.color, in: RoundedRectangle(cornerRadius: Radius.button))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radius.button)
