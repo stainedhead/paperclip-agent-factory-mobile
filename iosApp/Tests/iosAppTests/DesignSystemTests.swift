@@ -1,3 +1,4 @@
+import Foundation
 import PaperclipKit
 import Testing
 
@@ -80,5 +81,70 @@ struct RelativeAgeTests {
 
     @Test func aFutureTimestampReadsAsJustNowNotNegative() {
         #expect(RelativeAge.text(seconds: -5) == "0s")
+    }
+
+    @Test func unitsFollowTheLocaleNotJustEnglish() {
+        let german = Locale(identifier: "de_DE")
+        #expect(RelativeAge.text(seconds: 480, locale: german) == "8min")
+        #expect(RelativeAge.text(seconds: 259_200, locale: Locale(identifier: "fr_FR")) == "3j")
+    }
+
+    @Test func voiceOverHearsWordsNotLetters() {
+        let english = Locale(identifier: "en_US")
+        #expect(RelativeAge.spoken(seconds: 12, locale: english) == "12 seconds")
+        #expect(RelativeAge.spoken(seconds: 480, locale: english) == "8 minutes")
+        #expect(RelativeAge.spoken(seconds: 3600, locale: english) == "1 hour")
+        #expect(RelativeAge.spoken(seconds: 259_200, locale: english) == "3 days")
+        #expect(RelativeAge.spoken(seconds: 65, locale: Locale(identifier: "de_DE")) == "1 Minute")
+    }
+}
+
+/// A1/B-01: a label is a function of the clock, so it cannot stay frozen at the moment of its last render.
+@MainActor
+struct ClockDrivenLabelTests {
+    private let english = Locale(identifier: "en_US")
+    private let updated = Date(timeIntervalSince1970: 1000)
+
+    @Test func theSameUpdateTimeReadsOlderAsTheClockMovesOn() {
+        let first = UpdatedLabel.text(updatedAt: updated, now: Date(timeIntervalSince1970: 1012), locale: english)
+        let later = UpdatedLabel.text(updatedAt: updated, now: Date(timeIntervalSince1970: 1000 + 600), locale: english)
+        let muchLater = UpdatedLabel.text(
+            updatedAt: updated, now: Date(timeIntervalSince1970: 1000 + 7200), locale: english)
+        #expect(first == "Updated 12s ago")
+        #expect(later == "Updated 10m ago")
+        #expect(muchLater == "Updated 2h ago")
+    }
+
+    @Test func aPinnedDemoClockWinsOverTheTickAndALiveOneFollowsIt() {
+        let tick = Date(timeIntervalSince1970: 5000)
+        #expect(LiveClock.now(pinned: nil, tick: tick) == tick)
+        #expect(
+            LiveClock.now(pinned: Date(timeIntervalSince1970: 1012), tick: tick)
+                == Date(timeIntervalSince1970: 1012))
+    }
+
+    @Test func aRunsElapsedTimeKeepsCountingWhileItIsRunningAndStopsWhenItEnds() {
+        let started = Date(timeIntervalSince1970: 1000)
+        let running = { (now: Double) in
+            RunRowPresentation.elapsedText(
+                startedAt: started, finishedAt: nil, now: Date(timeIntervalSince1970: now))
+        }
+        #expect(running(1045) == "45s")
+        #expect(running(1252) == "4m 12s")
+        let finished = Date(timeIntervalSince1970: 1100)
+        #expect(
+            RunRowPresentation.elapsedText(
+                startedAt: started, finishedAt: finished, now: Date(timeIntervalSince1970: 9999))
+                == "1m 40s")
+    }
+
+    @Test func aCardsSpokenAgeUsesWordsAtTheClocksNow() {
+        let card = InboxCardPresentation(
+            kind: .decision, rawKind: nil, title: "Ship?", identifier: "PAP-1", severity: .high,
+            whyNow: "Needs you", origin: nil, activityAtEpochMillis: 1_000_000,
+            referenceDate: Date(timeIntervalSince1970: 1480), locale: english)
+        #expect(card.age == "8m")
+        #expect(card.accessibilityLabel.contains("8 minutes ago"))
+        #expect(!card.accessibilityLabel.contains("8m ago"))
     }
 }

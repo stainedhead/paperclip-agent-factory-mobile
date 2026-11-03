@@ -48,7 +48,7 @@ struct InboxPresentationTests {
         let card = InboxCardPresentation(item: item("decision:dec-1182", in: all), referenceDate: reference)
         let spoken =
             "Critical. Decision \u{00B7} PAP-1182. Ship the billing migration to production?. "
-            + "CTO proposes 3 options, PAP-1182, blocks 4 tasks. 8m ago"
+            + "CTO proposes 3 options, PAP-1182, blocks 4 tasks. 8 minutes ago"
         #expect(card.accessibilityLabel == spoken)
     }
 
