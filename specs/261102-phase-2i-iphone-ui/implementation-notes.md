@@ -283,3 +283,20 @@ Run 41604626498 (ios) on the second push: ios (1), (2), (3) and (audits) succeed
 | R9 | Fixed: `didUpdate` is assigned when the model is first made. No observable behaviour changed, so no new test. |
 | R10 | Fixed: `auditScreen` and `auditAccessibility` are no longer `@discardableResult`, so an ignored result warns at compile time. A warning, not an error. |
 | R11 | Deferred, as A11. |
+
+### Third round: clearing the audit findings (partial)
+
+Goal: every accessibility audit green. Result: not reached. Local run (iPhone 18 Pro, iOS 27.2, text size Large, 116 UI tests): all functional tests pass, 16 of the 24 audit tests still fail (before: 18).
+
+Fixed, with cause:
+- **First-run address and Edit factory address fields** ("Text clipped" on a single-line UIKit text field at larger sizes): `FormField` is now a vertical-axis field of 1 to 4 lines; Return ends the entry and never adds a line.
+- **Edit factory** (Cancel and Save "Dynamic Type partially unsupported", Save contrast): the navigation bar caps its text size and draws it on glass, so Cancel and Save are now in-content buttons in a bottom bar (the same pattern as the other detail screens). The screen's own accessibility identifier had been overriding its children's; it now sits on the scroll view. Audit: 0 findings.
+- **Factories Edit and Manage Done** (same bar-text cause): icon buttons with the text as their label (the Settings gear was never flagged). Their findings are gone.
+- **Manage factories list text**: header, footer and "Add a factory" use scalable fonts and explicit colours. 7 findings became 5. Addresses may wrap after separators (`BreakableAddress`); this did not change the audit's count but helps real wrapping.
+
+Not fixed, and what was learned (local counts): Approval 1 and offline 1, Factories 4, Inbox 3 and offline 9, Manage 5, Agents 7, Factory home 10 and offline 21, Run offline 1, Settings 2, Shell 3, Issue 2 and offline 2, Work 3 and offline 2.
+- Contrast findings sit on elements at the bottom edge or beyond the bottom of the screen (frames at y 750 to 900 on an 874 pt screen): content below the fold that the audit measures against whatever is drawn there.
+- "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text (Agents' running row, Factory home tiles) appear only when the text size is below the maximum: with the simulator at accessibility XXXL the same Agents screen has 1 finding instead of 7. All fonts are text styles; no fixed sizes, scale limits or line limits are involved. The audit seems to flag elements that its larger-text pass pushes off screen. A tab-bar-hidden Agents screen and a solid tab bar background gave the same findings, so it is not the tab bar. A hard scroll edge effect changed nothing.
+- At XXXL a different set of contrast findings appears on plain text (including navigation titles), so the contrast check is not stable across sizes.
+- Inbox and Shell findings have no element (frame zero): they cannot be traced.
+Nothing was filtered, allow-listed or set aside beyond ADR-116. The audit job stays non-blocking (ADR-080). Two consecutive green CI runs were not achieved, so it was not promoted.
