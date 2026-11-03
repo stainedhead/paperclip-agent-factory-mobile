@@ -166,3 +166,11 @@ struct ErrorBannerButtonTests {
         #expect(ErrorBannerButton.choose(signedOut: false, signIn: false, retry: false, dismiss: false) == nil)
     }
 }
+
+/// C8: Reduce Motion switches the two explicit animations off.
+struct MotionTests {
+    @Test func reduceMotionTurnsAnimationOffAndOtherwiseItIsOn() {
+        #expect(Motion.animation(reduceMotion: true) == nil)
+        #expect(Motion.animation(reduceMotion: false) != nil)
+    }
+}
