@@ -129,6 +129,7 @@ final class InboxUITests: XCTestCase {
         app.card(InboxIds.failedRun).swipeLeft()
         app.buttons["inbox-dismiss-\(InboxIds.failedRun)"].tap()
         waitUntil(app.card(InboxIds.failedRun), "exists == false")
+        XCTAssertTrue(app.buttons["inbox-undo-button"].waitForExistence(timeout: 5), "the undo offer never appeared")
         app.buttons["inbox-undo-button"].tap()
         waitUntil(app.card(InboxIds.failedRun), "exists == true")
     }
