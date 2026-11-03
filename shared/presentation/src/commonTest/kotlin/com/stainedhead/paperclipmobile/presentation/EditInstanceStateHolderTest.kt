@@ -160,6 +160,22 @@ class EditInstanceStateHolderTest {
         }
 
     @Test
+    fun `A11 the state says when the address can be checked so the app holds no rule`() =
+        runTest {
+            val (holder, _) = loaded()
+            holder.state.value.canCheckAddress shouldBe true
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("http://home.example.com"))
+            holder.state.value.canCheckAddress shouldBe false
+
+            holder.onIntent(EditInstanceIntent.AddressChanged(""))
+            holder.state.value.canCheckAddress shouldBe false
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://moved.example.com"))
+            holder.state.value.canCheckAddress shouldBe true
+        }
+
+    @Test
     fun `FR-003 an invalid address shows its issue and blocks saving`() =
         runTest {
             val (holder, env) = loaded()
