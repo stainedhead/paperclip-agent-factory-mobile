@@ -103,3 +103,28 @@ struct FactoryPresentationTests {
         #expect(ExpiryPresentation(ExpiryUi(state: .expiringSoon, daysLeft: 3)).tone == .warn)
     }
 }
+
+/// B-04: the dot beside the factory name tells the truth about the key and the phone's connection.
+@MainActor
+struct SwitcherDotTests {
+    private let valid = ExpiryUi(state: .valid, daysLeft: 23)
+    private let expired = ExpiryUi(state: .expired, daysLeft: nil)
+
+    @Test func aWorkingKeyOnlineIsGreen() {
+        #expect(SwitcherDot.tone(status: .signedIn, expiry: valid, isOffline: false) == .success)
+    }
+
+    @Test func anExpiredOrSignedOutKeyIsNotGreen() {
+        #expect(SwitcherDot.tone(status: .signedIn, expiry: expired, isOffline: false) == .warn)
+        #expect(SwitcherDot.tone(status: .needsRePairing, expiry: valid, isOffline: false) == .warn)
+        #expect(SwitcherDot.tone(status: .signedOut, expiry: valid, isOffline: false) == .neutral)
+    }
+
+    @Test func anOfflinePhoneIsNeverGreen() {
+        #expect(SwitcherDot.tone(status: .signedIn, expiry: valid, isOffline: true) == .warn)
+    }
+
+    @Test func aFactoryNotInTheListYetShowsNoClaim() {
+        #expect(SwitcherDot.tone(status: nil, expiry: nil, isOffline: false) == .neutral)
+    }
+}
