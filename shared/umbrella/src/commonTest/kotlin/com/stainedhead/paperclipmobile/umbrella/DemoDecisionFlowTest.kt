@@ -115,7 +115,7 @@ class DemoDecisionFlowTest {
             val budget = graph.attention.createBudgetIncidentStateHolder("demo-home", "company-acme", "inc-eng-2")
             budget.state.await { it.phase == DetailPhase.Content }
             budget.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            budget.onIntent(BudgetIntent.AmountChanged(20_500))
+            budget.onIntent(BudgetIntent.AmountTyped("205.00", ".", 2))
             budget.state.await { it.canSubmit }
 
             budget.onIntent(BudgetIntent.SubmitTapped)
