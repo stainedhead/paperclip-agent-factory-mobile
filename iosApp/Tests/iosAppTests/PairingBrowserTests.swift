@@ -161,8 +161,7 @@ struct PairingBrowserTests {
 
     @Test func theLiveProviderTakesTheSwiftBrowserAndHandsTheLinkToItAsAPairingBrowser() async {
         let harness = Harness()
-        let provider = LiveGraphProvider(opener: harness.browser)
-        #expect(provider.isAvailable == false)
+        let provider = LiveGraphProvider(opener: harness.browser, settings: .app)
 
         let port = Unchecked(value: provider.pairingBrowser)
         await openLink(port, Unchecked(value: Secret.companion.of(value: link)))

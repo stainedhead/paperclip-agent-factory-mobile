@@ -1,3 +1,4 @@
+import Foundation
 import PaperclipKit
 import SwiftUI
 import Testing
@@ -30,16 +31,57 @@ struct AppEnvironmentTests {
         environment.shutdown()
     }
 
-    @Test func aLaunchWithoutTheDemoFlagSaysLiveFactoriesAreNotInThisBuildAndRunsNothing() async {
-        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
+    private func liveSettings() -> LiveSettings {
+        LiveSettings(
+            keychainService: "pafm.app-env.\(UUID().uuidString)",
+            dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("pafm-env-\(UUID().uuidString)"),
+            unlockReason: "Unlock Paperclip", confirmReason: "Confirm this action")
+    }
+
+    /// A provider whose first graph cannot be opened (the database is busy) and whose second can.
+    private final class FlakyProvider: AppGraphProvider {
+        struct Busy: Error {}
+        let mode = GraphMode.live
+        var failures = 1
+
+        func makeGraph() throws -> PaperclipGraph {
+            if failures > 0 {
+                failures -= 1
+                throw Busy()
+            }
+            return PaperclipCore.shared.createFirstRunDemoGraph()
+        }
+    }
+
+    @Test func aLaunchWithoutTheDemoFlagOpensTheRealGraphAndStartsAtFirstRun() async {
+        let environment = AppEnvironment(
+            configuration: LaunchConfiguration(arguments: ["iosApp"]),
+            provider: LiveGraphProvider(opener: ASWebAuthSessionPairingBrowser(), settings: liveSettings()))
         environment.start()
         #expect(environment.mode == .live)
-        #expect(environment.startupNotice == .liveFactoriesUnavailable)
-        // The fake-backed graph is never running: no state holders, no refresh, no Face ID that approves everything.
+        #expect(environment.startupNotice == nil)
+        #expect(await eventually { environment.app.state.isLoaded })
+        #expect(environment.app.state.hasFactories == false)
+        #expect(environment.graph.demoControls == nil, "the real graph has no demo controls")
+        #expect(environment.biometricPromptCount == 0)
+        environment.shutdown()
+    }
+
+    @Test func aGraphThatCannotBeOpenedShowsTheNoticeRunsNothingAndRetryOpensIt() async {
+        let provider = FlakyProvider()
+        let environment = AppEnvironment(
+            configuration: LaunchConfiguration(arguments: ["iosApp"]), provider: provider)
+        environment.start()
+        #expect(environment.startupNotice == .liveGraphUnavailable)
+        // The fake graph that stands in is never running: no state holders, no refresh, no Face ID that approves all.
         #expect(environment.app.isClosed)
         #expect(environment.firstRun.isClosed)
         #expect(environment.inbox == nil)
         #expect(environment.biometricPromptCount == 0)
+
+        environment.retryLaunch()
+        #expect(environment.startupNotice == nil)
+        #expect(await eventually { environment.app.state.isLoaded })
         environment.shutdown()
     }
 
@@ -76,13 +118,22 @@ struct AppEnvironmentTests {
         #expect(environment.inbox == nil)
     }
 
-    @Test func theLiveProviderIsAPlaceholderThatIsMarkedUnavailable() {
-        let provider: any AppGraphProvider = LiveGraphProvider(opener: ASWebAuthSessionPairingBrowser())
+    @Test func theLiveProviderBuildsTheRealGraphAndTheDemoProviderTheFakeOne() throws {
+        let provider: any AppGraphProvider = LiveGraphProvider(
+            opener: ASWebAuthSessionPairingBrowser(), settings: liveSettings())
         #expect(provider.mode == .live)
-        #expect(provider.isAvailable == false)
-        // The seam compiles today: it still hands back a graph (the fake-backed one, ADR-037) so first run works.
-        #expect(provider.makeGraph().demoControls == nil)
-        #expect(DemoGraphProvider().makeGraph().demoControls != nil)
+        let live = try provider.makeGraph()
+        #expect(live.demoControls == nil)
+        live.close()
+        #expect(try DemoGraphProvider().makeGraph().demoControls != nil)
+    }
+
+    @Test func theLiveSettingsCarryTheLocalisedFaceIDReasonsAndTheAppsKeychainService() {
+        let settings = LiveSettings.app
+        #expect(settings.keychainService == "com.stainedhead.paperclipmobile.board-keys")
+        #expect(settings.unlockReason == ShellLabel.biometricUnlockReason.text)
+        #expect(settings.confirmReason == ShellLabel.biometricConfirmReason.text)
+        #expect(settings.dataDirectory.path.contains("Application Support"))
     }
 
     @Test func scenePhasesDriveTheRefreshLifecycleAndTheSwitcherBlur() async {

@@ -63,3 +63,24 @@ struct FactoriesModelTests {
         model.close()
     }
 }
+
+/// 1b's "key could not be read" paths: the sheets that offer to act on this phone only say so, and each confirmation
+/// has its own words.
+@MainActor
+struct EditConfirmationPresentationTests {
+    @Test func everyConfirmationHasATitleAMessageAndAConfirmButton() {
+        for which in [EditConfirmation.signOut, .remove, .signOutHereOnly, .removeHereOnly] {
+            let text = EditConfirmationPresentation.descriptor(which, name: "Home factory")
+            #expect(!text.title.isEmpty && !text.message.isEmpty && !text.confirmTitle.isEmpty)
+            #expect(text.title.contains("Home factory"))
+        }
+    }
+
+    @Test func theHereOnlyVersionsSayTheKeyStaysLiveOnTheServer() {
+        for which in [EditConfirmation.signOutHereOnly, .removeHereOnly] {
+            let text = EditConfirmationPresentation.descriptor(which, name: "Home factory")
+            #expect(text.message.localizedCaseInsensitiveContains("server"))
+            #expect(text.message != EditConfirmationPresentation.descriptor(.signOut, name: "Home factory").message)
+        }
+    }
+}

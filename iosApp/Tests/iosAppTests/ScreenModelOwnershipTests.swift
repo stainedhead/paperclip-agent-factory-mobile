@@ -1,3 +1,4 @@
+import Foundation
 import PaperclipKit
 import SwiftUI
 import Testing
@@ -154,7 +155,13 @@ struct ScreenModelOwnershipTests {
     }
 
     @Test func aLiveGraphUsesTheWallClockForUpdatedLabels() {
-        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
+        let settings = LiveSettings(
+            keychainService: "pafm.wall-clock.\(UUID().uuidString)",
+            dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("pafm-clock-\(UUID().uuidString)"),
+            unlockReason: "Unlock", confirmReason: "Confirm")
+        let environment = AppEnvironment(
+            configuration: LaunchConfiguration(arguments: ["iosApp"]),
+            provider: LiveGraphProvider(opener: ASWebAuthSessionPairingBrowser(), settings: settings))
         #expect(environment.referenceDate == nil)
         environment.shutdown()
     }
