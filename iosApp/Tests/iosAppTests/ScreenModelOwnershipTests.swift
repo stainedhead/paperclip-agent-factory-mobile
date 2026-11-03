@@ -157,7 +157,8 @@ struct ScreenModelOwnershipTests {
     @Test func aLiveGraphUsesTheWallClockForUpdatedLabels() {
         let settings = LiveSettings(
             keychainService: "pafm.wall-clock.\(UUID().uuidString)",
-            dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("pafm-clock-\(UUID().uuidString)"),
+            dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(
+                "pafm-clock-\(UUID().uuidString)"),
             unlockReason: "Unlock", confirmReason: "Confirm")
         let environment = AppEnvironment(
             configuration: LaunchConfiguration(arguments: ["iosApp"]),

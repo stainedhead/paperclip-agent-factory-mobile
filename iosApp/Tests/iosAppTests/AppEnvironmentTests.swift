@@ -34,7 +34,8 @@ struct AppEnvironmentTests {
     private func liveSettings() -> LiveSettings {
         LiveSettings(
             keychainService: "pafm.app-env.\(UUID().uuidString)",
-            dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("pafm-env-\(UUID().uuidString)"),
+            dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(
+                "pafm-env-\(UUID().uuidString)"),
             unlockReason: "Unlock Paperclip", confirmReason: "Confirm this action")
     }
 

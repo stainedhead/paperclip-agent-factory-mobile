@@ -95,23 +95,40 @@ final class AppEnvironment {
         self.provider = provider
         pairingPage = page
         mode = provider.mode
-        let graph = provider.makeGraph()
+        let opened = Self.open(provider)
+        let graph = opened.graph
         self.graph = graph
         app = HolderModel(holder: graph.createAppStateHolder())
         firstRun = FirstRunModel(holder: graph.createFirstRunStateHolder())
         pairingPage.onEvent = { [weak self] in self?.pairingPageEvent($0) }
         router.onChange = { [weak self] in self?.releaseScreenModels() }
         router.onSheetDismissed = { [weak self] in self?.inbox?.refresh() }
-        startupNotice = StartupNotice.companion.forLaunch(
-            demo: provider.mode == .demo, liveAvailable: provider.isAvailable)
+        startupNotice = opened.notice
         if startupNotice != nil { tearDown() }
+    }
+
+    /// Opens the provider's graph. When the real one cannot be opened the notice says so and a stand-in graph is
+    /// returned only so the environment has something to hold: it is closed at once, runs no holder and no refresh, and
+    /// no screen is shown for it (nothing falls back to fakes).
+    private static func open(_ provider: any AppGraphProvider) -> (graph: PaperclipGraph, notice: StartupNotice?) {
+        do {
+            return (try provider.makeGraph(), nil)
+        } catch {
+            let notice = StartupNotice.companion.forLaunch(demo: provider.mode == .demo, liveOpened: false)
+            return (PaperclipCore.shared.createGraph(allowInsecureLocal: false), notice)
+        }
+    }
+
+    /// "Try again" on the startup notice: opens the real graph again.
+    func retryLaunch() {
+        replaceGraph(with: provider)
     }
 
     private static func provider(
         for configuration: LaunchConfiguration, page: ASWebAuthSessionPairingBrowser
     ) -> any AppGraphProvider {
         if configuration.useFirstRunDemo { return FirstRunDemoGraphProvider() }
-        return configuration.useDemo ? DemoGraphProvider() : LiveGraphProvider(opener: page)
+        return configuration.useDemo ? DemoGraphProvider() : LiveGraphProvider(opener: page, settings: .app)
     }
 
     /// The first-run flow has saved the factory but is not finished: it keeps the screen until Done (also when the
@@ -135,6 +152,11 @@ final class AppEnvironment {
         firstRun.didUpdate = { [weak self] state in self?.firstRunChanged(state) }
         observe(firstRun)
         appStateChanged(app.state)
+    }
+
+    /// "Try the demo factory" is offered in Debug builds only; a Release build has no way onto the demo graph.
+    var demoEntry: (() -> Void)? {
+        LaunchConfiguration.buildAllowsDemoControls ? { [weak self] in self?.useDemo() } : nil
     }
 
     /// "Try the demo factory" on the first-run screen: the same app, now on the demo graph.
@@ -281,14 +303,19 @@ final class AppEnvironment {
     private func replaceGraph(with provider: any AppGraphProvider) {
         tearDown()
         self.provider = provider
-        startupNotice = nil
         mode = provider.mode
-        let graph = provider.makeGraph()
+        let opened = Self.open(provider)
+        startupNotice = opened.notice
+        let graph = opened.graph
         self.graph = graph
         app = HolderModel(holder: graph.createAppStateHolder())
         firstRun = FirstRunModel(holder: graph.createFirstRunStateHolder())
         started = false
-        start()
+        if startupNotice != nil {
+            tearDown()
+        } else {
+            start()
+        }
     }
 
     private func tearDown() {

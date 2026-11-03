@@ -30,13 +30,13 @@ struct RootView: View {
     @ViewBuilder private var content: some View {
         let state = environment.app.state
         if let notice = environment.startupNotice {
-            StartupNoticeView(notice: notice)
+            StartupNoticeView(notice: notice, onRetry: environment.retryLaunch)
         } else if !state.isLoaded {
             LoadingState()
         } else if state.lock == .locked {
             LockView(environment: environment)
         } else if !state.hasFactories || environment.firstRunInProgress {
-            FirstRunView(model: environment.firstRun, onTryDemo: environment.useDemo)
+            FirstRunView(model: environment.firstRun, onTryDemo: environment.demoEntry)
         } else {
             TabShellView(environment: environment)
         }
@@ -46,10 +46,12 @@ struct RootView: View {
 /// What the shell says instead of running when this build cannot reach real factories (the words are the notice's).
 struct StartupNoticeView: View {
     let notice: StartupNotice
+    let onRetry: () -> Void
 
     var body: some View {
         EmptyState(
-            symbol: "exclamationmark.shield", title: ShellLabel.startupTitle.text, message: L10n.text(notice)
+            symbol: "exclamationmark.shield", title: ShellLabel.startupTitle.text, message: L10n.text(notice),
+            actionTitle: ShellLabel.startupRetry.text, action: onRetry
         )
         .accessibilityIdentifier("startup-notice")
     }
