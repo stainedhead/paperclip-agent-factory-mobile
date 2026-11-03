@@ -13,9 +13,9 @@ final class LargeTextUITests: XCTestCase {
 
     /// Scrolls until the element is on screen and hittable (it may start below the fold).
     @MainActor
-    private func reach(_ app: XCUIApplication, _ id: String, file: StaticString = #filePath, line: UInt = #line)
-        -> XCUIElement
-    {
+    private func reach(
+        _ app: XCUIApplication, _ id: String, file: StaticString = #filePath, line: UInt = #line
+    ) -> XCUIElement {
         let element = app.element(id)
         _ = element.waitForExistence(timeout: 5)
         var swipes = 0
