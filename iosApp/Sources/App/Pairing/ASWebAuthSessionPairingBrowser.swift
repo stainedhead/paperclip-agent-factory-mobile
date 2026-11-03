@@ -133,6 +133,7 @@ final class ASWebAuthSessionPairingBrowser: NSObject, ApprovalPageOpener {
     /// Closes the page when the person cancels pairing in the app.
     func cancelPresentedPage() {
         current?.cancel()
+        current = nil
     }
 
     private func acceptableURL(_ text: String) -> URL? {
@@ -148,5 +149,16 @@ final class ASWebAuthSessionPairingBrowser: NSObject, ApprovalPageOpener {
 extension ASWebAuthSessionPairingBrowser: ASWebAuthenticationPresentationContextProviding {
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         anchor() ?? ASPresentationAnchor()
+    }
+}
+
+/// When the approval page must close: as soon as shared code has ended the pairing without it being used (cancelled,
+/// expired, failed), so nobody can approve a challenge that nothing is waiting on (A9).
+enum PairingPagePolicy {
+    static func closesPage(for pairing: PairingStatus) -> Bool {
+        switch pairing {
+        case .cancelled, .expired, .failed: true
+        case .idle, .waiting: false
+        }
     }
 }

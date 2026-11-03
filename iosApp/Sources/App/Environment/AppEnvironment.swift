@@ -70,6 +70,7 @@ final class AppEnvironment {
 
     /// Screen models of the Factories family, closed when their route leaves its stack (see `ScreenKey`).
     @ObservationIgnored let models = ModelStore<ScreenKey>()
+    @ObservationIgnored private let privacyShield = PrivacyShieldController()
     @ObservationIgnored private(set) var launchSettings: HolderModel<SettingsStateHolder>?
     @ObservationIgnored private var provider: any AppGraphProvider
     @ObservationIgnored private var inboxKey: [String]?
@@ -152,6 +153,7 @@ final class AppEnvironment {
     }
 
     private func firstRunChanged(_ state: FirstRunState) {
+        if PairingPagePolicy.closesPage(for: state.pairing) { pairingPage.cancelPresentedPage() }
         switch state.step {
         case .pair, .secure: firstRunInProgress = true
         case .done: firstRunInProgress = false
@@ -167,6 +169,7 @@ final class AppEnvironment {
     /// hides content in the app switcher (anything but `active`).
     func scenePhaseChanged(_ phase: ScenePhase) {
         isObscured = phase != .active
+        privacyShield.setShown(isObscured)
         switch phase {
         case .active: graph.lifecycle.setForeground(isForeground: true)
         case .background: graph.lifecycle.setForeground(isForeground: false)
@@ -190,7 +193,11 @@ final class AppEnvironment {
     }
 
     func editModel(id: String?) -> HolderModel<EditInstanceStateHolder> {
-        models.model(for: .editFactory(id: id)) { graph.createEditInstanceStateHolder(instanceId: id) }
+        let model = models.model(for: .editFactory(id: id)) { graph.createEditInstanceStateHolder(instanceId: id) }
+        model.didUpdate = { [weak self] state in
+            if PairingPagePolicy.closesPage(for: state.pairing) { self?.pairingPage.cancelPresentedPage() }
+        }
+        return model
     }
 
     func settingsModel() -> HolderModel<SettingsStateHolder> {
