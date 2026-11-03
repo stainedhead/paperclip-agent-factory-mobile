@@ -24,6 +24,16 @@ final class ShellUITests: XCTestCase {
     }
 
     @MainActor
+    func testALaunchWithoutDemoSaysLiveFactoriesAreNotInThisBuildAndOffersNothingToApprove() {
+        let app = XCUIApplication()
+        app.launch()
+        XCTAssertTrue(app.element("startup-notice").waitForExistence(timeout: 30), "the notice never appeared")
+        XCTAssertTrue(app.staticTexts["Live factories are not available yet"].exists)
+        XCTAssertFalse(app.tabBars.firstMatch.exists)
+        XCTAssertEqual(app.buttons.count, 0, "nothing to tap: no pairing, no demo, no approvals")
+    }
+
+    @MainActor
     func testDemoLaunchShowsFiveTabsAndTheInboxBadgeFromTheDemoData() {
         // The diagnostics trace (lock, load, Inbox phase and badge) lands in the failure hierarchy of a slow start.
         let app = launch(["-demo-diagnostics"])

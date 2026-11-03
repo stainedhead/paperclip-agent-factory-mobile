@@ -79,11 +79,10 @@ struct OfflineLaunchTests {
     }
 
     @Test func aBuildWithoutDemoControlsIgnoresEveryDemoFlag() {
-        let flags = [
-            "iosApp", "-demo", "-demo-first-run", "-demo-no-auto-refresh", "-demo-biometrics", "approved",
-            "-demo-diagnostics", "-demo-idle", "immediately", "-demo-offline", "-demo-tab", "factories",
-        ]
-        let config = LaunchConfiguration(arguments: flags, allowsDemoControls: false)
+        let flags = "iosApp -demo -demo-first-run -demo-no-auto-refresh -demo-biometrics approved -demo-diagnostics"
+        let more = "-demo-idle immediately -demo-offline -demo-tab factories"
+        let arguments = (flags + " " + more).split(separator: " ").map(String.init)
+        let config = LaunchConfiguration(arguments: arguments, allowsDemoControls: false)
         #expect(config.useDemo == false)
         #expect(config.useFirstRunDemo == false)
         #expect(config.pausesAutoRefresh == false)
