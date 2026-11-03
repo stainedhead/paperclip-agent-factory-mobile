@@ -75,6 +75,14 @@ audit_tests=(
   iosAppUITests/SettingsUITests/testAccessibilityAuditOfSettings
   iosAppUITests/ShellUITests/testAccessibilityAuditBaselineOfTheShell
   iosAppUITests/OperationsAuditUITests
+  iosAppUITests/InboxUITests/testAccessibilityAuditOfTheInbox
+  iosAppUITests/InboxUITests/testAccessibilityAuditOfTheOfflineInbox
+  iosAppUITests/ApprovalUITests/testAccessibilityAuditOfTheApprovalScreen
+  iosAppUITests/ApprovalUITests/testAccessibilityAuditOfTheOfflineApprovalScreen
+  iosAppUITests/BudgetUITests/testAccessibilityAuditOfTheBudgetSheet
+  iosAppUITests/BudgetUITests/testAccessibilityAuditOfTheOfflineBudgetScreen
+  iosAppUITests/DecisionUITests/testAccessibilityAuditOfTheDecisionScreen
+  iosAppUITests/DecisionUITests/testAccessibilityAuditOfTheOfflineDecisionScreen
 )
 # The functional UI test classes by shard. Every UI test class must be listed in a shard or be audit-only, so a new
 # class cannot silently run nowhere.
