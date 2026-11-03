@@ -51,6 +51,20 @@ final class SettingsUITests: XCTestCase {
     }
 
     @MainActor
+    func testRenamingTheDeviceWithoutPressingDoneIsKeptWhenLeavingTheScreen() {
+        let app = openSettings()
+        let field = app.textFields["settings-device-name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.clearAndTypeText("Desk phone")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["settings-button"].waitForExistence(timeout: 10))
+        app.buttons["settings-button"].tap()
+        XCTAssertTrue(app.textFields["settings-device-name"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.textFields["settings-device-name"].value as? String, "Desk phone")
+    }
+
+    @MainActor
     func testTheAppLockToggleAndLockAfterChange() {
         let app = openSettings()
         let toggle = app.switches["settings-app-lock-toggle"]

@@ -45,6 +45,26 @@ final class EditFactoryUITests: XCTestCase {
     }
 
     @MainActor
+    func testCancelWithTypedChangesAsksBeforeDiscardingThem() {
+        let app = open("edit:demo-home")
+        app.buttons["edit-cancel-button"].tap()
+        XCTAssertTrue(app.element("factories-root").waitForExistence(timeout: 10), "nothing typed: Cancel just leaves")
+
+        let again = open("edit:demo-home")
+        again.textFields["edit-name"].clearAndTypeText("Studio factory")
+        again.buttons["edit-cancel-button"].tap()
+        XCTAssertTrue(again.buttons["edit-discard-keep"].waitForExistence(timeout: 5), "typed changes need a prompt")
+        again.buttons["edit-discard-keep"].tap()
+        XCTAssertTrue(again.element("edit-factory").exists, "Keep editing stays on the form")
+        XCTAssertEqual(again.textFields["edit-name"].value as? String, "Studio factory")
+
+        again.buttons["edit-cancel-button"].tap()
+        again.buttons["edit-discard-confirm"].tap()
+        XCTAssertTrue(again.element("factories-root").waitForExistence(timeout: 10))
+        XCTAssertEqual(again.staticTexts["factory-name-demo-home"].label, "Home factory")
+    }
+
+    @MainActor
     func testChangingTheAddressDisablesSaveUntilTheNewAddressIsChecked() {
         let app = open("edit:demo-home")
         let save = app.buttons["edit-save-button"]
