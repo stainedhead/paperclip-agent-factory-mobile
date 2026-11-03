@@ -18,17 +18,18 @@ extension StateHolderProtocol {
     static func isWorking(_ state: State) -> Bool { false }
 }
 
-extension DecisionStateHolder { static func isWorking(_ state: DecisionState) -> Bool { state.isSubmitting } }
-extension ApprovalStateHolder { static func isWorking(_ state: ApprovalState) -> Bool { state.isSubmitting } }
+// Each mutating screen's shared state names its own in-flight flag (`isWorking`); nothing is mapped here.
+extension DecisionStateHolder { static func isWorking(_ state: DecisionState) -> Bool { state.isWorking } }
+extension ApprovalStateHolder { static func isWorking(_ state: ApprovalState) -> Bool { state.isWorking } }
 extension BudgetIncidentStateHolder {
-    static func isWorking(_ state: BudgetIncidentState) -> Bool { state.isSubmitting }
+    static func isWorking(_ state: BudgetIncidentState) -> Bool { state.isWorking }
 }
-extension AgentDetailStateHolder { static func isWorking(_ state: AgentDetailState) -> Bool { state.isBusy } }
-extension IssueStateHolder { static func isWorking(_ state: IssueState) -> Bool { state.isBusy } }
-extension RunViewerStateHolder { static func isWorking(_ state: RunViewerState) -> Bool { state.isCancelling } }
-extension EditInstanceStateHolder { static func isWorking(_ state: EditInstanceState) -> Bool { state.isBusy } }
-extension SettingsStateHolder { static func isWorking(_ state: SettingsState) -> Bool { state.isBusy } }
-extension AgentsStateHolder { static func isWorking(_ state: AgentsState) -> Bool { state.busyAgentId != nil } }
+extension AgentDetailStateHolder { static func isWorking(_ state: AgentDetailState) -> Bool { state.isWorking } }
+extension IssueStateHolder { static func isWorking(_ state: IssueState) -> Bool { state.isWorking } }
+extension RunViewerStateHolder { static func isWorking(_ state: RunViewerState) -> Bool { state.isWorking } }
+extension EditInstanceStateHolder { static func isWorking(_ state: EditInstanceState) -> Bool { state.isWorking } }
+extension SettingsStateHolder { static func isWorking(_ state: SettingsState) -> Bool { state.isWorking } }
+extension AgentsStateHolder { static func isWorking(_ state: AgentsState) -> Bool { state.isWorking } }
 
 extension FirstRunStateHolder: StateHolderProtocol { typealias Intent = any FirstRunIntent }
 extension AppStateHolder: StateHolderProtocol { typealias Intent = any AppIntent }
@@ -99,7 +100,7 @@ final class HolderModel<Holder: StateHolderProtocol> {
         guard Holder.isWorking(state) else { return }
         for await next in holder.state {
             apply(next)
-            if !Holder.isWorking(next) || isClosed { return }
+            if !Holder.isWorking(next) || isClosed || Task.isCancelled { return }
         }
     }
 
@@ -130,7 +131,7 @@ final class ModelStore<Key: Hashable> {
 
     private var entries: [Key: Entry] = [:]
     private var wanted: Set<Key> = []
-    private var finishing: Set<Key> = []
+    private var finishing: [Key: Task<Void, Never>] = [:]
 
     var keys: Set<Key> { Set(entries.keys) }
 
@@ -168,16 +169,18 @@ final class ModelStore<Key: Hashable> {
     /// Shutdown: everything closes now, in flight or not.
     func closeAll() {
         wanted = []
+        for task in finishing.values { task.cancel() }
+        finishing = [:]
         for entry in entries.values { entry.close() }
         entries = [:]
     }
 
     private func finishLater(_ key: Key, _ entry: Entry) {
-        guard finishing.insert(key).inserted else { return }
-        Task { [weak self] in
+        guard finishing[key] == nil else { return }
+        finishing[key] = Task { [weak self] in
             await entry.untilIdle()
-            guard let self else { return }
-            finishing.remove(key)
+            guard let self, !Task.isCancelled else { return }
+            finishing[key] = nil
             if !wanted.contains(key), let current = entries[key], current.model === entry.model {
                 current.close()
                 entries[key] = nil
