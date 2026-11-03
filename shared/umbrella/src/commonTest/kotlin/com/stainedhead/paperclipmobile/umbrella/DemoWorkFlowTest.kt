@@ -27,6 +27,7 @@ import kotlin.time.Duration.Companion.seconds
 private suspend fun <S> StateFlow<S>.await(predicate: (S) -> Boolean): S =
     withContext(Dispatchers.Default) { withTimeout(60.seconds) { first(predicate) } }
 
+private const val ALL_OPEN_ROWS = 9
 private const val HOME = "demo-home"
 private const val ACME = "company-acme"
 
@@ -119,7 +120,12 @@ class DemoWorkFlowTest {
 
             val list = graph.work.createWorkListStateHolder(HOME, ACME)
             list.onIntent(WorkListIntent.FilterSelected(IssueFilterUi.Blocked))
-            val blocked = list.state.await { it.phase == DetailPhase.Content && it.filter == IssueFilterUi.Blocked }
+            // The chip changes before the rows do, so wait for the rows of the new filter.
+            val blocked =
+                list.state.await {
+                    it.phase == DetailPhase.Content && it.filter == IssueFilterUi.Blocked &&
+                        it.rows.size < ALL_OPEN_ROWS
+                }
             blocked.rows.map { it.identifier }.shouldContainExactly(emptyList())
             issue.close()
             list.close()

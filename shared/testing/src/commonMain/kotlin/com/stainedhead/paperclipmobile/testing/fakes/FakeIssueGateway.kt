@@ -33,9 +33,10 @@ class FakeIssueGateway(
     plans: Map<IssueId, PlanDocument> = mapOf(WorkFixtures.pap1182 to WorkFixtures.plan()),
     attachments: Map<IssueId, List<Attachment>>? = null,
     private val projectName: String = "Billing",
-    /** The time a new comment is stamped with; a demo graph passes its clock so the comment sorts last. */
-    private val now: () -> Instant = { TestData.epoch },
 ) : IssueGateway {
+    /** The time a new comment is stamped with; a demo graph sets its clock so the comment sorts last. */
+    var now: () -> Instant = { TestData.epoch }
+
     val store = issues.associateBy { it.id }.toMutableMap()
     val commentStore = comments.mapValues { it.value.toMutableList() }.toMutableMap()
     private val attachmentStore: Map<IssueId, List<Attachment>>? = attachments

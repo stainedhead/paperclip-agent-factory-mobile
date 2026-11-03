@@ -171,8 +171,7 @@ private fun org.koin.core.module.Module.demoWorkPorts() {
             DemoWork.plans(),
             DemoWork.attachments(),
             "Billing v2",
-            now = { get<Clock>().now() },
-        )
+        ).apply { now = { get<Clock>().now() } }
     }
     single<InteractionGateway>(RawPort) {
         FakeInteractionGateway(listOf(DemoWork.confirmation()), DemoWork.interactionsByIssue()).apply {

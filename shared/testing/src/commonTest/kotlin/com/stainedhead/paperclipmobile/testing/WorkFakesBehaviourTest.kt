@@ -176,7 +176,7 @@ class WorkFakesBehaviourTest {
         }
 
     @Test
-    fun `an answered interaction tells the hook, a refused answer does not`() =
+    fun `an answered interaction tells the hook and a refused answer does not`() =
         runTest {
             val gateway = FakeInteractionGateway()
             val answered = mutableListOf<String>()
@@ -193,7 +193,7 @@ class WorkFakesBehaviourTest {
     fun `a new comment carries the time the fake was told and is not older than the thread`() =
         runTest {
             val later = TestData.epoch + 3.days
-            val gateway = FakeIssueGateway(now = { later })
+            val gateway = FakeIssueGateway().apply { now = { later } }
             gateway.addComment(scope, pap, "Hello", CommentOptions())
             gateway
                 .comments(scope, pap)
