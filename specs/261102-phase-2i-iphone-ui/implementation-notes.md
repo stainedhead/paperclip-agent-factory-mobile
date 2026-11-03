@@ -259,3 +259,7 @@ No P0. Every finding was verified against the code first. Shared rules got a fai
 ### Counts
 
 Shared JVM: domain 143, application 313, presentation 358, testing 56, umbrella 60 (0 failures). Swift Testing 353. UI tests 116. Kover: core 98.01%, presentation 98.06%.
+
+### Deferred review findings
+
+Each has its reason in the table above: A11 (Post button's blank-text look), B-13 (bar inside the scroll at accessibility sizes), B-18 (two offline messages), C8 (KVO and view-only input beyond existing tests), C9 (sleep-based negative assertions, warm-up), C12 (branch protection and gitleaks), C15 (ADR renumbering at merge). Also not done inside fixed findings: the amount in the Face ID reason string (A4) and run elapsed text localisation (B-09).
