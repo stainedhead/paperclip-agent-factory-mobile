@@ -42,15 +42,21 @@ struct FormField: View {
     var capitalization: TextInputAutocapitalization = .words
     var isDisabled = false
     let identifier: String
+    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
             Text(title).font(Typography.button).foregroundStyle(Palette.textPrimary.color)
             TextField(placeholder, text: $text, axis: .vertical)
                 .lineLimit(1...4)
+                .submitLabel(.done)
                 // A field that can wrap is still one line of text: Return ends the entry, it never adds a line.
+                .focused($focused)
                 .onChange(of: text) { _, new in
-                    if new.contains("\n") { text = new.replacingOccurrences(of: "\n", with: "") }
+                    if new.contains("\n") {
+                        text = new.replacingOccurrences(of: "\n", with: "")
+                        focused = false
+                    }
                 }
                 .font(Typography.body)
                 .textInputAutocapitalization(capitalization)

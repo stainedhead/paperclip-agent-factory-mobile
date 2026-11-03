@@ -36,23 +36,30 @@ struct EditFactoryView: View {
             .padding(Spacing.page)
         }
         .scrollDismissesKeyboard(.interactively)
+        .accessibilityIdentifier("edit-factory")
         .background(Palette.background.color)
         .navigationTitle(state.mode == .add ? ShellLabel.editTitleAdd.text : ShellLabel.editTitleEdit.text)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+        // Cancel and Save are in-content buttons, not navigation bar items: the system bar caps their text size and
+        // draws them on glass, which the accessibility audit flags (Dynamic Type, contrast).
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack(spacing: Spacing.large) {
                 Button(ShellLabel.commonCancel.text) {
                     if state.hasUnsavedChanges { showsDiscard = true } else { environment.router.pop(.factories) }
                 }
+                .buttonStyle(.app(.secondary))
                 .accessibilityIdentifier("edit-cancel-button")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
                 Button(ShellLabel.commonSave.text, action: model.save)
+                    .buttonStyle(.app(.primary))
                     .disabled(!state.canSave || state.isBusy)
                     .accessibilityIdentifier("edit-save-button")
             }
+            .padding(.horizontal, Spacing.page)
+            .padding(.vertical, Spacing.large)
+            .background(Palette.surface.color)
+            .overlay(alignment: .top) { HairlineDivider() }
         }
         .alert(ShellLabel.editDiscardTitle.text, isPresented: $showsDiscard) {
             Button(ShellLabel.editDiscardConfirm.text, role: .destructive) { environment.router.pop(.factories) }
@@ -64,7 +71,6 @@ struct EditFactoryView: View {
             if let which = model.state.confirmation { sheet(for: which, state: model.state) }
         }
         .task { await model.observe() }
-        .accessibilityIdentifier("edit-factory")
     }
 
     private func statusLine(status: FactoryStatusUi, expiry: ExpiryUi?) -> some View {

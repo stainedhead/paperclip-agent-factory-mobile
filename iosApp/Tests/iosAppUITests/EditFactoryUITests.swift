@@ -69,6 +69,7 @@ final class EditFactoryUITests: XCTestCase {
         let app = open("edit:demo-home")
         let save = app.buttons["edit-save-button"]
         app.textFields["edit-address"].clearAndTypeText("https://other.example.com")
+        app.textFields["edit-address"].typeText("\n")  // Return ends the entry and closes the keyboard
 
         XCTAssertFalse(save.isEnabled, "Save waits for a fresh check")
         XCTAssertTrue(app.element("edit-address-warning").exists)
