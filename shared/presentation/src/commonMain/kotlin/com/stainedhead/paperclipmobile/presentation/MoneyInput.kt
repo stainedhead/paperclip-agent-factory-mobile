@@ -1,6 +1,6 @@
 package com.stainedhead.paperclipmobile.presentation
 
-/** What typed money text came to: the amount in minor units, or why it is not one. Both null while the field is empty. */
+/** What typed money text came to: minor units, or why it is not an amount. Both are null while the field is empty. */
 data class ParsedMoney(
     val minorUnits: Long?,
     val issue: InvalidKey?,

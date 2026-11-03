@@ -76,15 +76,42 @@ class AgentDetailStateHolder(
 
     fun onIntent(intent: AgentDetailIntent) {
         when (intent) {
-            AgentDetailIntent.Refresh -> load()
-            AgentDetailIntent.PauseTapped -> askToPause()
-            AgentDetailIntent.PauseConfirmed -> confirmPause()
-            AgentDetailIntent.PauseCancelled -> model.update { it.copy(confirmPause = false) }
-            AgentDetailIntent.ResumeTapped -> act(AgentActionUi.Resume)
-            AgentDetailIntent.RunNowTapped -> act(AgentActionUi.RunNow)
-            is AgentDetailIntent.BudgetAmountTyped -> typeBudget(intent)
-            AgentDetailIntent.BudgetSubmitted -> setBudget()
-            AgentDetailIntent.MessageDismissed -> model.update { it.copy(feedback = null) }
+            AgentDetailIntent.Refresh -> {
+                load()
+            }
+
+            AgentDetailIntent.PauseTapped -> {
+                askToPause()
+            }
+
+            AgentDetailIntent.PauseConfirmed -> {
+                confirmPause()
+            }
+
+            AgentDetailIntent.PauseCancelled -> {
+                model.update { it.copy(confirmPause = false) }
+            }
+
+            AgentDetailIntent.ResumeTapped -> {
+                act(AgentActionUi.Resume)
+            }
+
+            AgentDetailIntent.RunNowTapped -> {
+                act(AgentActionUi.RunNow)
+            }
+
+            is AgentDetailIntent.BudgetAmountTyped -> {
+                val parsed = MoneyInput.parse(intent.text, intent.decimalSeparator, intent.fractionDigits)
+                model.update { it.copy(budgetAmount = parsed.minorUnits, budgetIssue = parsed.issue) }
+            }
+
+            AgentDetailIntent.BudgetSubmitted -> {
+                setBudget()
+            }
+
+            AgentDetailIntent.MessageDismissed -> {
+                model.update { it.copy(feedback = null) }
+            }
         }
     }
 
@@ -163,11 +190,6 @@ class AgentDetailStateHolder(
                 }
             }
         }
-    }
-
-    private fun typeBudget(intent: AgentDetailIntent.BudgetAmountTyped) {
-        val parsed = MoneyInput.parse(intent.text, intent.decimalSeparator, intent.fractionDigits)
-        model.update { it.copy(budgetAmount = parsed.minorUnits, budgetIssue = parsed.issue) }
     }
 
     private fun setBudget() {
