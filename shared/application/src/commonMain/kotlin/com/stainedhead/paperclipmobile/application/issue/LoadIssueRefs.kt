@@ -16,8 +16,8 @@ private const val MAX_IN_FLIGHT = 4
 /**
  * Names the issues that runs work on ("PAP-1204 Add retries to webhook ingest"): a run only carries the issue id.
  * Best effort: an issue that cannot be read is left out and the screen shows the run without it. Each id is read once,
- * a few at a time (A10). Nothing is dropped: a cap would leave later rows without a name and no one would know why (R8);
- * the number of distinct issues is bounded by the runs the screen lists.
+ * a few at a time (A10). Nothing is dropped: a cap would leave later rows without a name and no one would know
+ * why (R8); the number of distinct issues is bounded by the runs the screen lists.
  */
 class LoadIssueRefs(
     private val issues: IssueGateway,
