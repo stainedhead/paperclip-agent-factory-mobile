@@ -6,7 +6,7 @@ The iPhone app is built on a demo factory; connecting to a real server arrives w
 |---|---|---|
 | [Getting started](./getting-started.md) | Prerequisites, clone, build, run the gates, build the XCFramework, run the iOS tests, run the demo graph from Kotlin and Swift | Current |
 | [Configuration reference](./configuration-reference.md) | Gradle properties, version-catalog pins (including `paperclip-server`), scripts and their environment variables, graph flags, settings and factory fields with their validation rules, security rules | Current |
-| [Usage examples](./usage-examples.md) | Verified snippets: create a graph, drive a state holder (Kotlin and Swift), add a factory on fakes, decide with device authentication cancelled or approved, start and stop the refresh policy, write a fake and a contract suite | Current |
+| [Usage examples](./usage-examples.md) | Snippets that mirror the tests: create a graph, drive a state holder (Kotlin and Swift), add a factory on fakes, decide with device authentication cancelled or approved, start and stop the refresh policy, write a fake and a contract suite | Current |
 | [Testing guide](./testing-guide.md) | TDD, fakes, contract suites, Konsist rules and Kover gates together; add a use case or a state holder end to end | Current |
 | [First run and adding a factory](./first-factory.md) | Address, name, check, demo factory | Current |
 | [Pairing](./pairing.md) | Approving this phone | Current (demo only) |

@@ -477,7 +477,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Context.** Three audits (Factory home, offline Factory home, Agents) used a non-strict `XCTExpectFailure` for "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text in the lower part of the screen (y about 575 to 775 of 874 pt).
 
-**Decision.** No `XCTExpectFailure` remains anywhere. The audits assert an empty finding list like the others and stay in the non-blocking audit set (ADR-080), so CI reports their findings instead of hiding them. Investigated without effect: making the tile and row buttons single elements (`accessibilityElement(.ignore)` on the button, the pattern the Work rows use and which pass), and `contentMargins(.bottom)` for the floating tab bar. The findings track screen position (a tile row is clean at y 540 and flagged at y 620), not a font: the Work list, built the same way, passes. Cause not found.
+**Decision.** No `XCTExpectFailure` remains anywhere (the last dead helper that called it was deleted in the review-fix round, C4). The audits assert an empty finding list like the others and stay in the non-blocking audit set (ADR-080), so CI reports their findings instead of hiding them. Investigated without effect: making the tile and row buttons single elements (`accessibilityElement(.ignore)` on the button, the pattern the Work rows use and which pass), and `contentMargins(.bottom)` for the floating tab bar. The findings track screen position (a tile row is clean at y 540 and flagged at y 620), not a font: the Work list, built the same way, passes. Cause not found.
 
 **Consequences.** The three tests fail locally and in the audit job until the cause is found; they do not block the merge. Findings: Factory home (2 to 4 texts of the Approvals and Budget incidents tiles), offline Factory home (all tiles), Agents (the CTO row, Pause, section header).
 
@@ -487,7 +487,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** `createLiveGraph`, `openLiveGraph` and `LivePlatform` exist only on `feat/phase-1b-adapters` (PR #7), so this branch does not call them (the Kotlin would not compile into the framework). `LiveGraphProvider` already has the Swift half (pairing browser, debug-only insecure local) and its `makeGraph()` is the single line to change. The exact steps are the "Merge checklist" in implementation-notes.md.
 
-**Consequences.** A launch without `-demo` shows the first-run flow on empty fakes today.
+**Consequences.** A launch without `-demo` used to show the first-run flow on empty fakes with Face ID that always approved; ADR-112 replaced that with a "not available in this build" screen.
 
 ## ADR-111: Hit targets and reduce motion are checked by UI test and environment, not by a shared rule
 
@@ -495,4 +495,54 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** `HitTargetUITests` reads every button, switch and text field on each tab root and asserts at least 43.9 x 43.9 pt (rounding tolerance). Explicit animations read `accessibilityReduceMotion`. These are presentation rules with no shared state, so no Kotlin changed.
 
-**Consequences.** The tests were characterisation tests: they passed on first run, no red step.
+**Consequences.** The tests were characterisation tests: they passed on first run, no red step. The review-fix round (ADR-116) made the test fail when it measures nothing, and say which controls it cannot see.
+
+## ADR-112: A build without live adapters says so and runs nothing; demo flags exist in Debug builds only
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A3, A7)
+
+**Context.** `LiveGraphProvider.isAvailable` was never read. A launch without `-demo` ran the shared graph on fakes (an in-memory secret store, a frozen clock and `FakeBiometrics`, which approves everything), so a Release build showed first-run pairing and approved destructive actions without Face ID while the confirm sheet promised it. All `-demo*` flags and the diagnostics overlay worked in every build.
+
+**Decision.** The rule lives in shared code: `StartupNotice.forLaunch(demo, liveAvailable)` returns `LiveFactoriesUnavailable` for a live launch whose adapters are not wired. `AppEnvironment` asks it once, closes the holders it had created (no refresh, no biometric port in use) and `RootView` shows the notice instead of first run or the tabs. `LaunchConfiguration` takes `allowsDemoControls`, true only when `DEBUG` is defined (CI and the UI tests build Debug), and ignores every `-demo*` argument otherwise; `DiagnosticsOverlay` is compiled into Debug only.
+
+**Consequences.** Until Phase 1b is merged and `isAvailable` flips, a Release build can only show the notice. The fake graph is still constructed by the provider, then closed before any state holder runs; no UI path reaches it. A Debug build without `-demo` also shows the notice (the first-run flow is reached with `-demo-first-run`).
+
+## ADR-113: Typed money is read by one strict shared parser; the app passes only the decimal separator and the currency's digits
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A4, A11, B-19, B-06)
+
+**Context.** Swift parsed the budget amount: it dropped every character that was not a digit, the locale's decimal separator or a minus sign, so "250.50" typed in a comma-decimal locale became 25,050.00 (100 times too much), and the result was passed to a Face ID prompt that does not show it.
+
+**Decision.** `MoneyInput.parse(text, decimalSeparator, fractionDigits)` in `shared/presentation` is the only reader. The other of "." and "," is the grouping mark and is accepted only in groups of exactly three; a mark in the wrong place, two decimal marks, too many decimals, more than 12 whole digits, zero or a negative amount is refused with an `InvalidKey` (`AmountNotNumeric`, `AmountTooManyDecimals`, `AmountTooLarge`, `AmountNotPositive`), never dropped or rounded. The Budget incident and Agent detail holders take the text (`AmountTyped`, `BudgetAmountTyped`), keep the parsed amount and the issue in state, and Agent detail reports a saved budget with `budgetSavedCount` so the form closes only on success. The raise button shows the amount that will be sent.
+
+**Consequences.** An ambiguous input ("250,50" in a point-decimal locale) is refused with a message instead of guessed. The Face ID reason string does not carry the amount: the `Biometrics` port takes a fixed reason; the amount is on the button the person taps.
+
+## ADR-114: Relative times are a function of a clock the view receives, not a value computed once
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A1, B-01, B-09)
+
+**Context.** "Updated 12s ago", card ages and a run's elapsed time were computed once in `body`, so an offline or final screen showed the age of its last render.
+
+**Decision.** `TickingReference` gives each age-showing view a "now": the pinned clock when there is one (the demo's frozen clock, previews, tests), otherwise the date of a `TimelineView(.periodic)` (15 s for ages, 1 s for a running run). The views hold no timer; the schedule is display only. `RelativeAge` uses `Duration.UnitsFormatStyle`: narrow for the compact text, wide for VoiceOver.
+
+**Consequences.** Offline and final screens keep ageing. Unit tests move the clock (`ClockDrivenLabelTests`); no UI test can, because the demo clock is pinned.
+
+## ADR-115: A screen left while its mutation is in flight is closed after the outcome is recorded
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A6)
+
+**Context.** `ModelStore` closed a pushed screen's model when its route left the stack, and closing cancels the holder's coroutines. A back swipe during a request or a Face ID prompt dropped the outcome and the reconcile read.
+
+**Decision.** Each holder says what counts as work (`StateHolderProtocol.isWorking`: submitting, busy, cancelling). `ModelStore.retain` keeps a working model, follows its flow until it is idle, then closes it unless its key came back; `closeAll` (shutdown) still closes at once.
+
+**Consequences.** The back button is not blocked. A model can outlive its screen by one request; a Face ID prompt left unanswered keeps it until the prompt ends.
+
+## ADR-116: Audits set aside only the system tab bar's buttons, and say how many
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review C1 to C4)
+
+**Context.** The audit helpers dropped any finding whose element reached below the top of the tab bar or of the app's own fixed action bar, which included the bar's own buttons. `HitTargetUITests` passed when it measured nothing.
+
+**Decision.** One helper, `auditScreen`, returns every finding except those on a button of the system tab bar (matched by identifier and label, read when the audit runs); those are counted, printed and attached as "system-owned". Content under the bar and the app's own bars are findings. The dead `XCTExpectFailure` helper is deleted. `HitTargetUITests` waits for the screen, uses the bar position from its buttons when its own frame is infinite, fails when fewer controls than a per-tab minimum were measured, and prints how many controls it could not see (below the fold or under the bars).
+
+**Consequences.** Audit findings that were hidden are now reported in the non-blocking audit set; their counts are in implementation-notes.md. `ios.yml` lets only the audit step fail without failing its leg, and fails the leg if no audit test ran.
