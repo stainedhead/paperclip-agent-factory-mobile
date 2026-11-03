@@ -13,20 +13,12 @@ struct IssueView: View {
     }
 }
 
-/// What was in the comment box when Send was tapped, kept so a comment that failed can come back into the box.
-private struct CommentDraft {
-    let body: String
-    let reopen: Bool
-    let interrupt: Bool
-}
-
 private struct IssueScreen: View {
     let model: IssueScreenModel
     let environment: AppEnvironment
     @State private var comment = ""
     @State private var reopen = false
     @State private var interrupt = false
-    @State private var sentDraft: CommentDraft?
     @State private var showsSubtask = false
     @State private var web: WebLink?
 
@@ -53,9 +45,9 @@ private struct IssueScreen: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if state.phase == .content {
                 IssueCommentBar(model: model, state: state, comment: $comment, reopen: $reopen, interrupt: $interrupt) {
-                    sentDraft = CommentDraft(body: comment, reopen: reopen, interrupt: interrupt)
+                    // The box keeps its text until shared code says the comment went through (`commentSentCount`), so
+                    // a refused or failed send loses nothing and a posted one is never put back.
                     model.comment(comment, reopen: reopen, interrupt: interrupt)
-                    (comment, reopen, interrupt) = ("", false, false)
                 }
             }
         }
@@ -69,12 +61,7 @@ private struct IssueScreen: View {
             guard old, !new else { return nil }
             return state.feedback == nil ? .success : .error
         }
-        .onChange(of: state.feedback) { _, feedback in
-            // A comment that did not go through comes back into the box, so nothing typed is lost.
-            guard feedback != nil, let sent = sentDraft else { return }
-            if comment.isEmpty { (comment, reopen, interrupt) = (sent.body, sent.reopen, sent.interrupt) }
-            sentDraft = nil
-        }
+        .onChange(of: state.commentSentCount) { _, _ in (comment, reopen, interrupt) = ("", false, false) }
         .sheet(isPresented: $showsSubtask) { SubtaskSheet(model: model) }
         .sheet(item: $web) { SafariView(url: $0.url).ignoresSafeArea() }
     }
