@@ -29,6 +29,7 @@ extension RoleUi: CatalogKey { static var catalogNamespace: String { "role" } }
 extension RemovalEffect: CatalogKey { static var catalogNamespace: String { "removal" } }
 extension ServerKeyOutcome: CatalogKey { static var catalogNamespace: String { "keyOutcome" } }
 extension IdlePeriod: CatalogKey { static var catalogNamespace: String { "idle" } }
+extension StartupNotice: CatalogKey { static var catalogNamespace: String { "startup" } }
 extension PairedDevicesStatus: CatalogKey { static var catalogNamespace: String { "devices" } }
 
 enum L10n {
@@ -69,6 +70,7 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case firstRunContinue
     case firstRunWillConnect
     case firstRunTryDemo
+    case startupTitle
     case settingsTitle
     case settingsAppLock
     case settingsIdlePeriod

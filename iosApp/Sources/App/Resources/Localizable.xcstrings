@@ -5414,6 +5414,17 @@
         }
       }
     },
+    "label.startupTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live factories are not available yet"
+          }
+        }
+      }
+    },
     "label.statusKeyExpired": {
       "extractionState": "manual",
       "localizations": {
@@ -6213,6 +6224,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "7d"
+          }
+        }
+      }
+    },
+    "startup.liveFactoriesUnavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build cannot connect to a Paperclip factory yet, so nothing is paired and nothing can be approved. Use a build that includes live factories."
           }
         }
       }

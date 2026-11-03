@@ -27,7 +27,9 @@ struct RootView: View {
 
     @ViewBuilder private var content: some View {
         let state = environment.app.state
-        if !state.isLoaded {
+        if let notice = environment.startupNotice {
+            StartupNoticeView(notice: notice)
+        } else if !state.isLoaded {
             LoadingState()
         } else if state.lock == .locked {
             LockView(environment: environment)
@@ -36,6 +38,18 @@ struct RootView: View {
         } else {
             TabShellView(environment: environment)
         }
+    }
+}
+
+/// What the shell says instead of running when this build cannot reach real factories (the words are the notice's).
+struct StartupNoticeView: View {
+    let notice: StartupNotice
+
+    var body: some View {
+        EmptyState(
+            symbol: "exclamationmark.shield", title: ShellLabel.startupTitle.text, message: L10n.text(notice)
+        )
+        .accessibilityIdentifier("startup-notice")
     }
 }
 

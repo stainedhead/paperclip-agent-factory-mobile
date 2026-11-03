@@ -64,6 +64,9 @@ final class AppEnvironment {
     /// diagnostics overlay polls it, because prompts also come from use cases that change no app state.
     var biometricPromptCount: Int { Int(graph.demoControls?.biometricPromptCount ?? 0) }
     let configuration: LaunchConfiguration
+    /// Set when this build cannot run the way it was launched (live factories are not wired yet). The shell shows it
+    /// and runs nothing: no holder, no refresh and no fake Face ID (A3).
+    private(set) var startupNotice: StartupNotice?
 
     /// Screen models of the Factories family, closed when their route leaves its stack (see `ScreenKey`).
     @ObservationIgnored let models = ModelStore<ScreenKey>()
@@ -98,6 +101,9 @@ final class AppEnvironment {
         pairingPage.onEvent = { [weak self] in self?.pairingPageEvent($0) }
         router.onChange = { [weak self] in self?.releaseScreenModels() }
         router.onSheetDismissed = { [weak self] in self?.inbox?.refresh() }
+        startupNotice = StartupNotice.companion.forLaunch(
+            demo: provider.mode == .demo, liveAvailable: provider.isAvailable)
+        if startupNotice != nil { tearDown() }
     }
 
     private static func provider(
@@ -119,7 +125,7 @@ final class AppEnvironment {
 
     /// Starts mirroring the shell state. Call once from the scene; calling again does nothing.
     func start() {
-        guard !started else { return }
+        guard !started, startupNotice == nil else { return }
         started = true
         applyDemoLaunchOptions()
         applyStartLocation()
@@ -265,6 +271,7 @@ final class AppEnvironment {
     private func replaceGraph(with provider: any AppGraphProvider) {
         tearDown()
         self.provider = provider
+        startupNotice = nil
         mode = provider.mode
         let graph = provider.makeGraph()
         self.graph = graph

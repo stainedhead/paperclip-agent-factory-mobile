@@ -35,7 +35,18 @@ struct LaunchConfiguration {
     let startTab: AppTab?
     let startRoute: String?
 
-    init(arguments: [String]) {
+    /// Demo flags and the diagnostics overlay exist in Debug builds only (which is what CI and the UI tests build). A
+    /// Release build ignores every `-demo*` flag, so a shipped binary cannot be steered onto fakes (A7).
+    static var buildAllowsDemoControls: Bool {
+        #if DEBUG
+            true
+        #else
+            false
+        #endif
+    }
+
+    init(arguments rawArguments: [String], allowsDemoControls: Bool = LaunchConfiguration.buildAllowsDemoControls) {
+        let arguments = allowsDemoControls ? rawArguments : []
         useDemo = arguments.contains("-demo")
         useFirstRunDemo = arguments.contains("-demo-first-run")
         showsDiagnostics = arguments.contains("-demo-diagnostics")
