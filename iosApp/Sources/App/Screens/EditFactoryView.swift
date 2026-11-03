@@ -134,7 +134,7 @@ private struct EditFactoryFields: View {
                     systemImage: "checkmark.shield")
             }
             .buttonStyle(.app(.secondary))
-            .disabled(state.addressIssue != nil || state.address.isEmpty || state.probe == .probing)
+            .disabled(!state.canCheckAddress)
             .accessibilityIdentifier("edit-check-address")
             probe(state)
         }
