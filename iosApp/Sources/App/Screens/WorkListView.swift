@@ -88,7 +88,7 @@ private struct WorkListScreen: View {
                 // Searching is sent when the person submits; clearing the box shows the filter again at once.
                 if text.isEmpty, !state.search.isEmpty { model.search("") }
             }
-            .padding(.leading, Spacing.page + Spacing.large)
+            .padding(.leading, Spacing.minimumTarget)
             .padding(.trailing, Spacing.extraLarge)
             .frame(minHeight: Spacing.minimumTarget)
             .background(Palette.surface.color, in: RoundedRectangle(cornerRadius: Radius.button))

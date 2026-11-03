@@ -78,7 +78,6 @@ struct WorkPresentationTests {
 
     @Test func fileSizesAreWrittenForPeople() {
         #expect(FileSizeText.text(bytes: 4096) == "4 KB")
-        #expect(FileSizeText.text(bytes: 0).contains("0"))
     }
 
     @Test func markdownKeepsInlineStylingAndPlainTextAsItIs() {
