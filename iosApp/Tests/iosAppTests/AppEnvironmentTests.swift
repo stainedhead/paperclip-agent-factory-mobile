@@ -30,18 +30,27 @@ struct AppEnvironmentTests {
         environment.shutdown()
     }
 
-    @Test func aLaunchWithoutTheDemoFlagStartsWithNoFactoryForFirstRun() async {
+    @Test func aLaunchWithoutTheDemoFlagSaysLiveFactoriesAreNotInThisBuildAndRunsNothing() async {
         let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
         environment.start()
         #expect(environment.mode == .live)
-        #expect(await eventually { environment.app.state.isLoaded })
-        #expect(environment.app.state.hasFactories == false)
+        #expect(environment.startupNotice == .liveFactoriesUnavailable)
+        // The fake-backed graph is never running: no state holders, no refresh, no Face ID that approves everything.
+        #expect(environment.app.isClosed)
+        #expect(environment.firstRun.isClosed)
         #expect(environment.inbox == nil)
+        #expect(environment.biometricPromptCount == 0)
+        environment.shutdown()
+    }
+
+    @Test func aDemoLaunchHasNoStartupNotice() {
+        let environment = demo()
+        #expect(environment.startupNotice == nil)
         environment.shutdown()
     }
 
     @Test func tryingTheDemoFactorySwitchesGraphAndClosesTheOldOwnedModels() async {
-        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
+        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"]))
         environment.start()
         let oldApp = environment.app
         let oldFirstRun = environment.firstRun

@@ -77,4 +77,25 @@ struct OfflineLaunchTests {
         #expect(LaunchConfiguration(arguments: ["iosApp", "-demo", "-demo-offline"]).goesOffline)
         #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).goesOffline == false)
     }
+
+    @Test func aBuildWithoutDemoControlsIgnoresEveryDemoFlag() {
+        let flags = [
+            "iosApp", "-demo", "-demo-first-run", "-demo-no-auto-refresh", "-demo-biometrics", "approved",
+            "-demo-diagnostics", "-demo-idle", "immediately", "-demo-offline", "-demo-tab", "factories",
+        ]
+        let config = LaunchConfiguration(arguments: flags, allowsDemoControls: false)
+        #expect(config.useDemo == false)
+        #expect(config.useFirstRunDemo == false)
+        #expect(config.pausesAutoRefresh == false)
+        #expect(config.scriptedBiometrics.isEmpty)
+        #expect(config.showsDiagnostics == false)
+        #expect(config.demoIdlePeriod == nil)
+        #expect(config.goesOffline == false)
+        #expect(config.startTab == nil)
+    }
+
+    @Test func aDebugBuildHonoursTheDemoFlags() {
+        #expect(LaunchConfiguration.buildAllowsDemoControls, "tests and UI tests build Debug")
+        #expect(LaunchConfiguration(arguments: ["iosApp", "-demo"]).useDemo)
+    }
 }

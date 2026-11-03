@@ -81,7 +81,7 @@ struct ScreenModelOwnershipTests {
     }
 
     @Test func leavingTheGraphClosesEveryScreenModel() async {
-        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp"]))
+        let environment = AppEnvironment(configuration: LaunchConfiguration(arguments: ["iosApp", "-demo-first-run"]))
         environment.start()
         let factories = environment.factoriesModel()
         environment.useDemo()
