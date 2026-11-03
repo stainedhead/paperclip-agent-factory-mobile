@@ -34,6 +34,15 @@ State holder `FirstRunStateHolder`. FR-003 and FR-009. The address of the Paperc
 |---|---|
 | <img src="images/ios-first-run.png" alt="Built: the first-run screen with an address field and a disabled Continue button" width="240"> | <img src="images/design-first-run.png" alt="Design mock of the first-run setup screen" width="240"> |
 
+### Screens 10 and 4: Work list and Issue (iPhone, milestone 2i-5)
+
+Built on `WorkListStateHolder` and `IssueStateHolder`; everything below runs on the demo graph.
+
+- **Work tab.** Search box (sent when you press Search; clearing it shows the filter again), five saved-filter chips, the issue count with its "Updated" time, and one card per issue: number, title, status and priority pills, assignee. "New issue" (Operator and Owner) asks for a title and a priority and opens the new issue. More rows load when you reach the end of the list. Offline: the saved rows stay, with a banner.
+- **Issue screen.** Header as in the mock (number and project, title, status, priority, assignee), the parent and what blocks it as links, subtasks, then Thread, Plan, Runs and Files. Thread lists comments and the agent's request cards in time order. A question card shows its questions and options and sends the answers once all required ones are filled in; the shared card says what is missing. The bar at the bottom changes the status (clock button), takes a comment, and offers "Reopen with this comment" or "Interrupt the running agent" only when the issue allows it. The assignee pill opens a menu of people to assign. Runs open the Run viewer. Files are listed (name, type, size) and open in the web app.
+- **No Face ID.** None of these actions is on the destructive list; the prompt count stays unchanged and a failed action is never retried.
+- No design mock exists for the Work list; it is designed from the state and the tokens of the other tabs.
+
 ## State holders only (no UI yet)
 
 Each screen below is a `StateFlow<State>` plus `onIntent(Intent)` in `shared/presentation`, reached through `PaperclipGraph`. "Mock" means a design image exists; the rest have no image.

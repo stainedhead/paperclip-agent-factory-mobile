@@ -443,3 +443,20 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** The count is set as the tab button's accessibility value, "N waiting" (catalog key `label.tabBadgeValue`, empty without a badge), a real accessibility improvement; the label stays "Inbox". A `.accessibilityValue` on the SwiftUI `tabItem` did not reach the button (CI run 41557971050 family: hierarchy unchanged), so a zero-size `UIViewControllerRepresentable` inside each tab finds the `UITabBarController` and sets `UITabBarItem.accessibilityValue` (`TabBarAccessibility`). UIKit rebuilds the bar's items without SwiftUI telling us (a detail screen hiding and showing the bar, a sheet closing) and a live button only picks a changed value up when its badge changes, so the helper also sets the values on the view controllers' items, re-assigns the badge text when it changes a value, and re-checks twice a second. UI tests keep reading the badge and now assert on that value. A launch option `-demo-no-auto-refresh` skips starting the Inbox refresh session (pull to refresh and returning to the screen still refresh) and that one test uses it, so its first read is deterministic. No assertion was weakened.
 
 **Consequences.** The Shell test now requires the tab to expose the count instead of accepting its absence. The timer is still covered by the shared RefreshVisibleScreen tests.
+
+## ADR-106: Work list and Issue are built on the existing holders; text input stays in the view
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+
+**Context.** The shared holders for both screens existed. The demo answered a question without telling the Inbox feed and stamped a new comment with the epoch, so it sorted first in the thread.
+
+**Decision.** Swift renders the state and forwards intents; the only shared edits are the demo ones above, test first. Search is sent on submit (no per-keystroke requests, no timers), the comment box and the cards' text fields keep their own text and send change intents, and a failed comment is put back in the box. Create-issue opens the new issue through `createdIssueId`. No Face ID is added: none of these actions is on the destructive list in AGENTS.md.
+
+**Consequences.** Tab counts ("Runs 3") appear once a tab has been read, because the holder reads those tabs lazily; the mock shows them at once.
+
+## ADR-107: The new Work and Issue audits are blocking-free but honest
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+
+**Decision.** `WorkAuditUITests` asserts the audit returns no findings with plain assertions (no expected failure, no allow-list) and is listed in the audit set of `scripts/ios-test.sh` (non-blocking in CI, ADR-080). The new functional classes `WorkUITests` and `IssueUITests` join shard 3.
+

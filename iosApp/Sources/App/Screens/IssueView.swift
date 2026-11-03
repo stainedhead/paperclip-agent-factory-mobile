@@ -88,13 +88,15 @@ private struct IssueScreen: View {
             ErrorBanner(
                 error: error, onRetry: { model.refresh() }, onSignInAgain: { environment.router.select(.factories) })
         }
-        if !state.subtasks.isEmpty || state.canCreateSubtask { subtasks }
+        if !state.subtasks.isEmpty { subtasks }
         IssueTabs(state: state) { model.select($0) }
         if let error = state.tabError {
             ErrorBanner(error: error, onRetry: { model.select(state.tab) })
         }
         switch state.tab {
-        case .thread: IssueThreadView(model: model, state: state, environment: environment, web: $web)
+        case .thread:
+            IssueThreadView(model: model, state: state, environment: environment, web: $web)
+            addSubtask
         case .plan: planTab
         case .runs: runsTab
         case .files: filesTab
@@ -132,11 +134,14 @@ private struct IssueScreen: View {
                 .accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier("issue-subtask-\(row.id)")
             }
-            if state.canCreateSubtask {
-                Button(IssueLabel.addSubtask.text) { showsSubtask = true }
-                    .buttonStyle(.app(.secondary))
-                    .accessibilityIdentifier("issue-add-subtask")
-            }
+        }
+    }
+
+    @ViewBuilder private var addSubtask: some View {
+        if state.canCreateSubtask {
+            Button(IssueLabel.addSubtask.text) { showsSubtask = true }
+                .buttonStyle(.app(.secondary))
+                .accessibilityIdentifier("issue-add-subtask")
         }
     }
 

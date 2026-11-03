@@ -257,6 +257,10 @@ Decisions are in ADR-030 to ADR-037; the fix spec is `specs/archive/261101-phase
 | Role gating | Every flag goes through `Permissions` and `DeviceAuthPolicy` (`RoleGating.kt`); a 403 on a read or a mutation re-resolves the role once. |
 | CI | `contract-smoke.sh`, SHA-pinned actions and a digest-pinned scanner (see CI). |
 
+## Work list and Issue on iPhone (2i-5)
+
+`WorkListView` (Work tab root, model keyed by factory and company, kept while the tab exists so the filter and search survive) and `IssueView` (pushed by `.issue(id)` from the Work list, Inbox, Run viewer, Agent detail and subtasks, model keyed by the route). Text the person types (search, comment, answers, reasons) stays in view state and only change intents go to the holder, because the holder renders asynchronously. A comment that fails comes back into the box. Demo changes: answering a question tells the Inbox feed (`FakeInteractionGateway.onAnswered`) and new demo comments are stamped with the demo clock (`FakeIssueGateway(now = ...)`). See ADR-106 and ADR-107.
+
 ## Known limitations and gaps
 
 Behaviour:
