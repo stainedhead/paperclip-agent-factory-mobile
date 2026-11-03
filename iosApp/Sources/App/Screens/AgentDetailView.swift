@@ -114,6 +114,12 @@ private struct AgentDetailScreen: View {
                     .accessibilityIdentifier("agent-detail-\(action)")
                 }
             }
+        } else if state.isBusy {
+            // The shared state hides the actions while one runs: say so instead of leaving a gap.
+            Label(AgentsLabel.working.text, systemImage: "hourglass")
+                .font(Typography.body).foregroundStyle(Palette.textSecondary.color)
+                .frame(maxWidth: .infinity, minHeight: Spacing.minimumTarget, alignment: .leading)
+                .accessibilityIdentifier("agent-detail-working")
         } else if let reason = state.actionsDisabledReason {
             DisabledReasonView(reason: reason)
         }
