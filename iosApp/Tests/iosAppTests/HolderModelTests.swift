@@ -125,7 +125,7 @@ struct ModelStoreTests {
 
         func finish() {
             inFlight = false
-            waiters.forEach { $0.resume() }
+            for waiter in waiters { waiter.resume() }
             waiters = []
         }
     }
