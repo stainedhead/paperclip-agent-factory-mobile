@@ -5,6 +5,21 @@ import Testing
 
 @testable import iosApp
 
+/// A provider whose first graph cannot be opened (the database is busy) and whose second can.
+private final class FlakyProvider: AppGraphProvider {
+    struct Busy: Error {}
+    let mode = GraphMode.live
+    var failures = 1
+
+    func makeGraph() throws -> PaperclipGraph {
+        if failures > 0 {
+            failures -= 1
+            throw Busy()
+        }
+        return PaperclipCore.shared.createFirstRunDemoGraph()
+    }
+}
+
 /// UI-001: which graph the app runs on, who owns it, and how it is torn down.
 @MainActor
 struct AppEnvironmentTests {
@@ -37,21 +52,6 @@ struct AppEnvironmentTests {
             dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(
                 "pafm-env-\(UUID().uuidString)"),
             unlockReason: "Unlock Paperclip", confirmReason: "Confirm this action")
-    }
-
-    /// A provider whose first graph cannot be opened (the database is busy) and whose second can.
-    private final class FlakyProvider: AppGraphProvider {
-        struct Busy: Error {}
-        let mode = GraphMode.live
-        var failures = 1
-
-        func makeGraph() throws -> PaperclipGraph {
-            if failures > 0 {
-                failures -= 1
-                throw Busy()
-            }
-            return PaperclipCore.shared.createFirstRunDemoGraph()
-        }
     }
 
     @Test func aLaunchWithoutTheDemoFlagOpensTheRealGraphAndStartsAtFirstRun() async {

@@ -2,45 +2,6 @@ import Observation
 import PaperclipKit
 import SwiftUI
 
-/// Which screen model a route (or a tab root) owns.
-enum ScreenKey: Hashable {
-    case factories
-    case manageFactories
-    case editFactory(id: String?)
-    case settings
-    case decision(id: String)
-    case approval(id: String)
-    case budget(id: String)
-    /// The Factory and Agents tab roots belong to one company of one factory; another company is another model.
-    case factoryHome(instance: String, company: String)
-    case agents(instance: String, company: String)
-    case agent(id: String)
-    case run(id: String)
-    /// The Work tab root belongs to one company of one factory; the Issue screen to its route.
-    case work(instance: String, company: String)
-    case issue(id: String)
-
-    init?(_ sheet: AppSheet) {
-        switch sheet {
-        case .budgetIncident(let id): self = .budget(id: id)
-        case .settings: return nil
-        }
-    }
-
-    init?(_ route: AppRoute) {
-        switch route {
-        case .manageFactories: self = .manageFactories
-        case .editFactory(let id): self = .editFactory(id: id)
-        case .settings, .pairedDevices: self = .settings
-        case .decision(let id): self = .decision(id: id)
-        case .approval(let id): self = .approval(id: id)
-        case .agent(let id): self = .agent(id: id)
-        case .run(let id): self = .run(id: id)
-        case .issue(let id): self = .issue(id: id)
-        }
-    }
-}
-
 /// Owns the shared graph and every long-lived model for the running app: the app shell (lock, selected factory and
 /// company), the first-run screen, and the Inbox that feeds the tab badge. The `App` scene creates one and keeps it
 /// for the life of the process; nothing else closes these models, and a view's `.task` ending never does.
@@ -107,9 +68,8 @@ final class AppEnvironment {
         if startupNotice != nil { tearDown() }
     }
 
-    /// Opens the provider's graph. When the real one cannot be opened the notice says so and a stand-in graph is
-    /// returned only so the environment has something to hold: it is closed at once, runs no holder and no refresh, and
-    /// no screen is shown for it (nothing falls back to fakes).
+    /// Opens the provider's graph. If the real one cannot be opened, a stand-in graph is returned only to be held:
+    /// it is closed at once and runs nothing (nothing falls back to fakes).
     private static func open(_ provider: any AppGraphProvider) -> (graph: PaperclipGraph, notice: StartupNotice?) {
         do {
             return (try provider.makeGraph(), nil)
@@ -138,7 +98,7 @@ final class AppEnvironment {
     /// "Now" for "Updated ..." labels: a graph with its own clock (the demo's is frozen) is measured against that
     /// clock, a live graph against the wall clock (nil).
     var referenceDate: Date? {
-        mode == .demo ? Date(timeIntervalSince1970: Double(graph.nowEpochMillis()) / 1000) : nil
+        mode == .demo ? Date(timeIntervalSince1970: Double(graph.nowEpochMillis) / 1000) : nil
     }
 
     /// Starts mirroring the shell state. Call once from the scene; calling again does nothing.
@@ -154,7 +114,7 @@ final class AppEnvironment {
         appStateChanged(app.state)
     }
 
-    /// "Try the demo factory" is offered in Debug builds only; a Release build has no way onto the demo graph.
+    /// "Try the demo factory" is Debug only.
     var demoEntry: (() -> Void)? {
         LaunchConfiguration.buildAllowsDemoControls ? { [weak self] in self?.useDemo() } : nil
     }

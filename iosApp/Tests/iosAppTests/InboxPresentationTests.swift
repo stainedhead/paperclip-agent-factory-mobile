@@ -21,7 +21,7 @@ struct InboxPresentationTests {
         return found
     }
 
-    private var reference: Date { Date(timeIntervalSince1970: Double(graph.nowEpochMillis()) / 1000) }
+    private var reference: Date { Date(timeIntervalSince1970: Double(graph.nowEpochMillis) / 1000) }
 
     @Test func theDecisionCardReadsLikeTheMock() async {
         let all = await items()
