@@ -46,13 +46,19 @@ struct FormField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.small) {
             Text(title).font(Typography.button).foregroundStyle(Palette.textPrimary.color)
-            TextField(placeholder, text: $text)
+            TextField(placeholder, text: $text, axis: .vertical)
+                .lineLimit(1...4)
+                // A field that can wrap is still one line of text: Return ends the entry, it never adds a line.
+                .onChange(of: text) { _, new in
+                    if new.contains("\n") { text = new.replacingOccurrences(of: "\n", with: "") }
+                }
                 .font(Typography.body)
                 .textInputAutocapitalization(capitalization)
                 .autocorrectionDisabled()
                 .keyboardType(keyboard)
                 .disabled(isDisabled)
                 .padding(.horizontal, Spacing.extraLarge)
+                .padding(.vertical, Spacing.small)
                 .frame(minHeight: Spacing.minimumTarget)
                 .background(Palette.surface.color, in: RoundedRectangle(cornerRadius: Radius.button))
                 .overlay(
