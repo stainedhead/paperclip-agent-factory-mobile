@@ -42,6 +42,7 @@ internal class IssueEdits(
             },
             { model, _ -> model },
             loader::load,
+            { it.copy(commentsSent = it.commentsSent + 1) },
         )
     }
 
@@ -86,6 +87,7 @@ internal class IssueEdits(
             { mutate(session.context) { session.useCases.edits.create(it, NewIssue(title, parentId = session.id)) } },
             { model, _ -> model },
             loader::load,
+            { it.copy(subtasksCreated = it.subtasksCreated + 1) },
         )
     }
 }

@@ -41,16 +41,18 @@ internal class IssueSession(
         call: suspend () -> ActionResult<T>,
         apply: (IssueModel, T) -> IssueModel,
         reload: (() -> Unit)? = null,
+        counter: (IssueModel) -> IssueModel = { it },
     ) {
         if (!model.claim({ it.busy }) { it.copy(busy = true, feedback = null) }) return
         scope.launch {
             val result = call()
             model.update { current ->
                 val applied = result.value?.let { apply(current, it) } ?: current
-                applied.copy(
+                val counted = if (result.feedback == null && result.value != null) counter(applied) else applied
+                counted.copy(
                     busy = false,
-                    role = result.role ?: applied.role,
-                    version = applied.version + 1,
+                    role = result.role ?: counted.role,
+                    version = counted.version + 1,
                     feedback = result.feedback,
                 )
             }
