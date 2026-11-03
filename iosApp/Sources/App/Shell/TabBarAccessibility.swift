@@ -19,7 +19,14 @@ enum TabBarAccessibility {
     @MainActor
     static func apply(_ values: [String], to items: [UITabBarItem]) {
         for (value, item) in zip(values, items) {
-            item.accessibilityValue = value.isEmpty ? nil : value
+            let wanted = value.isEmpty ? nil : value
+            guard item.accessibilityValue != wanted else { continue }
+            item.accessibilityValue = wanted
+            // A button reads its item's accessibility value when the item's badge changes, not when the value does:
+            // re-assigning the badge (same text, no redraw in between) makes the live button pick the value up.
+            let badge = item.badgeValue
+            item.badgeValue = nil
+            item.badgeValue = badge
         }
     }
 }

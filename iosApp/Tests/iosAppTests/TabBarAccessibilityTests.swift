@@ -23,4 +23,14 @@ struct TabBarAccessibilityTests {
         TabBarAccessibility.apply([], to: items)
         #expect(items[0].accessibilityValue == "1 waiting")
     }
+
+    @Test func theBadgeTextIsKeptWhenTheValueChanges() {
+        let item = UITabBarItem()
+        item.badgeValue = "3"
+        TabBarAccessibility.apply(["3 waiting"], to: [item])
+        #expect(item.badgeValue == "3")
+        TabBarAccessibility.apply(["2 waiting"], to: [item])
+        #expect(item.badgeValue == "3")
+        #expect(item.accessibilityValue == "2 waiting")
+    }
 }
