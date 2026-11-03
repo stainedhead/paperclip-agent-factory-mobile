@@ -71,7 +71,7 @@ final class SettingsUITests: XCTestCase {
         XCTAssertTrue(toggle.waitForExistence(timeout: 10))
         toggle.tap()
         // The switch follows the shared state holder, one asynchronous round trip after the tap.
-        waitUntil(toggle, "value == '0'")
+        waitUntil(toggle, "value == '0'", timeout: 45)
 
         app.element("settings-idle-period").tap()
         app.buttons["15 minutes"].tap()

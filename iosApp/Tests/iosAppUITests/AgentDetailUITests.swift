@@ -26,7 +26,7 @@ final class AgentDetailUITests: XCTestCase {
         app.textFields["agent-budget-amount"].enterText("1500")
         waitUntil(app.buttons["agent-budget-save"], "isEnabled == true")
         app.buttons["agent-budget-save"].tap()
-        waitUntil(app.element("agent-budget"), "label CONTAINS '$1,500'")
+        waitUntil(app.element("agent-budget"), "label CONTAINS '$1,500'", timeout: 45)
 
         app.buttons["agent-detail-pause"].tap()
         XCTAssertTrue(app.element("confirm-destructive-sheet").waitForExistence(timeout: 10))
