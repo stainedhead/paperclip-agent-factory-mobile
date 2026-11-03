@@ -39,6 +39,15 @@ final class ApprovalUITests: XCTestCase {
     }
 
     @MainActor
+    func testALinkedIssueOpensItsIssueScreen() {
+        let app = openHireApproval()
+        let link = app.buttons["approval-issue-pap-1190"]
+        XCTAssertTrue(link.waitForExistence(timeout: 10), "the linked issue is not a button")
+        link.tap()
+        XCTAssertTrue(app.element("issue-screen").waitForExistence(timeout: 15), "the Issue screen never opened")
+    }
+
+    @MainActor
     func testApprovingResolvesItAsksNoFaceIDAndClearsTheInboxCard() {
         let app = openHireApproval()
         app.buttons["approval-approve"].tap()
