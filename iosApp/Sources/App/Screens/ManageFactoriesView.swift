@@ -85,7 +85,8 @@ struct ManageFactoriesView: View {
                 ConfirmDestructiveSheet(
                     title: ShellLabel.removeTitle.text(confirmation.name),
                     message: message(for: confirmation),
-                    confirmTitle: ShellLabel.removeConfirm.text,
+                    confirmTitle: confirmation.hereOnly
+                        ? ShellLabel.removeHereOnlyConfirm.text : ShellLabel.removeConfirm.text,
                     issue: model.state.deviceAuthIssue,
                     isWorking: model.state.isRemoving,
                     cancelTitle: ShellLabel.commonKeep.text,
@@ -102,7 +103,8 @@ struct ManageFactoriesView: View {
     }
 
     private func message(for confirmation: RemovalConfirmationUi) -> String {
-        (confirmation.effects.map { L10n.text($0) } + [ShellLabel.removeFooter.text]).joined(separator: "\n")
+        if confirmation.hereOnly { return ShellLabel.removeHereOnlyMessage.text }
+        return (confirmation.effects.map { L10n.text($0) } + [ShellLabel.removeFooter.text]).joined(separator: "\n")
     }
 }
 

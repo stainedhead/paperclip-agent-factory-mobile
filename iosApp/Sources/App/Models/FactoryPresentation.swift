@@ -71,3 +71,37 @@ struct ExpiryPresentation: Equatable {
         }
     }
 }
+
+/// The words of each confirmation on the Edit factory screen. The "here only" ones appear when the phone could not read
+/// the key (Face ID declined, device locked): the factory is signed out or removed on this phone, and the key stays
+/// live on the server, which the message says.
+@MainActor
+enum EditConfirmationPresentation {
+    struct Descriptor {
+        let title: String
+        let message: String
+        let confirmTitle: String
+    }
+
+    static func descriptor(_ which: EditConfirmation, name: String) -> Descriptor {
+        switch which {
+        case .signOut:
+            Descriptor(
+                title: ShellLabel.editSignOutTitle.text(name), message: ShellLabel.editSignOutMessage.text,
+                confirmTitle: ShellLabel.editSignOutConfirm.text)
+        case .signOutHereOnly:
+            Descriptor(
+                title: ShellLabel.editSignOutHereOnlyTitle.text(name),
+                message: ShellLabel.editSignOutHereOnlyMessage.text,
+                confirmTitle: ShellLabel.editSignOutHereOnlyConfirm.text)
+        case .remove:
+            Descriptor(
+                title: ShellLabel.removeTitle.text(name), message: ShellLabel.editRemoveMessage.text,
+                confirmTitle: ShellLabel.removeConfirm.text)
+        case .removeHereOnly:
+            Descriptor(
+                title: ShellLabel.removeTitle.text(name), message: ShellLabel.removeHereOnlyMessage.text,
+                confirmTitle: ShellLabel.removeHereOnlyConfirm.text)
+        }
+    }
+}

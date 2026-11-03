@@ -91,19 +91,16 @@ struct EditFactoryView: View {
     }
 
     @ViewBuilder private func sheet(for which: EditConfirmation, state: EditInstanceState) -> some View {
+        let text = EditConfirmationPresentation.descriptor(which, name: state.name)
         switch which {
-        case .signOut:
+        case .signOut, .signOutHereOnly:
             ConfirmSheet(
-                title: ShellLabel.editSignOutTitle.text(state.name),
-                message: ShellLabel.editSignOutMessage.text,
-                confirmTitle: ShellLabel.editSignOutConfirm.text,
+                title: text.title, message: text.message, confirmTitle: text.confirmTitle,
                 isWorking: state.isBusy, onConfirm: model.confirm, onCancel: model.dismissConfirmation)
-        case .remove:
+        case .remove, .removeHereOnly:
             ConfirmDestructiveSheet(
-                title: ShellLabel.removeTitle.text(state.name),
-                message: ShellLabel.editRemoveMessage.text,
-                confirmTitle: ShellLabel.removeConfirm.text, issue: state.deviceAuthIssue,
-                isWorking: state.isBusy, cancelTitle: ShellLabel.commonKeep.text,
+                title: text.title, message: text.message, confirmTitle: text.confirmTitle,
+                issue: state.deviceAuthIssue, isWorking: state.isBusy, cancelTitle: ShellLabel.commonKeep.text,
                 onConfirm: model.confirm, onCancel: model.dismissConfirmation)
         }
     }
