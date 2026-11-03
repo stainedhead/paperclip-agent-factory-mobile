@@ -157,17 +157,17 @@ Every port except `Connectivity` and `AppLifecycle` (a `StateFlow` already guara
 
 ## Tests and coverage
 
-Numbers from the last local run (2026-11-02, after the independent re-review fixes; JUnit XML under `shared/*/build/test-results`):
+Numbers from the last local run (2026-11-03, after the Phase 2i review-fix round; JUnit XML under `shared/*/build/test-results`):
 
 | Where | Tests (JVM) |
 |---|---|
 | `shared/domain` | 143 |
-| `shared/application` | 303 |
-| `shared/presentation` | 326 (322 on Android host and iOS simulator: `AtomicGuardsTest`'s 4 stress tests are JVM only) |
-| `shared/testing` | 48 |
-| `shared/umbrella` | 32 |
+| `shared/application` | 313 |
+| `shared/presentation` | 358 (354 on Android host and iOS simulator: `AtomicGuardsTest`'s 4 stress tests are JVM only) |
+| `shared/testing` | 56 |
+| `shared/umbrella` | 60 |
 | Konsist (`konsistTest`) | 37 in 10 files |
-| Swift (`iosApp/Tests`) | 33 Swift Testing cases in `iosAppTests` (counted from source) and 1 XCUITest |
+| Swift (`iosApp/Tests`) | 353 Swift Testing cases in `iosAppTests` (as reported by the test run) and 116 XCUITests in `iosAppUITests` (including 24 audit tests, which do not block CI) |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
 
@@ -175,8 +175,8 @@ Kover coverage, regenerated with `rm -rf build/reports/kover && ./gradlew koverX
 
 | Gate | Task | Line coverage | Threshold |
 |---|---|---|---|
-| Domain + application, one aggregate | `koverVerifyCore` | 97.98% (2568 covered, 53 missed) | 90% |
-| Presentation | `koverVerifyPresentation` | 98.02% (4217 covered, 85 missed) | 90% |
+| Domain + application, one aggregate | `koverVerifyCore` | 98.01% (2604 covered, 53 missed) | 90% |
+| Presentation | `koverVerifyPresentation` | 98.06% (4339 covered, 86 missed) | 90% |
 
 Kover rules cannot filter by package, so there are two custom variants, `core` and `presentation` (ADR-007). `koverVerify` alone checks nothing meaningful. Infrastructure, `testing` and `umbrella` are outside the gates.
 
