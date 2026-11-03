@@ -19,6 +19,8 @@ import com.stainedhead.paperclipmobile.domain.PlanDocument
 import com.stainedhead.paperclipmobile.domain.port.IssueGateway
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.WorkFixtures
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Instant
 
 /**
@@ -26,6 +28,7 @@ import kotlin.time.Instant
  * `q` are applied, priority is NOT (the app filters it), and paging is by offset and limit. A comment with `reopen`
  * moves a closed issue to todo (W3). [failures] scripts errors by operation name.
  */
+@OptIn(ExperimentalAtomicApi::class)
 class FakeIssueGateway(
     issues: List<Issue> = WorkFixtures.issues(),
     private val currentUserId: String = WorkFixtures.ME,
@@ -42,7 +45,10 @@ class FakeIssueGateway(
     private val attachmentStore: Map<IssueId, List<Attachment>>? = attachments
     var attachmentList: List<Attachment> = WorkFixtures.attachments()
     val plans = plans.toMutableMap()
-    val calls = mutableMapOf<String, Int>()
+    private val callCounts = AtomicReference<Map<String, Int>>(emptyMap())
+
+    /** How often each operation ran. Safe to bump from several coroutines at once (issue refs are read together). */
+    val calls: Map<String, Int> get() = callCounts.load()
     val failures = mutableMapOf<String, DomainError>()
     val commentOptions = mutableListOf<CommentOptions>()
     val queries = mutableListOf<IssueQuery>()
@@ -53,7 +59,10 @@ class FakeIssueGateway(
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
-        calls[name] = count(name) + 1
+        while (true) {
+            val seen = callCounts.load()
+            if (callCounts.compareAndSet(seen, seen + (name to (seen[name] ?: 0) + 1))) break
+        }
         return failures[name]
     }
 
