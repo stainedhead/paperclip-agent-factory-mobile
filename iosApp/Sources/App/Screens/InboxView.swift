@@ -37,11 +37,14 @@ struct FactorySwitcher: View {
             .first { $0.id == state.selectedInstanceId }
             .flatMap { row in row.companies.first { $0.id == row.selectedCompanyId }?.name }
         let label = InboxHeader.factoryLabel(factory: factory, company: company)
+        let selected = factories.state.rows.first { $0.id == state.selectedInstanceId }
+        let dot = SwitcherDot.tone(
+            status: selected?.status, expiry: selected?.expiry, isOffline: factories.state.isOffline)
         Button {
             environment.router.select(.factories)
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
-                Circle().fill(Palette.success.color).frame(width: 8, height: 8).accessibilityHidden(true)
+                Circle().fill(dot.foreground.color).frame(width: 8, height: 8).accessibilityHidden(true)
                 Text(label).font(Typography.secondary).multilineTextAlignment(.leading)
                 Image(systemName: "chevron.down").font(Typography.micro).accessibilityHidden(true)
             }

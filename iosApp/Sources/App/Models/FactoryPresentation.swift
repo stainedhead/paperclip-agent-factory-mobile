@@ -45,6 +45,15 @@ struct FactoryStatusPresentation: Equatable {
     }
 }
 
+/// The colour of the dot beside the factory name on the tabs: green only for a working key on a connected phone.
+enum SwitcherDot {
+    static func tone(status: FactoryStatusUi?, expiry: ExpiryUi?, isOffline: Bool) -> StatusTone {
+        guard let status, let expiry else { return .neutral }
+        let tone = FactoryStatusPresentation(status: status, expiry: expiry).tone
+        return isOffline && tone == .success ? .warn : tone
+    }
+}
+
 /// "Board key expires in 23 days": the text and colour for a key's expiry, nil when the key never expires.
 struct ExpiryPresentation: Equatable {
     let text: String?
