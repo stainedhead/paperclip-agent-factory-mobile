@@ -1,12 +1,43 @@
 import PaperclipKit
 import SwiftUI
 
+/// The one button a banner offers: sign in again when signed out, otherwise try again, otherwise just close it.
+enum ErrorBannerButton: Equatable {
+    case signIn
+    case retry
+    case dismiss
+
+    static func choose(signedOut: Bool, signIn: Bool, retry: Bool, dismiss: Bool) -> ErrorBannerButton? {
+        if signedOut && signIn { return .signIn }
+        if retry { return .retry }
+        return dismiss ? .dismiss : nil
+    }
+
+    var title: String {
+        switch self {
+        case .signIn: ShellLabel.commonSignInAgain.text
+        case .retry: ShellLabel.commonRetry.text
+        case .dismiss: ShellLabel.commonDismiss.text
+        }
+    }
+
+    var identifier: String {
+        switch self {
+        case .signIn: "error-sign-in-again"
+        case .retry: "error-retry"
+        case .dismiss: "error-dismiss"
+        }
+    }
+}
+
 /// One localized message per `ErrorKey` (PRD FR-097), with the server's own reason for a rejection and the way
 /// forward: sign in again when signed out, otherwise try again.
 struct ErrorBanner: View {
     let error: ErrorUi
     var onRetry: (() -> Void)?
     var onSignInAgain: (() -> Void)?
+    /// For a banner that retries nothing: it only closes the message.
+    var onDismiss: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
@@ -18,14 +49,13 @@ struct ErrorBanner: View {
             .font(Typography.body)
             .foregroundStyle(Palette.destructive.color)
             .accessibilityIdentifier("error-message")
-            if error.key == .signedOut, let onSignInAgain {
-                Button(ShellLabel.commonSignInAgain.text, action: onSignInAgain)
-                    .buttonStyle(.app(.primary))
-                    .accessibilityIdentifier("error-sign-in-again")
-            } else if let onRetry {
-                Button(ShellLabel.commonRetry.text, action: onRetry)
-                    .buttonStyle(.app(.secondary))
-                    .accessibilityIdentifier("error-retry")
+            if let button = ErrorBannerButton.choose(
+                signedOut: error.key == .signedOut, signIn: onSignInAgain != nil, retry: onRetry != nil,
+                dismiss: onDismiss != nil)
+            {
+                Button(button.title) { act(button) }
+                    .buttonStyle(.app(button == .signIn ? .primary : .secondary))
+                    .accessibilityIdentifier(button.identifier)
             }
         }
         .padding(Spacing.card)
@@ -33,6 +63,14 @@ struct ErrorBanner: View {
         .background(Palette.destructiveSoft.color, in: RoundedRectangle(cornerRadius: Radius.card))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("error-banner")
+    }
+
+    private func act(_ button: ErrorBannerButton) {
+        switch button {
+        case .signIn: onSignInAgain?()
+        case .retry: onRetry?()
+        case .dismiss: onDismiss?()
+        }
     }
 
     private var message: String {

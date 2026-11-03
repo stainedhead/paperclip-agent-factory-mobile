@@ -12,7 +12,7 @@ struct PairedDevicesView: View {
         let state = model.state
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.roomy) {
-                if let error = state.error { ErrorBanner(error: error, onRetry: model.dismissMessage) }
+                if let error = state.error { ErrorBanner(error: error, onDismiss: model.dismissMessage) }
                 if state.factories.count > 1 {
                     Picker(ShellLabel.devicesChooseFactory.text, selection: $selectedFactory) {
                         ForEach(state.factories, id: \.id) { Text($0.name).tag($0.id) }

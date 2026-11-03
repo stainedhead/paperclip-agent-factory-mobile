@@ -14,7 +14,7 @@ struct FirstRunView: View {
                     header
                     StepIndicator(steps: steps, current: currentStep)
                     if let error = model.state.error {
-                        ErrorBanner(error: error, onRetry: model.dismissError)
+                        ErrorBanner(error: error, onDismiss: model.dismissError)
                     }
                     switch model.state.step {
                     case .address: FirstRunAddressStep(model: model, onTryDemo: onTryDemo)

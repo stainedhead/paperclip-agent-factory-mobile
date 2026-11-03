@@ -12,7 +12,7 @@ struct SettingsView: View {
         let state = model.state
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.roomy) {
-                if let error = state.error { ErrorBanner(error: error, onRetry: model.dismissMessage) }
+                if let error = state.error { ErrorBanner(error: error, onDismiss: model.dismissMessage) }
                 notices(state)
                 SectionHeader(title: ShellLabel.settingsThisPhone.text)
                 CardGroup {

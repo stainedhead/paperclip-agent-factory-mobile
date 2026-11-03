@@ -13,7 +13,7 @@ struct EditFactoryView: View {
         let state = model.state
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.roomy) {
-                if let error = state.error { ErrorBanner(error: error, onRetry: model.dismissMessage) }
+                if let error = state.error { ErrorBanner(error: error, onDismiss: model.dismissMessage) }
                 if state.isOffline {
                     Label(ShellLabel.editOfflineNote.text, systemImage: "wifi.slash")
                         .font(Typography.secondary).foregroundStyle(Palette.warn.color)
