@@ -484,3 +484,37 @@ class ApprovalStaleLoadTest {
             holder.state.value.actions shouldBe listOf(ApprovalActionUi.Comment)
         }
 }
+
+/** A5: the comment box is cleared when the person's own comment is in the thread, not when anyone's arrives. */
+class ApprovalCommentPostedTest {
+    @Test
+    fun `A5 the posted count rises for the person's own comment only`() =
+        runTest {
+            val env = approvalEnv()
+            val holder = approvalHolder(env)
+            advanceUntilIdle()
+            holder.state.value.commentPostedCount shouldBe 0
+
+            holder.onIntent(ApprovalIntent.CommentSubmitted("  "))
+            advanceUntilIdle()
+            holder.state.value.commentPostedCount shouldBe 0
+
+            holder.onIntent(ApprovalIntent.CommentSubmitted("Ship it"))
+            advanceUntilIdle()
+            holder.state.value.commentPostedCount shouldBe 1
+        }
+
+    @Test
+    fun `A5 a comment that is not known to have gone through is not counted`() =
+        runTest {
+            val env = approvalEnv()
+            env.approvals.failures["addComment"] = DomainError.Timeout
+            val holder = approvalHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(ApprovalIntent.CommentSubmitted("Please check"))
+            advanceUntilIdle()
+
+            holder.state.value.commentPostedCount shouldBe 0
+        }
+}
