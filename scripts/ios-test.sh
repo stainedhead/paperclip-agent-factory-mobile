@@ -17,6 +17,26 @@ if [ ! -d "$framework" ]; then
 fi
 echo "Using PaperclipKit.xcframework ($(cat "${framework%.xcframework}.configuration" 2>/dev/null || echo 'unknown configuration'))"
 
+# Checked first: a class that runs nowhere should cost seconds, not a full build.
+# The functional UI test classes by shard. Every UI test class must be listed in a shard or be audit-only, so a new
+# class cannot silently run nowhere.
+shard_targets() {
+  case "$1" in
+    1) echo "iosAppTests iosAppUITests/FirstRunUITests iosAppUITests/EditFactoryUITests iosAppUITests/FactoriesUITests iosAppUITests/ManageFactoriesUITests iosAppUITests/SettingsUITests iosAppUITests/ShellUITests" ;;
+    2) echo "iosAppUITests/InboxUITests iosAppUITests/DecisionUITests iosAppUITests/HitTargetUITests" ;;
+    3) echo "iosAppUITests/ApprovalUITests iosAppUITests/BudgetUITests iosAppUITests/FactoryHomeUITests iosAppUITests/AgentsUITests iosAppUITests/AgentDetailUITests iosAppUITests/RunViewerUITests iosAppUITests/WorkUITests iosAppUITests/IssueUITests" ;;
+    *) echo "error: SHARD must be 1, 2 or 3" >&2; exit 1 ;;
+  esac
+}
+audit_only_classes="OperationsAuditUITests WorkAuditUITests"
+# Every XCTestCase subclass of the UI target, final or not, whatever its name ends in.
+for class in $(grep -rhoE '(final )?class +[A-Za-z0-9_]+ *: *XCTestCase' iosApp/Tests/iosAppUITests | sed -E 's/.*class +([A-Za-z0-9_]+).*/\1/'); do
+  if ! { for n in 1 2 3; do shard_targets "$n"; done; echo "$audit_only_classes"; } | grep -qw "$class"; then
+    echo "error: $class is in no shard of scripts/ios-test.sh" >&2
+    exit 1
+  fi
+done
+
 (cd iosApp && xcodegen generate --quiet)
 
 device_id="${IOS_SIMULATOR_ID:-$(xcrun simctl list devices available -j | python3 -c '
@@ -85,24 +105,6 @@ audit_tests=(
   iosAppUITests/DecisionUITests/testAccessibilityAuditOfTheDecisionScreen
   iosAppUITests/DecisionUITests/testAccessibilityAuditOfTheOfflineDecisionScreen
 )
-# The functional UI test classes by shard. Every UI test class must be listed in a shard or be audit-only, so a new
-# class cannot silently run nowhere.
-shard_targets() {
-  case "$1" in
-    1) echo "iosAppTests iosAppUITests/FirstRunUITests iosAppUITests/EditFactoryUITests iosAppUITests/FactoriesUITests iosAppUITests/ManageFactoriesUITests iosAppUITests/SettingsUITests iosAppUITests/ShellUITests" ;;
-    2) echo "iosAppUITests/InboxUITests iosAppUITests/DecisionUITests iosAppUITests/HitTargetUITests" ;;
-    3) echo "iosAppUITests/ApprovalUITests iosAppUITests/BudgetUITests iosAppUITests/FactoryHomeUITests iosAppUITests/AgentsUITests iosAppUITests/AgentDetailUITests iosAppUITests/RunViewerUITests iosAppUITests/WorkUITests iosAppUITests/IssueUITests" ;;
-    *) echo "error: SHARD must be 1, 2 or 3" >&2; exit 1 ;;
-  esac
-}
-audit_only_classes="OperationsAuditUITests WorkAuditUITests"
-for class in $(grep -rhoE 'final class [A-Za-z]+UITests' iosApp/Tests/iosAppUITests | awk '{print $3}'); do
-  if ! { for n in 1 2 3; do shard_targets "$n"; done; echo "$audit_only_classes"; } | grep -qw "$class"; then
-    echo "error: $class is in no shard of scripts/ios-test.sh" >&2
-    exit 1
-  fi
-done
-
 filter_args=()
 case "${TEST_SET:-all}" in
   audits) for t in "${audit_tests[@]}"; do filter_args+=("-only-testing:$t"); done ;;
