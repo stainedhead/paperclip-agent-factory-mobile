@@ -150,7 +150,8 @@ struct InteractionCardView: View {
                             .foregroundStyle((choice.selected ? Palette.accent : Palette.textSecondary).color)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: Spacing.hairline) {
-                            Text(choice.label).font(Typography.body).foregroundStyle(Palette.textPrimary.color)
+                            Text(choice.label).font(Typography.body)
+                                .foregroundStyle((isOpen ? Palette.textPrimary : Palette.textSecondary).color)
                                 .multilineTextAlignment(.leading)
                             if let summary = choice.summary {
                                 Text(summary).font(Typography.secondary)
@@ -162,7 +163,7 @@ struct InteractionCardView: View {
                     .frame(maxWidth: .infinity, minHeight: Spacing.minimumTarget, alignment: .leading)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.cardSelect)
                 .disabled(!isOpen)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(choice.label)
