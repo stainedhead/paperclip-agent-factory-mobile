@@ -103,7 +103,8 @@ struct LocalizationTests {
 
     /// B-08: a count reads right at one and at many, from the String Catalog's plural variations (never "1 keys").
     @Test func countsReadInTheSingularAndThePluralFromTheCatalog() {
-        #expect(ShellLabel.settingsUnconfirmedRevokes.plural(1) == "1 key could not be confirmed as revoked on its server.")
+        #expect(
+            ShellLabel.settingsUnconfirmedRevokes.plural(1) == "1 key could not be confirmed as revoked on its server.")
         #expect(
             ShellLabel.settingsUnconfirmedRevokes.plural(2)
                 == "2 keys could not be confirmed as revoked on their servers.")
