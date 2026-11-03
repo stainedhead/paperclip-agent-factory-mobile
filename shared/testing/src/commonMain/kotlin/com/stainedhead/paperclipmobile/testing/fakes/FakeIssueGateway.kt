@@ -19,6 +19,7 @@ import com.stainedhead.paperclipmobile.domain.PlanDocument
 import com.stainedhead.paperclipmobile.domain.port.IssueGateway
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.WorkFixtures
+import kotlin.time.Instant
 
 /**
  * An issues endpoint with the server's list rules (research W1): `status`, `attention=blocked`, `assigneeUserId=me` and
@@ -32,6 +33,8 @@ class FakeIssueGateway(
     plans: Map<IssueId, PlanDocument> = mapOf(WorkFixtures.pap1182 to WorkFixtures.plan()),
     attachments: Map<IssueId, List<Attachment>>? = null,
     private val projectName: String = "Billing",
+    /** The time a new comment is stamped with; a demo graph passes its clock so the comment sorts last. */
+    private val now: () -> Instant = { TestData.epoch },
 ) : IssueGateway {
     val store = issues.associateBy { it.id }.toMutableMap()
     val commentStore = comments.mapValues { it.value.toMutableList() }.toMutableMap()
@@ -117,7 +120,7 @@ class FakeIssueGateway(
                 CommentAuthorType.User,
                 null,
                 currentUserId,
-                TestData.epoch,
+                now(),
             )
         commentStore.getOrPut(id) { mutableListOf() } += comment
         return scripted?.let { DomainResult.Failure(it) } ?: DomainResult.Success(comment)

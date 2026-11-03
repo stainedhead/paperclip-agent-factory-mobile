@@ -29,6 +29,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.days
 
 private fun <T> DomainResult<T>.value(): T = (this as DomainResult.Success).value
 
@@ -172,5 +173,32 @@ class WorkFakesBehaviourTest {
                 .value()
                 .monthBudget.minorUnits shouldBe 500_000
             gateway.windowSpend(scope).value().isNotEmpty() shouldBe true
+        }
+
+    @Test
+    fun `an answered interaction tells the hook, a refused answer does not`() =
+        runTest {
+            val gateway = FakeInteractionGateway()
+            val answered = mutableListOf<String>()
+            gateway.onAnswered = { answered += it }
+            val pending = gateway.list(scope, pap).value().first { it.meta.status == InteractionStatus.Pending }
+
+            gateway.answer(scope, pap, pending.meta.id, InteractionAnswer.Respond(emptyList()))
+            answered shouldBe emptyList()
+            gateway.answer(scope, pap, pending.meta.id, InteractionAnswer.Accept)
+            answered shouldBe listOf(pending.meta.id.value)
+        }
+
+    @Test
+    fun `a new comment carries the time the fake was told and is not older than the thread`() =
+        runTest {
+            val later = TestData.epoch + 3.days
+            val gateway = FakeIssueGateway(now = { later })
+            gateway.addComment(scope, pap, "Hello", CommentOptions())
+            gateway
+                .comments(scope, pap)
+                .value()
+                .last()
+                .createdAt shouldBe later
         }
 }
