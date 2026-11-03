@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
+import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceResult
 import com.stainedhead.paperclipmobile.application.instance.ReorderInstances
 import com.stainedhead.paperclipmobile.application.instance.ReorderResult
@@ -35,6 +36,8 @@ data class RemovalConfirmationUi(
     val id: String,
     val name: String,
     val effects: List<RemovalEffect>,
+    /** The key could not be read: confirming removes the factory from this phone only (F-R-2). */
+    val hereOnly: Boolean = false,
 )
 
 data class ManageFactoriesState(
@@ -44,6 +47,7 @@ data class ManageFactoriesState(
     val deviceAuthIssue: DeviceAuthIssue? = null,
     val reorderRejected: Boolean = false,
     val lastRemovedKey: ServerKeyOutcome? = null,
+    val error: ErrorUi? = null,
 )
 
 sealed interface ManageFactoriesIntent {
@@ -66,6 +70,7 @@ data class ManageFactoriesUseCases(
     val observeInstances: ObserveInstances,
     val reorder: ReorderInstances,
     val remove: RemoveInstance,
+    val removeHereOnly: RemoveInstanceHereOnly,
 )
 
 /** State holder for Manage factories (screen 16): reorder and remove, with confirmation and device authentication. */
@@ -109,11 +114,13 @@ class ManageFactoriesStateHolder(
             }
 
             ManageFactoriesIntent.RemoveCancelled -> {
-                mutableState.update { it.copy(confirmation = null) }
+                mutableState.update { it.copy(confirmation = null, error = null) }
             }
 
             ManageFactoriesIntent.MessageDismissed -> {
-                mutableState.update { it.copy(deviceAuthIssue = null, reorderRejected = false, lastRemovedKey = null) }
+                mutableState.update {
+                    it.copy(deviceAuthIssue = null, reorderRejected = false, lastRemovedKey = null, error = null)
+                }
             }
         }
     }
@@ -149,7 +156,8 @@ class ManageFactoriesStateHolder(
         if (current.isRemoving) return
         mutableState.update { it.copy(isRemoving = true, deviceAuthIssue = null) }
         scope.launch {
-            val result = useCases.remove(InstanceId(confirmation.id))
+            val id = InstanceId(confirmation.id)
+            val result = if (confirmation.hereOnly) useCases.removeHereOnly(id) else useCases.remove(id)
             mutableState.update { it.afterRemoval(result) }
         }
     }
@@ -157,7 +165,22 @@ class ManageFactoriesStateHolder(
     private fun ManageFactoriesState.afterRemoval(result: RemoveInstanceResult): ManageFactoriesState =
         when (result) {
             is RemoveInstanceResult.Removed -> {
-                copy(confirmation = null, isRemoving = false, lastRemovedKey = result.serverKey.toUi())
+                copy(confirmation = null, isRemoving = false, error = null, lastRemovedKey = result.serverKey.toUi())
+            }
+
+            RemoveInstanceResult.KeyReadDenied -> {
+                copy(
+                    isRemoving = false,
+                    error = ErrorUi(ErrorKey.AuthDeclined),
+                    confirmation =
+                        confirmation?.let {
+                            it.copy(
+                                hereOnly = true,
+                                effects =
+                                    it.effects - RemovalEffect.ServerKey,
+                            )
+                        },
+                )
             }
 
             is RemoveInstanceResult.NotAuthorized -> {

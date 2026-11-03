@@ -79,6 +79,20 @@ class AgentTest {
     }
 
     @Test
+    fun `F-A-6 an agent mid-transition offers neither Resume nor Pause`() {
+        val resuming = testAgent(status = AgentStatus.Paused).copy(lifecycleState = "resuming")
+        resuming.isResuming shouldBe true
+        resuming.canResume shouldBe false
+        val pausing = testAgent(status = AgentStatus.Running).copy(lifecycleState = "pausing")
+        pausing.isPausing shouldBe true
+        pausing.canPause shouldBe false
+        testAgent(status = AgentStatus.Paused, pauseReason = PauseReason.Manual)
+            .copy(lifecycleState = "paused")
+            .canResume shouldBe true
+        testAgent(status = AgentStatus.Idle).copy(lifecycleState = "ready").canPause shouldBe true
+    }
+
+    @Test
     fun `a manual pause can be resumed but a budget pause cannot and a terminated agent has no actions`() {
         testAgent(status = AgentStatus.Paused, pauseReason = PauseReason.Manual).canResume shouldBe true
         testAgent(status = AgentStatus.Paused, pauseReason = PauseReason.Budget).canResume shouldBe false

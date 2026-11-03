@@ -330,3 +330,39 @@ class FakeNoteStoreContractTest : NoteStoreContract() {
 ```
 
 For a real port, the Konsist rules also require a class named `Fake<PortName>` in `shared/testing` and a file in `shared/testing/.../contract` that names the port in brackets in its KDoc (`[NoteStore]`). The helpers `mustSucceed`, `mustFailWith` and `mustBeRejected` in `ContractSupport.kt` are `internal` to `shared/testing`; use them in suites that live there. See [testing-guide.md](./testing-guide.md).
+
+## 8. Create the live graph
+
+The live graph runs on the real adapters: the platform's secret store and biometrics, the Paperclip REST API over HTTPS, and a SQLite database. With an empty database it has no factories and starts at the first-run flow (no demo data). The Kotlin snippet was compiled and run as a temporary JVM test at commit `d8fb5ce` (1 test, passing; the file was deleted). On the JVM the secret store refuses every write, so pairing fails closed; on Android the call is refused until the Android app phase.
+
+```kotlin
+val browser = PairingBrowsers.fromCallback { approvalUrl, finished ->
+    // open approvalUrl in the system browser (it is a secret: do not log or keep it), then:
+    finished()
+}
+val graph = PaperclipCore.createLiveGraph(allowInsecureLocal = false, pairingBrowser = browser)
+
+val firstRun = graph.createFirstRunStateHolder()
+firstRun.onIntent(FirstRunIntent.AddressChanged("https://paperclip.example.com"))
+firstRun.state.value.canContinue   // true
+
+firstRun.close()   // close the screens' holders first
+graph.close()      // then the graph: HTTP client, database and network monitor, once
+```
+
+From Swift the graph is made in the app target (the excerpt is from `iosApp/Tests/iosAppTests/LiveGraphInteropTests.swift`, which passes under `./scripts/ios-test.sh`; it uses a temporary folder and its own Keychain service):
+
+```swift
+let pairingBrowser = PairingBrowsers.shared.fromCallback { url, finished in
+    // present ASWebAuthenticationSession with `url`, call finished() when it is dismissed
+    _ = finished()
+}
+// The app: Keychain service and Application Support folder of its own, localized prompt texts.
+let graph = LiveIosGraph.shared.createLiveGraph(
+    allowInsecureLocal: true, pairingBrowser: pairingBrowser,
+    settings: IosLiveSettings(
+        keychainService: "pafm.live.test.\(UUID().uuidString)", dataDirectory: folder.path,
+        unlockReason: "Unlock Paperclip", confirmReason: "Confirm this action"))
+// Defaults (app Keychain service, Application Support/PaperclipData, English prompts):
+// PaperclipCore.shared.createLiveGraph(allowInsecureLocal: false, pairingBrowser: pairingBrowser)
+```

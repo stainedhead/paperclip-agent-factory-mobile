@@ -10,6 +10,10 @@ import com.stainedhead.paperclipmobile.testing.TestData
 abstract class AttentionCacheContract {
     abstract fun create(): AttentionCache
 
+    private companion object {
+        const val EXTRA_TOTAL = 40
+    }
+
     private val home = CompanyScope(InstanceId("inst-1"), TestData.acme)
     private val otherCompany = CompanyScope(InstanceId("inst-1"), TestData.globex)
     private val otherFactory = CompanyScope(InstanceId("inst-2"), TestData.acme)
@@ -20,6 +24,7 @@ abstract class AttentionCacheContract {
         scopesAreIsolated()
         theLatestWriteReplacesTheEarlierOne()
         clearRemovesOnlyThatScope()
+        aLongerFeedIsCutAndItsCursorCleared()
     }
 
     private suspend fun emptyUntilWritten() {
@@ -54,5 +59,18 @@ abstract class AttentionCacheContract {
         cache.clear(home)
         check(cache.read(home) == null) { "clear must remove the feed" }
         check(cache.read(otherCompany) != null) { "clear must not touch another scope" }
+    }
+
+    private suspend fun aLongerFeedIsCutAndItsCursorCleared() {
+        val cache = create()
+        val max = AttentionCache.MAX_ITEMS
+        val items = (1..max + 1).map { AttentionFixtures.item("long-$it") }
+        cache.write(home, AttentionFixtures.feed(items = items, next = "server-cursor", total = max + EXTRA_TOTAL))
+        val cut = cache.read(home)!!
+        check(cut.items == items.take(max)) { "a feed over the limit must keep exactly its first $max items" }
+        check(cut.nextCursor == null) { "a cut feed must not keep a cursor that points past the dropped items" }
+        check(cut.totalCount == max + EXTRA_TOTAL) { "a cut feed must keep the company-wide total" }
+        cache.write(home, AttentionFixtures.feed(items = items.take(max), next = "server-cursor"))
+        check(cache.read(home)?.nextCursor == "server-cursor") { "a feed at the limit must keep its cursor" }
     }
 }

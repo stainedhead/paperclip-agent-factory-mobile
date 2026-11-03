@@ -73,6 +73,13 @@ interface SecretStore {
 
     /** Deletes every secret under `instance/{instanceId}/`. */
     suspend fun deleteNamespace(instanceId: InstanceId)
+
+    /**
+     * The instance ids that have at least one secret stored, whether or not a factory is configured for them. Lists
+     * names only: no value is read and no prompt is shown. Used to sweep secrets whose factory record is gone (the
+     * Keychain outlives the app's database and its reinstall, review1b F-B-2).
+     */
+    suspend fun namespaces(): Set<InstanceId>
 }
 
 /** Device owner authentication (Face ID, fingerprint, device PIN). */

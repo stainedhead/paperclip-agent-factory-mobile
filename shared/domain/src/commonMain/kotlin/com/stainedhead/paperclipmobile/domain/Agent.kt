@@ -69,15 +69,25 @@ data class Agent(
     val budgetPercentUsed: Int
         get() = if (hasBudget) (monthSpend.minorUnits * PERCENT / monthlyBudget.minorUnits).toInt() else 0
 
-    /** A budget pause is lifted by the budget incident, not by Resume (web app, research A1). */
-    val canResume: Boolean get() = status == AgentStatus.Paused && !isBudgetPaused
+    /** The server is applying a resume: it answers `paused` with `lifecycleState` `resuming` for a moment (ADR-074). */
+    val isResuming: Boolean get() = lifecycleState == RESUMING
+
+    /** The server is applying a pause. */
+    val isPausing: Boolean get() = lifecycleState == PAUSING
+
+    /**
+     * A budget pause is lifted by the budget incident, not by Resume (web app, research A1). While a resume is being
+     * applied there is nothing to press: a second tap would send a second mutation (review1b F-A-6).
+     */
+    val canResume: Boolean get() = status == AgentStatus.Paused && !isBudgetPaused && !isResuming
     val canPause: Boolean get() =
-        status == AgentStatus.Idle || status == AgentStatus.Active ||
-            status == AgentStatus.Running
+        (status == AgentStatus.Idle || status == AgentStatus.Active || status == AgentStatus.Running) && !isPausing
     val canRunNow: Boolean get() = canPause || status == AgentStatus.Error
 
     private companion object {
         const val PERCENT = 100
+        const val RESUMING = "resuming"
+        const val PAUSING = "pausing"
     }
 }
 

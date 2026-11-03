@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Generates the Xcode project and runs the iOS unit and UI tests on an installed iPhone simulator.
+# Builds ad-hoc signed (not unsigned): an unsigned simulator app gets errSecMissingEntitlement from the Keychain.
 # Needs PaperclipKit.xcframework first: scripts/build-kit.sh
 #   IOS_SIMULATOR_ID=<udid>  pick a specific simulator (default: first available iPhone on the newest iOS runtime)
 set -euo pipefail
@@ -32,4 +33,6 @@ xcodebuild test \
   -project iosApp/iosApp.xcodeproj \
   -scheme iosApp \
   -destination "id=${device_id}" \
-  CODE_SIGNING_ALLOWED=NO
+  CODE_SIGN_IDENTITY=- \
+  CODE_SIGNING_REQUIRED=NO \
+  CODE_SIGNING_ALLOWED=YES

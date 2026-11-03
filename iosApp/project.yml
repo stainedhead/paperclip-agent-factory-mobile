@@ -30,6 +30,9 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        # Without this a device with Face ID refuses the prompt (review1b F-B-9). English text; the app has no
+        # InfoPlist String Catalog yet, so a translation is a later addition.
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Paperclip uses Face ID to confirm that you own this device before it unlocks your key or approves a destructive action.
   iosAppTests:
     type: bundle.unit-test
     platform: iOS

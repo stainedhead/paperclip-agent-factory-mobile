@@ -7,13 +7,16 @@ import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGroup
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.AgentStatus
+import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.ResolutionIssue
 import com.stainedhead.paperclipmobile.domain.Role
+import com.stainedhead.paperclipmobile.domain.port.AgentGateway
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
+import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -139,6 +142,25 @@ class PauseAgentTest {
         }
 
     @Test
+    fun `F-A-5 a connection lost after the call was sent is read back and a refused one is not`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["pause"] = DomainError.ConnectionLost
+
+            val result = env.pause()(env.context(), env.agent("agent-eng-1"))
+
+            (result as MutationResult.Reconciled).error shouldBe DomainError.ConnectionLost
+            env.agents.count("pause") shouldBe 1
+            env.agents.count("get") shouldBe 1
+
+            val refused = Env()
+            refused.agents.failures["pause"] = DomainError.Unreachable
+            refused.pause()(refused.context(), refused.agent("agent-eng-1")) shouldBe
+                MutationResult.Failed(DomainError.Unreachable)
+            refused.agents.count("get") shouldBe 0
+        }
+
+    @Test
     fun `FR-096 a timeout is sent once and the agent is read again`() =
         runTest {
             val env = Env()
@@ -152,7 +174,50 @@ class PauseAgentTest {
         }
 }
 
+/**
+ * What the pinned server does (live contract run 41511756580): the resume reply is the row mid-transition
+ * (`paused`, no reason, `lifecycleState: "resuming"`), and the next read already shows `idle`.
+ */
+private class ResumingAgents(
+    private val inner: FakeAgentGateway,
+    private val getsStillResuming: Boolean = false,
+) : AgentGateway by inner {
+    override suspend fun get(
+        scope: CompanyScope,
+        id: AgentId,
+    ): DomainResult<Agent> =
+        inner.get(scope, id).let { read ->
+            if (getsStillResuming && read is DomainResult.Success) {
+                DomainResult.Success(read.value.copy(status = AgentStatus.Paused, lifecycleState = "resuming"))
+            } else {
+                read
+            }
+        }
+
+    override suspend fun resume(
+        scope: CompanyScope,
+        id: AgentId,
+    ): DomainResult<Agent> {
+        inner.resume(scope, id)
+        val settled = inner.store.getValue(id)
+        return DomainResult.Success(
+            settled.copy(status = AgentStatus.Paused, pauseReason = null, lifecycleState = "resuming"),
+        )
+    }
+}
+
 class ResumeAndRunNowTest {
+    @Test
+    fun `a resume answered mid-transition is followed by one read so the person sees the settled agent`() =
+        runTest {
+            val env = Env()
+
+            val result = ResumeAgent(ResumingAgents(env.agents))(env.context(Role.Operator), env.agent("agent-design"))
+
+            (result as MutationResult.Done).value.status shouldBe AgentStatus.Idle
+            env.agents.count("get") shouldBe 1
+        }
+
     @Test
     fun `FR-071 a manually paused agent resumes without device authentication`() =
         runTest {
@@ -162,6 +227,45 @@ class ResumeAndRunNowTest {
 
             (result as MutationResult.Done).value.status shouldBe AgentStatus.Idle
             env.biometrics.calls shouldBe 0
+        }
+
+    @Test
+    fun `a failed read after a mid-transition resume leaves the server's answer in place`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["get"] = DomainError.ServerError
+
+            val result = ResumeAgent(ResumingAgents(env.agents))(env.context(Role.Operator), env.agent("agent-design"))
+
+            (result as MutationResult.Done).value.lifecycleState shouldBe "resuming"
+            env.agents.count("resume") shouldBe 1
+        }
+
+    @Test
+    fun `F-A-6 a resume whose follow-up read fails leaves an agent that cannot be resumed again`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["get"] = DomainError.ServerError
+
+            val result = ResumeAgent(ResumingAgents(env.agents))(env.context(Role.Operator), env.agent("agent-design"))
+
+            val agent = (result as MutationResult.Done).value
+            agent.canResume shouldBe false
+            ResumeAgent(env.agents)(env.context(Role.Operator), agent) shouldBe
+                MutationResult.Invalid(InvalidInput.WrongStatus)
+        }
+
+    @Test
+    fun `F-A-6 a follow-up read that still shows resuming offers no second Resume`() =
+        runTest {
+            val env = Env()
+            val stuck = ResumingAgents(env.agents, getsStillResuming = true)
+
+            val result = ResumeAgent(stuck)(env.context(Role.Operator), env.agent("agent-design"))
+
+            val agent = (result as MutationResult.Done).value
+            agent.canResume shouldBe false
+            env.agents.count("resume") shouldBe 1
         }
 
     @Test
@@ -186,6 +290,18 @@ class ResumeAndRunNowTest {
                 MutationResult.Invalid(InvalidInput.WrongStatus)
             InvokeHeartbeat(env.agents, env.runs)(env.context(Role.Viewer), env.agent("agent-cto")) shouldBe
                 MutationResult.Denied
+            env.agents.count("invokeHeartbeat") shouldBe 1
+        }
+
+    @Test
+    fun `F-A-5 an unreadable reply to run now is Unknown and never Failed`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["invokeHeartbeat"] = DomainError.Malformed
+
+            val result = InvokeHeartbeat(env.agents, env.runs)(env.context(), env.agent("agent-eng-1"))
+
+            result shouldBe MutationResult.Unknown(DomainError.Malformed)
             env.agents.count("invokeHeartbeat") shouldBe 1
         }
 

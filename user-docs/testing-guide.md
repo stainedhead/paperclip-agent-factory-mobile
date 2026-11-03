@@ -79,7 +79,7 @@ See the compiled walkthrough in [usage-examples.md](./usage-examples.md#7-write-
 
 ## Konsist rules: what they enforce, how to extend
 
-The 37 architecture tests are listed in [technical-details.md](../docs/technical-details.md#layering-rules-and-how-they-are-enforced). They live in `shared/umbrella/src/konsistTest/kotlin/…/architecture/` and run with `./gradlew :shared:umbrella:konsistTest`. Every rule scans real files and, where it can, asserts that it found some, so it does not pass by scanning nothing. The exception is the infrastructure rule: the five infrastructure modules are stubs, so on the real tree it checks nothing yet, and a fixture test (a module with only `iosMain` and `androidMain` files) proves it reports a violation once they have code. A new rule needs a negative case: a fixture or a deliberate break that makes it fail (the contract-per-port, `Secret.reveal`, traceability and CI pinning rules each have one). Write the rule, watch it fail, then fix the code. Never silence a rule inline; if a rule is wrong, change it in its own commit and explain why.
+The architecture tests are listed in [technical-details.md](../docs/technical-details.md#layering-rules-and-how-they-are-enforced). They live in `shared/umbrella/src/konsistTest/kotlin/…/architecture/` and run with `./gradlew :shared:umbrella:konsistTest`. Every rule scans real files and, where it can, asserts that it found some, so it does not pass by scanning nothing. The infrastructure rules scan the real adapter modules and each carries a planted-violation test (a temporary source tree with a `suspend fun`, a `const val` or a fake import) that proves the rule can fail. A new rule needs a negative case: a fixture or a deliberate break that makes it fail (the contract-per-port, `Secret.reveal`, traceability and CI pinning rules each have one). Write the rule, watch it fail, then fix the code. Never silence a rule inline; if a rule is wrong, change it in its own commit and explain why.
 
 ## Coverage gates
 
@@ -92,4 +92,11 @@ Both need 90% line coverage and both run in `check`. Do not reduce coverage when
 
 ## Contract tests against a real server
 
-`scripts/paperclip-test-server.sh up` starts the pinned Paperclip (authenticated mode, `http://127.0.0.1:3199`) in Docker, and `contract.yml` does the same in CI. No contract tests exist yet: they arrive with the Phase 1b adapters, which will subclass the port contract suites. Paperclip's version pin is `paperclip-server` in the version catalog.
+`scripts/paperclip-test-server.sh up` starts the pinned Paperclip (authenticated mode, `http://localhost:3199`) in Docker, and `contract.yml` does the same in CI and then runs the live contract test. The adapters also run the shared port contract suites through a MockEngine stub server in `commonTest`. The live test is separate (it needs a server): after `up`, create the bootstrap invite and run it with
+
+```bash
+export PAPERCLIP_CONTRACT_BOOTSTRAP_INVITE="$(./scripts/paperclip-test-server.sh invite)"
+PAPERCLIP_CONTRACT_I_KNOW_THIS_MUTATES=true PAPERCLIP_CONTRACT_BASE_URL=http://localhost:3199 ./gradlew :shared:infrastructure:api:contractTest
+```
+
+It signs up a test user, pairs through the real challenge flow, seeds a company, issues, approvals and an agent, exercises every gateway it can, and prints which operations were verified live and which only through MockEngine (`shared/infrastructure/api/build/reports/contract/live-operations.txt`). Paperclip's version pin is `paperclip-server` in the version catalog.

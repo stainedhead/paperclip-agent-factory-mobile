@@ -73,6 +73,14 @@ interface AttentionCache {
     )
 
     suspend fun clear(scope: CompanyScope)
+
+    companion object {
+        /**
+         * The most items a cache keeps per scope. A longer page is cut to this many and its `nextCursor` is cleared,
+         * because the server cursor points past the dropped items and paging on would skip them.
+         */
+        const val MAX_ITEMS = 200
+    }
 }
 
 /** `GET /api/decisions/{id}`, decide and dismiss (research Q4, Q8). */

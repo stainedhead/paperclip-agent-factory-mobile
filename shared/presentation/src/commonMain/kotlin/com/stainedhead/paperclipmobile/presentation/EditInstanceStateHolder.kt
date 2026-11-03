@@ -5,7 +5,9 @@ import com.stainedhead.paperclipmobile.application.auth.KeyExpiryStatus
 import com.stainedhead.paperclipmobile.application.auth.LoadInstanceAccess
 import com.stainedhead.paperclipmobile.application.auth.PairInstance
 import com.stainedhead.paperclipmobile.application.auth.SignInResult
+import com.stainedhead.paperclipmobile.application.auth.SignOutHereOnlyResult
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
+import com.stainedhead.paperclipmobile.application.auth.SignOutInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.auth.SignOutResult
 import com.stainedhead.paperclipmobile.application.instance.AddInstance
 import com.stainedhead.paperclipmobile.application.instance.AddInstanceResult
@@ -15,6 +17,7 @@ import com.stainedhead.paperclipmobile.application.instance.InstanceNameIssue
 import com.stainedhead.paperclipmobile.application.instance.ProbeInstance
 import com.stainedhead.paperclipmobile.application.instance.ProbeResult
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
+import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceResult
 import com.stainedhead.paperclipmobile.application.instance.UpdateInstance
 import com.stainedhead.paperclipmobile.application.instance.UpdateInstanceResult
@@ -45,6 +48,12 @@ enum class EditMode {
 enum class EditConfirmation {
     SignOut,
     Remove,
+
+    /** The key could not be read: sign out on this phone only; the key stays live on the server (F-R-2). */
+    SignOutHereOnly,
+
+    /** The key could not be read: remove the factory from this phone only; the key stays live on the server. */
+    RemoveHereOnly,
 }
 
 data class EditInstanceState(
@@ -136,6 +145,8 @@ data class EditInstanceUseCases(
     val pair: PairInstance,
     val signOut: SignOutInstance,
     val remove: RemoveInstance,
+    val removeHereOnly: RemoveInstanceHereOnly,
+    val signOutHereOnly: SignOutInstanceHereOnly,
     val expiry: KeyExpiryStatus,
 )
 
@@ -606,20 +617,15 @@ internal class EditInstanceTeardown(
         state.update {
             it.copy(
                 isBusy = true,
-                confirmation =
-                    if (confirmation ==
-                        EditConfirmation.Remove
-                    ) {
-                        it.confirmation
-                    } else {
-                        null
-                    },
+                confirmation = if (confirmation.staysWhileBusy()) it.confirmation else null,
             )
         }
         scope.launch {
             when (confirmation) {
                 EditConfirmation.SignOut -> signOut(id)
                 EditConfirmation.Remove -> remove(id)
+                EditConfirmation.SignOutHereOnly -> signOutHereOnly(id)
+                EditConfirmation.RemoveHereOnly -> removeHereOnly(id)
             }
         }
     }
@@ -627,12 +633,49 @@ internal class EditInstanceTeardown(
     private suspend fun signOut(id: InstanceId) {
         val result = useCases.signOut(id)
         useCases.get(id)?.let { session.show(it) }
+        if (result == SignOutResult.Declined) {
+            state.update {
+                it.copy(
+                    isBusy = false,
+                    error = ErrorUi(ErrorKey.AuthDeclined),
+                    confirmation = EditConfirmation.SignOutHereOnly,
+                )
+            }
+            return
+        }
         val outcome = (result as? SignOutResult.SignedOut)?.serverKey?.toUi()
         state.update { it.copy(isBusy = false, serverKeyOutcome = outcome, companies = emptyList()) }
     }
 
     private suspend fun remove(id: InstanceId) {
-        when (val result = useCases.remove(id)) {
+        afterRemoval(useCases.remove(id))
+    }
+
+    private suspend fun removeHereOnly(id: InstanceId) {
+        afterRemoval(useCases.removeHereOnly(id))
+    }
+
+    private suspend fun signOutHereOnly(id: InstanceId) {
+        when (val result = useCases.signOutHereOnly(id)) {
+            is SignOutHereOnlyResult.SignedOut -> {
+                useCases.get(id)?.let { session.show(it) }
+                state.update {
+                    it.copy(isBusy = false, serverKeyOutcome = result.serverKey.toUi(), companies = emptyList())
+                }
+            }
+
+            is SignOutHereOnlyResult.NotAuthorized -> {
+                state.update { it.copy(isBusy = false, deviceAuthIssue = result.result.toIssue()) }
+            }
+
+            SignOutHereOnlyResult.NotFound -> {
+                state.update { it.copy(isBusy = false, confirmation = null, removed = true) }
+            }
+        }
+    }
+
+    private fun afterRemoval(result: RemoveInstanceResult) {
+        when (result) {
             is RemoveInstanceResult.Removed -> {
                 state.update {
                     it.copy(
@@ -648,9 +691,23 @@ internal class EditInstanceTeardown(
                 state.update { it.copy(isBusy = false, deviceAuthIssue = result.result.toIssue()) }
             }
 
+            RemoveInstanceResult.KeyReadDenied -> {
+                state.update {
+                    it.copy(
+                        isBusy = false,
+                        error = ErrorUi(ErrorKey.AuthDeclined),
+                        confirmation = EditConfirmation.RemoveHereOnly,
+                    )
+                }
+            }
+
             RemoveInstanceResult.NotFound -> {
                 state.update { it.copy(isBusy = false, confirmation = null, removed = true) }
             }
         }
     }
 }
+
+/** A removal keeps its dialog open while it runs, so a refusal or a failure is shown in place. */
+private fun EditConfirmation.staysWhileBusy() =
+    this == EditConfirmation.Remove || this == EditConfirmation.RemoveHereOnly

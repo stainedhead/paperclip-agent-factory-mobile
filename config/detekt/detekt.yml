@@ -36,3 +36,10 @@ complexity:
   # Restates the default (15) so that raising it is a visible edit to this file.
   CyclomaticComplexMethod:
     threshold: 15
+
+exceptions:
+  # The one network door (PaperclipHttpClient) must turn ANY engine failure (OkHttp, Darwin, TLS, platform) into a typed
+  # DomainError, and engines throw arbitrary Throwables. CancellationException is rethrown before the catch-all, and
+  # nothing else in the codebase may catch Throwable.
+  TooGenericExceptionCaught:
+    excludes: ['**/infrastructure/api/**/PaperclipHttpClient.kt']

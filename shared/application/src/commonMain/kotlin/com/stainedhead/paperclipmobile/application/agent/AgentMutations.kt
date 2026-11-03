@@ -49,7 +49,13 @@ class PauseAgent(
     }
 }
 
-/** Resumes a manually paused agent (PRD FR-071). A budget pause is lifted by the budget incident instead. */
+/**
+ * Resumes a manually paused agent (PRD FR-071). A budget pause is lifted by the budget incident instead.
+ *
+ * The server answers a resume with the agent mid-transition (`paused`, `lifecycleState` `resuming`) and the next read
+ * already shows it idle (live contract run). One read follows such a reply, so the person sees the settled agent, not
+ * a paused one under a Resume button that was just pressed. The mutation itself is still sent once.
+ */
 class ResumeAgent(
     private val agents: AgentGateway,
 ) {
@@ -59,7 +65,11 @@ class ResumeAgent(
     ): MutationResult<Agent> {
         if (!Permissions.allows(context.role, Action.ResumeAgent)) return MutationResult.Denied
         if (!agent.canResume) return MutationResult.Invalid(InvalidInput.WrongStatus)
-        return agents.changed(context, agent) { agents.resume(context.scope, agent.id) }
+        val result = agents.changed(context, agent) { agents.resume(context.scope, agent.id) }
+        val answered = (result as? MutationResult.Done)?.value
+        if (answered?.isResuming != true) return result
+        return (agents.get(context.scope, agent.id) as? DomainResult.Success)?.let { MutationResult.Done(it.value) }
+            ?: result
     }
 }
 

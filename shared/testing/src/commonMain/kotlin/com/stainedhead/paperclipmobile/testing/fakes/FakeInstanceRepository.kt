@@ -36,7 +36,11 @@ class FakeInstanceRepository(
 
     override suspend fun update(instance: Instance) {
         updateCalls += 1
-        items.value = items.value.map { if (it.id == instance.id) instance else it }
+        // Like the SQL adapter: the order and the creation time belong to add and reorder (review1b F-B-6).
+        items.value =
+            items.value.map {
+                if (it.id == instance.id) instance.copy(sortOrder = it.sortOrder, createdAt = it.createdAt) else it
+            }
     }
 
     override suspend fun reorder(orderedIds: List<InstanceId>) {
