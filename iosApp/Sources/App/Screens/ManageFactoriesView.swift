@@ -58,8 +58,14 @@ struct ManageFactoriesView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(ShellLabel.commonDone.text) { environment.router.popToRoot(.factories) }
-                    .accessibilityIdentifier("manage-done-button")
+                Button {
+                    environment.router.popToRoot(.factories)
+                } label: {
+                    Image(systemName: "checkmark")
+                }
+                .frame(minWidth: Spacing.minimumTarget, minHeight: Spacing.minimumTarget)
+                .accessibilityLabel(ShellLabel.commonDone.text)
+                .accessibilityIdentifier("manage-done-button")
             }
         }
         .sheet(

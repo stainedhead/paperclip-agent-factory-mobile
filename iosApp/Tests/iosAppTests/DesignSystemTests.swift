@@ -174,3 +174,13 @@ struct MotionTests {
         #expect(Motion.animation(reduceMotion: false) != nil)
     }
 }
+
+/// Audit: a web address has no spaces, so it can only wrap where it is told it may.
+struct BreakableAddressTests {
+    @Test func anAddressMayWrapAfterItsSeparatorsAndKeepsItsCharacters() {
+        let shown = BreakableAddress.text("https://paperclip.tail1234.ts.net/api")
+        #expect(shown.contains("\u{200B}"))
+        #expect(shown.replacingOccurrences(of: "\u{200B}", with: "") == "https://paperclip.tail1234.ts.net/api")
+        #expect(BreakableAddress.text("localhost") == "localhost")
+    }
+}

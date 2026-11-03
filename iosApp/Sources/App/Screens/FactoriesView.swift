@@ -43,8 +43,15 @@ struct FactoriesView: View {
         .navigationTitle(ShellLabel.tabFactories.text)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button(ShellLabel.commonEdit.text) { environment.router.push(.manageFactories, in: .factories) }
-                    .accessibilityIdentifier("manage-factories-button")
+                // An icon, not text: bar text is capped by the system and drawn on glass (audit: Dynamic Type, contrast).
+                Button {
+                    environment.router.push(.manageFactories, in: .factories)
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .frame(minWidth: Spacing.minimumTarget, minHeight: Spacing.minimumTarget)
+                .accessibilityLabel(ShellLabel.commonEdit.text)
+                .accessibilityIdentifier("manage-factories-button")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
