@@ -51,7 +51,9 @@ final class BudgetUITests: XCTestCase {
         enterAmount(app, "250")
         XCTAssertTrue(app.text("budget-amount-help").contains("$200"))
         waitUntil(app.buttons["budget-submit"], "isEnabled == true")
-        XCTAssertTrue(app.buttons["budget-submit"].label.contains("Raise to $250 and resume"), "the amount to be sent is on the button")
+        XCTAssertTrue(
+            app.buttons["budget-submit"].label.contains("Raise to $250 and resume"),
+            "the amount to be sent is on the button")
 
         app.buttons["budget-submit"].tap()
         XCTAssertTrue(app.element("feedback-message").waitForExistence(timeout: 15))

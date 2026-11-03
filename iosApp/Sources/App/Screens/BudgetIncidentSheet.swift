@@ -42,7 +42,7 @@ private struct BudgetScreen: View {
             ScrollViewReader { proxy in
                 scroll
                     .onChange(of: amountText) { _, _ in
-                        withAnimation(reduceMotion ? nil : .default) {
+                        withAnimation(Motion.animation(reduceMotion: reduceMotion)) {
                             proxy.scrollTo("budget-amount-anchor", anchor: .bottom)
                         }
                     }

@@ -92,7 +92,7 @@ private struct InboxScreen: View {
         .safeAreaInset(edge: .bottom) {
             if state.undo != nil { UndoSnackbar { model.undo() }.padding(.bottom, Spacing.medium) }
         }
-        .animation(reduceMotion ? nil : .default, value: state.undo != nil)
+        .animation(Motion.animation(reduceMotion: reduceMotion), value: state.undo != nil)
         .sensoryFeedback(.success, trigger: state.totalCount)
         .confirmationDialog(InboxLabel.snoozeTitle.text, isPresented: snoozeBinding, presenting: snoozeTarget) { id in
             ForEach(state.snoozeOptions, id: \.self) { preset in
