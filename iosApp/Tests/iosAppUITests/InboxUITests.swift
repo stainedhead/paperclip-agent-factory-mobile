@@ -119,8 +119,9 @@ final class InboxUITests: XCTestCase {
             XCTAssertTrue(app.buttons[preset].exists, "missing snooze preset \(preset)")
         }
         app.buttons.matching(identifier: "Tomorrow").firstMatch.tap()
-        waitUntil(app.card(InboxIds.failedRun), "exists == false")
-        XCTAssertTrue(app.buttons["inbox-undo-button"].waitForExistence(timeout: 5))
+        // The undo offer lasts five seconds: wait for it first, then check the card is gone, then use it at once.
+        XCTAssertTrue(app.buttons["inbox-undo-button"].waitForExistence(timeout: 15), "the undo offer never appeared")
+        XCTAssertFalse(app.card(InboxIds.failedRun).exists, "the card is hidden while the undo is offered")
         app.buttons["inbox-undo-button"].tap()
         waitUntil(app.card(InboxIds.failedRun), "exists == true")
         waitUntil(app.buttons["inbox-undo-button"], "exists == false")
@@ -128,8 +129,8 @@ final class InboxUITests: XCTestCase {
         app.reveal(InboxIds.failedRun)
         app.card(InboxIds.failedRun).swipeLeft()
         app.buttons["inbox-dismiss-\(InboxIds.failedRun)"].tap()
-        waitUntil(app.card(InboxIds.failedRun), "exists == false")
-        XCTAssertTrue(app.buttons["inbox-undo-button"].waitForExistence(timeout: 5), "the undo offer never appeared")
+        XCTAssertTrue(app.buttons["inbox-undo-button"].waitForExistence(timeout: 15), "the undo offer never appeared")
+        XCTAssertFalse(app.card(InboxIds.failedRun).exists, "the card is hidden while the undo is offered")
         app.buttons["inbox-undo-button"].tap()
         waitUntil(app.card(InboxIds.failedRun), "exists == true")
     }
