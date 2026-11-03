@@ -8,6 +8,7 @@ struct EditFactoryView: View {
     let environment: AppEnvironment
     let instanceId: String?
     private var model: EditModel { environment.editModel(id: instanceId) }
+    @State private var showsDiscard = false
 
     var body: some View {
         let state = model.state
@@ -42,14 +43,22 @@ struct EditFactoryView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button(ShellLabel.commonCancel.text) { environment.router.pop(.factories) }
-                    .accessibilityIdentifier("edit-cancel-button")
+                Button(ShellLabel.commonCancel.text) {
+                    if state.hasUnsavedChanges { showsDiscard = true } else { environment.router.pop(.factories) }
+                }
+                .accessibilityIdentifier("edit-cancel-button")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(ShellLabel.commonSave.text, action: model.save)
                     .disabled(!state.canSave || state.isBusy)
                     .accessibilityIdentifier("edit-save-button")
             }
+        }
+        .confirmationDialog(ShellLabel.editDiscardTitle.text, isPresented: $showsDiscard, titleVisibility: .visible) {
+            Button(ShellLabel.editDiscardConfirm.text, role: .destructive) { environment.router.pop(.factories) }
+                .accessibilityIdentifier("edit-discard-confirm")
+            Button(ShellLabel.editDiscardKeep.text, role: .cancel) {}
+                .accessibilityIdentifier("edit-discard-keep")
         }
         .onChange(of: state.saved) { _, saved in if saved { environment.router.pop(.factories) } }
         .onChange(of: state.removed) { _, removed in if removed { environment.router.popToRoot(.factories) } }

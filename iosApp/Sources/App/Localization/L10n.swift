@@ -100,6 +100,9 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case severityLow
     case editRemoveMessage
     case editConnectedAs
+    case editDiscardTitle
+    case editDiscardConfirm
+    case editDiscardKeep
     case firstRunHeadline
     case firstRunIntro
     case stepAddress

@@ -7,6 +7,7 @@ struct SettingsView: View {
     let environment: AppEnvironment
     private var model: SettingsModel { environment.settingsModel() }
     @State private var nameDraft = ""
+    @FocusState private var nameFocused: Bool
 
     var body: some View {
         let state = model.state
@@ -21,7 +22,11 @@ struct SettingsView: View {
                             .multilineTextAlignment(.trailing)
                             .font(Typography.body)
                             .submitLabel(.done)
+                            .focused($nameFocused)
                             .onSubmit { model.commitDeviceName(nameDraft) }
+                            // Leaving the field or the screen saves the name too, not only the keyboard's Done.
+                            .onChange(of: nameFocused) { _, focused in if !focused { commitNameIfChanged() } }
+                            .onDisappear { commitNameIfChanged() }
                             .frame(
                                 minWidth: 120, maxWidth: .infinity, minHeight: Spacing.minimumTarget,
                                 alignment: .trailing
@@ -104,6 +109,10 @@ struct SettingsView: View {
         }
         .task { await model.observe() }
         .accessibilityIdentifier("settings")
+    }
+
+    private func commitNameIfChanged() {
+        if nameDraft != model.state.deviceName { model.commitDeviceName(nameDraft) }
     }
 
     @ViewBuilder private func notices(_ state: SettingsState) -> some View {
