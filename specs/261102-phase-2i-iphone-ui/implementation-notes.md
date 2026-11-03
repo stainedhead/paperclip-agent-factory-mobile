@@ -300,3 +300,7 @@ Not fixed, and what was learned (local counts): Approval 1 and offline 1, Factor
 - At XXXL a different set of contrast findings appears on plain text (including navigation titles), so the contrast check is not stable across sizes.
 - Inbox and Shell findings have no element (frame zero): they cannot be traced.
 Nothing was filtered, allow-listed or set aside beyond ADR-116. The audit job stays non-blocking (ADR-080). Two consecutive green CI runs were not achieved, so it was not promoted.
+
+### Round 3, second part
+
+Cause found for "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text: lazy stacks and grids (ADR-117). Fixed by making Agents, Work and the Factory home tiles eager. Local audit result after this: 8 audit tests pass (Budget, Budget offline, Decision, Decision offline, Edit factory, First run, Agent detail, Run viewer), 16 fail, with the findings listed in ADR-117. The audit helper now prints the whole issue and the hierarchy for an issue with no element. 116 UI tests ran; every functional test passes.
