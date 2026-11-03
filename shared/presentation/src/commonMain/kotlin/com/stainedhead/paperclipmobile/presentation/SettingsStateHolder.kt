@@ -96,7 +96,10 @@ data class SettingsState(
     /** How many factories the last "sign out everywhere" could not sign out locally. */
     val signOutFailures: Int = 0,
     val error: ErrorUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isBusy
+}
 
 sealed interface SettingsIntent {
     data class DeviceNameCommitted(

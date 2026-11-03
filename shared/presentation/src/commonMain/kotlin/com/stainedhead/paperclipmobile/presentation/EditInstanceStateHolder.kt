@@ -87,7 +87,10 @@ data class EditInstanceState(
     val saved: Boolean = false,
     val removed: Boolean = false,
     val error: ErrorUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isBusy
+}
 
 sealed interface EditInstanceIntent {
     data class NameChanged(

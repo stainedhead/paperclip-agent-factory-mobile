@@ -71,7 +71,10 @@ data class AgentsState(
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = busyAgentId != null
+}
 
 sealed interface AgentsIntent {
     data object Refresh : AgentsIntent
