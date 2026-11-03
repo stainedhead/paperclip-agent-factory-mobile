@@ -304,3 +304,17 @@ Nothing was filtered, allow-listed or set aside beyond ADR-116. The audit job st
 ### Round 3, second part
 
 Cause found for "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text: lazy stacks and grids (ADR-117). Fixed by making Agents, Work and the Factory home tiles eager. Local audit result after this: 8 audit tests pass (Budget, Budget offline, Decision, Decision offline, Edit factory, First run, Agent detail, Run viewer), 16 fail, with the findings listed in ADR-117. The audit helper now prints the whole issue and the hierarchy for an issue with no element. 116 UI tests ran; every functional test passes.
+
+### Round 3, decision and large-text guard
+
+Decision (owner): option C of ADR-117. `ios (audits)` stays non-blocking and unfiltered; the guard is `LargeTextUITests` in shard 2 (14 screens and a growth check, launched with `-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`): key text exists, lies inside the screen width, has no ellipsis, and every primary action can be reached by scrolling and is hittable. I read XXXL screenshots of Agents, Edit factory and Budget: text grows and wraps, nothing is cut off (Agents hyphenates "Engi-neer 2" in the name column at this size).
+
+Audit tests failing locally (16): Approval, Approval offline, Factories, Inbox, Inbox offline, Manage, Agents, Factory home, Factory home offline, Run offline, Settings, Shell, Issue, Issue offline, Work, Work offline.
+
+CI-only findings at e432599 (iOS 26.5) that are clean locally:
+- Budget (11, "Dynamic Type partially unsupported" on every text of an eager screen at y 152 to 500): the same larger-text-pass behaviour as the lazy stacks, but this sheet has no lazy container; not reproducible locally, left as an audit artifact on that runtime.
+- Edit factory (3): "Hit area too small" on the wrapping field: a real 26.5 defect of my vertical-axis field; the minimum height is now on the field itself (unverified on 26.5). Two "Contrast failed" texts at y 875 are the bottom band.
+- Run (4): "Hit area too small" on 18 pt event rows; marked static text (unverified on 26.5).
+- Agent detail "Succeeded" clipped at y 814 and Decision offline contrast at y 782 are the bottom band.
+
+The two ios (2) failures at e432599: `DecisionUITests.testItShowsTheQuestionTheAgentAndEveryOption...` failed with "Failed to terminate com.stainedhead.paperclipmobile" (the runner could not stop the previous app; no code to harden); `InboxUITests.testSwipeSnoozeAndDismiss...` tapped the undo button without waiting for it after a dismiss; it now waits as after the snooze. Both passed on the next run (dba0aa3).
