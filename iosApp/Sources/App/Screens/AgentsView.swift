@@ -130,7 +130,7 @@ private struct AgentsScreen: View {
                     .accessibilityIdentifier("agents-section-\(section.group)")
                 ForEach(section.rows, id: \.id) { row in
                     AgentRowCard(
-                        row: row, state: state, referenceDate: environment.referenceDate,
+                        row: row, state: state,
                         onOpen: { environment.router.push(.agent(id: row.id), in: .agents) },
                         onViewRun: { run in environment.router.push(.run(id: run), in: .agents) },
                         model: model)
@@ -164,13 +164,17 @@ private struct AgentsScreen: View {
 private struct AgentRowCard: View {
     let row: AgentRowUi
     let state: AgentsState
-    let referenceDate: Date?
     let onOpen: () -> Void
     let onViewRun: (String) -> Void
     let model: AgentsModel
 
     var body: some View {
-        let presentation = AgentRowPresentation(row: row, referenceDate: referenceDate)
+        TickingReference(every: LiveClock.ageTick) { now in
+            card(AgentRowPresentation(row: row, referenceDate: now))
+        }
+    }
+
+    private func card(_ presentation: AgentRowPresentation) -> some View {
         VStack(alignment: .leading, spacing: Spacing.large) {
             Button(action: onOpen) {
                 HStack(alignment: .top, spacing: Spacing.extraLarge) {

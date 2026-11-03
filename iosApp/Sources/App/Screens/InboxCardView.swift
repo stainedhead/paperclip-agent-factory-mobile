@@ -5,7 +5,6 @@ import SwiftUI
 /// is offline or another action is running (`isDisabled`); opening a card only reads, so it stays available.
 struct InboxCardView: View {
     let item: InboxItemUi
-    let referenceDate: Date?
     let isDisabled: Bool
     let onOpen: () -> Void
     let onApprove: () -> Void
@@ -13,10 +12,16 @@ struct InboxCardView: View {
     let onKeepPaused: () -> Void
 
     var body: some View {
-        let card = InboxCardPresentation(item: item, referenceDate: referenceDate)
+        TickingReference(every: LiveClock.ageTick) { now in
+            card(InboxCardPresentation(item: item, referenceDate: now))
+        }
+    }
+
+    private func card(_ card: InboxCardPresentation) -> some View {
         let actions = InboxCardActions(item: item)
-        AttentionCard(
-            severity: card.severity, kind: card.kindLine, age: card.age, title: card.title, subtitle: card.context,
+        return AttentionCard(
+            severity: card.severity, kind: card.kindLine, age: card.age, ageSpoken: card.ageSpoken, title: card.title,
+            subtitle: card.context,
             identifier: "inbox-card-\(item.id)", combinedLabel: card.accessibilityLabel,
             showsChevron: actions.link == .chevron && actions.inline.isEmpty, onOpen: onOpen
         ) {

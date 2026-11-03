@@ -38,12 +38,19 @@ struct SpendMeter: View {
 /// One of the "Running now" rows (Factory home, Agent detail's runs): who and what, how long, a way into the run.
 struct RunListRow: View {
     let row: RunRowUi
-    let referenceDate: Date?
     let identifier: String
     let onOpen: () -> Void
 
     var body: some View {
-        let presentation = RunRowPresentation(row: row, referenceDate: referenceDate)
+        TickingReference(
+            every: RunRowPresentation.isLive(row.status)
+                ? LiveClock.elapsedTick : LiveClock.ageTick
+        ) { now in
+            button(RunRowPresentation(row: row, referenceDate: now))
+        }
+    }
+
+    private func button(_ presentation: RunRowPresentation) -> some View {
         Button(action: onOpen) {
             HStack(spacing: Spacing.extraLarge) {
                 VStack(alignment: .leading, spacing: Spacing.hairline) {

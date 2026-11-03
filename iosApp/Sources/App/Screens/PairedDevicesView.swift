@@ -82,7 +82,6 @@ struct PairedDevicesView: View {
 private struct DeviceKeyCard: View {
     let key: DeviceKeyUi
     let onRevoke: () -> Void
-    @Environment(\.referenceDate) private var referenceDate
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.medium) {
@@ -90,7 +89,10 @@ private struct DeviceKeyCard: View {
             if key.isCurrentDevice {
                 StatusPill(text: ShellLabel.devicesThisPhone.text, tone: .success)
             }
-            Text(lastUsed).font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
+            TickingReference(every: LiveClock.ageTick) { now in
+                Text(lastUsed(now: now ?? Date())).font(Typography.secondary)
+                    .foregroundStyle(Palette.textSecondary.color)
+            }
             Button(ShellLabel.devicesRevoke.text, action: onRevoke)
                 .buttonStyle(.app(.destructive))
                 .accessibilityLabel("\(ShellLabel.devicesRevoke.text) \(key.name)")
@@ -104,9 +106,9 @@ private struct DeviceKeyCard: View {
         .accessibilityIdentifier("device-key-\(key.id)")
     }
 
-    private var lastUsed: String {
+    private func lastUsed(now: Date) -> String {
         guard let millis = key.lastUsedAtEpochMillis?.int64Value else { return ShellLabel.devicesNeverUsed.text }
-        let seconds = (referenceDate ?? Date()).timeIntervalSince(Date(timeIntervalSince1970: Double(millis) / 1000))
+        let seconds = now.timeIntervalSince(Date(timeIntervalSince1970: Double(millis) / 1000))
         return ShellLabel.devicesLastUsed.text(RelativeAge.text(seconds: seconds))
     }
 }

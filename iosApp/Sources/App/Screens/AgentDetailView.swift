@@ -53,8 +53,9 @@ private struct AgentDetailScreen: View {
     // MARK: - Content
 
     @ViewBuilder private func content(_ agent: AgentRowUi) -> some View {
-        let presentation = AgentRowPresentation(row: agent, referenceDate: environment.referenceDate)
-        header(agent, presentation)
+        TickingReference(every: LiveClock.ageTick) { now in
+            header(agent, AgentRowPresentation(row: agent, referenceDate: now))
+        }
         if let feedback = state.feedback { FeedbackBanner(feedback: feedback) { model.dismissMessage() } }
         if let error = state.error {
             ErrorBanner(
@@ -160,7 +161,7 @@ private struct AgentDetailScreen: View {
             }
             if let run = state.currentRun {
                 RunListRow(
-                    row: run, referenceDate: environment.referenceDate, identifier: "agent-current-run"
+                    row: run, identifier: "agent-current-run"
                 ) { environment.router.push(.run(id: run.runId), in: environment.router.selectedTab) }
                 .padding(.horizontal, Spacing.card)
                 .background(Palette.surface.color, in: RoundedRectangle(cornerRadius: Radius.card))
@@ -215,7 +216,7 @@ private struct AgentDetailScreen: View {
                     ForEach(Array(state.recentRuns.enumerated()), id: \.element.runId) { index, run in
                         if index > 0 { HairlineDivider() }
                         RunListRow(
-                            row: run, referenceDate: environment.referenceDate, identifier: "agent-run-\(run.runId)"
+                            row: run, identifier: "agent-run-\(run.runId)"
                         ) { environment.router.push(.run(id: run.runId), in: environment.router.selectedTab) }
                     }
                 }

@@ -10,6 +10,7 @@ struct AttentionCard<Actions: View>: View {
     let severity: SeverityUi?
     let kind: String
     let age: String
+    var ageSpoken: String?
     let title: String
     var subtitle: String?
     var identifier = "attention-card"
@@ -90,7 +91,7 @@ struct AttentionCard<Actions: View>: View {
             Text(age)
                 .font(Typography.label)
                 .foregroundStyle(Palette.textSecondary.color)
-                .accessibilityLabel(age)
+                .accessibilityLabel(ageSpoken ?? age)
                 .accessibilityIdentifier("\(identifier)-age")
         }
     }

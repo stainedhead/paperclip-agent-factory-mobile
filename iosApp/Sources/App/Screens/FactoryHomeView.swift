@@ -176,7 +176,7 @@ private struct FactoryHomeScreen: View {
                     ForEach(Array(state.liveRuns.enumerated()), id: \.element.runId) { index, run in
                         if index > 0 { HairlineDivider() }
                         RunListRow(
-                            row: run, referenceDate: environment.referenceDate,
+                            row: run,
                             identifier: "factory-run-\(run.runId)"
                         ) {
                             environment.router.push(.run(id: run.runId), in: .factory)

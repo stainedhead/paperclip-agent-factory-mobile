@@ -20,7 +20,7 @@ struct IssueThreadView: View {
             }
             ForEach(state.thread, id: \.id) { item in
                 if let comment = item.comment {
-                    CommentCard(comment: comment, referenceDate: environment.referenceDate)
+                    CommentCard(comment: comment)
                 } else if let card = item.interaction {
                     InteractionCardView(model: model, card: card, isBusy: state.isBusy, web: $web)
                 }
@@ -33,10 +33,14 @@ struct IssueThreadView: View {
 
 private struct CommentCard: View {
     let comment: IssueCommentUi
-    let referenceDate: Date?
 
     var body: some View {
-        let line = CommentPresentation.authorLine(comment, referenceDate: referenceDate)
+        TickingReference(every: LiveClock.ageTick) { now in
+            card(CommentPresentation.authorLine(comment, referenceDate: now))
+        }
+    }
+
+    private func card(_ line: String) -> some View {
         VStack(alignment: .leading, spacing: Spacing.extraSmall) {
             Text(line).font(Typography.label).foregroundStyle(Palette.textSecondary.color)
             Text(MarkdownText.attributed(comment.body)).font(Typography.body)

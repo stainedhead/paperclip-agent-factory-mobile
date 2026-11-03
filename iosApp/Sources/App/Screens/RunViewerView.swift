@@ -68,7 +68,15 @@ private struct RunViewerScreen: View {
     }
 
     private func header(_ run: RunRowUi) -> some View {
-        let presentation = RunRowPresentation(row: run, referenceDate: environment.referenceDate)
+        let every =
+            RunRowPresentation.isLive(run.status)
+            ? LiveClock.elapsedTick : LiveClock.ageTick
+        return TickingReference(every: every) { now in
+            header(run, RunRowPresentation(row: run, referenceDate: now))
+        }
+    }
+
+    private func header(_ run: RunRowUi, _ presentation: RunRowPresentation) -> some View {
         let status = [L10n.text(run.status), presentation.elapsed].compactMap { $0 }.joined(separator: " \u{00B7} ")
         return VStack(alignment: .leading, spacing: Spacing.medium) {
             StatusPill(text: status, tone: pillTone(RunRowPresentation.tone(run.status)))

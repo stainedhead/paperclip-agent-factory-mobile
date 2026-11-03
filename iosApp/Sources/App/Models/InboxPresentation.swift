@@ -39,17 +39,19 @@ struct InboxCardPresentation: Equatable {
     let title: String
     let context: String
     let age: String
+    /// The age as words, for VoiceOver ("8 minutes").
+    let ageSpoken: String
 
     init(item: InboxItemUi, referenceDate: Date?) {
         self.init(
             kind: item.kind, rawKind: item.rawKind, title: item.title, identifier: item.identifier,
             severity: item.severity, whyNow: item.whyNow, origin: item.originAgentName,
-            activityAtEpochMillis: item.activityAtEpochMillis, referenceDate: referenceDate)
+            activityAtEpochMillis: item.activityAtEpochMillis, referenceDate: referenceDate, locale: .current)
     }
 
     init(
         kind: SourceKindUi, rawKind: String?, title: String?, identifier: String?, severity: SeverityUi,
-        whyNow: String, origin: String?, activityAtEpochMillis: Int64, referenceDate: Date?
+        whyNow: String, origin: String?, activityAtEpochMillis: Int64, referenceDate: Date?, locale: Locale = .current
     ) {
         let kindName = kind == .unsupported ? (rawKind ?? kind.cardLabel) : kind.cardLabel
         self.severity = severity
@@ -57,7 +59,8 @@ struct InboxCardPresentation: Equatable {
         self.title = title ?? kindName
         context = Self.context(whyNow: whyNow, origin: origin)
         let seconds = (referenceDate ?? Date()).timeIntervalSince1970 - Double(activityAtEpochMillis) / 1000
-        age = RelativeAge.text(seconds: seconds)
+        age = RelativeAge.text(seconds: seconds, locale: locale)
+        ageSpoken = RelativeAge.spoken(seconds: seconds, locale: locale)
     }
 
     /// The reason the card is here, plus the agent it came from when the reason does not already name it.
@@ -69,7 +72,7 @@ struct InboxCardPresentation: Equatable {
     /// One spoken sentence per card, so VoiceOver reads it as a unit and the buttons stay separate.
     var accessibilityLabel: String {
         let severityName = SeverityLabel.name(severity)
-        return [severityName, kindLine, title, context, InboxLabel.ageAgo.text(age)].joined(separator: ". ")
+        return [severityName, kindLine, title, context, InboxLabel.ageAgo.text(ageSpoken)].joined(separator: ". ")
     }
 }
 

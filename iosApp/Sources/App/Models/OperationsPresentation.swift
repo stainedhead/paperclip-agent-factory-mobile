@@ -39,14 +39,18 @@ struct RunRowPresentation: Equatable {
         issueLine = [issue, row.issueTitle].compactMap { $0 }.joined(separator: " \u{00B7} ").nilIfEmpty
         isLive = Self.isLive(row.status)
         if let started = row.startedAtEpochMillis?.int64Value {
-            let finished = row.finishedAtEpochMillis.map { Double($0.int64Value) / 1000 }
-            let end = finished ?? (referenceDate ?? Date()).timeIntervalSince1970
-            let seconds = end - Double(started) / 1000
-            elapsed = RunTime.elapsed(seconds: seconds)
-            compact = RelativeAge.text(seconds: seconds)
+            let startedAt = Date(timeIntervalSince1970: Double(started) / 1000)
+            let finishedAt = row.finishedAtEpochMillis.map { Date(timeIntervalSince1970: Double($0.int64Value) / 1000) }
+            elapsed = Self.elapsedText(startedAt: startedAt, finishedAt: finishedAt, now: referenceDate ?? Date())
+            compact = RelativeAge.text(seconds: (finishedAt ?? referenceDate ?? Date()).timeIntervalSince(startedAt))
         } else {
             (elapsed, compact) = (nil, nil)
         }
+    }
+
+    /// How long a run has gone: to `now` while it runs, to its end once it has finished.
+    static func elapsedText(startedAt: Date, finishedAt: Date?, now: Date) -> String {
+        RunTime.elapsed(seconds: (finishedAt ?? now).timeIntervalSince(startedAt))
     }
 
     static func isLive(_ status: RunStatusUi) -> Bool {

@@ -181,7 +181,7 @@ private struct InboxScreen: View {
 
     private func row(_ item: InboxItemUi) -> some View {
         InboxCardView(
-            item: item, referenceDate: environment.referenceDate, isDisabled: isDisabled,
+            item: item, isDisabled: isDisabled,
             onOpen: { open(item) },
             onApprove: { model.approve(item.id) },
             onReject: { model.requestReject(item.id) },

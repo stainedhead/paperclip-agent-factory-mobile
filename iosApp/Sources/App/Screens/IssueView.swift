@@ -178,7 +178,7 @@ private struct IssueScreen: View {
                 ForEach(Array(state.runs.enumerated()), id: \.element.runId) { index, run in
                     if index > 0 { HairlineDivider() }
                     RunListRow(
-                        row: run, referenceDate: environment.referenceDate, identifier: "issue-run-\(run.runId)"
+                        row: run, identifier: "issue-run-\(run.runId)"
                     ) { environment.router.push(.run(id: run.runId), in: environment.router.selectedTab) }
                 }
             }
