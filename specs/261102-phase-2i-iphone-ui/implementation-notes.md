@@ -263,3 +263,7 @@ Shared JVM: domain 143, application 313, presentation 358, testing 56, umbrella 
 ### Deferred review findings
 
 Each has its reason in the table above: A11 (Post button's blank-text look), B-13 (bar inside the scroll at accessibility sizes), B-18 (two offline messages), C8 (KVO and view-only input beyond existing tests), C9 (sleep-based negative assertions, warm-up), C12 (branch protection and gitleaks), C15 (ADR renumbering at merge). Also not done inside fixed findings: the amount in the Face ID reason string (A4) and run elapsed text localisation (B-09).
+
+### CI (review-fix round)
+
+Run 41604626498 (ios) on the second push: ios (1), (2), (3) and (audits) succeeded; shared 41604626225 succeeded; security 41604626375 failed. The first push (run 41601956075) failed ios (1) only on `swift-format lint --strict` (`forEach` in `HolderModelTests`), fixed. Cause of the security failure (C12): gitleaks rule `generic-api-key` on commit 3b204ae (a Phase 1b commit that is in this branch's history through the shared base) in `shared/infrastructure/api/src/commonTest/.../ErrorMapperTest.kt:137`, a test string `"SECRETVALUE"`; the fix is a fingerprint allowlist entry in `.gitleaks.toml` on the branch that owns that file. Not changed here. The audit leg is green only because its audit step is allowed to fail; the audit tests themselves fail (see Audit results); the audit step ran 24+ tests (the "Audits ran" step passed).
