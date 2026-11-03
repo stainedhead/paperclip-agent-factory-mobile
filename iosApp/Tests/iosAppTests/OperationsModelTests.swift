@@ -136,8 +136,11 @@ struct OperationsModelTests {
         #expect(model.state.canSetBudget)
         #expect(model.state.monthlyBudget?.minorUnits == 100_000)
 
-        model.setBudget(minorUnits: 150_000)
+        model.typeBudget(text: "1500", currency: "USD", locale: Locale(identifier: "en_US"))
+        #expect(await eventually { model.state.canSaveBudget })
+        model.saveBudget()
         #expect(await eventually { model.state.monthlyBudget?.minorUnits == 150_000 })
+        #expect(model.state.budgetSavedCount == 1)
         observing.cancel()
         model.close()
     }

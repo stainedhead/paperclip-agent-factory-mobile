@@ -8,6 +8,7 @@ import Testing
 /// what may be submitted, when Face ID is asked and what the server refused are the shared holder's.
 @MainActor
 struct BudgetModelTests {
+    private let enUS = Locale(identifier: "en_US")
     private struct Rig {
         let model: BudgetModel
         let observing: Task<Void, Never>
@@ -48,6 +49,20 @@ struct BudgetModelTests {
         rig.finish()
     }
 
+    @Test func aCommaDecimalTypedInAPointLocaleIsRefusedNotReadAsHundredsTimesMore() async {
+        let rig = await makeRig()
+        rig.model.choose(.raiseAndResume)
+        rig.model.setAmount(text: "250,50", locale: enUS)
+        #expect(await eventually { rig.model.state.amountIssue == .amountNotANumber })
+        #expect(rig.model.state.amountMinorUnits == nil)
+        #expect(rig.model.state.canSubmit == false)
+        rig.model.setAmount(text: "250,50", locale: Locale(identifier: "de_DE"))
+        #expect(await eventually { rig.model.state.amountMinorUnits?.int64Value == 25_050 })
+        rig.model.setAmount(text: "250.50", locale: Locale(identifier: "de_DE"))
+        #expect(await eventually { rig.model.state.amountIssue == .amountNotANumber })
+        rig.finish()
+    }
+
     @Test func keepingPausedNeedsNoAmountAndEndsTheIncident() async {
         let rig = await makeRig()
         rig.model.choose(.keepPaused)
@@ -60,10 +75,10 @@ struct BudgetModelTests {
     @Test func anAmountAtOrBelowTheObservedSpendIsRefusedBeforeAnythingIsSent() async {
         let rig = await makeRig()
         rig.model.choose(.raiseAndResume)
-        rig.model.setAmount(15_000)
+        rig.model.setAmount(text: "150.00", locale: enUS)
         #expect(await eventually { rig.model.state.amountIssue == .amountMustExceedObserved })
         #expect(rig.model.state.canSubmit == false)
-        rig.model.setAmount(20_000)
+        rig.model.setAmount(text: "200.00", locale: enUS)
         #expect(await eventually { rig.model.state.amountIssue == .amountMustExceedObserved }, "equal is not enough")
         #expect(rig.controls.biometricPromptCount == 0)
         rig.finish()
@@ -72,7 +87,7 @@ struct BudgetModelTests {
     @Test func aValidRaiseAsksFaceIDAndResolvesTheIncident() async {
         let rig = await makeRig(biometrics: [.cancelled, .approved])
         rig.model.choose(.raiseAndResume)
-        rig.model.setAmount(25_000)
+        rig.model.setAmount(text: "250", locale: enUS)
         #expect(await eventually { rig.model.state.canSubmit })
         #expect(rig.model.state.submitNeedsDeviceAuth)
 
@@ -89,7 +104,7 @@ struct BudgetModelTests {
     @Test func theServersReasonForRefusingARaiseIsKeptInTheState() async {
         let rig = await makeRig(serverSpend: 21_000)
         rig.model.choose(.raiseAndResume)
-        rig.model.setAmount(20_500)
+        rig.model.setAmount(text: "205.00", locale: enUS)
         #expect(await eventually { rig.model.state.canSubmit })
         rig.model.submit()
         #expect(await eventually { rig.model.state.feedback?.error?.key == .rejected })

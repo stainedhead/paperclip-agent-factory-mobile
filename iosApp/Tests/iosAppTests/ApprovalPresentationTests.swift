@@ -16,13 +16,15 @@ struct ApprovalPresentationTests {
         #expect(MoneyFormat.text(MoneyUi(minorUnits: 0, currency: "USD"), locale: enUS) == "$0")
     }
 
-    @Test func aTypedAmountParsesToMinorUnitsAndRejectsNonsense() {
-        #expect(MoneyFormat.minorUnits(from: "250", locale: enUS) == 25_000)
-        #expect(MoneyFormat.minorUnits(from: "250.50", locale: enUS) == 25_050)
-        #expect(MoneyFormat.minorUnits(from: "$1,200", locale: enUS) == 120_000)
-        #expect(MoneyFormat.minorUnits(from: "", locale: enUS) == nil)
-        #expect(MoneyFormat.minorUnits(from: "abc", locale: enUS) == nil)
-        #expect(MoneyFormat.minorUnits(from: "-5", locale: enUS) == nil)
+    @Test func theAmountFieldTellsSharedCodeOnlyTheLocalesSeparatorAndTheCurrencysDigits() {
+        let us = MoneyInputFormat(currency: "USD", locale: enUS)
+        #expect(us.decimalSeparator == ".")
+        #expect(us.fractionDigits == 2)
+        let germany = MoneyInputFormat(currency: "EUR", locale: Locale(identifier: "de_DE"))
+        #expect(germany.decimalSeparator == ",")
+        #expect(germany.fractionDigits == 2)
+        let japan = MoneyInputFormat(currency: "JPY", locale: Locale(identifier: "ja_JP"))
+        #expect(japan.fractionDigits == 0)
     }
 
     @Test func knownRolesReadAsTheirAcronymsAndOthersAreCapitalised() {
