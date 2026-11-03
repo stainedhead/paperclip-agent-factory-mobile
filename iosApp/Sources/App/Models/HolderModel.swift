@@ -10,7 +10,25 @@ protocol StateHolderProtocol: AnyObject {
     var state: SkieSwiftStateFlow<State> { get }
     func onIntent(intent: Intent)
     func close()
+    /// True while this state has a mutation in flight (or a Face ID prompt up): the screen must not be torn down yet.
+    static func isWorking(_ state: State) -> Bool
 }
+
+extension StateHolderProtocol {
+    static func isWorking(_ state: State) -> Bool { false }
+}
+
+extension DecisionStateHolder { static func isWorking(_ state: DecisionState) -> Bool { state.isSubmitting } }
+extension ApprovalStateHolder { static func isWorking(_ state: ApprovalState) -> Bool { state.isSubmitting } }
+extension BudgetIncidentStateHolder {
+    static func isWorking(_ state: BudgetIncidentState) -> Bool { state.isSubmitting }
+}
+extension AgentDetailStateHolder { static func isWorking(_ state: AgentDetailState) -> Bool { state.isBusy } }
+extension IssueStateHolder { static func isWorking(_ state: IssueState) -> Bool { state.isBusy } }
+extension RunViewerStateHolder { static func isWorking(_ state: RunViewerState) -> Bool { state.isCancelling } }
+extension EditInstanceStateHolder { static func isWorking(_ state: EditInstanceState) -> Bool { state.isBusy } }
+extension SettingsStateHolder { static func isWorking(_ state: SettingsState) -> Bool { state.isBusy } }
+extension AgentsStateHolder { static func isWorking(_ state: AgentsState) -> Bool { state.busyAgentId != nil } }
 
 extension FirstRunStateHolder: StateHolderProtocol { typealias Intent = any FirstRunIntent }
 extension AppStateHolder: StateHolderProtocol { typealias Intent = any AppIntent }
@@ -71,6 +89,20 @@ final class HolderModel<Holder: StateHolderProtocol> {
         apply(holder.state.value)
     }
 
+    /// True while the holder has a mutation in flight.
+    var isWorking: Bool { Holder.isWorking(state) }
+
+    /// Returns once the holder is no longer working (at once when it is not), following the flow meanwhile so the
+    /// model keeps the latest state even though no view is looking.
+    func waitUntilIdle() async {
+        apply(holder.state.value)
+        guard Holder.isWorking(state) else { return }
+        for await next in holder.state {
+            apply(next)
+            if !Holder.isWorking(next) || isClosed { return }
+        }
+    }
+
     /// Releases the Kotlin holder. Only the owner calls this; safe to call more than once.
     func close() {
         guard !isClosed else { return }
@@ -91,31 +123,65 @@ final class HolderModel<Holder: StateHolderProtocol> {
 final class ModelStore<Key: Hashable> {
     private struct Entry {
         let model: AnyObject
+        let isWorking: () -> Bool
+        let untilIdle: () async -> Void
         let close: () -> Void
     }
 
     private var entries: [Key: Entry] = [:]
+    private var wanted: Set<Key> = []
+    private var finishing: Set<Key> = []
 
     var keys: Set<Key> { Set(entries.keys) }
 
     /// Every live model, for the owner to address them all (for example to cancel a pairing).
     var allModels: [AnyObject] { entries.values.map(\.model) }
 
-    func model<Holder: StateHolderProtocol>(for key: Key, make: () -> Holder) -> HolderModel<Holder> {
+    /// `isWorking` and `untilIdle` say when the model has a mutation in flight; the defaults ask the model's holder.
+    func model<Holder: StateHolderProtocol>(
+        for key: Key, make: () -> Holder,
+        isWorking: @escaping (HolderModel<Holder>) -> Bool = { $0.isWorking },
+        untilIdle: @escaping (HolderModel<Holder>) async -> Void = { await $0.waitUntilIdle() }
+    ) -> HolderModel<Holder> {
         if let existing = entries[key]?.model as? HolderModel<Holder> { return existing }
         let model = HolderModel(holder: make())
-        entries[key] = Entry(model: model, close: { model.close() })
+        entries[key] = Entry(
+            model: model, isWorking: { isWorking(model) }, untilIdle: { await untilIdle(model) },
+            close: { model.close() })
         return model
     }
 
+    /// Closes the models whose keys left. A model with a mutation in flight is closed once the outcome is recorded
+    /// (the request and its reconcile read finish with the holder), unless its key came back by then.
     func retain(only keep: Set<Key>) {
+        wanted = keep
         for (key, entry) in entries where !keep.contains(key) {
-            entry.close()
-            entries[key] = nil
+            if entry.isWorking() {
+                finishLater(key, entry)
+            } else {
+                entry.close()
+                entries[key] = nil
+            }
         }
     }
 
+    /// Shutdown: everything closes now, in flight or not.
     func closeAll() {
-        retain(only: [])
+        wanted = []
+        for entry in entries.values { entry.close() }
+        entries = [:]
+    }
+
+    private func finishLater(_ key: Key, _ entry: Entry) {
+        guard finishing.insert(key).inserted else { return }
+        Task { [weak self] in
+            await entry.untilIdle()
+            guard let self else { return }
+            finishing.remove(key)
+            if !wanted.contains(key), let current = entries[key], current.model === entry.model {
+                current.close()
+                entries[key] = nil
+            }
+        }
     }
 }
