@@ -46,6 +46,7 @@ private struct WorkListScreen: View {
         .onChange(of: state.createdIssueId) { _, created in
             guard let created else { return }
             model.createdAcknowledged()
+            showsCreate = false
             environment.router.push(.issue(id: created), in: .work)
         }
         .sheet(isPresented: $showsCreate) { CreateIssueSheet(model: model) }
@@ -118,7 +119,7 @@ private struct WorkListScreen: View {
     private var countRow: some View {
         AdaptiveStack {
             VStack(alignment: .leading, spacing: Spacing.hairline) {
-                Text(state.rows.count == 1 ? WorkLabel.countOne.text : WorkLabel.countLine.text(state.rows.count))
+                Text(WorkLabel.count.plural(state.rows.count))
                     .font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
                     .accessibilityIdentifier("work-count")
                 UpdatedLabel(epochMillis: state.updatedAtEpochMillis?.int64Value)
@@ -244,12 +245,12 @@ private struct CreateIssueSheet: View {
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("work-create-priority")
             }
-            Button(WorkLabel.createSave.text) {
-                model.create(title: title, priority: priority)
-                dismiss()
-            }
-            .buttonStyle(.app(.primary))
-            .accessibilityIdentifier("work-create-save")
+            if let feedback = model.state.feedback { FeedbackBanner(feedback: feedback) { model.dismissMessage() } }
+            // The sheet closes when the issue exists (the screen opens it); a refusal or failure keeps what was typed.
+            Button(WorkLabel.createSave.text) { model.create(title: title, priority: priority) }
+                .buttonStyle(.app(.primary))
+                .disabled(model.state.isCreating)
+                .accessibilityIdentifier("work-create-save")
             Button(WorkLabel.createCancel.text) { dismiss() }
                 .buttonStyle(.app(.secondary))
                 .accessibilityIdentifier("work-create-cancel")

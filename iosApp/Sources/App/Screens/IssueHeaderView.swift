@@ -224,12 +224,12 @@ struct SubtaskSheet: View {
             FormField(
                 title: IssueLabel.subtaskField.text, placeholder: IssueLabel.subtaskPlaceholder.text, text: $title,
                 capitalization: .sentences, identifier: "issue-subtask-title")
-            Button(IssueLabel.subtaskSave.text) {
-                model.addSubtask(title)
-                dismiss()
-            }
-            .buttonStyle(.app(.primary))
-            .accessibilityIdentifier("issue-subtask-save")
+            if let feedback = model.state.feedback { FeedbackBanner(feedback: feedback) { model.dismissMessage() } }
+            // The sheet closes when shared code reports the subtask created; a refusal or failure keeps the title.
+            Button(IssueLabel.subtaskSave.text) { model.addSubtask(title) }
+                .buttonStyle(.app(.primary))
+                .disabled(model.state.isBusy)
+                .accessibilityIdentifier("issue-subtask-save")
             Button(IssueLabel.subtaskCancel.text) { dismiss() }
                 .buttonStyle(.app(.secondary))
                 .accessibilityIdentifier("issue-subtask-cancel")
@@ -239,5 +239,6 @@ struct SubtaskSheet: View {
         .presentationDetents([.medium, .large])
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("issue-subtask-form")
+        .onChange(of: model.state.subtaskCreatedCount) { _, _ in dismiss() }
     }
 }
