@@ -2291,6 +2291,17 @@
         }
       }
     },
+    "error.authDeclined": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip could not read this phone's key: Face ID or the passcode was declined, or the phone is locked. Nothing was sent. Try again."
+          }
+        }
+      }
+    },
     "error.certificateInvalid": {
       "extractionState": "manual",
       "localizations": {
@@ -2331,6 +2342,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "That doesn't look like a board key. Nothing was sent."
+          }
+        }
+      }
+    },
+    "error.keyInvalidated": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone's key for the factory is no longer valid (for example after a fingerprint change). Pair this phone again."
           }
         }
       }
@@ -3567,6 +3589,17 @@
         }
       }
     },
+    "keyOutcome.declined": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID was declined, so the key was not revoked on the server and nothing was deleted."
+          }
+        }
+      }
+    },
     "keyOutcome.notAttempted": {
       "extractionState": "manual",
       "localizations": {
@@ -3860,6 +3893,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Other"
+          }
+        }
+      }
+    },
+    "label.biometricConfirmReason": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm this action on your factory"
+          }
+        }
+      }
+    },
+    "label.biometricUnlockReason": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock Paperclip"
           }
         }
       }
@@ -4502,6 +4557,39 @@
         }
       }
     },
+    "label.editSignOutHereOnlyConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out here only"
+          }
+        }
+      }
+    },
+    "label.editSignOutHereOnlyMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone's key could not be read, so it cannot be revoked on the server. Signing out removes it from this phone only; the key stays live on the server until you revoke it in the web app."
+          }
+        }
+      }
+    },
+    "label.editSignOutHereOnlyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of %@ on this phone only?"
+          }
+        }
+      }
+    },
     "label.editSignOutMessage": {
       "extractionState": "manual",
       "localizations": {
@@ -5054,6 +5142,28 @@
         }
       }
     },
+    "label.removeHereOnlyConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove here only"
+          }
+        }
+      }
+    },
+    "label.removeHereOnlyMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone's key could not be read, so it cannot be revoked on the server. Removing deletes the factory from this phone only; the key stays live on the server until you revoke it in the web app."
+          }
+        }
+      }
+    },
     "label.removeTitle": {
       "extractionState": "manual",
       "localizations": {
@@ -5485,13 +5595,24 @@
         }
       }
     },
+    "label.startupRetry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
     "label.startupTitle": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Live factories are not available yet"
+            "value": "Paperclip cannot start yet"
           }
         }
       }
@@ -6299,13 +6420,13 @@
         }
       }
     },
-    "startup.liveFactoriesUnavailable": {
+    "startup.liveGraphUnavailable": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This build cannot connect to a Paperclip factory yet, so nothing is paired and nothing can be approved. Use a build that includes live factories."
+            "value": "Paperclip could not open its data on this phone right now. Nothing was changed or deleted. Try again in a moment."
           }
         }
       }

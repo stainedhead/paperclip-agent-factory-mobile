@@ -81,6 +81,14 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case firstRunWillConnect
     case firstRunTryDemo
     case startupTitle
+    case startupRetry
+    case biometricUnlockReason
+    case biometricConfirmReason
+    case editSignOutHereOnlyTitle
+    case editSignOutHereOnlyMessage
+    case editSignOutHereOnlyConfirm
+    case removeHereOnlyMessage
+    case removeHereOnlyConfirm
     case settingsTitle
     case settingsAppLock
     case settingsIdlePeriod
