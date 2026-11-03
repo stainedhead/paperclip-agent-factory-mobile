@@ -1,3 +1,4 @@
+import Foundation
 import PaperclipKit
 import Testing
 
@@ -75,5 +76,32 @@ struct DecisionPresentationTests {
         #expect(spoken.contains("Cancel the migration"))
         #expect(spoken.contains("Face ID"))
         #expect(spoken.contains("Cancels the issue"))
+    }
+}
+
+/// B-02 and B-12: the expiry is shown, and free text from the server is shown as written.
+@MainActor
+struct DecisionExpiryAndEffectTextTests {
+    @Test func theExpiryReadsAsADateAndTimeSoNoOneIsSurprisedByTheExpiredState() {
+        let utc = TimeZone(identifier: "UTC") ?? .current
+        let fivePM = Int64(1_793_725_200) * 1000  // 2026-11-03 17:00 UTC
+        let text = DecisionPresentation.expiryText(
+            epochMillis: fivePM, locale: Locale(identifier: "en_US"), timeZone: utc)
+        #expect(text.hasPrefix("Expires "))
+        #expect(text.contains("Nov"))
+        #expect(text.contains("5:00"))
+    }
+
+    @Test func freeTextInAnEffectIsNotRewrittenButAStatusIs() {
+        let create = EffectSummaryUi(kind: .createIssue, targetIssueId: "x", detail: "fix_login_bug", isStrict: false)
+        #expect(DecisionPresentation.effectLine(create).contains("fix_login_bug"))
+        let comment = EffectSummaryUi(
+            kind: .commentOnIssue, targetIssueId: "x", detail: "set_up_the_flag first", isStrict: false)
+        #expect(DecisionPresentation.effectLine(comment).contains("set_up_the_flag first"))
+        let assign = EffectSummaryUi(kind: .assignIssue, targetIssueId: "x", detail: "qa_lead", isStrict: false)
+        #expect(DecisionPresentation.effectLine(assign).contains("qa_lead"))
+        let status = EffectSummaryUi(
+            kind: .updateIssueStatus, targetIssueId: "x", detail: "in_progress", isStrict: false)
+        #expect(DecisionPresentation.effectLine(status).contains("in progress"))
     }
 }
