@@ -24,13 +24,14 @@ final class ShellUITests: XCTestCase {
     }
 
     @MainActor
-    func testALaunchWithoutDemoSaysLiveFactoriesAreNotInThisBuildAndOffersNothingToApprove() {
+    func testALaunchWithoutDemoOpensTheRealGraphBehindTheRealAppLock() {
         let app = XCUIApplication()
         app.launch()
-        XCTAssertTrue(app.element("startup-notice").waitForExistence(timeout: 30), "the notice never appeared")
-        XCTAssertTrue(app.staticTexts["Live factories are not available yet"].exists)
+        // The real graph asks the real device owner (LocalAuthentication; the simulator shows its passcode sheet), so
+        // the app lock is up. No notice, no tabs, and nothing of the demo.
+        XCTAssertTrue(app.element("lock-screen").waitForExistence(timeout: 30), "the app lock never appeared")
+        XCTAssertFalse(app.element("startup-notice").exists)
         XCTAssertFalse(app.tabBars.firstMatch.exists)
-        XCTAssertEqual(app.buttons.count, 0, "nothing to tap: no pairing, no demo, no approvals")
     }
 
     @MainActor
