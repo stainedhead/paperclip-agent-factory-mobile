@@ -18,6 +18,8 @@ internal data class BudgetModel(
     val outcome: BudgetOutcomeUi? = null,
     val choice: BudgetChoice? = null,
     val amount: Long? = null,
+    /** Why the typed text is not an amount; set with a null [amount]. */
+    val amountInputIssue: InvalidKey? = null,
     val loadedAt: Instant? = null,
     val loading: Boolean = false,
     val submitting: Boolean = false,
@@ -109,6 +111,7 @@ internal object BudgetIncidentRenderer {
     private fun amountIssue(model: BudgetModel): InvalidKey? {
         val incident = model.incident
         val amount = model.amount
+        if (model.choice == BudgetChoice.RaiseAndResume && model.amountInputIssue != null) return model.amountInputIssue
         if (model.choice != BudgetChoice.RaiseAndResume || incident == null || amount == null) return null
         return when (incident.validate(BudgetResolution.RaiseAndResume(Money(amount, incident.observed.currency)))) {
             ResolutionIssue.MustExceedObserved -> InvalidKey.AmountMustExceedObserved

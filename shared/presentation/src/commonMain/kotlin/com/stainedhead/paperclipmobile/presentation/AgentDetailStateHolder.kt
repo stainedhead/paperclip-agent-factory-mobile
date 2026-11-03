@@ -25,6 +25,9 @@ private data class DetailModel(
     val view: AgentView? = null,
     val role: Role? = null,
     val loading: Boolean = false,
+    val budgetAmount: Long? = null,
+    val budgetIssue: InvalidKey? = null,
+    val budgetSaved: Int = 0,
     val confirmPause: Boolean = false,
     val busy: Boolean = false,
     /** Counts finished actions. A read that started before one finished must not replace its result (F-B-7). */
@@ -79,7 +82,8 @@ class AgentDetailStateHolder(
             AgentDetailIntent.PauseCancelled -> model.update { it.copy(confirmPause = false) }
             AgentDetailIntent.ResumeTapped -> act(AgentActionUi.Resume)
             AgentDetailIntent.RunNowTapped -> act(AgentActionUi.RunNow)
-            is AgentDetailIntent.BudgetSubmitted -> setBudget(intent.minorUnits)
+            is AgentDetailIntent.BudgetAmountTyped -> typeBudget(intent)
+            AgentDetailIntent.BudgetSubmitted -> setBudget()
             AgentDetailIntent.MessageDismissed -> model.update { it.copy(feedback = null) }
         }
     }
@@ -161,15 +165,26 @@ class AgentDetailStateHolder(
         }
     }
 
-    private fun setBudget(minorUnits: Long) {
-        val agent = current() ?: return
-        val mayAct = model.value.role?.let { Permissions.allows(it, Action.SetAgentBudget) } == true
-        val idle = !model.value.busy && connectivity.isOnline.value
-        if (!mayAct || minorUnits < 0 || !idle) return
-        run { mutate(context) { useCases.setBudget(it, agent, Money(minorUnits, agent.monthlyBudget.currency)) } }
+    private fun typeBudget(intent: AgentDetailIntent.BudgetAmountTyped) {
+        val parsed = MoneyInput.parse(intent.text, intent.decimalSeparator, intent.fractionDigits)
+        model.update { it.copy(budgetAmount = parsed.minorUnits, budgetIssue = parsed.issue) }
     }
 
-    private fun run(call: suspend () -> ActionResult<Agent>) {
+    private fun setBudget() {
+        val agent = current() ?: return
+        val minorUnits = model.value.budgetAmount ?: return
+        val mayAct = model.value.role?.let { Permissions.allows(it, Action.SetAgentBudget) } == true
+        val idle = !model.value.busy && connectivity.isOnline.value
+        if (!mayAct || !idle) return
+        run(budget = true) {
+            mutate(context) { useCases.setBudget(it, agent, Money(minorUnits, agent.monthlyBudget.currency)) }
+        }
+    }
+
+    private fun run(
+        budget: Boolean = false,
+        call: suspend () -> ActionResult<Agent>,
+    ) {
         if (!model.claim({ it.busy }) { it.copy(busy = true, feedback = null) }) return
         scope.launch {
             val result = call()
@@ -179,6 +194,8 @@ class AgentDetailStateHolder(
                     role = result.role ?: m.role,
                     version = m.version + 1,
                     feedback = result.feedback,
+                    budgetSaved = if (budget && result.feedback == null) m.budgetSaved + 1 else m.budgetSaved,
+                    budgetAmount = if (budget && result.feedback == null) null else m.budgetAmount,
                     view =
                         result.value?.let { agent -> m.view?.copy(agent = agent) } ?: m.view,
                 )
@@ -211,6 +228,11 @@ private fun renderDetail(
         budgetPercentUsed = view?.agent?.budgetPercentUsed ?: 0,
         actions = actions,
         canSetBudget = !model.busy && mayAct(online, role, Action.SetAgentBudget),
+        budgetAmountMinorUnits = model.budgetAmount,
+        budgetAmountIssue = model.budgetIssue,
+        canSaveBudget =
+            model.budgetAmount != null && !model.busy && mayAct(online, role, Action.SetAgentBudget),
+        budgetSavedCount = model.budgetSaved,
         confirmPause = model.confirmPause,
         isBusy = model.busy,
         role = role?.toUi(),

@@ -60,9 +60,14 @@ sealed interface BudgetIntent {
         val choice: BudgetChoice,
     ) : BudgetIntent
 
-    /** The new monthly budget in cents, or null when the field is cleared. */
-    data class AmountChanged(
-        val minorUnits: Long?,
+    /**
+     * The amount field's text as typed. The app passes only the locale's decimal separator and the currency's fraction
+     * digits; shared code reads and validates it (A4).
+     */
+    data class AmountTyped(
+        val text: String,
+        val decimalSeparator: String,
+        val fractionDigits: Int,
     ) : BudgetIntent
 
     data object SubmitTapped : BudgetIntent

@@ -65,17 +65,9 @@ class BudgetIncidentStateHolder(
                 choose(intent.choice)
             }
 
-            is BudgetIntent.AmountChanged -> {
-                model.update {
-                    it.copy(
-                        amount =
-                            intent.minorUnits?.takeIf { cents ->
-                                cents >=
-                                    0
-                            },
-                        feedback = null,
-                    )
-                }
+            is BudgetIntent.AmountTyped -> {
+                val parsed = MoneyInput.parse(intent.text, intent.decimalSeparator, intent.fractionDigits)
+                model.update { it.copy(amount = parsed.minorUnits, amountInputIssue = parsed.issue, feedback = null) }
             }
 
             BudgetIntent.SubmitTapped -> {
