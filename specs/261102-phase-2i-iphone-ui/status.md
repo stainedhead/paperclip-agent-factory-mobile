@@ -8,19 +8,12 @@ Update this file after every task and phase. It is the single source of progress
 
 | Phase | State |
 |---|---|
-| Phase 0 Specification | In Progress |
-| Phase 1 Research and data model | Not Started |
-| Phase 2 Architecture and plan | Not Started |
-| Phase 3 Task breakdown | Not Started |
-| Phase 4 Implementation | Not Started |
-| Phase 5 Completion and archive | Not Started |
-
-## Phase 0 checklist
-
-- [x] Spec directory created; `spec.md` populated from the PRD
-- [x] Research questions identified (`research.md`)
-- [x] Phase files initialized
-- [ ] `/dev-flow:review-spec` run and findings resolved
+| Phase 0 Specification | Done, except the `/dev-flow:review-spec` run (never run) |
+| Phase 1 Research and data model | Done (`research.md`, `data-dictionary.md`) |
+| Phase 2 Architecture and plan | Done (`architecture.md`, `plan.md`) |
+| Phase 3 Task breakdown | Done (`tasks.md`) |
+| Phase 4 Implementation | Done for the demo graph (2i-0 to 2i-6) and the review-fix round; live factories not wired (blocker 1) |
+| Phase 5 Completion and archive | Not started: blocked |
 
 ## Milestones
 
@@ -30,7 +23,8 @@ Update this file after every task and phase. It is the single source of progress
 - [x] 2i-3 Decision, Approval, Budget incident sheet (UI-030)
 - [x] 2i-4 Factory home, Agents, Agent detail, Run viewer (UI-040)
 - [x] 2i-5 Work list and Issue with interactions (UI-050)
-- [x] 2i-6 Polish, accessibility, screenshots into docs, live seam, documentation (UI-060, acceptance 5 to 10)
+- [ ] 2i-6 Polish, accessibility, screenshots, live seam, documentation (UI-060): built, not accepted. The accessibility audits fail (blocker 2), the live seam is unwired (blocker 1).
+- [x] Review-fix round (reviews A, B, C): see implementation-notes.md, "Review-fix round"
 
 ## Notes
 
@@ -47,7 +41,11 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Blockers
 
-(none)
+1. The live graph is not wired: `LiveGraphProvider.isAvailable` is false until Phase 1b (PR #7) merges. A build without `-demo` shows "Live factories are not available yet" (ADR-112). Merge checklist: implementation-notes.md.
+2. Accessibility audits fail honestly: the Phase 2i audit set reports findings on most screens (counts in implementation-notes.md, "Audit results"). They do not block CI (ADR-080) but 2i-6 is not accepted while they stand.
+3. The `security` workflow (gitleaks) fails on this and other branches; cause and fix not done (C12).
+4. ADR numbers 042 to 047 and 080 collide with 1b (C15).
+5. `/dev-flow:review-spec` was never run.
 
 ## Recent activity
 
@@ -60,3 +58,5 @@ Update this file after every task and phase. It is the single source of progress
 - 2026-11-02: milestone 2i-5 (Work list, Issue, demo answer and comment fixes) implemented.
 - 2026-11-02: fixed the iOS 26.5 CI failures (tab badge accessibility value, demo refresh timer pause); ADR-105.
 - 2026-11-03: milestone 2i-6 (polish, accessibility, screenshots, live seam notes, docs) implemented.
+
+- 2026-11-03: review-fix round for reviews A, B and C (no P0); new ADR-112 to 116; status and docs corrected.

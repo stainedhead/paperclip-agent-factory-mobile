@@ -146,7 +146,7 @@ Shared edits (test first, own commit): `LoadIssueRefs`; `RunRowUi`/`AgentRowUi`/
 
 Deviations: no Resume on Engineer 2 (shared rule, ADR-101); no "Next heartbeat in 8m" or "last run timed out" (not in state); Factory header is the shared factory switcher plus a navigation title, not a company title; Agent detail has no avatar (it failed the contrast audit); the Run viewer and Agent detail hide the tab bar like other detail screens; Factory tiles select the matching tab. The "Updated 0s ago" is the frozen demo clock. Issue taps from Run viewer and Agent detail open the 2i-5 placeholder route.
 
-Accessibility audits: Run viewer (normal, offline) and Agent detail: zero findings. Factory home (normal 5, offline 15) and Agents (5): the findings are "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text low on the screen (Factory: the Approvals and Budget incidents tiles, and Agents/Work tiles when the offline banner pushes them down; Agents: the CTO row). Fixed: caption2 text (the audit flags it), uppercase via `textCase`, avatar contrast. Remaining: scrolling the screen moves which tiles are flagged (a throwaway test scrolled Factory home and the tiles at y 441 to 620 were flagged instead), so it is the audit's larger-text comparison of content that moves below the fold, not a fixed font; Inbox lists and the detail screens with a fixed bar do not show it. Those three tests use `XCTExpectFailure` (non-strict) with this reason; they are in the audit set in `scripts/ios-test.sh` (non-blocking in CI).
+Accessibility audits: Run viewer (normal, offline) and Agent detail: zero findings. Factory home (normal 5, offline 15) and Agents (5): the findings are "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text low on the screen (Factory: the Approvals and Budget incidents tiles, and Agents/Work tiles when the offline banner pushes them down; Agents: the CTO row). Fixed: caption2 text (the audit flags it), uppercase via `textCase`, avatar contrast. Remaining: scrolling the screen moves which tiles are flagged (a throwaway test scrolled Factory home and the tiles at y 441 to 620 were flagged instead), so it is the audit's larger-text comparison of content that moves below the fold, not a fixed font; Inbox lists and the detail screens with a fixed bar do not show it. Those three tests used `XCTExpectFailure` (non-strict) with this reason when this was written; the 2i-6 round removed it from them, and the review-fix round deleted the last dead helper that still called it (C4); they are in the audit set in `scripts/ios-test.sh` (non-blocking in CI).
 
 Screenshots read (iPhone 18 Pro simulator, demo graph): Factory normal, XXXL, error; Agents normal, dark; Run viewer normal; Run viewer dark offline and Agent detail were captured but not read. Defects found and fixed: failReads did not break Agents (above); the spend header stacked three lines at XXXL (now an adaptive stack). Not verified: real Face ID, live data, VoiceOver by ear, Agent detail and offline screenshots by eye.
 
@@ -197,3 +197,65 @@ Decisions: ADR-108 to 111.
 5. Re-run: `./gradlew check`, build-kit, all UI shards; the first-run UI tests run on the fake graph via `-demo-first-run` and are unaffected.
 
 CI (run 41587650667 on 066e32e, runner Xcode 26.6 / iOS 26.5): shared, ios (1), (2), (3) green on the first iteration (the KVO tab bar passes the badge tests on 26.5); security failed (known gitleaks issue). Non-blocking ios (audits): 24 tests, 11 failures: Approval (2), Manage (1), Agent detail (1), Agents, Factory home, offline Factory home, Run viewer (2), Work list (2). New since the last note: Agent detail, Run viewer and Work audits fail on 26.5 although they return nothing on iOS 27.2. Locally the Manage audit also failed once after the screenshot session ("Contrast failed | 3 factories"); all functional tests of the other classes passed (47 UI tests, 1 audit failure; 50 more in Inbox/Decision/Approval/Budget/Shell; 5 HitTarget; 320 Swift Testing cases).
+
+
+## Review-fix round (three independent reviews: A architecture and security, B UI and states, C tests, CI and docs), 2026-11-03
+
+No P0. Every finding was verified against the code first. Shared rules got a failing shared test first (compile or assertion failure seen), Swift rules a failing Swift Testing case or XCUITest first (red seen unless the commit message says otherwise). Test and production are separate commits; commit messages carry the finding id.
+
+### Findings
+
+| Id | Result |
+|---|---|
+| A1, B-01 | Fixed: `TickingReference`/`LiveClock`, `UpdatedLabel`, cards, run rows, comments, devices (ADR-114). Unit tests move the clock; no UI test can (the demo clock is pinned). |
+| A2 | Fixed: `IssueState.commentSentCount`; the box clears only on it. |
+| A3 | Fixed: `StartupNotice` (shared), notice screen, holders closed (ADR-112). UI test: plain launch shows it and offers no button. |
+| A4, B-19 | Fixed: `MoneyInput` (shared), tests for 250.50, 250,50, 1,200.50, 1.200,50, overflow, negative, zero (ADR-113). Not done: the Face ID reason string does not carry the amount (the `Biometrics` port takes a fixed reason); the amount is on the button instead. |
+| A5 | Fixed: `ApprovalState.commentPostedCount`. |
+| A6 | Fixed: `ModelStore` keeps a working model until idle (ADR-115). Unit-tested with a gate; not tested with a real back swipe. |
+| A7 | Fixed: `LaunchConfiguration.allowsDemoControls` (DEBUG), overlay compiled in Debug only. The overlay still uses a 0.25 s `TimelineView` for its counter (Debug and test only). |
+| A8 | Fixed: `PrivacyShieldController`, a window above alerts (unit-tested that the window exists and goes away; not seen in the app switcher). |
+| A9 | Fixed: `PairingPagePolicy` closes the page on cancelled, expired, failed. |
+| A10 | Fixed: `LoadIssueRefs` runs 4 at a time, at most 25. This exposed a race in `FakeIssueGateway` call counts (a Kotlin/Native crash in the Swift tests), fixed with an atomic copy-on-write map. |
+| A11 | Partly fixed: `canCheckAddress`, `canSaveBudget` and positive-only budgets are shared. Deferred: the Approval comment Post button's "trimmed text is empty" check stays in Swift, because the text lives in the view (ADR-106); shared refuses a blank comment (`BodyRequired`), so only the enabled look is duplicated. |
+| B-02 | Fixed: "Expires ..." line. |
+| B-03 | Fixed: the budget sheet closes before "Sign in again" selects Factories. |
+| B-04 | Fixed: `SwitcherDot`. |
+| B-05 | Fixed: banners that retry nothing say Dismiss (`ErrorBannerButton`). |
+| B-06 | Fixed: create-issue, subtask and budget sheets close on success only. |
+| B-07 | Fixed: linked issues are buttons (UI test). |
+| B-08 | Fixed: catalog plural variations; the `One`/`Other` pairs are gone. |
+| B-09 | Fixed: `Duration.UnitsFormatStyle`, narrow for display and wide for VoiceOver. Run elapsed text ("4m 12s") is still hand-formatted English. |
+| B-10 | Fixed for the skeleton and the overlay. |
+| B-11 | Fixed by combining the comment's children instead of labelling it with raw markdown. No test (accessibility structure). |
+| B-12 | Fixed: only statuses are prettified. |
+| B-13 | Half fixed: the bar names the chosen option. Deferred: moving the bar into the scroll content at accessibility sizes; a sticky Confirm that is always reachable was kept on purpose, at the cost of a short reading area. |
+| B-14 | Fixed: unsaved-changes prompt (alert; a confirmation dialog is a popover on iOS 27 and drops the cancel button) and device name saved on leaving. |
+| B-15 | Fixed: Working row. The pause sheet does not need `isWorking`: it closes at once. |
+| B-16 | Fixed: "Choose an option". |
+| B-17 | Fixed: `WebAddress`, https only. |
+| B-18 | Deferred: two offline messages on the Inbox; tests assert the disabled reason, it is a design call, no correctness issue. |
+| B-20 | Fixed: `NSFaceIDUsageDescription` and `InfoPlistTests`, identical to 1b (merges cleanly). Portrait lock kept. |
+| C1, C2 | Fixed: one `auditScreen`; only the system tab bar's buttons are set aside (counted and attached); content under the bar and the app's own bars are findings. The old rule had also dropped every finding on screens that hide the tab bar. FirstRun's "Text clipped" filter and the Shell baseline (which never failed) now assert empty. |
+| C3 | Fixed: `HitTargetUITests` waits, handles an infinite bar frame, fails below a per-tab minimum and prints not-visible counts. Measured (examined / not visible): Inbox 11/10, Factory 6/7, Work 12/19, Agents 13/17, Factories 7/8; controls below the fold are not covered. |
+| C4 | Fixed: helper deleted; ADR-109 and the 2i-4 note corrected. |
+| C5 | Fixed: status.md rewritten. |
+| C6 | Fixed: getting-started, README, configuration, testing and usage pages. "Verified" claims dropped. |
+| C7 | Recorded: earlier shared commits combined tests and production, and several Swift suites were written after their views (2i-5, 2i-6). Red steps for those cannot be shown from history. From this round on tests and production are separate commits. A few commits in this round mix a production file that a later commit in the round needs (for example the Work list count line), so not every intermediate commit compiles; the branch tip does. |
+| C8 | Partly fixed: `Motion.animation(reduceMotion:)` is unit-tested. Deferred: tab bar KVO (covered by `TabBarAccessibilityTests` and the UI tests), view-only text input (ADR-106). |
+| C9 | Deferred: the 300 ms sleeps assert that something did not happen and have a positive control; a deterministic signal needs test-only hooks in shared code. They can only pass vacuously, never fail falsely. The 15 s simulator warm-up and the 0.5 s focus retry are kept. |
+| C10 | Fixed: the shard check runs before the build and matches any `XCTestCase` subclass. |
+| C11 | Fixed: step-level `continue-on-error`, and a step that fails the leg if no audit ran. |
+| C12 | Deferred: branch protection is a repository setting. The security job fails on gitleaks on this and other branches (see the CI note below). |
+| C13 | Recorded: see "Audit results" below; these are treated as defects, not as an artifact. 2i-6 is not accepted while they stand. |
+| C15 | Deferred: ADR 042 to 047 and 080 collide with 1b. Renumbering now would break references in specs and docs; the merge checklist item stays and new ADRs here start at 112. |
+| C16 | Fixed: demo-only banner first. |
+| C17 | Done: the seven images that had not been read were read (demo data only, no addresses, tokens or emails). Decision, Approval and Budget were recaptured after their screens changed. |
+
+### Audit results (local, iPhone 18 Pro, iOS 27.2, 402x874, honest helper)
+
+24 audit tests became 29 findings groups; 116 UI tests ran, 18 failed before the discard-test and demo-test fixes, all but two were audits. After the fixes the remaining failures are audits only. Findings per screen: Approval 1 and offline 1 (comment text partly behind the action bar), Edit factory 4 (Save contrast, Cancel and Save "Dynamic Type partially unsupported", address field "Text clipped"), Factories 6, First run 1 (address field clipped), Inbox 3 and offline 9, Manage 7, Agents 7, Factory home 10 and offline 21, Run viewer offline 1, Settings 2, Issue 2 and offline 2, Work 3 and offline 2, Shell 3. Budget, Decision (both), Agent detail and Run viewer: 0. None were on the system tab bar's buttons. Earlier counts were lower because the old rule hid everything under the tab bar and everything on screens without one. Per-finding detail is in the `accessibility-audit-<screen>` attachments and the `ACCESSIBILITY-AUDIT-FINDING` log lines of the audit job. These tests are in the non-blocking audit set (ADR-080, ADR-116).
+
+### Counts
+
+Shared JVM: domain 143, application 313, presentation 358, testing 56, umbrella 60 (0 failures). Swift Testing 353. UI tests 116. Kover: core 98.01%, presentation 98.06%.
