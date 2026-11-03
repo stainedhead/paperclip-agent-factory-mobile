@@ -27,7 +27,6 @@ extension XCTestCase {
     /// type, identifier, label, frame), printed and attached; the ones on the system tab bar are counted separately as
     /// `system-owned`. Returns the findings that count; call sites assert it is empty.
     @MainActor
-    @discardableResult
     func auditScreen(_ app: XCUIApplication, screen: String) throws -> [String] {
         var findings: [String] = []
         var systemOwned: [String] = []
@@ -57,7 +56,6 @@ extension XCTestCase {
     }
 
     @MainActor
-    @discardableResult
     func auditAccessibility(_ app: XCUIApplication, screen: String) throws -> [String] {
         try auditScreen(app, screen: screen)
     }
