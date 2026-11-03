@@ -19,8 +19,7 @@ enum WorkLabel: String, CaseIterable, CatalogKey {
     case filtersLabel
     case searchLabel
     case searchPlaceholder
-    case countLine
-    case countOne
+    case count
     case emptyTitle
     case emptyMessage
     case emptySearchMessage

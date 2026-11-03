@@ -128,7 +128,7 @@ struct InteractionCardView: View {
 
     private var kindLine: String {
         var parts = [L10n.text(card.kind).uppercased()]
-        if card.kind == .askUserQuestions { parts.append(IssueLabel.questionsMore.text(card.questions.count)) }
+        if card.kind == .askUserQuestions { parts.append(IssueLabel.questionsMore.plural(card.questions.count)) }
         if !isPending { parts.append(L10n.text(card.status)) }
         return parts.joined(separator: " \u{00B7} ").uppercased()
     }

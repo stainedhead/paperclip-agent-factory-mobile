@@ -84,7 +84,7 @@ struct ManageFactoriesView: View {
     }
 
     private func countText(_ count: Int) -> String {
-        count == 1 ? ShellLabel.manageCountOne.text : ShellLabel.manageCountOther.text(count)
+        ShellLabel.manageCount.plural(count)
     }
 
     private func message(for confirmation: RemovalConfirmationUi) -> String {

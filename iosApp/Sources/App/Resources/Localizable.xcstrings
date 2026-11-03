@@ -486,24 +486,25 @@
         }
       }
     },
-    "agents.countLine": {
+    "agents.count": {
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d agents"
-          }
-        }
-      }
-    },
-    "agents.countOne": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 agent"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld agent"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld agents"
+                }
+              }
+            }
           }
         }
       }
@@ -4512,24 +4513,25 @@
         }
       }
     },
-    "label.expiryDaysOne": {
+    "label.expiryDays": {
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Board key expires in 1 day"
-          }
-        }
-      }
-    },
-    "label.expiryDaysOther": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Board key expires in %lld days"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Board key expires in %lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Board key expires in %lld days"
+                }
+              }
+            }
           }
         }
       }
@@ -4820,24 +4822,25 @@
         }
       }
     },
-    "label.manageCountOne": {
+    "label.manageCount": {
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 factory"
-          }
-        }
-      }
-    },
-    "label.manageCountOther": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld factories"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld factory"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld factories"
+                }
+              }
+            }
           }
         }
       }
@@ -5319,9 +5322,21 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld factories could not be signed out on this phone."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld factory could not be signed out on this phone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld factories could not be signed out on this phone."
+                }
+              }
+            }
           }
         }
       }
@@ -5374,9 +5389,21 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld keys could not be confirmed as revoked on their servers."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld key could not be confirmed as revoked on its server."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld keys could not be confirmed as revoked on their servers."
+                }
+              }
+            }
           }
         }
       }
@@ -6877,24 +6904,25 @@
         }
       }
     },
-    "work.countLine": {
+    "work.count": {
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d issues"
-          }
-        }
-      }
-    },
-    "work.countOne": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 issue"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld issue"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld issues"
+                }
+              }
+            }
           }
         }
       }
@@ -7420,9 +7448,21 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d questions"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld question"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld questions"
+                }
+              }
+            }
           }
         }
       }

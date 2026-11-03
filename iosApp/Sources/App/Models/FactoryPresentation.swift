@@ -67,8 +67,7 @@ struct ExpiryPresentation: Equatable {
             (text, tone) = (ShellLabel.expiryExpired.text, .warn)
         case .valid, .expiringSoon:
             let days = expiry.daysLeft?.intValue ?? 0
-            let label = days == 1 ? ShellLabel.expiryDaysOne.text : ShellLabel.expiryDaysOther.text(days)
-            (text, tone) = (label, expiry.state == .expiringSoon ? .warn : .neutral)
+            (text, tone) = (ShellLabel.expiryDays.plural(days), expiry.state == .expiringSoon ? .warn : .neutral)
         }
     }
 }

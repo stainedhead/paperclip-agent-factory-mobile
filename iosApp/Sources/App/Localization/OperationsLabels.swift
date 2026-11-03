@@ -45,8 +45,7 @@ enum FactoryLabel: String, CaseIterable, CatalogKey {
 enum AgentsLabel: String, CaseIterable, CatalogKey {
     static var catalogNamespace: String { "agents" }
 
-    case countLine
-    case countOne
+    case count
     case filtersLabel
     case filterAll
     case filterRunning

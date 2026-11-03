@@ -112,12 +112,12 @@ struct SettingsView: View {
                 .accessibilityIdentifier("settings-key-outcome")
         }
         if state.unconfirmedRevokes > 0 {
-            Text(ShellLabel.settingsUnconfirmedRevokes.text(Int(state.unconfirmedRevokes)))
+            Text(ShellLabel.settingsUnconfirmedRevokes.plural(Int(state.unconfirmedRevokes)))
                 .font(Typography.secondary).foregroundStyle(Palette.warn.color)
                 .accessibilityIdentifier("settings-unconfirmed")
         }
         if state.signOutFailures > 0 {
-            Text(ShellLabel.settingsSignOutFailures.text(Int(state.signOutFailures)))
+            Text(ShellLabel.settingsSignOutFailures.plural(Int(state.signOutFailures)))
                 .font(Typography.secondary).foregroundStyle(Palette.destructive.color)
                 .accessibilityIdentifier("settings-signout-failures")
         }

@@ -9,6 +9,11 @@ protocol CatalogKey {
 }
 
 extension CatalogKey {
+    /// The text for a catalog entry that has plural variations, for `count`.
+    func plural(_ count: Int) -> String { L10n.plural(catalogKey, count) }
+}
+
+extension CatalogKey {
     var catalogKey: String { "\(Self.catalogNamespace).\(self)" }
 }
 
@@ -45,6 +50,11 @@ enum L10n {
     /// The catalog text for a raw key, or the key itself when it is missing so a gap is visible, never blank.
     static func resolve(_ key: String) -> String {
         Bundle.main.localizedString(forKey: key, value: key, table: nil)
+    }
+
+    /// A count in the person's language: the catalog's plural variation for `count` ("1 key", "2 keys").
+    static func plural(_ key: String, _ count: Int) -> String {
+        String.localizedStringWithFormat(resolve(key), count)
     }
 
     private static func format(_ template: String, _ arguments: [CVarArg]) -> String {
@@ -137,12 +147,10 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case factoriesCurrent
     case factoriesLoadingCompanies
     case factoriesCompanySelected
-    case expiryDaysOne
-    case expiryDaysOther
+    case expiryDays
     case expiryExpired
     case statusKeyExpired
-    case manageCountOne
-    case manageCountOther
+    case manageCount
     case manageHint
     case manageRemoveAction
     case manageMoveUp

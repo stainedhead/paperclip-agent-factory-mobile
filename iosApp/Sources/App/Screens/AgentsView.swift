@@ -65,7 +65,7 @@ private struct AgentsScreen: View {
         FactorySwitcher(environment: environment, identifier: "agents-switcher")
         if state.phase == .content {
             HStack(spacing: Spacing.medium) {
-                Text(rows.count == 1 ? AgentsLabel.countOne.text : AgentsLabel.countLine.text(rows.count))
+                Text(AgentsLabel.count.plural(rows.count))
                     .font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
                     .accessibilityIdentifier("agents-count")
                 UpdatedLabel(epochMillis: state.updatedAtEpochMillis?.int64Value)
