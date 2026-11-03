@@ -121,13 +121,6 @@ final class SettingsUITests: XCTestCase {
         let app = openSettings()
         XCTAssertTrue(app.textFields["settings-device-name"].waitForExistence(timeout: 10))
         let findings = try auditAccessibility(app, screen: "settings")
-        // Listed in implementation-notes.md: items under the floating tab bar ("Sign out everywhere", the help text)
-        // and "Text clipped" on rows. Anything else fails.
-        let known = [
-            "Text clipped", "Contrast nearly passed", "Dynamic Type font sizes", "| Sign out everywhere",
-            "come from each factory"
-        ]
-        let others = findings.filter { finding in !known.contains { finding.contains($0) } }
-        XCTAssertTrue(others.isEmpty, others.joined(separator: "\n"))
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 }

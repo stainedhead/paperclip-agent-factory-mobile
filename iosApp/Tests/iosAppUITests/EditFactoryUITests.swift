@@ -157,8 +157,6 @@ final class EditFactoryUITests: XCTestCase {
         let app = open("edit:demo-home")
         XCTAssertTrue(app.element("edit-access-company-company-acme").waitForExistence(timeout: 10))
         let findings = try auditAccessibility(app, screen: "edit-factory")
-        let known = ["Text clipped", "| Cancel", "| Save", "Contrast nearly passed", "Dynamic Type font sizes"]
-        let others = findings.filter { finding in !known.contains { finding.contains($0) } }
-        XCTAssertTrue(others.isEmpty, others.joined(separator: "\n"))
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 }

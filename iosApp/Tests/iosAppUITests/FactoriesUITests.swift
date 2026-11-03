@@ -62,11 +62,6 @@ final class FactoriesUITests: XCTestCase {
         let app = openFactories()
         XCTAssertTrue(app.buttons["company-chip-demo-home-company-acme"].waitForExistence(timeout: 10))
         let findings = try auditAccessibility(app, screen: "factories")
-        // Listed in implementation-notes.md: the system nav-bar "Edit" button (glass material), "Add a factory" half
-        // under the floating tab bar, and "Text clipped" on the address lines. Anything else fails.
-        let others = findings.filter { finding in
-            !["| Edit", "Add a factory", "Text clipped"].contains { finding.contains($0) }
-        }
-        XCTAssertTrue(others.isEmpty, others.joined(separator: "\n"))
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 }

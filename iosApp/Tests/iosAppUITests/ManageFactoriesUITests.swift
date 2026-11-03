@@ -99,10 +99,6 @@ final class ManageFactoriesUITests: XCTestCase {
     func testAccessibilityAuditOfManageFactories() throws {
         let app = openManage()
         let findings = try auditAccessibility(app, screen: "manage-factories")
-        // Listed in implementation-notes.md: system glass "Done", list header/footer contrast and Dynamic Type notes,
-        // and "Text clipped" on rows. Anything else fails.
-        let known = ["Text clipped", "| Done", "Contrast nearly passed", "Dynamic Type font sizes"]
-        let others = findings.filter { finding in !known.contains { finding.contains($0) } }
-        XCTAssertTrue(others.isEmpty, others.joined(separator: "\n"))
+        XCTAssertTrue(findings.isEmpty, findings.joined(separator: "\n"))
     }
 }
