@@ -65,6 +65,25 @@ struct TabBarAccessibilityValues: UIViewControllerRepresentable {
             applyValues()
         }
 
+        // UIKit rebuilds the bar's items at moments no SwiftUI state announces (a sheet over the tabs closing, a
+        // detail screen's bar coming back). Looking again twice a second is cheap: nothing changes unless an item has
+        // lost its value.
+        private var timer: Timer?
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            timer?.invalidate()
+            timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.applyValues() }
+            }
+        }
+
+        override func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
+            timer?.invalidate()
+            timer = nil
+        }
+
         override func viewDidLayoutSubviews() {
             super.viewDidLayoutSubviews()
             applyValues()
