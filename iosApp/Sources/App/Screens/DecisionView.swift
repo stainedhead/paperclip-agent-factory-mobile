@@ -205,6 +205,13 @@ private struct DecisionScreen: View {
                 if let reason = state.actionsDisabledReason {
                     DisabledReasonView(reason: reason)
                 }
+                if let chosen = state.options.first(where: { $0.id == state.selectedOptionId }) {
+                    // The bar restates what the tap will do, so the choice is in front of the button that confirms it.
+                    Text("\(DecisionLabel.selected.text): \(chosen.label)")
+                        .font(Typography.secondary).foregroundStyle(Palette.textSecondary.color)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("decision-chosen")
+                }
                 AdaptiveStack(spacing: Spacing.large) {
                     Button(DecisionLabel.dismiss.text) { model.dismiss() }
                         .buttonStyle(.app(.secondary))
