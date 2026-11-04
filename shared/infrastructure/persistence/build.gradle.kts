@@ -42,4 +42,10 @@ kotlin {
             implementation(libs.sqldelight.driver.sqlite)
         }
     }
+    // The emulator tests drive the real Android SQLite driver with the shared fakes and fixtures.
+    sourceSets.matching { it.name == "androidDeviceTest" }.configureEach {
+        dependencies {
+            implementation(project(":shared:testing"))
+        }
+    }
 }
