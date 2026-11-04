@@ -399,6 +399,53 @@
     <string name="snooze_tomorrow">Tomorrow</string>
     <string name="snooze_next_week">Next week</string>
 
+    <!-- Decision (screen 2). -->
+    <string name="decision_nav_title">Decision</string>
+    <string name="decision_proposed_by">Proposed by %1$s</string>
+    <string name="decision_expires">Expires %1$s</string>
+    <string name="decision_options">Options</string>
+    <string name="decision_effect_strict">Skipped if the issue changed since it was proposed</string>
+    <string name="decision_no_effects">Changes nothing on any issue</string>
+    <string name="decision_asks_auth">Asks you to confirm with your fingerprint, face or screen lock</string>
+    <string name="decision_destructive">Destructive</string>
+    <string name="decision_selected">Selected</string>
+    <string name="decision_confirm">Confirm choice</string>
+    <string name="decision_dismiss">Dismiss</string>
+    <string name="decision_snooze">Snooze</string>
+    <string name="decision_working">Working</string>
+    <string name="decision_results">What happened</string>
+    <string name="decision_reason_target_changed">The issue changed after this was proposed.</string>
+    <string name="decision_counter">%1$s / %2$s</string>
+    <string name="decision_final_decided_no_option">This decision was already made.</string>
+    <string name="decision_chosen">Decided</string>
+    <string name="decide_by_today">Decide by today</string>
+    <string name="decide_by_this_week">Decide this week</string>
+    <string name="decide_by_whenever">Decide whenever</string>
+    <string name="decide_by_on_date">Decide by %1$s</string>
+    <string name="decide_by_none">No deadline</string>
+    <string name="effect_comment_on_issue">Posts a comment: %1$s</string>
+    <string name="effect_create_issue">Creates the issue “%1$s”</string>
+    <string name="effect_update_issue_status">Sets the issue status to %1$s</string>
+    <string name="effect_assign_issue">Assigns the issue to %1$s</string>
+    <string name="effect_cancel_issue_tree">Cancels the issue and its sub-issues: %1$s</string>
+    <string name="effect_resolve_blocker">Resolves %1$s blocker(s)</string>
+    <string name="effect_unsupported">Does something this app can\'t describe (%1$s). Open it in the web app to see more.</string>
+    <string name="effect_status_claimed">Started</string>
+    <string name="effect_status_executed">Done</string>
+    <string name="effect_status_skipped">Skipped</string>
+    <string name="effect_status_failed">Failed</string>
+    <string name="effect_status_unknown">Unknown</string>
+    <string name="execution_running">Running the effects</string>
+    <string name="execution_succeeded">All effects ran</string>
+    <string name="execution_partial">Some effects did not run</string>
+    <string name="execution_failed">No effect ran</string>
+    <string name="execution_unknown">The result is not known yet</string>
+    <string name="decision_final_decided">Already decided: %1$s</string>
+    <string name="decision_final_dismissed">This decision was dismissed.</string>
+    <string name="decision_final_expired">This decision expired.</string>
+    <string name="decision_final_cancelled">This decision was cancelled.</string>
+    <string name="decision_final_unknown">This decision is no longer open.</string>
+
     <!-- What the last action said (FeedbackKind and InvalidKey). -->
     <string name="feedback_not_allowed">Your role doesn\'t allow this.</string>
     <string name="feedback_invalid">Check the highlighted field and try again.</string>

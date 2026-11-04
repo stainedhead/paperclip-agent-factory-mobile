@@ -14,8 +14,13 @@ import com.stainedhead.paperclipmobile.domain.IdlePeriod
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.presentation.ActionsDisabledReason
 import com.stainedhead.paperclipmobile.presentation.AddressIssue
+import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
+import com.stainedhead.paperclipmobile.presentation.DecisionFinalKind
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
+import com.stainedhead.paperclipmobile.presentation.EffectKindUi
+import com.stainedhead.paperclipmobile.presentation.EffectStatusUi
 import com.stainedhead.paperclipmobile.presentation.ErrorKey
+import com.stainedhead.paperclipmobile.presentation.ExecutionStatusUi
 import com.stainedhead.paperclipmobile.presentation.FactoryStatusUi
 import com.stainedhead.paperclipmobile.presentation.FeedbackKind
 import com.stainedhead.paperclipmobile.presentation.InboxGroupUi
@@ -133,5 +138,14 @@ class KeyLabelsTest {
     fun everyFeedbackKeyHasText() {
         check("feedback", FeedbackKind.entries, FeedbackKind::stringRes)
         check("invalid", InvalidKey.entries, InvalidKey::stringRes)
+    }
+
+    @Test
+    fun everyDecisionKeyHasText() {
+        check("decide_by", DecideByKindUi.entries, DecideByKindUi::stringRes)
+        check("effect", EffectKindUi.entries, EffectKindUi::stringRes)
+        check("effect_status", EffectStatusUi.entries, EffectStatusUi::stringRes)
+        check("execution", ExecutionStatusUi.entries, ExecutionStatusUi::stringRes)
+        check("decision_final", DecisionFinalKind.entries, DecisionFinalKind::stringRes)
     }
 }

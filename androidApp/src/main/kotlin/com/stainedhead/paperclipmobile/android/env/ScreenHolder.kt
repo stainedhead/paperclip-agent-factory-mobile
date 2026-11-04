@@ -1,8 +1,18 @@
 package com.stainedhead.paperclipmobile.android.env
 
+import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.presentation.AppIntent
 import com.stainedhead.paperclipmobile.presentation.AppState
 import com.stainedhead.paperclipmobile.presentation.AppStateHolder
+import com.stainedhead.paperclipmobile.presentation.ApprovalIntent
+import com.stainedhead.paperclipmobile.presentation.ApprovalState
+import com.stainedhead.paperclipmobile.presentation.ApprovalStateHolder
+import com.stainedhead.paperclipmobile.presentation.BudgetIncidentState
+import com.stainedhead.paperclipmobile.presentation.BudgetIncidentStateHolder
+import com.stainedhead.paperclipmobile.presentation.BudgetIntent
+import com.stainedhead.paperclipmobile.presentation.DecisionIntent
+import com.stainedhead.paperclipmobile.presentation.DecisionState
+import com.stainedhead.paperclipmobile.presentation.DecisionStateHolder
 import com.stainedhead.paperclipmobile.presentation.EditInstanceIntent
 import com.stainedhead.paperclipmobile.presentation.EditInstanceState
 import com.stainedhead.paperclipmobile.presentation.EditInstanceStateHolder
@@ -37,6 +47,8 @@ class ScreenHolder<S, I>(
     val state: StateFlow<S>,
     private val deliver: (I) -> Unit,
     private val release: () -> Unit,
+    /** What the refresh policy needs from the screen, for a screen that refreshes while visible (null for others). */
+    val refreshTarget: RefreshTarget? = null,
     private val inFlight: (S) -> Boolean = { false },
 ) {
     private val closed = AtomicBoolean(false)
@@ -75,3 +87,12 @@ fun SettingsStateHolder.screenHolder() =
 
 fun EditInstanceStateHolder.screenHolder() =
     ScreenHolder<EditInstanceState, EditInstanceIntent>(state, ::onIntent, ::close) { it.isWorking }
+
+fun DecisionStateHolder.screenHolder() =
+    ScreenHolder<DecisionState, DecisionIntent>(state, ::onIntent, ::close, refreshTarget) { it.isWorking }
+
+fun ApprovalStateHolder.screenHolder() =
+    ScreenHolder<ApprovalState, ApprovalIntent>(state, ::onIntent, ::close, refreshTarget) { it.isWorking }
+
+fun BudgetIncidentStateHolder.screenHolder() =
+    ScreenHolder<BudgetIncidentState, BudgetIntent>(state, ::onIntent, ::close, refreshTarget) { it.isWorking }

@@ -76,8 +76,8 @@ fun DetailUnavailable(
     error: ErrorUi?,
     isOffline: Boolean,
     onRetry: () -> Unit,
-    onSignInAgain: () -> Unit,
     modifier: Modifier = Modifier,
+    onSignInAgain: (() -> Unit)? = null,
 ) {
     when (phase) {
         DetailPhase.Loading -> {
