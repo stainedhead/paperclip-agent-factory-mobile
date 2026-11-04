@@ -87,14 +87,16 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T8.8 End-to-end demo-flow test (criterion 2): 14 connected tests on the Pixel_9_Pro emulator, all passing (ADR-136)
   - [x] T8.9 Emulator live-graph smoke (criteria 4, 5, 6): everything that needs no server executed and passing; the pairing against the pinned server was NOT executed (Docker daemon would not start here); fingerprint enrolment and the system prompt on a destructive action were NOT proven (ADR-137)
 - [ ] 2a-9 Documentation, screenshots, release gate
-  - [ ] T9.1 README, product-summary, product-details
-  - [ ] T9.2 `user-docs/` Android notes
+  - [x] T9.1 README, product-summary, product-details (Android column naming the proving tests and the parity ledger), technical-details (current counts), AGENTS.md (Android UI test row, android.yml row, device-test row), ADR-138
+  - [x] T9.2 `user-docs/` Android notes; 20 Roborazzi images copied to `docs/images/android-*.png`, 8 to `user-docs/images/` (demo only, never pairing)
   - [ ] T9.3 Map main PRD acceptance criteria 1 to 9 and 11 to 13 to named Android tests in `status.md`
   - [ ] T9.4 Close status, run `/dev-flow:review-code`, fix findings one commit each, archive the spec
 
 - 2026-11-04: milestone 2a-7 implemented (T7.1 to T7.3): Work list, Issue (header, subtasks, Thread, Plan, Runs, Files, comment bar, status and assignee menus), the five interaction forms and the web-app door for unsupported kinds, placeholders removed. Gates: spotlessCheck, detekt, lint, konsistTest, allTests, :androidApp:testDebugUnitTest (482, 0 failures), :androidApp:verifyRoborazziDebug (55 baselines, 6 new), assembleDebug and assembleRelease. Emulator smoke on Pixel_9_Pro (demo): Work list and a subtask's Issue. Attachments cannot be opened (no shared port, ADR-064): reported. ADR-131.
 
 - 2026-11-04: milestone 2a-8 completed (T8.6, T8.8, T8.9). `:androidApp:benchmark` with baseline profile and nightly CI job (ADR-135), 14 connected demo-flow tests (ADR-136), live proofs that need no server plus an unrun pairing script (ADR-137). Measured: cold start to the Inbox with content 307 ms median of 10 on the emulator; the 5% jank budget is not met on the emulator. The pairing against the pinned server, fingerprint enrolment and the real prompt on a destructive action were not executed.
+
+- 2026-11-04: T9.1 and T9.2 done (documentation). Numbers recorded from the JUnit XML after running the suites: `:androidApp:testDebugUnitTest` 538 tests in 80 classes, 0 failures; Konsist 102 tests in 23 files; `allTests` 0 failures; Kover core 98.03% and presentation 98.10% (unchanged); 73 PNG files in the screenshot directory. False claims fixed: the iPhone Files tab was documented as opening files in the web app (it lists them and shows a note, like Android), README and getting-started still said live adapters were not wired and named a stale branch, the main PRD said Android secrets use an encrypted DataStore file (they are Keystore-wrapped record files in `noBackupFilesDir`), the Android PRD module table named old constructors. T9.3 (acceptance mapping) and T9.4 (review and archive) are not done.
 
 ## Main PRD acceptance criteria mapping (filled in T9.3)
 
