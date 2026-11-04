@@ -46,10 +46,10 @@ Test first; shared first, UI second; fakes behind seams (`KeystoreBackend`, `Aut
 
 1. AGP 9.5 built-in Kotlin for an application module (Q5): verify at T0.1.
 2. Exact `withDeviceTest {}` DSL and instrumentation dependencies in the KMP library plugin (Q2): verify at T0.7.
-3. Roborazzi plus Robolectric plus JUnit 5/Vintage (Q6): decide at T0.1.
-4. Where the Macrobenchmark module lives and whether the CI emulator can run it per PR (Q7).
-5. Behaviour on a corrupt or undecryptable Keystore record that is not an invalidation: `Missing` (proposed) vs `Failed` semantic for reads (reads have no failure value).
-6. The PRD's counts (16 state holders, 381 JVM tests, 98% coverage, 67 Konsist rules, 28 Swift files) were not re-verified in this step.
+3. Roborazzi plus Robolectric plus JUnit 5/Vintage (Q6): DECIDED in review (spec section 13): JUnit 4 + Robolectric for Compose/Roborazzi, JUnit 5 for pure tests via Vintage if the pinned platform has it, else JUnit 4 throughout; wired and verified in T0.8.
+4. DECIDED in review: `:androidApp:benchmark` (`com.android.test`), T8.6; not per PR (on demand, nightly, release gate).
+5. DECIDED in review: `Missing` (reads have no failure value; never plaintext); tests in T1.1 and T1.2.
+6. RESOLVED in review (2026-11-04): counts re-verified against the code. 16 state holders (16 `*StateHolder` classes in `shared/presentation`), 381 presentation JVM tests and 98% coverage (as documented in `docs/technical-details.md`), 67 Konsist tests in 16 files (counted with the same regex as `DocumentedCountsRulesTest`), 376 Swift Testing cases, 131 XCUITests. The PRD's "28 Swift files" was wrong: `iosApp/Sources/App/Screens` has 24 Swift files (83 Swift files under `App` in total); the PRD is corrected.
 
 ## References
 

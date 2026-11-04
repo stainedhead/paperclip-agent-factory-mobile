@@ -76,6 +76,7 @@ androidApp (Compose) ──► shared/umbrella (graph) ──► presentation �
 | `shared/infrastructure/securestore` | `KeystoreSecretStore(context)` + internal `KeystoreBackend` seam (mirrors iOS `KeychainBackend`) | `androidMain`, tests in `androidDeviceTest` + `androidHostTest` (fake backend) |
 | `shared/infrastructure/platform` | `BiometricPromptBiometrics(host)`, `ConnectivityManagerConnectivity(context)` | `androidMain`, `androidDeviceTest` |
 | `shared/umbrella` | `AndroidLivePlatform` (internal) in `androidMain`; public `AndroidLiveGraph.openLiveGraph(context, allowInsecureLocal, pairingBrowser, settings)` (`@Throws`-equivalent: returns a result type, see below); replaces the `error(...)` in `defaultLivePlatform()` | `androidMain`, `androidHostTest` |
+| `androidApp/benchmark` (new, `com.android.test`; added in spec review) | Macrobenchmark `StartupBenchmark`, frame timing, baseline profile generator (task 8.6) | `main` |
 | `gradle/libs.versions.toml` | Compose BOM, activity-compose, navigation-compose, lifecycle-runtime-compose, androidx.biometric, androidx.browser, datastore (see Dependencies), Roborazzi, Compose UI test | catalog only |
 | `.github/workflows/android.yml` (new) | lint, unit, screenshot tests, `assembleRelease`, instrumented tests on an emulator | CI |
 
@@ -113,7 +114,7 @@ Package `com.stainedhead.paperclipmobile.android`. One Activity (`MainActivity`,
 | `Shell/LockView`, `PrivacyShieldController` | `shell/LockScreen`, `PrivacyShield` (see Security) |
 | `Shell/ConfirmSheet`, `ConfirmDestructiveSheet` | `ModalBottomSheet` composables with the lock glyph on gated buttons |
 | `Pairing/ASWebAuthSessionPairingBrowser.swift` | `pairing/CustomTabsPairingBrowser.kt` |
-| `Screens/*.swift` (28 files) | `screens/*Screen.kt` (one per screen, plus the same sub-views) |
+| `Screens/*.swift` (24 files) | `screens/*Screen.kt` (one per screen, plus the same sub-views) |
 
 Navigation mirrors the iOS router: five top-level destinations (Inbox, Factory, Work, Agents, Factories), each with its own back stack kept across tab switches (`NavHost` per tab, `saveState`/`restoreState`); routes `editFactory`, `settings`, `pairedDevices`, `manageFactories`, `decision`, `approval`, `agent`, `run`, `issue`; sheets `budgetIncident` and `settings`. The Inbox tab badge shows `deskBadgeCount` from the shared state.
 
@@ -296,8 +297,8 @@ README status, `docs/product-summary.md`, `docs/product-details.md` (Android col
 |---|---|---|---|
 | Rules and state | shared `commonTest` | existing | Unchanged. Any new rule found missing is added here first. |
 | New Android services | `androidHostTest` + `androidDeviceTest` | kotlin.test, fake backends, emulator | Contract suites for `SecretStore`, `Biometrics`; Keystore invalidation; no secret in DB/backups |
-| Presentation mapping | `androidApp/src/test` (JVM) | JUnit 5, Kotest assertions | `*Presentation.kt` formatting, key→string completeness, route table, `HolderViewModel` lifecycle |
-| Compose screens | `androidApp/src/test` (Robolectric-free where possible) and `androidTest` | Compose UI test, semantic tags | Per-screen demo values, flows, role/offline variants; call counters through the demo graph prove gating |
+| Presentation mapping | `androidApp/src/test` (JVM) | JUnit 5 (Vintage engine alongside JUnit 4, see spec section 13), Kotest assertions | `*Presentation.kt` formatting, key→string completeness, route table, `HolderViewModel` lifecycle |
+| Compose screens | `androidApp/src/test` (JUnit 4 + Robolectric, decided in spec review; Compose UI test and Roborazzi require it) and `androidTest` | Compose UI test, semantic tags | Per-screen demo values, flows, role/offline variants; call counters through the demo graph prove gating |
 | Screenshots | `androidApp/src/test` | Roborazzi | Light/dark, font scale 1.0 and 2.0, small and large phones; images feed the docs |
 | Accessibility | `androidTest` | Compose accessibility checks, Espresso `AccessibilityChecks` | One pass per screen family; failures are recorded honestly in an ADR as on iPhone (ADR-111/119) |
 | Architecture | `shared/umbrella/src/konsistTest` | Konsist | `androidApp` import rules, no literals in `Text`, no `reveal`, no direct `BiometricPrompt` in composables; planted-violation self-tests |

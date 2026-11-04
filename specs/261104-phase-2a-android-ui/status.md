@@ -8,7 +8,7 @@ Update this file after every task and phase. It is the single source of progress
 
 | Phase | State |
 |---|---|
-| Phase 0 Specification | In Progress (spec files created; `/dev-flow:review-spec` not yet run) |
+| Phase 0 Specification | Complete (review run 2026-11-04, gaps resolved in the spec files) |
 | Phase 1 Research and data model | Not Started (initial `research.md` and `data-dictionary.md` drafted) |
 | Phase 2 Architecture and plan | Not Started (drafts exist) |
 | Phase 3 Task breakdown | Not Started (draft in `tasks.md`) |
@@ -20,18 +20,19 @@ Update this file after every task and phase. It is the single source of progress
 - [x] Spec created from the PRD
 - [x] Research questions identified
 - [x] Phase files initialized
-- [ ] `/dev-flow:review-spec` run
+- [x] `/dev-flow:review-spec` run (2026-11-04): verdict Implementation-ready after revisions; see Recent activity
 
 ## Milestones and tasks
 
-- [ ] 2a-0 Foundations (androidApp skeleton, catalog, CI, device-test source set)
+- [ ] 2a-0 Foundations (androidApp skeleton, catalog, device-test source set, test runner, CI; order T0.1 to T0.4, T0.6, T0.7, T0.8, T0.5)
   - [ ] T0.1 Add `:androidApp`
   - [ ] T0.2 Version catalog entries
   - [ ] T0.3 Manifest and resources: only the launcher Activity exported, `allowBackup=false`, `dataExtractionRul
   - [ ] T0.4 Include `androidApp` in detekt, Spotless/ktlint, Android Lint
-  - [ ] T0.5 `.github/workflows/android.yml`
   - [ ] T0.6 Konsist rules for `androidApp`
   - [ ] T0.7 Enable `withDeviceTest {}`
+  - [ ] T0.8 Test runner decision and wiring (JUnit 4 + Robolectric for Compose/Roborazzi; ADR)
+  - [ ] T0.5 `.github/workflows/android.yml` (after T0.7 and T0.8)
 - [ ] 2a-1 Android device services (shared PR, merges before UI)
   - [ ] T1.1 `KeystoreBackend` seam + `KeystoreSecretStore` over `FakeKeystoreBackend`
   - [ ] T1.2 Real backend: AES-256-GCM key
@@ -81,8 +82,10 @@ Update this file after every task and phase. It is the single source of progress
   - [ ] T8.3 Dark theme, dynamic-color neutrals, 360x640 dp and large phones, reduced motion, haptics, adaptive i
   - [ ] T8.4 Recents and `FLAG_SECURE` behaviour on API 28, 33, latest
   - [ ] T8.5 R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and l
-  - [ ] T8.6 Baseline profile, Macrobenchmark cold start
+  - [ ] T8.6 `:androidApp:benchmark` module, baseline profile, Macrobenchmark cold start
   - [ ] T8.7 Merged-manifest permission / exported-component test
+  - [ ] T8.8 End-to-end demo-flow test (criterion 2)
+  - [ ] T8.9 Emulator live-graph smoke (criteria 4, 5, 6)
 - [ ] 2a-9 Documentation, screenshots, release gate
   - [ ] T9.1 README, product-summary, product-details
   - [ ] T9.2 `user-docs/` Android notes
@@ -106,3 +109,4 @@ None.
 ## Recent activity
 
 - 2026-11-04: spec created from the PRD (`/dev-flow:create-spec`).
+- 2026-11-04: `/dev-flow:review-spec`. Added T0.8 (test runner), T8.8, T8.9; reordered 2a-0; benchmark module added to the module tables; Keystore Missing-on-undecryptable and `namespaces()` tests added to T1.1/T1.2; edge-case, decisions and open-question sections added to spec.md; traceability tables added to tasks.md; PRD "28 Swift files" corrected to 24. Task count 57.

@@ -81,6 +81,7 @@ New and changed modules:
 | `build-logic` (`pafm.kmp-library`) | `withDeviceTest {}` for the modules that need it |
 | `gradle/libs.versions.toml` | Compose BOM, activity/navigation/lifecycle compose, biometric, browser, splashscreen, profileinstaller, Roborazzi, UI test |
 | `.github/workflows/android.yml` | lint, unit, screenshot verify, assembleRelease, emulator job |
+| `androidApp/benchmark` (new, `com.android.test`) | Macrobenchmark `StartupBenchmark`, frame-timing fling, baseline profile generator (T8.6); runs on demand, nightly and at the release gate, not per PR |
 
 ## 7. Scope of changes
 
@@ -98,13 +99,45 @@ The ten acceptance criteria of the PRD apply verbatim (screens reachable with de
 
 ## 10. Risks and mitigation
 
-The eleven risks of the PRD apply (AuthHost and background prompts; Keystore vendor variance; no build types in the KMP library plugin; Compose stability; parallel streams touching `shared/`; flaky emulator CI; permission creep; Custom Tab return detection; signing and R8 ownership; CI emulator without StrongBox; UI drift). Added by this spec: Roborazzi needs Robolectric on the JVM, which conflicts with "Robolectric-free" and with JUnit 5 (see research Q5); a Macrobenchmark module is required but is not in the PRD module table (research Q8).
+The eleven risks of the PRD apply (AuthHost and background prompts; Keystore vendor variance; no build types in the KMP library plugin; Compose stability; parallel streams touching `shared/`; flaky emulator CI; permission creep; Custom Tab return detection; signing and R8 ownership; CI emulator without StrongBox; UI drift). Added by this spec: Roborazzi needs Robolectric on the JVM, which conflicts with "Robolectric-free" and with JUnit 5 (decision in section 13); a Macrobenchmark module is required but is not in the PRD module table (now in section 6).
 
 ## 11. Timeline and milestones
 
 2a-0 Foundations, 2a-1 device services (shared), 2a-2 live graph (shared), 2a-3 shell/design system/first run, 2a-4 Factories family, 2a-5 Inbox/Decision/Approval/Budget, 2a-6 Factory/Agents/Run, 2a-7 Work/Issue, 2a-8 polish and hardening, 2a-9 docs and release gate. 2a-1 and 2a-2 run alongside 2a-0; 2a-4 to 2a-7 are independent after 2a-3. Task breakdown: [tasks.md](./tasks.md). One pull request per milestone, shared first. Calendar dates: [TBD].
 
-## 12. References
+## 12. Edge cases and error paths
+
+- **Keystore:** a record that cannot be decrypted but whose key is not invalidated (corrupt or truncated file, bad tag, record restored without its key, key absent) reads as `Missing`; never plaintext, never `Found` (T1.1, T1.2). `KeyPermanentlyInvalidatedException` reads as `Invalidated`. Cancelled authentication, `UserNotAuthenticatedException`, lockout read as `Denied`. Any storage or crypto failure on write is `Failed`. Concurrent writes to one key leave one complete record (temp file plus atomic rename, per-key mutex). StrongBox absent falls back to the TEE; no fallback to unprotected storage. `namespaces()` returns names only, never decrypts and never prompts (T1.1, T1.2).
+- **Biometrics:** no resumed activity, no hardware, none enrolled (with `DEVICE_CREDENTIAL` allowed: no device credential) or security update required is `Unavailable`; an activity recreated mid-prompt cancels the prompt, which is `Cancelled` and blocks the mutation. Nothing but `Approved` runs a mutation.
+- **Connectivity:** the initial value is read from the current default network before the callback fires; callback registration failure is treated as offline (fail closed for mutations, reads use the cache).
+- **Live graph:** database or Keystore open failure returns `Unavailable` with nothing left open; Try again re-runs once per tap; the graph opens once per process.
+- **Pairing:** no Custom Tabs provider falls back to `ACTION_VIEW`; no handler at all ends the attempt through `finished()` and the shared flow shows its cancelled state; process death mid-pairing restarts at the address step and restores nothing secret (T3.7, T3.8).
+- **Process death and rotation:** holders survive rotation, are closed on leaving the back stack; after process death a screen that had a mutation in flight re-reads the entity and shows `MutationResult.Unknown` wording; mutations are never auto-retried or replayed on restore.
+- **Backup and restore:** `allowBackup=false` plus `dataExtractionRules` excluding everything; if a record file ever appears without its Keystore key it reads as `Missing` and the factory shows signed out.
+- **Permissions:** only INTERNET, ACCESS_NETWORK_STATE, USE_BIOMETRIC; a merged-manifest test fails on any other permission or exported component (T0.3, T8.7).
+- **Empty and offline:** empty lists, viewer role and offline render the shared keys with their reasons; no action is enabled on stale data.
+
+## 13. Decisions made in this review and open questions
+
+Decisions (recorded here; ADRs are written in the named task):
+
+1. **Test runner (T0.8, planned ADR).** Compose UI tests and Roborazzi in `androidApp/src/test` run on JUnit 4 + Robolectric (both libraries require it). Pure-JVM tests stay JUnit 5 on the same task via the Vintage engine if the pinned JUnit platform ships it; otherwise the whole `androidApp` unit-test source set is JUnit 4 with Kotest assertions. Shared modules keep kotlin.test / JUnit 5. This supersedes the PRD's "Robolectric-free where possible" and the AGENTS.md "JUnit 5" entry for Android UI; AGENTS.md is amended in T9.1.
+2. **Macrobenchmark module (T8.6).** `:androidApp:benchmark` (`com.android.test`); not per PR; recorded in `status.md`.
+3. **Undecryptable-but-not-invalidated record:** `Missing` (T1.1, T1.2).
+4. **`SecretStore.namespaces()`** is implemented by `KeystoreSecretStore` and covered by the contract suite and the device test (T1.1, T1.2).
+5. **CI task ordering:** T0.5 follows T0.7 and T0.8 (execution order in `tasks.md`).
+6. PRD defaults accepted for its six open questions (see the header). Emulator job per PR is for the small instrumented set only; benchmarks are not per PR.
+
+Open questions that remain, each with a resolution path (none blocks starting 2a-0):
+
+| # | Question | Owner | Resolved by |
+|---|---|---|---|
+| 1 | Does AGP 9.5 need an extra Kotlin plugin for `androidApp`? (research Q5) | implementer | first `:androidApp:assembleDebug` in T0.1; record in `implementation-notes.md` |
+| 2 | Exact `withDeviceTest {}` DSL in the KMP library plugin | implementer | T0.7 against AGP 9.5 docs; fallback is a recorded ADR |
+| 3 | Does the pinned JUnit platform ship a Vintage engine? | implementer | T0.8 |
+| 4 | Can the CI emulator pair against the pinned server (Custom Tab)? | implementer | T8.9; fallback is the stored-record variant |
+
+## 14. References
 
 - Source PRD: `specs/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md`
 - [../../AGENTS.md](../../AGENTS.md), [../../INTENT.md](../../INTENT.md)

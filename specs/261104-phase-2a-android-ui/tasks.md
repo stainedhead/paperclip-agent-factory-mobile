@@ -4,7 +4,7 @@
 
 ## Progress summary
 
-0 / 54 tasks complete (0 / 10 milestones).
+0 / 57 tasks complete (0 / 10 milestones). Execution order inside 2a-0: T0.1, T0.2, T0.3, T0.4, T0.6, T0.7, T0.8, then T0.5 (CI needs the device-test source set and the test runner). Task ids are stable identifiers, not a sequence; the list below is in execution order. The dependency graph is acyclic; see the Traceability section at the end.
 
 ## Task format
 
@@ -22,21 +22,23 @@ Milestone dependencies: none (parallel with 2a-1, 2a-2)
   - Red: merged-manifest test (release and debug variants) fails on missing attributes and on an extra permission.
 - **T0.4** Include `androidApp` in detekt, Spotless/ktlint, Android Lint (`HardcodedText` as error); zero issues on the skeleton · deps: T0.1 · size: S
   - Red: a planted unformatted / hard-coded-text file fails the gate, then is removed.
-- **T0.5** `.github/workflows/android.yml` (lint, unit, Roborazzi verify, assembleRelease, emulator job); actions SHA-pinned · deps: T0.1, T0.7 · size: M
-  - Red: `CiPinningRulesTest` fails on an unpinned action in the new workflow.
 - **T0.6** Konsist rules for `androidApp` (no `infrastructure.*` imports except umbrella-exposed platform types, no `Secret.reveal`, no `Text("literal")`, composables never call `BiometricPrompt`), each with a planted-violation self-test · deps: T0.1 · size: M
   - Red: a planted-violation test for each rule fails first because the rule does not exist.
 - **T0.7** Enable `withDeviceTest {}` (androidx.test runner, ext-junit, coroutines-test) in `pafm.kmp-library.gradle.kts` for securestore, platform, persistence, umbrella; smoke device test per module; emulator command in `user-docs/getting-started.md` · deps: - · size: M
   - Red: `connectedAndroidDeviceTest` task absent / smoke test not found. Green: runs on an emulator; `./gradlew check` stays device-free.
+- **T0.8** Test runner decision and wiring (ADR, next free number after ADR-120): `androidApp/src/test` uses JUnit 4 + Robolectric (`@RunWith(AndroidJUnit4::class)`) for Compose UI tests and Roborazzi, because both are JUnit 4 and Robolectric based; pure-JVM tests (`*Presentation`, `*Labels`, route table, key-to-string completeness) stay JUnit 5 and run on the same Gradle test task through the JUnit Vintage engine if the pinned JUnit platform (catalog `junit`) ships one; if it does not, the whole `androidApp` unit-test source set is JUnit 4 with Kotest assertions. `androidTest` (instrumented) is JUnit 4 by nature (AndroidJUnitRunner). `shared/**` tests stay on kotlin.test / JUnit 5 as AGENTS.md says. Add a smoke Compose test and a Roborazzi record/verify round trip. Record the result in `implementation-notes.md` and the ADR; AGENTS.md "Where tests live" Android UI row is amended in T9.1 · deps: T0.1, T0.2 · size: M
+  - Red: a Compose smoke test and a Roborazzi verify with no runner configured fail, then pass after wiring; one JUnit 5 pure test and one JUnit 4 Robolectric test both execute in the same unit-test task (or the fallback is recorded).
+- **T0.5** `.github/workflows/android.yml` (lint, unit, Roborazzi verify, assembleRelease, emulator job); actions SHA-pinned · deps: T0.1, T0.7, T0.8 · size: M
+  - Red: `CiPinningRulesTest` fails on an unpinned action in the new workflow.
 
 ## 2a-1 Android device services (shared PR, merges before UI)
 
-Milestone dependencies: T0.7 for device tests; host tests have no dependency
+Milestone dependencies: T0.7 for device tests (T1.2, T1.5); host tests have no dependency
 
-- **T1.1** `KeystoreBackend` seam + `KeystoreSecretStore` over `FakeKeystoreBackend` (androidHostTest); run the shared `SecretStore` contract suite including `namespaces()` · deps: - · size: L
-  - Red: the contract suite fails to compile against the missing class. Refactor: extract shared record encoding.
+- **T1.1** `KeystoreBackend` seam + `KeystoreSecretStore` over `FakeKeystoreBackend` (androidHostTest); run the shared `SecretStore` contract suite including `namespaces()` (names only: no decrypt, no prompt; exactly the factories that hold a record) · deps: - · size: L
+  - Red: the contract suite fails to compile against the missing class. Named tests: `namespaces()` returns exactly the factories with records and is unchanged by a failed `put`; a record that cannot be decrypted but whose key is not invalidated (corrupt ciphertext, bad tag, truncated file, file restored without its key) returns `Missing`, never plaintext and never `Found`; an absent key returns `Missing`; concurrent `put` to one key leaves one complete record (atomic write). Refactor: extract shared record encoding.
 - **T1.2** Real backend: AES-256-GCM key (StrongBox then TEE), `setUserAuthenticationRequired` per policy, atomic file store in `noBackupFilesDir`, exception mapping to Missing/Denied/Invalidated, write results Stored/Failed · deps: T1.1, T0.7 · size: L
-  - Red (androidDeviceTest): round trip; new-enrolment invalidation reports `Invalidated`; no plaintext in files or DB.
+  - Red (androidDeviceTest): round trip; new-enrolment invalidation reports `Invalidated`; no plaintext in files or DB; a record file with flipped bytes returns `Missing` (not `Invalidated`, not plaintext, no crash); `namespaces()` lists the factory namespaces from the real record files without using `Cipher` (no authentication prompt); `deleteNamespace` removes only that factory's files; StrongBox-absent fallback to TEE through the backend seam.
 - **T1.3** `BiometricPromptBiometrics` + `AuthHost`; map outcomes to the five `BiometricResult` values; `Biometrics` contract suite with a scripted prompt shim · deps: - · size: L
   - Red: contract suite plus per-outcome mapping tests (cancel, lockout, no activity, no hardware).
 - **T1.4** `ConnectivityManagerConnectivity`: default-network callback to `StateFlow<Boolean>` (validated capability), `close()` unregisters · deps: - · size: M
@@ -50,7 +52,7 @@ Milestone dependencies: T0.7 for device tests; host tests have no dependency
 
 ## 2a-2 Android live graph entry point (shared PR)
 
-Milestone dependencies: T1.1, T1.3, T1.4
+Milestone dependencies: T1.1, T1.3, T1.4, T1.5
 
 - **T2.1** `AndroidLivePlatform` (internal `LivePlatform`) with Keystore store, BiometricPrompt, ConnectivityManager, `openAndroidPersistence`, system clock/id/timezone; `release()` closes connectivity · deps: T1.1, T1.3, T1.4, T1.5 · size: M
   - Red: host test resolving every port as real and asserting `release()` unregisters.
@@ -65,11 +67,11 @@ Milestone dependencies: T1.1, T1.3, T1.4
 
 Milestone dependencies: 2a-0, 2a-2
 
-- **T3.1** `PaperclipApplication`, `AppEnvironment`, `AppGraphProvider` (Demo / FirstRunDemo / Live), `LaunchConfiguration` (AND-010) · deps: T0.1, T2.2 · size: M
-  - Red: provider tests: demo extra only in debug; Unavailable shows the notice and a closed stand-in graph, never fakes.
+- **T3.1** `PaperclipApplication`, `AppEnvironment`, `AppGraphProvider` (Demo / FirstRunDemo / Live), `LaunchConfiguration` (AND-010); `ProcessLifecycleOwner` to `graph.lifecycle.setForeground` · deps: T0.1, T0.8, T2.2 · size: M
+  - Red: provider tests: demo extra only in debug; Unavailable shows the notice and a closed stand-in graph, never fakes, and Try again re-opens once; background stops refresh sessions and foreground resumes them (acceptance criterion 7).
 - **T3.2** `HolderViewModel<S,I>` and lifecycle tests: clear closes the holder, rotation does not (AND-011) · deps: T3.1 · size: M
   - Red: per-holder-type ViewModel lifecycle tests.
-- **T3.3** Design system: theme, tokens, `AttentionCard`, `StatusPill`, `SeverityLabel`, `UpdatedLabel`, `DisabledReason`, `ErrorBanner`, `EmptyState`, `Motion`, previews (AND-015) · deps: T0.1 · size: L
+- **T3.3** Design system: theme, tokens, `AttentionCard`, `StatusPill`, `SeverityLabel`, `UpdatedLabel`, `DisabledReason`, `ErrorBanner`, `EmptyState`, `Motion`, previews (AND-015) · deps: T0.1, T0.8 · size: L
   - Red: contrast and 48 dp target tests on tokens and components.
 - **T3.4** `strings.xml` + `*Labels.kt`; "every key enum entry has a string" test (AND-016, AND-017) · deps: T3.3 · size: M
   - Red: completeness test fails on the first unmapped entry of each key enum.
@@ -78,10 +80,10 @@ Milestone dependencies: 2a-0, 2a-2
 - **T3.6** `AuthHost` registration in `MainActivity`, confirm sheets with lock glyph, `LockScreen`, `PrivacyShield` / `FLAG_SECURE` (AND-013, AND-014) · deps: T1.3, T3.5 · size: L
   - Red: Compose tests with scripted `Biometrics`: cancel or failed means zero mutation calls; lock engages after idle; FLAG_SECURE on lock and pairing screens.
 - **T3.7** `CustomTabsPairingBrowser` over `CallbackPairingBrowser`, and the First-run screen (AND-020) · deps: T3.5, T3.6 · size: L
-  - Red: demo launch reaches first run; "Try the demo factory" reaches the Inbox shell; both Custom Tab return paths call `finished()`.
+  - Red: demo launch reaches first run; "Try the demo factory" reaches the Inbox shell; both Custom Tab return paths call `finished()`; no Custom Tabs provider falls back to a plain `ACTION_VIEW`; no handler at all ends the attempt through `finished()` so the shared pairing flow shows its cancelled state (no crash, no stuck wait).
 - **T3.8** Process death and configuration change: `SavedStateHandle` for route stack and selection, `rememberSaveable` for free text except pairing (AND-019) · deps: T3.5 · size: M
   - Red: recreate-activity and process-death-simulation tests; no secrets restored.
-- **T3.9** Roborazzi wiring and light/dark shell baselines · deps: T3.3 · size: S
+- **T3.9** Roborazzi baselines for the shell (runner wiring is T0.8): light/dark shell baselines · deps: T3.3, T0.8 · size: S
   - Red: verify task fails with no baseline; then record baselines.
 
 ## 2a-4 Factories family (8, 9, 13, 16, Paired devices)
@@ -138,7 +140,7 @@ Milestone dependencies: 2a-3
 
 ## 2a-8 Polish, accessibility, security hardening (AND-070)
 
-Milestone dependencies: 2a-4 to 2a-7
+Milestone dependencies: 2a-4 to 2a-7 (T8.4 to T8.7 need only the tasks they list)
 
 - **T8.1** Font scale 2.0 semantics and screenshots for the named primary actions (not clipped, at least 48 dp) · deps: T4.5, T5.5, T6.3, T7.3 · size: M
   - Red: semantics assertions fail on truncated actions.
@@ -148,25 +150,71 @@ Milestone dependencies: 2a-4 to 2a-7
   - Red: screenshot baselines.
 - **T8.4** Recents and `FLAG_SECURE` behaviour on API 28, 33, latest · deps: T3.6 · size: M
   - Red: device test per API level.
-- **T8.5** R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and live mode · deps: T0.1 · size: L
+- **T8.5** R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and live mode · deps: T0.1, T3.1 · size: L
   - Red: install-and-launch test of the release APK.
-- **T8.6** Baseline profile, Macrobenchmark cold start (Pixel 6, CI emulator), jank guard, `stability_config.conf` · deps: T8.5 · size: M
+- **T8.6** New `com.android.test` module `:androidApp:benchmark` (added to `settings.gradle.kts`, the architecture module table and the Spotless/detekt/Lint/Konsist scope): baseline profile generator, `StartupBenchmark` (`StartupMode.COLD`, median of 10), a `FrameTimingMetric` fling over 200 Inbox cards, `stability_config.conf`. Decision: benchmarks run on demand, nightly and in the 2a-8 release gate, not per PR (release-like build plus emulator or device); the result is recorded in `status.md` · deps: T8.5, T5.1 · size: M
   - Red: the benchmark misses its budget before the profile.
 - **T8.7** Merged-manifest permission / exported-component test; manual Pixel and Samsung pass for BiometricPrompt and StrongBox · deps: T0.3 · size: S
   - Red: merged-manifest test.
+
+- **T8.8** End-to-end demo-flow test (acceptance criterion 2): first run, switch factory and company, decide (non-destructive; destructive with biometric cancelled then approved), approve a hire and reject with note, resolve the budget incident, answer the two agent questions, pause an agent, cancel a run, create an issue, snooze and dismiss with Undo, on the demo graph with call counters · deps: T4.5, T5.5, T6.3, T7.3 · size: M
+  - Red: the flow test fails at the first unreachable step.
+- **T8.9** Emulator live-graph smoke (acceptance criteria 4, 5, 6): a launch without the demo flag opens the real graph at first run; pairing against the pinned Paperclip server where the runner allows (otherwise a stored-record variant); the board key appears only in the Keystore-wrapped record (scan the SQLDelight file, shared preferences, `noBackupFilesDir` and logcat for the token; a `bmgr`/`adb backup` export holds none); enrolling a new fingerprint makes the next read report re-pair-needed; the system biometric prompt appears on a destructive action with enrolled credentials; a release build refuses a stored `http` address · deps: T1.2, T2.3, T3.7, T8.5 · size: L
+  - Red: each assertion fails first on a build without the behaviour (a planted token in a file fails the scan).
 
 ## 2a-9 Documentation, screenshots, release gate
 
 Milestone dependencies: 2a-8
 
-- **T9.1** README, product-summary, product-details (Android column naming the proving tests), technical-details, ADRs · deps: T8.1 to T8.7 · size: M
+- **T9.1** README, product-summary, product-details (Android column naming the proving tests), technical-details (Android modules, device services, entry point, CI row, test counts; the Konsist count if it changes), AGENTS.md (Android UI test row: JUnit 4 + Robolectric for Compose and Roborazzi, JUnit 5 elsewhere; per T0.8), ADRs · deps: T8.1 to T8.9 · size: M
   - Doc gate: the parity ledger has no unlinked gap.
 - **T9.2** `user-docs/` Android notes; Roborazzi screenshots to `docs/images/android-*.png` and `user-docs/images/` (demo only, never pairing) · deps: T9.1 · size: M
   - Doc gate.
-- **T9.3** Map main PRD acceptance criteria 1 to 9 and 11 to 13 to named Android tests in `status.md` · deps: T8.1 to T8.7 · size: S
+- **T9.3** Map main PRD acceptance criteria 1 to 9 and 11 to 13 to named Android tests in `status.md` · deps: T8.1 to T8.9 · size: S
   - All mapped tests pass.
 - **T9.4** Close status, run `/dev-flow:review-code`, fix findings one commit each, archive the spec · deps: T9.1, T9.2, T9.3 · size: M
   - All five workflows green.
+
+## Traceability
+
+Milestone order (acyclic): 2a-0, 2a-1 and 2a-2 run in parallel (2a-1 device tests need T0.7; 2a-2 needs 2a-1) -> 2a-3 (needs 2a-0 and 2a-2) -> 2a-4, 2a-5, 2a-6, 2a-7 in parallel -> 2a-8 -> 2a-9. Inside 2a-0: T0.1, T0.2, T0.3, T0.4, T0.6, T0.7, T0.8, T0.5.
+
+| Requirement | Task(s) |
+|---|---|
+| AND-001 | T1.1, T1.2, T1.6, T8.9 |
+| AND-002 | T1.3, T3.6 |
+| AND-003 | T1.4 |
+| AND-004 | T2.1 to T2.4 |
+| AND-010 | T3.1 |
+| AND-011 | T3.2 |
+| AND-012 | T3.5 |
+| AND-013 | T1.3, T3.6 |
+| AND-014 | T3.6, T8.4 |
+| AND-015 | T3.3, T8.3 |
+| AND-016 | T3.4 |
+| AND-017 | T3.4, T0.4 (Lint), T0.6 (Konsist) |
+| AND-018 | T4.5 |
+| AND-019 | T3.8 |
+| AND-020 | T3.7 |
+| AND-021 to AND-024 | T4.1 to T4.4 |
+| AND-030 | T5.1 |
+| AND-040 to AND-042 | T5.2 to T5.4 (variants T5.5) |
+| AND-050 to AND-052 | T6.1 to T6.3 |
+| AND-060, AND-061 | T7.1 to T7.3 |
+| AND-070 | T8.1 to T8.7 |
+
+| PRD acceptance criterion | Task(s) |
+|---|---|
+| 1 Screens reachable with demo values | per-screen tasks T3.7, T4.1 to T4.5, T5.1 to T5.4, T6.1 to T6.3, T7.1 to T7.3 |
+| 2 Main flows on the demo graph | T8.8 (parts in T5.2 to T5.4, T6.2, T6.3, T7.1, T7.3) |
+| 3 Role and offline variants | T5.5 and per-screen variants |
+| 4 Device authentication | T1.3, T3.6, T8.9 |
+| 5 Secrets | T1.1, T1.2, T1.6, T8.9 |
+| 6 Live graph | T2.2, T2.3, T3.1, T8.9 |
+| 7 Lifecycle | T3.1, T3.2, T3.5, T3.6, T3.8 |
+| 8 Accessibility and localisation | T3.4, T8.1, T8.2, T0.4 |
+| 9 Parity | T9.1, T9.3 |
+| 10 Gates | T0.4, T0.5, T9.4 |
 
 ## Stub example
 

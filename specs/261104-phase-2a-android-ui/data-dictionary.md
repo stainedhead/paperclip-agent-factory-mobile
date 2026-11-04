@@ -26,6 +26,7 @@
 | `AndroidLiveGraph.openLiveGraph(context, allowInsecureLocal, pairingBrowser, settings)` | umbrella / androidMain | returns `AndroidGraphOpen` |
 | `AndroidGraphOpen` | umbrella / androidMain | sealed: `Opened(graph)`, `Unavailable(cause)` |
 | `AndroidLiveSettings` | umbrella / androidMain | prompt texts, key alias (mirrors `IosLiveSettings`) |
+| `:androidApp:benchmark` | `com.android.test` module | `StartupBenchmark`, frame-timing fling, baseline profile generator (T8.6) |
 
 ## Kotlin types added (androidApp)
 
