@@ -212,6 +212,7 @@ class InfrastructureDeviceRulesTest {
                 "NwConnectivity",
                 "AuthHost",
                 "BiometricPromptBiometrics",
+                "ConnectivityManagerConnectivity",
             )
     }
 }
