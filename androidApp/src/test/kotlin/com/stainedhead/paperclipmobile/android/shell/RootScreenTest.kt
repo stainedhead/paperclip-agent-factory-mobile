@@ -21,6 +21,10 @@ import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
 import com.stainedhead.paperclipmobile.android.env.demoOpen
 import com.stainedhead.paperclipmobile.android.env.firstRunOpen
 import com.stainedhead.paperclipmobile.android.env.unavailable
+import com.stainedhead.paperclipmobile.domain.IdlePeriod
+import com.stainedhead.paperclipmobile.domain.port.BiometricResult
+import com.stainedhead.paperclipmobile.presentation.AppIntent
+import com.stainedhead.paperclipmobile.presentation.SettingsIntent
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +45,7 @@ class RootScreenTest {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var environment: AppEnvironment? = null
+    private var autoUnlock = true
 
     @After
     fun tearDown() {
@@ -51,15 +56,18 @@ class RootScreenTest {
     private fun show(
         provider: ScriptedProvider,
         secure: MutableList<Boolean> = mutableListOf(),
+        unlock: Boolean = true,
     ) {
         val env = AppEnvironment(provider, scope, demoEntryAvailable = true).also { environment = it }
+        autoUnlock = unlock
         rule.setContent {
             PaperclipTheme(darkTheme = false) {
                 RootScreen(
                     environment = env,
                     lock = { actions ->
                         Text("lock screen")
-                        LaunchedEffect(Unit) { actions.onUnlock() }
+                        actions.issue?.let { Text("issue $it") }
+                        if (autoUnlock) LaunchedEffect(Unit) { actions.onUnlock() }
                     },
                     firstRun = { _, _ -> Text("first run screen") },
                     tabs = { _, badge -> AppTabs(badge) },
@@ -95,6 +103,47 @@ class RootScreenTest {
         rule.onNodeWithTag("tab-Inbox").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3 waiting"),
         )
+    }
+
+    @Test
+    fun theLockEngagesAgainAfterTheIdlePeriod() {
+        show(ScriptedProvider(GraphMode.Demo, listOf(::demoOpen)))
+        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("tab-Inbox") }
+        val graph = checkNotNull(environment?.session?.value?.graph)
+        graph.createSettingsStateHolder().onIntent(SettingsIntent.IdlePeriodChosen(IdlePeriod.Immediately))
+        autoUnlock = false
+
+        // The new period reaches the app holder asynchronously, so each trip to the background and back is repeated
+        // until the lock engages.
+        rule.waitUntil(WAIT_MILLIS) {
+            environment?.setForeground(false)
+            environment?.setForeground(true)
+            rule.hasText("lock screen")
+        }
+    }
+
+    @Test
+    fun aCancelledUnlockStaysLockedAndSaysWhy() {
+        show(ScriptedProvider(GraphMode.Demo, listOf(::demoOpen)), unlock = false)
+        rule.waitUntil(WAIT_MILLIS) { rule.hasText("lock screen") }
+        val controls =
+            checkNotNull(
+                environment
+                    ?.session
+                    ?.value
+                    ?.graph
+                    ?.demoControls,
+            )
+        controls.scriptBiometrics(BiometricResult.Cancelled)
+
+        environment
+            ?.session
+            ?.value
+            ?.app
+            ?.send(AppIntent.UnlockRequested)
+
+        rule.waitUntil(WAIT_MILLIS) { rule.hasText("issue Cancelled") }
+        rule.hasTag("tab-Inbox") shouldBe false
     }
 
     @Test

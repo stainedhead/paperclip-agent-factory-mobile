@@ -52,7 +52,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T3.3 Design system: theme, tokens, `AttentionCard`, `StatusPill`, `SeverityLabel`, `UpdatedLabel`, `Disab
   - [x] T3.4 `strings.xml` + `*Labels.kt`
   - [x] T3.5 `AppRoute` type-safe routes, `TabShell`
-  - [ ] T3.6 `AuthHost` registration in `MainActivity`, confirm sheets with lock glyph, `LockScreen`, `PrivacyShi
+  - [x] T3.6 `AuthHost` registration in `MainActivity`, confirm sheets with lock glyph, `LockScreen`, `PrivacyShi
   - [ ] T3.7 `CustomTabsPairingBrowser` over `CallbackPairingBrowser`, and the First-run screen
   - [ ] T3.8 Process death and configuration change: `SavedStateHandle` for route stack and selection, `rememberS
   - [ ] T3.9 Roborazzi wiring and light/dark shell baselines

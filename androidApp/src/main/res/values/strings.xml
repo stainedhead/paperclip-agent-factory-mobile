@@ -22,6 +22,12 @@
     </plurals>
     <string name="tab_placeholder">This screen arrives in an upcoming release.</string>
     <string name="startup_title">Paperclip can\'t open its data</string>
+    <string name="lock_title">Paperclip is locked</string>
+    <string name="lock_message">Unlock with your fingerprint, face or screen lock to continue.</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="confirm_destructive_auth">Confirm with your fingerprint, face or screen lock</string>
+    <string name="confirm_destructive_working">Waiting for you to confirm…</string>
+    <string name="common_cancel">Cancel</string>
     <string name="common_retry">Try again</string>
     <string name="common_sign_in_again">Sign in again</string>
     <string name="common_dismiss">Dismiss</string>
