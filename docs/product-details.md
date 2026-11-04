@@ -2,9 +2,9 @@
 
 Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent-factory-mobile-PRD.md). The numbered screen inventory is the PRD's; the order below follows it.
 
-**What exists today.** All 15 Phase 1a screens have a tested state holder in the shared Kotlin core, so the behaviour below is built and verified by tests on the demo data. Only one screen has a UI: the first step of First-run setup on iPhone. Every other screen has no SwiftUI or Compose view yet (Phase 2). Screen 14 (Notification settings) belongs to Phase 3 and has no state holder.
+**What exists today.** The shared Kotlin core has a tested state holder for every screen, and the iPhone app (Phase 2i) draws screens 1 to 13, 15 and 16 on the real Phase 1b adapters (and on the demo graph with `-demo` in Debug builds). Screen 14 (Notification settings) belongs to Phase 3.
 
-**About the images.** The images in `docs/images/design-*.png` are **design mocks** rendered from [Paperclip-Remote-mobile-UI-design.html](../Paperclip-Remote-mobile-UI-design.html); they show demo data and are a target, not the product. `docs/images/ios-first-run.png` is the only **built** screenshot (the running iPhone app). Mocks exist for seven screens; the other screens have none. Real screenshots replace mocks as the screens are built.
+**About the images.** Screenshots in `docs/images/` without a `design-` prefix are real captures of the running iPhone app in **demo mode** (fake data only; the pairing screen is never captured). The `design-*.png` files are the original mocks, kept for comparison.
 
 ## Roles, device authentication, offline: rules that apply everywhere
 
@@ -17,22 +17,57 @@ Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent
 | Text | State holders emit keys (enums), not sentences; the UI owns wording and localisation. |
 | Refresh | 15 s while visible, 5 s for a live run, none when the item is final (see [technical-details.md](./technical-details.md#refresh-policy)). |
 
-## Built UI
+## Built UI (iPhone, demo mode)
 
-### Screen 15: First-run setup, step 1 (address check)
-
-State holder `FirstRunStateHolder`. FR-003 and FR-009. The address of the Paperclip server is checked as you type, by the shared core:
-
-- it must start with `https://`; `http://` is accepted only for `localhost` and `10.0.2.2` in debug builds;
-- scheme and host are lower-cased and a trailing `/` is removed; a path prefix such as `/paperclip` and an explicit port are kept;
-- user names and passwords, query strings and fragments are refused, with a message saying what to remove;
-- a path with spaces, control characters, `..`, empty parts (`//`) or a broken `%` escape, and a host with an empty part, a trailing dot, non-ASCII letters (use the punycode form) or a malformed IP address are refused too.
-
-"Continue to pairing" is enabled for a valid address and does nothing yet. The rest of the flow (name, server check, pairing, company, app lock) is in the state holder and tested, with no view.
-
-| Built (iPhone, running) | Design mock (target) |
+| Screen | Image |
 |---|---|
-| <img src="images/ios-first-run.png" alt="Built: the first-run screen with an address field and a disabled Continue button" width="240"> | <img src="images/design-first-run.png" alt="Design mock of the first-run setup screen" width="240"> |
+| First run, address step (15) | <img src="images/first-run.png" alt="First-run screen: Add your first factory, with address and name fields and a Try the demo factory button" width="200"> |
+| Inbox (1) | <img src="images/inbox.png" alt="Inbox with Decide now cards" width="200"> <img src="images/inbox-offline.png" alt="Inbox offline with saved cards and disabled actions" width="200"> |
+| Decision (2) | <img src="images/decision.png" alt="Decision with three options, effects and a locked destructive option" width="200"> |
+| Approval (3) | <img src="images/approval.png" alt="Approval of a hire request with its payload" width="200"> |
+| Budget incident (12) | <img src="images/budget-incident.png" alt="Budget incident sheet with keep paused and raise and resume" width="200"> |
+| Factory home (5) | <img src="images/factory-home.png" alt="Factory home with spend and tiles" width="200"> |
+| Agents (6) and Agent detail (11) | <img src="images/agents.png" alt="Agents grouped by state with row buttons" width="200"> <img src="images/agent-detail.png" alt="Agent detail" width="200"> |
+| Run viewer (7) | <img src="images/run-viewer.png" alt="Run viewer with events, log tail and Cancel run" width="200"> |
+| Work (10) and Issue (4) | <img src="images/work.png" alt="Work list" width="200"> <img src="images/issue.png" alt="Issue thread with a questions card" width="200"> |
+| Factories (8), Manage (16) | <img src="images/factories.png" alt="Factories tab" width="200"> <img src="images/manage-factories.png" alt="Manage factories" width="200"> |
+| Edit factory (9), Settings (13) | <img src="images/edit-factory.png" alt="Edit factory" width="200"> <img src="images/settings.png" alt="Settings with app lock" width="200"> |
+| Dark mode, large text | <img src="images/factory-home-dark.png" alt="Factory home in dark mode" width="200"> <img src="images/decision-large-text.png" alt="Decision at the largest accessibility text size" width="200"> |
+
+### Polish and accessibility (UI-060)
+
+- **Text size.** Fonts scale with Dynamic Type; layouts switch to stacked arrangements at accessibility sizes; the app is exercised at the largest accessibility size in screenshots and audits.
+- **Dark mode.** One palette with a tested dark variant.
+- **VoiceOver.** Controls carry labels and hints, cards read as one element, the Inbox tab reads "N waiting" as its value.
+- **Targets.** Every control that is on screen between the navigation bar and the tab bar is at least 44 x 44 pt (`HitTargetUITests`, which fails when it measures too few controls and prints how many it could not see: below the fold or under the bars).
+- **Motion and haptics.** The two explicit animations are off when Reduce Motion is on; success and failure haptics follow each action's outcome.
+- **States.** Every screen has loading, empty, error and offline states; offline keeps the last data with its time and disables actions with a reason.
+
+### Review-fix round (iPhone)
+
+What changed for the person using the app after the three reviews of the iPhone UI (see implementation-notes.md, "Review-fix round"):
+
+- **Live graph.** A launch without `-demo` (and every Release build, where `-demo*` is ignored) opens the real graph behind the app lock. If the factory database or the Keychain cannot be opened, the app says "Paperclip cannot start yet" with Try again, changes nothing and never runs on fakes. When the phone cannot read a key (Face ID declined, locked), Sign out and Remove offer "here only" versions that say the key stays live on the server.
+- **Money you type is read strictly.** The Budget incident and Agent detail amounts are read by shared code with the phone's decimal mark. "250,50" typed where the decimal mark is "." is refused with a message (never read as 25,050); zero, negative, too-precise and too-large amounts are refused. The raise button reads "Raise to $250 and resume", and "Choose an option" until you choose.
+- **Times keep moving.** "Updated 12s ago", card ages and a running run's elapsed time keep counting while the screen is open, also offline. Ages are in your language; VoiceOver reads them as words ("8 minutes").
+- **Decision.** Shows when it expires; the bar above Confirm names the chosen option; effect lines show free text (a title or a comment excerpt) exactly as written.
+- **Approval.** Linked issues open the Issue screen. Your comment box clears only when your own comment is posted, never because someone else's arrived.
+- **Issue.** The comment box keeps your text until the comment is sent; a failed or refused send loses nothing and a sent one is never put back. The create-issue and subtask sheets stay open with your text when the server refuses, and close when it worked.
+- **Agent detail.** "Working" shows while Pause, Resume or Run now runs. The budget form closes only when the budget was saved.
+- **Edit factory and Settings.** Cancel asks before throwing away typed changes. The device name is saved when you leave the field or the screen, not only on Done.
+- **Leaving a screen mid-request.** Going back during a request or a Face ID prompt does not lose the outcome: the screen finishes first, then goes away.
+- **Privacy.** The app-switcher shield is a window above everything, so open sheets and the in-app browser are covered too. A pairing that ends (cancelled, expired, failed) closes its approval page.
+- **Switcher dot.** Green only for a working key on a connected phone; amber for an expired key, re-pairing or an offline phone; grey when signed out.
+- **Web links.** Only https links are opened (plain http only for `localhost` and `10.0.2.2` in Debug builds). Counts read right in the singular ("1 key", "1 factory").
+
+### Screens 10 and 4: Work list and Issue (iPhone, milestone 2i-5)
+
+Built on `WorkListStateHolder` and `IssueStateHolder`; everything below runs on the demo graph.
+
+- **Work tab.** Search box (sent when you press Search; clearing it shows the filter again), five saved-filter chips, the issue count with its "Updated" time, and one card per issue: number, title, status and priority pills, assignee. "New issue" (Operator and Owner) asks for a title and a priority and opens the new issue. More rows load when you reach the end of the list. Offline: the saved rows stay, with a banner.
+- **Issue screen.** Header as in the mock (number and project, title, status, priority, assignee), the parent and what blocks it as links, subtasks, then Thread, Plan, Runs and Files. Thread lists comments and the agent's request cards in time order. A question card shows its questions and options and sends the answers once all required ones are filled in; the shared card says what is missing. The bar at the bottom changes the status (clock button), takes a comment, and offers "Reopen with this comment" or "Interrupt the running agent" only when the issue allows it. The assignee pill opens a menu of people to assign. Runs open the Run viewer. Files are listed (name, type, size) and open in the web app.
+- **No Face ID.** None of these actions is on the destructive list; the prompt count stays unchanged and a failed action is never retried.
+- No design mock exists for the Work list; it is designed from the state and the tokens of the other tabs.
 
 ## State holders only (no UI yet)
 

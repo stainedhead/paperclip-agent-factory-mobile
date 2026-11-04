@@ -1,22 +1,14 @@
-# Adding your first factory
+# First run and adding a factory
 
-A **factory** is one Paperclip server. The app asks for its address first. This is the only screen of the iPhone app that exists today (screen 15, step 1 of First-run setup); everything after the address step is built in the shared core and tested, but has no screen yet.
+A **factory** is one Paperclip server. On first launch the app shows "Add your first factory".
 
-<img src="images/ios-first-run.png" alt="The built first-run screen with an empty address field" width="260">
+<img src="images/first-run.png" alt="First-run screen with a factory address field, a name field and a Try the demo factory button" width="260">
 
-1. Type or paste the address, for example `https://paperclip.example.com`.
-2. The app checks it as you type and says what to change:
-   - **Start the address with https://** : there is no `https://` or `http://` at the start.
-   - **Use a secure https:// address** : plain `http://` is refused. In debug builds only, `http://localhost` and `http://10.0.2.2` (the Android emulator's name for the host machine) are accepted.
-   - **Add the server name after https://**, **The server name has characters that are not allowed**, **The port must be a number from 1 to 65535** : fix the host or the port.
-   - **The part of the address after the server name has characters that are not allowed** : spaces, `..`, a doubled `//` or a broken `%` escape in the path. A server name with a trailing dot, non-English letters (use its `xn--` form) or an invalid IP address gives the server-name message above.
-   - **Remove the user name and password from the address**, or **Remove everything after the server address** : keep only the server address and an optional path. Query strings (`?…`) and fragments (`#…`) are refused.
-3. When the address is valid the app shows "Will connect to" followed by the cleaned-up address (scheme and host in lower case, no trailing `/`; a port and a path such as `/paperclip` are kept) and enables **Continue to pairing**.
+1. Type or paste the address, for example `https://paperclip.example.com`. The app checks it as you type and says what to change (it must start with `https://`; user names, query strings and fragments are refused; `http://` works only for `localhost` and `10.0.2.2` in debug builds).
+2. Give the factory a name (1 to 40 characters). It is shown in the factory switcher.
+3. **Check address** asks the server for its health. Servers in `local_trusted` mode, servers still waiting for their first user and servers that are not ready are refused.
+4. **Continue to pairing** approves this phone in your browser; see [pairing](./pairing.md). Then you choose a company and set the app lock ([app lock](./app-lock.md)).
 
-**Continue to pairing does nothing yet.** The rest of the flow (name your factory, check the server, approve this phone in your browser or paste a board key, choose a default company, set the app lock) exists in the shared core as `FirstRunStateHolder` and is tested on fakes, but no screen draws it and no real server is contacted. Storing the access key in the Keychain is Phase 1b.
+**Try the demo factory** switches to a built-in demo factory with fake data (Acme Labs, PAP-1182, Engineer 1). Use it to look around; it never contacts a server.
 
-**Which servers are accepted.** The app only connects to servers in `authenticated` mode that are ready. A server in `local_trusted` mode is always refused, and so is one whose mode the app does not recognise, one that is still waiting for its first user (bootstrap pending) and one that is not ready.
-
-**Private servers.** If your Paperclip runs at home, the phone must be able to reach it, for example through Tailscale. The app does not set that up; it needs a name or address the phone can resolve.
-
-To exercise the whole first-run logic today, see [usage-examples.md](./usage-examples.md#4-add-a-factory-on-fakes).
+**Current state.** A launch without `-demo` runs this flow against the real server; `-demo-first-run` (Debug builds) runs it on fakes. Private servers: see [Tailscale and allowed hostnames](./tailscale-and-hostnames.md). Problems: [troubleshooting](./troubleshooting.md).

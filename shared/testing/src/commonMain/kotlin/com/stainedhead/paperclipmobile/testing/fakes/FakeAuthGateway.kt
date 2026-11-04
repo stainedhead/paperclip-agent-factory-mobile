@@ -13,6 +13,12 @@ import com.stainedhead.paperclipmobile.domain.PairingChallenge
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.port.AuthGateway
 import com.stainedhead.paperclipmobile.testing.TestData
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
+
+private val APPROVAL_LIFETIME = 10.minutes
+private const val APPROVAL_POLL_MS = 250L
 
 /**
  * A scripted authentication endpoint. Set the public `...Result` properties to script a call, and read [calls] to
@@ -32,6 +38,9 @@ class FakeAuthGateway :
     var tokenOf: (InstanceId) -> String? = { null }
 
     var createResult: DomainResult<PairingChallenge>? = null
+
+    /** Builds a new challenge for every `createChallenge` (a challenge is wiped after use, so one cannot be reused). */
+    var challengeSource: (() -> PairingChallenge)? = null
     val pollResults = ArrayDeque<DomainResult<ChallengeStatus>>()
     var meResult: DomainResult<BoardAccess> = DomainResult.Success(TestData.access())
     var meWithKeyResult: DomainResult<BoardAccess> = DomainResult.Success(TestData.access())
@@ -48,7 +57,7 @@ class FakeAuthGateway :
     private val challengeServers = mutableMapOf<String, BaseUri>()
     private val pendingKeyServers = mutableMapOf<String, BaseUri>()
     private val revokedKeyIds = mutableSetOf<String>()
-    private val revokedInstances = mutableSetOf<InstanceId>()
+    private val revokedInstances = mutableMapOf<InstanceId, BaseUri?>()
 
     /** The pending token handed out by the last created challenge, so tests can check it was wiped. */
     var lastPendingToken: Secret? = null
@@ -60,7 +69,7 @@ class FakeAuthGateway :
         requestedCompanyId: CompanyId?,
     ): DomainResult<PairingChallenge> {
         record("createChallenge", baseUri)
-        val result = createResult ?: DomainResult.Success(TestData.challenge())
+        val result = createResult ?: DomainResult.Success(challengeSource?.invoke() ?: TestData.challenge())
         val created = (result as? DomainResult.Success)?.value
         lastPendingToken = created?.pendingBoardToken
         if (created != null) {
@@ -82,7 +91,12 @@ class FakeAuthGateway :
             return DomainResult.Failure(DomainError.NotFound)
         }
         val next = if (pollResults.size > 1) pollResults.removeFirst() else pollResults.firstOrNull()
-        return next ?: DomainResult.Success(ChallengeStatus.Pending)
+        val answer = next ?: DomainResult.Success(ChallengeStatus.Pending)
+        // An approved pairing issues a new key: a factory revoked on this host (or on an unknown one) signs in again.
+        if (answer == DomainResult.Success(ChallengeStatus.Approved)) {
+            revokedInstances.entries.removeAll { it.value == null || it.value == baseUri }
+        }
+        return answer
     }
 
     override suspend fun meWithKey(
@@ -104,7 +118,7 @@ class FakeAuthGateway :
 
     override suspend fun me(instanceId: InstanceId): DomainResult<BoardAccess> {
         record("me", hostOf(instanceId), tokenOf(instanceId))
-        if (instanceId in revokedInstances ||
+        if (instanceId in revokedInstances.keys ||
             instanceId in signedOutInstances
         ) {
             return DomainResult.Failure(DomainError.Unauthorized)
@@ -162,9 +176,24 @@ class FakeAuthGateway :
 
     override suspend fun revokeCurrentKey(instanceId: InstanceId): DomainResult<Unit> {
         record("revokeCurrentKey", hostOf(instanceId), tokenOf(instanceId))
-        if (revokeCurrentResult is DomainResult.Success) revokedInstances += instanceId
+        if (revokeCurrentResult is DomainResult.Success) revokedInstances[instanceId] = hostOf(instanceId)
         return revokeCurrentResult
     }
+}
+
+/**
+ * Scripts the person approving in the browser: every `createChallenge` hands out a fresh challenge that expires
+ * [lifetime] after [from] (the graph clock, so the wait is not already over), and every poll answers Approved.
+ * Demo mode and UI tests use this so pairing completes without a server.
+ */
+fun FakeAuthGateway.approvePairings(
+    from: () -> Instant,
+    lifetime: Duration = APPROVAL_LIFETIME,
+    pollMs: Long = APPROVAL_POLL_MS,
+) {
+    challengeSource = { TestData.challenge(lifetime, pollMs, from()) }
+    pollResults.clear()
+    pollResults.addLast(DomainResult.Success(ChallengeStatus.Approved))
 }
 
 /** One call that reached (or would reach) [host], with the token it sent. [token] is a fake test token. */

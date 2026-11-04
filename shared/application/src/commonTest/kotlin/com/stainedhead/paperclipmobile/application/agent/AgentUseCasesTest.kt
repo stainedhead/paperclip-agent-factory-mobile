@@ -3,6 +3,7 @@ package com.stainedhead.paperclipmobile.application.agent
 import com.stainedhead.paperclipmobile.application.Env
 import com.stainedhead.paperclipmobile.application.InvalidInput
 import com.stainedhead.paperclipmobile.application.MutationResult
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGroup
 import com.stainedhead.paperclipmobile.domain.AgentId
@@ -11,6 +12,7 @@ import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
+import com.stainedhead.paperclipmobile.domain.IssueId
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.ResolutionIssue
 import com.stainedhead.paperclipmobile.domain.Role
@@ -31,7 +33,7 @@ class ListAgentsTest {
         runTest {
             val env = Env()
 
-            val roster = ListAgents(env.agents)(env.scope).value()
+            val roster = ListAgents(env.agents, env.runs, LoadIssueRefs(env.issues))(env.scope).value()
 
             roster.sections.map { it.group } shouldBe
                 listOf(AgentGroup.NeedsAttention, AgentGroup.Running, AgentGroup.Paused, AgentGroup.Idle)
@@ -40,12 +42,34 @@ class ListAgentsTest {
         }
 
     @Test
+    fun `each agent's run in progress comes with its issue and the runs are best effort`() =
+        runTest {
+            val env = Env()
+
+            val roster = ListAgents(env.agents, env.runs, LoadIssueRefs(env.issues))(env.scope).value()
+            roster.liveRuns.map { it.id.value } shouldBe listOf("run-live")
+            roster.issueRefs.getValue(IssueId("pap-1182")).identifier shouldBe "PAP-1182"
+
+            env.runs.failures["live"] = DomainError.ServerError
+            val without = ListAgents(env.agents, env.runs, LoadIssueRefs(env.issues))(env.scope).value()
+            without.liveRuns shouldBe emptyList()
+            without.agents.size shouldBe 6
+        }
+
+    @Test
     fun `a failure is retried as a read and reported`() =
         runTest {
             val env = Env()
             env.agents.failures["list"] = DomainError.ServerError
 
-            (ListAgents(env.agents)(env.scope) as DomainResult.Failure).error shouldBe DomainError.ServerError
+            (
+                ListAgents(
+                    env.agents,
+                    env.runs,
+                    LoadIssueRefs(env.issues),
+                )(env.scope) as DomainResult.Failure
+            ).error shouldBe
+                DomainError.ServerError
             env.agents.count("list") shouldBe 4
         }
 }
@@ -63,6 +87,7 @@ class LoadAgentTest {
             view.currentRun?.id?.value shouldBe "run-live"
             view.currentIssue?.identifier shouldBe "PAP-1182"
             view.recentRuns.size shouldBe 2
+            view.issueRefs.getValue(IssueId("pap-1182")).identifier shouldBe "PAP-1182"
         }
 
     @Test

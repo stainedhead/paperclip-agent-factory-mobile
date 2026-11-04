@@ -86,10 +86,20 @@ data class EditInstanceState(
     val isOffline: Boolean = false,
     val isBusy: Boolean = false,
     val canSave: Boolean = false,
+    /** The name or address typed differs from what is saved, so Cancel would throw something away. */
+    val hasUnsavedChanges: Boolean = false,
+    /** What the saved factory has (empty while adding), to tell whether anything was typed. */
+    val savedName: String = "",
+    val savedAddress: String = "",
+    /** The address is valid and no check is running, so Check address can be tapped. */
+    val canCheckAddress: Boolean = false,
     val saved: Boolean = false,
     val removed: Boolean = false,
     val error: ErrorUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isBusy
+}
 
 sealed interface EditInstanceIntent {
     data class NameChanged(
@@ -296,7 +306,11 @@ class EditInstanceStateHolder(
 private fun EditInstanceState.revalidated(): EditInstanceState {
     val addressOk = addressIssue == null && address.isNotBlank()
     val needsProbe = mode == EditMode.Add || addressChangeClearsKey
-    return copy(canSave = name.isNotBlank() && addressOk && (!needsProbe || probe == ProbeStatus.Accepted))
+    return copy(
+        canSave = name.isNotBlank() && addressOk && (!needsProbe || probe == ProbeStatus.Accepted),
+        canCheckAddress = addressOk && probe != ProbeStatus.Probing,
+        hasUnsavedChanges = name != savedName || address != savedAddress,
+    )
 }
 
 /** What the parts of the edit screen share: the loaded factory, the probe report and the state. */
@@ -320,6 +334,8 @@ internal class EditInstanceSession(
                     instanceId = instance.id.value,
                     name = instance.displayName,
                     address = instance.baseUri.value,
+                    savedName = instance.displayName,
+                    savedAddress = instance.baseUri.value,
                     addressIssue = null,
                     addressChangeClearsKey = false,
                     status = instance.status.toUi(),

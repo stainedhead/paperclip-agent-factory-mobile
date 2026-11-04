@@ -79,12 +79,13 @@ object TestData {
     fun challenge(
         expiresIn: kotlin.time.Duration = 10.minutes,
         pollMs: Long = 1_000,
+        from: Instant = epoch,
     ) = PairingChallenge(
         id = "challenge-1",
         challengeToken = Secret.of("challenge-TESTONLY-secret"),
         pendingBoardToken = Secret.of(TOKEN),
         approvalUrl = Secret.of("$HOME_URI/cli-auth/challenge-1?token=challenge-TESTONLY-secret"),
-        expiresAt = epoch + expiresIn,
+        expiresAt = from + expiresIn,
         suggestedPollIntervalMs = pollMs,
     )
 }

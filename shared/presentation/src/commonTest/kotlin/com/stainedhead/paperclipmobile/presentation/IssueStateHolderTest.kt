@@ -370,3 +370,63 @@ class IssueEditsTest {
             holder.onIntent(IssueIntent.MessageDismissed)
         }
 }
+
+/** A2: the screen clears its comment box only when the shared holder says the comment went through. */
+class IssueCommentSentTest {
+    @Test
+    fun `A2 a posted comment is counted once and a later action does not count it again`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = issueHolder(env)
+            advanceUntilIdle()
+            holder.state.value.commentSentCount shouldBe 0
+
+            holder.onIntent(IssueIntent.CommentSubmitted("Ship it", reopen = false, interrupt = true))
+            advanceUntilIdle()
+            holder.state.value.commentSentCount shouldBe 1
+
+            holder.onIntent(IssueIntent.StatusSelected(IssueStatusUi.Done))
+            advanceUntilIdle()
+            holder.state.value.commentSentCount shouldBe 1
+        }
+
+    @Test
+    fun `A2 a refused or failed comment is not counted so the text stays in the box`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = issueHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(IssueIntent.CommentSubmitted("   ", reopen = false, interrupt = false))
+            advanceUntilIdle()
+            holder.state.value.commentSentCount shouldBe 0
+
+            env.issues.failures["addComment"] = DomainError.Timeout
+            holder.onIntent(IssueIntent.CommentSubmitted("maybe", reopen = false, interrupt = false))
+            advanceUntilIdle()
+            holder.state.value.commentSentCount shouldBe 0
+
+            env.connectivity.setOnline(false)
+            advanceUntilIdle()
+            holder.onIntent(IssueIntent.CommentSubmitted("offline", reopen = false, interrupt = false))
+            advanceUntilIdle()
+            holder.state.value.commentSentCount shouldBe 0
+        }
+
+    @Test
+    fun `B-06 a created subtask is counted so the sheet closes only on success`() =
+        runTest {
+            val env = workEnv(Role.Operator)
+            val holder = issueHolder(env)
+            advanceUntilIdle()
+            env.issues.failures["create"] = DomainError.Timeout
+            holder.onIntent(IssueIntent.SubtaskSubmitted("Write docs"))
+            advanceUntilIdle()
+            holder.state.value.subtaskCreatedCount shouldBe 0
+
+            env.issues.failures.remove("create")
+            holder.onIntent(IssueIntent.SubtaskSubmitted("Write docs"))
+            advanceUntilIdle()
+            holder.state.value.subtaskCreatedCount shouldBe 1
+        }
+}

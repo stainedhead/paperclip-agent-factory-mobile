@@ -2,7 +2,7 @@
 
 Every build and configuration knob that exists today. There is no end-user configuration file: the app's own settings live in the `AppSettings` and `Instance` types and are persisted by adapters that Phase 1b adds. Until then they live in memory in the fakes.
 
-Verified against commit `26f4e1c`.
+Last revised in the Phase 2i review-fix round (branch `feat/phase-2i-iphone-ui`); not re-checked line by line against the code.
 
 ## Build
 

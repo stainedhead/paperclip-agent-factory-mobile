@@ -1,8 +1,8 @@
 # Getting started
 
-For a developer adopting the shared Kotlin core of Paperclip Agent Factory Mobile. There is no end-user app to install yet: the only screen is the first-run address check on iPhone. What you can do today is build the core, run its quality gates and tests, and drive every screen's logic on the built-in demo data from Kotlin or Swift.
+For a developer adopting the shared Kotlin core of Paperclip Agent Factory Mobile. There is no end-user app to install yet. The iPhone app has every screen (Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Edit and Manage factories, Settings, first run), on the real Paperclip adapters (a launch without `-demo`; it starts at first run behind the app lock) or, in a Debug build, on the built-in demo data (launch argument `-demo`). What you can do today is build the core, run its quality gates and tests, and run the app either way.
 
-Verified against branch `feat/phase-1a-shared-contracts` at commit `26f4e1c` (the last code change), Kotlin 2.4.21, Gradle 9.8.2, Xcode 27.2 on macOS.
+Developed with Kotlin 2.4.21, Gradle 9.8.2 and Xcode 27.2 on macOS. This page was last revised in the Phase 2i review-fix round (branch `feat/phase-2i-iphone-ui`); the commands were run then, the older prose was not re-checked line by line.
 
 ## Prerequisites
 
@@ -48,7 +48,7 @@ Individual gates:
 | `./gradlew koverVerifyCore koverVerifyPresentation` | the 90% coverage gates (domain + application; presentation). `koverVerify` alone checks nothing meaningful. |
 | `./gradlew lint` | Android Lint |
 
-Coverage numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q`, then read `build/reports/kover/reportCore.xml` and `reportPresentation.xml`. At the verified commit: 97.97% and 98.02%.
+Coverage numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q`, then read `build/reports/kover/reportCore.xml` and `reportPresentation.xml`. Numbers for this branch are in `docs/technical-details.md` (Tests and coverage).
 
 ## Build the XCFramework and run the iOS tests
 
@@ -95,7 +95,7 @@ struct DemoAttentionInteropTests {
 }
 ```
 
-The shipped iPhone app calls `PaperclipCore.shared.createGraph(allowInsecureLocal:)` (an empty, fakes-backed graph) and renders only the first-run address step. To see another screen's logic on demo data from Swift, use the demo graph in a test as above.
+The iPhone app opens the real graph through `LiveIosGraph.openLiveGraph`; `-demo` (Debug builds) runs the app on the demo graph instead. To see a screen's logic on demo data from Swift, use the demo graph in a test as above.
 
 ## Where next
 

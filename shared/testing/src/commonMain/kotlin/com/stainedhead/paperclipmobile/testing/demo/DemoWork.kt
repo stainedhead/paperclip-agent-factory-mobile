@@ -81,6 +81,13 @@ object DemoWork {
                 DemoIds.AGENT_ENGINEER_1,
             ),
             issue(
+                DemoIds.ISSUE_EMAIL_DESIGN,
+                "Refresh the invoice email template",
+                IssueStatus.InProgress,
+                IssuePriority.Medium,
+                DemoIds.AGENT_DESIGNER,
+            ),
+            issue(
                 "pap-1210",
                 "Update the onboarding checklist",
                 IssueStatus.InReview,

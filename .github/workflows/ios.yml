@@ -15,12 +15,21 @@ permissions:
 
 jobs:
   ios:
+    # The functional UI tests are split over three jobs by test class (scripts/ios-test.sh, ADR-106); the accessibility
+    # audits are a fourth, non-blocking job (ADR-094). Linting runs once, in shard 1.
+    name: ios (${{ matrix.shard }})
     runs-on: macos-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ['1', '2', '3', 'audits']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
         with:
+          # The runner images stop at Xcode 26.6 and the iOS 26.5 simulator runtime (checked with a diagnostics step):
+          # newer Xcode releases are not installed there, so the UI tests must pass on 26.5 as well as locally.
           xcode-version: latest-stable
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
@@ -34,21 +43,48 @@ jobs:
       - name: Install tools
         run: brew install swiftlint xcodegen
       - name: Kotlin/Native tests (iOS simulator)
+        if: matrix.shard == '1'
         run: ./gradlew iosSimulatorArm64Test
       - name: Build PaperclipKit.xcframework
         run: ./scripts/build-kit.sh debug
       - name: SwiftLint
+        if: matrix.shard == '1'
         run: swiftlint --strict
       - name: swift-format
+        if: matrix.shard == '1'
         run: xcrun swift-format lint --recursive --strict iosApp/Sources iosApp/Tests iosApp/Packages/PaperclipKit/Package.swift
-      - name: Xcode unit and UI tests
+      - name: Xcode unit and functional UI tests
+        if: matrix.shard != 'audits'
+        env:
+          TEST_SET: functional
+          SHARD: ${{ matrix.shard }}
+          RESULT_BUNDLE: build/ios-ui.xcresult
         run: ./scripts/ios-test.sh
+      # The system accessibility audit samples screenshots and differs between Xcode 26.6 / iOS 26.5 (the runner) and
+      # 27.2 (local development), so it reports here without blocking; it must pass locally (ADR-094).
+      # Only this step may fail without failing the leg: the toolchain, the Gradle and the framework steps above are
+      # blocking for every leg, and the step after it fails the leg when the audit run executed no tests at all.
+      - name: Accessibility audits (non-blocking)
+        if: matrix.shard == 'audits'
+        continue-on-error: true
+        env:
+          TEST_SET: audits
+          RESULT_BUNDLE: build/ios-audits.xcresult
+        run: ./scripts/ios-test.sh
+      - name: Audits ran
+        if: matrix.shard == 'audits' && always()
+        run: |
+          total=$(xcrun xcresulttool get test-results summary --path build/ios-audits.xcresult | python3 -c 'import json,sys; print(json.load(sys.stdin).get("totalTestCount", 0))')
+          echo "audit tests executed: $total"
+          test "$total" -ge 1
       - name: Upload reports
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: ios-reports
+          name: ios-reports-${{ matrix.shard }}
           path: |
             **/build/reports/**
             **/build/test-results/**
+            build/ios-ui.xcresult
+            build/ios-audits.xcresult
           retention-days: 7

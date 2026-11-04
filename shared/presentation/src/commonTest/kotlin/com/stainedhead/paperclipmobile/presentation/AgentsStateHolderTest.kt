@@ -61,6 +61,50 @@ class AgentsListTest {
         }
 
     @Test
+    fun `a row shows the run its agent has in progress with the issue it works on`() =
+        runTest {
+            val env = workEnv()
+            val holder = agentsHolder(env)
+            advanceUntilIdle()
+
+            val state = holder.state.value
+            val run = state.row("agent-eng-1").currentRun
+            run?.runId shouldBe "run-live"
+            run?.issueIdentifier shouldBe "PAP-1182"
+            state.row("agent-cto").currentRun shouldBe null
+            state.row("agent-qa").currentRun shouldBe null
+        }
+
+    @Test
+    fun `setting a budget is the owner's and an operator is told why not`() =
+        runTest {
+            val owner = workEnv(Role.Owner)
+            val ownerHolder = agentsHolder(owner)
+            val operator = workEnv(Role.Operator)
+            val operatorHolder = agentsHolder(operator)
+            advanceUntilIdle()
+
+            ownerHolder.state.value.canSetBudget shouldBe true
+            ownerHolder.state.value.budgetDisabledReason shouldBe null
+            operatorHolder.state.value.canSetBudget shouldBe false
+            operatorHolder.state.value.budgetDisabledReason shouldBe ActionsDisabledReason.OwnerRole
+        }
+
+    @Test
+    fun `after run now the list is read again so the new run shows`() =
+        runTest {
+            val env = workEnv()
+            val holder = agentsHolder(env)
+            advanceUntilIdle()
+            val before = env.agents.count("list")
+
+            holder.onIntent(AgentsIntent.RunNowTapped("agent-eng-1"))
+            advanceUntilIdle()
+
+            env.agents.count("list") shouldBe before + 1
+        }
+
+    @Test
     fun `row actions follow the agent's state for an operator`() =
         runTest {
             val env = workEnv(Role.Operator)

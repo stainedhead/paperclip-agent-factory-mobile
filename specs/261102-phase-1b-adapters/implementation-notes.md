@@ -517,7 +517,7 @@ The three allow-listed operations are `DecisionGateway.get`, `decide` and `dismi
 - The red evidence for A-8 is a mutation (the test passed against the unchanged code, as the review suspected), for B-9 it is by construction, for A-9 it is a mutation run after the fact.
 - `shared/testing` (`InstanceRepositoryContract`, `FakeInstanceRepository`) was edited for B-6: outside this stream's ownership, minimal, in the B-6 commit.
 - Swift surface added for the iPhone UI stream: `PaperclipCore.openLiveGraph(allowInsecureLocal:pairingBrowser:)` (throws), `LiveIosGraph.openLiveGraph(allowInsecureLocal:pairingBrowser:settings:)` (throws), `PairingBrowsers.onMainThread(show:dismiss:)`, `NSFaceIDUsageDescription` in `iosApp/project.yml`. Nothing existing changed signature, no exhaustive `switch` over a shared type changed in F2.
-- ADR-070 (this branch's `PairingBrowsers.fromCallback`) and the other stream's ADR-045 (`ApprovalPageOpener`) describe two callback mechanisms for one Swift limitation; one will be dropped at merge. Not decided here.
+- ADR-070 (this branch's `PairingBrowsers.fromCallback`) and the other stream's ADR-091 (`ApprovalPageOpener`, renumbered from 045 on merge) describe two callback mechanisms for one Swift limitation; one will be dropped at merge. Not decided here.
 - A flaky test in `shared/presentation` (`AtomicGuardsTest`, concurrent DismissTapped, JVM only) failed once in CI (run 41537107026) and passed on the next push; it is not touched by this group.
 - The `ios` workflow was cancelled by newer pushes on several heads; its last verdict is in `status.md`.
 

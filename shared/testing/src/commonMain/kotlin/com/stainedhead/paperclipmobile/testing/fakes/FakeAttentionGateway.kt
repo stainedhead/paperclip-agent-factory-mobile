@@ -15,6 +15,7 @@ import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.FeedQuery
 import com.stainedhead.paperclipmobile.testing.AttentionFixtures
 import kotlinx.coroutines.delay
+import kotlin.time.Duration
 import kotlin.time.Instant
 
 /**
@@ -39,6 +40,19 @@ class FakeAttentionGateway(
     val decideByCalls = mutableListOf<Triple<AttentionSourceKind, String, DecideBy>>()
     private val hidden = mutableMapOf<String, Dismissal>()
 
+    /** Companies (by id) whose feed is empty: nothing there needs the person. Every other company gets [items]. */
+    var emptyCompanies: Set<String> = emptySet()
+    private val resolvedSubjects = mutableSetOf<String>()
+    private var served = 0
+
+    /** How old the first feed read says it is (`generatedAt` is that long before now); later reads are current. */
+    var firstFeedAge: Duration = Duration.ZERO
+
+    /** The subject (an approval, an incident) was resolved elsewhere: the server's feed stops returning its card. */
+    fun resolveSubject(subjectId: String) {
+        resolvedSubjects += subjectId
+    }
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
@@ -54,7 +68,12 @@ class FakeAttentionGateway(
         if (feedLatencyMillis > 0) delay(feedLatencyMillis)
         record("feed")?.let { return DomainResult.Failure(it) }
         val now = clock.now()
-        val visible = items.filter { servesStaleFeed || it.dismissalKey !in hidden }
+        val generatedAt = if (served++ == 0) now - firstFeedAge else now
+        val visible =
+            items.filter { scope.companyId.value !in emptyCompanies }.filter {
+                it.subject.id !in resolvedSubjects &&
+                    (servesStaleFeed || it.dismissalKey !in hidden)
+            }
         val start =
             query.cursor?.let { cursor ->
                 val index = visible.indexOfFirst { it.id == cursor }
@@ -71,7 +90,7 @@ class FakeAttentionGateway(
         val next = if (start + page.size < visible.size) page.last().id else null
         return DomainResult.Success(
             AttentionFeed(
-                generatedAt = now,
+                generatedAt = generatedAt,
                 totalCount = visible.size,
                 deskBadgeCount =
                     visible.count {

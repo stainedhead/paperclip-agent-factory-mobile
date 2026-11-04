@@ -71,8 +71,16 @@ class FactoryHomeStateHolder(
                 fail(allowed.error.toErrorUi())
             } else {
                 when (val home = useCases.load(companyScope)) {
-                    is DomainResult.Failure -> fail(home.error.toErrorUi())
-                    is DomainResult.Success -> show(home.value.summary, home.value.liveRuns.map { it.toRow() })
+                    is DomainResult.Failure -> {
+                        fail(home.error.toErrorUi())
+                    }
+
+                    is DomainResult.Success -> {
+                        show(
+                            home.value.summary,
+                            home.value.liveRuns.map { it.toRow(home.value.issueRefs[it.issueId]) },
+                        )
+                    }
                 }
             }
             model.update { it.copy(isRefreshing = false) }

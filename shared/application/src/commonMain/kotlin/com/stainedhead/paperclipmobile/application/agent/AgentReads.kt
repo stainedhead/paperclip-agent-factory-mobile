@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.agent
 
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.application.retryingRead
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGrouping
@@ -8,6 +9,7 @@ import com.stainedhead.paperclipmobile.domain.AgentSection
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.HeartbeatRun
+import com.stainedhead.paperclipmobile.domain.IssueId
 import com.stainedhead.paperclipmobile.domain.IssueRef
 import com.stainedhead.paperclipmobile.domain.port.AgentGateway
 import com.stainedhead.paperclipmobile.domain.port.IssueGateway
@@ -18,10 +20,15 @@ import com.stainedhead.paperclipmobile.domain.valueOrNull
 data class AgentRoster(
     val sections: List<AgentSection>,
     val agents: List<Agent>,
+    /** The runs in progress, so a row can show what the agent is doing now. Best effort: empty when unreadable. */
+    val liveRuns: List<HeartbeatRun>,
+    val issueRefs: Map<IssueId, IssueRef>,
 )
 
 class ListAgents(
     private val gateway: AgentGateway,
+    private val runs: RunGateway,
+    private val refs: LoadIssueRefs,
 ) {
     suspend operator fun invoke(scope: CompanyScope): DomainResult<AgentRoster> =
         when (val result = retryingRead { gateway.list(scope) }) {
@@ -30,8 +37,14 @@ class ListAgents(
             }
 
             is DomainResult.Success -> {
+                val live = runs.live(scope).valueOrNull().orEmpty()
                 DomainResult.Success(
-                    AgentRoster(AgentGrouping.group(result.value), result.value),
+                    AgentRoster(
+                        AgentGrouping.group(result.value),
+                        result.value,
+                        live,
+                        refs(scope, live.map { it.issueId }),
+                    ),
                 )
             }
         }
@@ -44,6 +57,8 @@ data class AgentView(
     val currentRun: HeartbeatRun?,
     val currentIssue: IssueRef?,
     val recentRuns: List<HeartbeatRun>,
+    /** The issues of the current and recent runs, by id. */
+    val issueRefs: Map<IssueId, IssueRef>,
 )
 
 class LoadAgent(
@@ -72,6 +87,7 @@ class LoadAgent(
                 .valueOrNull()
                 .orEmpty()
                 .sortedByDescending { it.createdAt }
-        return DomainResult.Success(AgentView(agent, manager?.name, current, issue, recent))
+        val refs = LoadIssueRefs(issues)(scope, recent.map { it.issueId })
+        return DomainResult.Success(AgentView(agent, manager?.name, current, issue, recent, refs))
     }
 }

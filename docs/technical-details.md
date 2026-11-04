@@ -8,8 +8,8 @@ How the code is organised and built, as it exists on the branch `feat/phase-1a-s
 |---|---|
 | Shared core: domain, application, presentation, testing fakes, umbrella | Built (Phase 1a). Runs entirely on fakes. |
 | Real adapters (`shared/infrastructure/*`) | `api` has the HTTP client (text and ranged byte paths), `ErrorMapper`, and the health, auth, attention, decision, approval, budget, dashboard, agent, run, issue and interaction gateways (Phase 1b-1, 1b-4a, 1b-4b); `persistence` has the SQLDelight database and the three SQL adapters (Phase 1b-2); `securestore` and `platform` have the device services (Phase 1b-3); `realtime` is a stub. |
-| Live graph (`PaperclipCore.createLiveGraph`) | Built (Phase 1b-5a): the real adapters behind the same graph surface, on iOS device services; the iPhone app switches to it in Phase 2i. Android is refused until its app phase. |
-| iPhone app | One screen: the first-run address check. Every other screen has a tested state holder and no UI. |
+| Live graph (`PaperclipCore.createLiveGraph`) | Built (Phase 1b-5a): the real adapters behind the same graph surface, on iOS device services; the iPhone app uses it for every launch without `-demo` (Phase 2i). Android is refused until its app phase. |
+| iPhone app | All main screens (Phase 2i), on the live graph, or on the demo graph with `-demo` in Debug builds. |
 | Android app | Not started. There is no `androidApp/` directory. The shared modules do build an Android library target. |
 | Push relay | Not started. |
 
@@ -183,20 +183,20 @@ Every port except `Connectivity` and `AppLifecycle` (a `StateFlow` already guara
 
 ## Tests and coverage
 
-Numbers from the last local run (2026-11-02, after review1b group F2; JUnit XML under `shared/*/build/test-results`):
+Numbers from the last local run (2026-11-03, after merging Phase 1b into the iPhone branch; JUnit XML under `shared/*/build/test-results`):
 
 | Where | Tests (JVM) |
 |---|---|
-| `shared/domain` | 144 |
-| `shared/application` | 322 |
-| `shared/presentation` | 328 (324 on Android host and iOS simulator: `AtomicGuardsTest`'s 4 stress tests are JVM only) |
-| `shared/testing` | 48 |
-| `shared/umbrella` | 51 (35 on the Android host, 38 on the iOS simulator) |
-| `shared/infrastructure/api` | 335 (333 Android host, 332 iOS simulator); `contractTest`: 41 (22 skipped without a server) |
-| `shared/infrastructure/persistence` | 56 (46 Android host, 51 iOS simulator) |
-| `shared/infrastructure/securestore`, `platform` | 3 and 6 on the JVM; 35 and 17 on the iOS simulator |
-| Konsist (`konsistTest`) | 67 in 16 files |
-| Swift (`iosApp/Tests`) | 51 Swift Testing cases in `iosAppTests` (the log of `ios-test.sh`) and 1 XCUITest |
+| `shared/domain` | 147 |
+| `shared/application` | 340 |
+| `shared/presentation` | 381 |
+| `shared/testing` | 56 |
+| `shared/umbrella` | 81 |
+| `shared/infrastructure/api` | 338; `contractTest` needs a server and was not run locally |
+| `shared/infrastructure/persistence` | 61 |
+| `shared/infrastructure/securestore`, `platform` | 3 and 6 |
+| Konsist (`konsistTest`) | 67 |
+| Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard) |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
 
@@ -204,8 +204,8 @@ Kover coverage, regenerated with `rm -rf build/reports/kover && ./gradlew koverX
 
 | Gate | Task | Line coverage | Threshold |
 |---|---|---|---|
-| Domain + application, one aggregate | `koverVerifyCore` | 98.01% (2611 covered, 53 missed) | 90% |
-| Presentation | `koverVerifyPresentation` | 98.03% (4228 covered, 85 missed) | 90% |
+| Domain + application, one aggregate | `koverVerifyCore` | 98.03% (2685 covered, 54 missed) | 90% |
+| Presentation | `koverVerifyPresentation` | 98.10% (4431 covered, 86 missed) | 90% |
 
 Kover rules cannot filter by package, so there are two custom variants, `core` and `presentation` (ADR-007). `koverVerify` alone checks nothing meaningful. Infrastructure, `testing` and `umbrella` are outside the gates.
 
@@ -286,11 +286,21 @@ Decisions are in ADR-030 to ADR-037; the fix spec is `specs/archive/261101-phase
 | Role gating | Every flag goes through `Permissions` and `DeviceAuthPolicy` (`RoleGating.kt`); a 403 on a read or a mutation re-resolves the role once. |
 | CI | `contract-smoke.sh`, SHA-pinned actions and a digest-pinned scanner (see CI). |
 
+## iPhone polish, tab bar and the live seam (2i-6)
+
+- **Tab bar values.** SwiftUI paints `.badge` but, on iOS 26, does not give the tab button an accessibility value. `TabBarAccessibility` sets it on the `UITabBarItem`s. UIKit rebuilds items at moments SwiftUI does not announce, so an invisible controller key-value observes the bar's `items`, its hidden state and layer position and the controller's `viewControllers`, and re-applies once per change. There is no timer (ADR-110).
+- **Live seam.** `AppGraphProvider` is the one switch: `DemoGraphProvider`, `FirstRunDemoGraphProvider` and `LiveGraphProvider`. `LiveGraphProvider` builds the real graph with `LiveIosGraph.openLiveGraph(allowInsecureLocal:pairingBrowser:settings:)` (settings: the board-key Keychain service, `Application Support/Paperclip`, the localised Face ID reasons) and a main-thread pairing browser (`PairingBrowsers.onMainThread`, which also closes the approval page when a pairing is cancelled). `makeGraph()` throws; `AppEnvironment` then shows the shared `StartupNotice.LiveGraphUnavailable` with Try again and holds only a closed stand-in graph, so nothing falls back to fakes (ADR-114, ADR-120).
+- **Audits.** Factory home and Agents fail the system audit's Dynamic Type and Text clipped checks on text low on the screen; they are asserted clean, run in the non-blocking audit set, and the findings are recorded honestly (ADR-111).
+
+## Work list and Issue on iPhone (2i-5)
+
+`WorkListView` (Work tab root, model keyed by factory and company, kept while the tab exists so the filter and search survive) and `IssueView` (pushed by `.issue(id)` from the Work list, Inbox, Run viewer, Agent detail and subtasks, model keyed by the route). Text the person types (search, comment, answers, reasons) stays in view state and only change intents go to the holder, because the holder renders asynchronously. A comment that fails comes back into the box. Demo changes: answering a question tells the Inbox feed (`FakeInteractionGateway.onAnswered`) and new demo comments are stamped with the demo clock (`FakeIssueGateway(now = ...)`). See ADR-108 and ADR-109.
+
 ## Known limitations and gaps
 
 Behaviour:
 
-1. **No adapters.** `createGraph` and `createDemoGraph` run on fakes. `LiveEvents` will have no real adapter even in Phase 1b (board keys fail on the WebSocket).
+1. **Live events.** `LiveEvents` has no real adapter (board keys fail on the WebSocket); screens refresh by polling.
 2. **Budget history.** A budget incident that has left the server's active list cannot be told apart as resolved or dismissed, because the overview lists only open incidents (ADR-029, research B1). The screen shows `NoLongerActive`; `KeptPaused` and `Raised` come from the app's own resolve response.
 3. **Demo fakes.** They ignore the company id, so Side Project Co shows the Acme Labs data. The demo Run viewer's events and log are the same for every run.
 4. **Decision details.** `GET /decisions/{id}` has neither `decideBy` nor the agent name; the Decision screen receives them as hints from the Inbox card (ADR-018). Opened from anywhere else it shows neither, and no Snooze (ADR-025).

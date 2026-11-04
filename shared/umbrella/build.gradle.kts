@@ -25,6 +25,7 @@ kotlin {
             export(project(":shared:presentation"))
             export(project(":shared:application"))
             export(project(":shared:domain"))
+            export(project(":shared:infrastructure:platform"))
             xcframework.add(this)
         }
         // SQLDelight links sqlite only into the module that applies its plugin; the framework and its tests use it too.
@@ -65,6 +66,7 @@ kotlin {
         api(project(":shared:presentation"))
         api(project(":shared:application"))
         api(project(":shared:domain"))
+        api(project(":shared:infrastructure:platform"))
         implementation(project(":shared:testing"))
         implementation(libs.koin.core)
         // The live graph (AD-040): the real adapters behind the ports.

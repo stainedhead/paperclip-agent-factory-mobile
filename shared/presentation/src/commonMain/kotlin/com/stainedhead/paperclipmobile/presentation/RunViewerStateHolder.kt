@@ -5,6 +5,7 @@ import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.Invalidation
+import com.stainedhead.paperclipmobile.domain.IssueRef
 import com.stainedhead.paperclipmobile.domain.LogTail
 import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.RunEvent
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 private data class RunModel(
     val run: HeartbeatRun? = null,
     val events: List<RunEvent> = emptyList(),
+    val issue: IssueRef? = null,
     val tail: LogTail = LogTail.Empty,
     val logUnavailable: Boolean = false,
     val autoScroll: Boolean = true,
@@ -116,7 +118,12 @@ class RunViewerStateHolder(
                     if (it.version != started) {
                         it
                     } else {
-                        it.copy(run = result.value.run, events = result.value.events, role = context.role)
+                        it.copy(
+                            run = result.value.run,
+                            events = result.value.events,
+                            issue = result.value.issue,
+                            role = context.role,
+                        )
                     }
                 }
                 readLog()
@@ -192,7 +199,7 @@ private fun renderRun(
                 model.loading -> DetailPhase.Loading
                 else -> DetailPhase.Failed
             },
-        run = run?.toRow(),
+        run = run?.toRow(model.issue),
         events = model.events.map { it.toUi() },
         logText = model.tail.text,
         logDroppedStart = model.tail.droppedStart,

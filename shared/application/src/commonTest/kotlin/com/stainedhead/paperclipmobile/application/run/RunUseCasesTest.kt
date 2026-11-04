@@ -3,6 +3,7 @@ package com.stainedhead.paperclipmobile.application.run
 import com.stainedhead.paperclipmobile.application.Env
 import com.stainedhead.paperclipmobile.application.InvalidInput
 import com.stainedhead.paperclipmobile.application.MutationResult
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.LogTail
@@ -26,23 +27,43 @@ class LoadRunTest {
         runTest {
             val env = Env()
 
-            val first = LoadRun(env.runs)(env.scope, live, emptyList()).value()
+            val first = LoadRun(env.runs, LoadIssueRefs(env.issues))(env.scope, live, emptyList()).value()
             first.run.status shouldBe RunStatus.Running
             first.events.map { it.seq } shouldBe listOf(1L, 2L)
 
-            val second = LoadRun(env.runs)(env.scope, live, first.events).value()
+            val second = LoadRun(env.runs, LoadIssueRefs(env.issues))(env.scope, live, first.events).value()
             second.events.map { it.seq } shouldBe listOf(1L, 2L)
+        }
+
+    @Test
+    fun `the run comes with the issue it works on and a missing issue is left out`() =
+        runTest {
+            val env = Env()
+
+            LoadRun(
+                env.runs,
+                LoadIssueRefs(env.issues),
+            )(env.scope, live, emptyList()).value().issue?.identifier shouldBe
+                "PAP-1182"
+
+            env.issues.failures["get"] = DomainError.ServerError
+            LoadRun(env.runs, LoadIssueRefs(env.issues))(env.scope, live, emptyList()).value().issue shouldBe null
         }
 
     @Test
     fun `a run that is not found fails and a failing events read still shows the run`() =
         runTest {
             val env = Env()
-            (LoadRun(env.runs)(env.scope, RunId("nope"), emptyList()) as DomainResult.Failure).error shouldBe
+            (
+                LoadRun(
+                    env.runs,
+                    LoadIssueRefs(env.issues),
+                )(env.scope, RunId("nope"), emptyList()) as DomainResult.Failure
+            ).error shouldBe
                 DomainError.NotFound
 
             env.runs.failures["events"] = DomainError.ServerError
-            val view = LoadRun(env.runs)(env.scope, live, emptyList()).value()
+            val view = LoadRun(env.runs, LoadIssueRefs(env.issues))(env.scope, live, emptyList()).value()
             view.run.id shouldBe live
             view.events shouldBe emptyList()
         }

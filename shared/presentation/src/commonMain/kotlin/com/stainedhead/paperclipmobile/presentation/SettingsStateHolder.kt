@@ -105,7 +105,10 @@ data class SettingsState(
     val signOutFailures: Int = 0,
     val error: ErrorUi? = null,
     val deviceAuthIssue: DeviceAuthIssue? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isBusy
+}
 
 sealed interface SettingsIntent {
     data class DeviceNameCommitted(

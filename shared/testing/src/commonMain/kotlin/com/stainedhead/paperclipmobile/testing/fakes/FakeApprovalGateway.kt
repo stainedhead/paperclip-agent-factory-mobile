@@ -28,6 +28,9 @@ class FakeApprovalGateway(
     var issues: List<LinkedIssue> = listOf(AttentionFixtures.linkedIssue())
     var commentList: MutableList<ApprovalComment> = mutableListOf(AttentionFixtures.approvalComment())
 
+    /** Called with the approval's id once approve or reject took effect, so a demo feed can drop its card. */
+    var onResolved: ((String) -> Unit)? = null
+
     /** Runs after a scripted failure so a test can model "resolved elsewhere while the call was in flight". */
     var serverChangesOnFailure: ((Approval) -> Approval)? = null
 
@@ -133,7 +136,12 @@ class FakeApprovalGateway(
         }
         return when {
             current.status.isResolvable -> {
-                DomainResult.Success(current.copy(status = target, decisionNote = note).also { store[id] = it })
+                DomainResult.Success(
+                    current.copy(status = target, decisionNote = note).also {
+                        store[id] = it
+                        onResolved?.invoke(id.value)
+                    },
+                )
             }
 
             current.status == target -> {

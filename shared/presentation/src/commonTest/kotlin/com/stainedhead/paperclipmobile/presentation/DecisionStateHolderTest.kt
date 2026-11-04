@@ -238,7 +238,7 @@ class DecisionActionsTest {
             state.execution shouldBe
                 ExecutionUi(
                     ExecutionStatusUi.Succeeded,
-                    listOf(EffectResultUi(0, "effect", EffectStatusUi.Executed, null)),
+                    listOf(EffectResultUi(0, "comment_on_issue", EffectStatusUi.Executed, null)),
                     false,
                 )
             state.options shouldBe emptyList()

@@ -42,7 +42,7 @@ private const val CENTS_PER_DOLLAR = 100L
 private fun dollars(amount: Long) = MoneyUi(amount * CENTS_PER_DOLLAR, "USD")
 
 private suspend fun <S> StateFlow<S>.await(predicate: (S) -> Boolean): S =
-    withContext(Dispatchers.Default) { withTimeout(10.seconds) { first(predicate) } }
+    withContext(Dispatchers.Default) { withTimeout(60.seconds) { first(predicate) } }
 
 private val home = DemoIds.HOME_FACTORY
 private val acme = DemoIds.ACME

@@ -32,6 +32,7 @@ import com.stainedhead.paperclipmobile.domain.SubjectKind
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 /**
@@ -41,6 +42,9 @@ import kotlin.time.Instant
 object DemoInbox {
     private val now = DemoFactories.now
     private val arrived: Instant = now - 3.days
+
+    /** The mock reads "Updated 12s ago" on first sight; a refresh then reads current. */
+    val FIRST_READ_AGE = 12.seconds
     private const val BUDGET_CENTS = 20_000L
     private const val FULL_PERCENT = 100
     private val hardStop = Money.usdCents(BUDGET_CENTS)

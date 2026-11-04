@@ -79,6 +79,8 @@ internal object IssueRenderer {
             canAssign = may(Action.AssignIssue),
             canCreateSubtask = may(Action.CreateIssue),
             isBusy = model.busy,
+            commentSentCount = model.commentsSent,
+            subtaskCreatedCount = model.subtasksCreated,
             isOffline = !online,
             actionsDisabledReason = disabledReason(online, role, Action.CommentOnIssue),
         )

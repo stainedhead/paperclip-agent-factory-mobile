@@ -114,6 +114,10 @@ data class IssueState(
     val assigneeChoices: List<AssigneeChoiceUi> = emptyList(),
     val canCreateSubtask: Boolean = false,
     val isBusy: Boolean = false,
+    /** Counts comments that went through; the comment box is cleared when it changes, never before (A2). */
+    val commentSentCount: Int = 0,
+    /** Counts subtasks created; the subtask sheet closes when it changes, and keeps its title when it does not. */
+    val subtaskCreatedCount: Int = 0,
     val role: RoleUi? = null,
     val isOffline: Boolean = false,
     val actionsDisabledReason: ActionsDisabledReason? = null,
@@ -121,7 +125,10 @@ data class IssueState(
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isBusy
+}
 
 sealed interface IssueIntent {
     data object Refresh : IssueIntent

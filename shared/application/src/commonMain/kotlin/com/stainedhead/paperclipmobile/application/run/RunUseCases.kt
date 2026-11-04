@@ -4,6 +4,7 @@ import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
 import com.stainedhead.paperclipmobile.application.InvalidInput
 import com.stainedhead.paperclipmobile.application.MutationResult
 import com.stainedhead.paperclipmobile.application.failed
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.application.retryingRead
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.CompanyContext
@@ -11,6 +12,7 @@ import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.IssueId
+import com.stainedhead.paperclipmobile.domain.IssueRef
 import com.stainedhead.paperclipmobile.domain.LogTail
 import com.stainedhead.paperclipmobile.domain.Permissions
 import com.stainedhead.paperclipmobile.domain.RunEvent
@@ -23,11 +25,14 @@ import com.stainedhead.paperclipmobile.domain.port.RunGateway
 data class RunView(
     val run: HeartbeatRun,
     val events: List<RunEvent>,
+    /** The issue the run works on, when it could be read. */
+    val issue: IssueRef?,
 )
 
 /** Loads a run and its newer events. Pass the events already shown; only later ones are requested. */
 class LoadRun(
     private val gateway: RunGateway,
+    private val refs: LoadIssueRefs,
 ) {
     suspend operator fun invoke(
         scope: CompanyScope,
@@ -44,7 +49,8 @@ class LoadRun(
                 is DomainResult.Failure -> emptyList()
                 is DomainResult.Success -> read.value
             }
-        return DomainResult.Success(RunView(run, RunEvents.merge(known, fresh)))
+        val issue = refs(scope, listOf(run.issueId))[run.issueId]
+        return DomainResult.Success(RunView(run, RunEvents.merge(known, fresh), issue))
     }
 }
 

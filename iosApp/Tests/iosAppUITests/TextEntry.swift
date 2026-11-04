@@ -1,0 +1,69 @@
+import XCTest
+
+extension XCUIElement {
+    /// Taps the field until it really has keyboard focus, waiting for the software keyboard between taps. On a slow
+    /// or freshly booted simulator the first tap can land before the field is ready, and `typeText` then fails with
+    /// "Neither element nor any descendant has keyboard focus".
+    @MainActor
+    func focus(attempts: Int = 6, file: StaticString = #filePath, line: UInt = #line) {
+        guard waitForExistence(timeout: 15) else {
+            XCTFail("The field \(identifier) never appeared", file: file, line: line)
+            return
+        }
+        for _ in 0..<attempts {
+            if !hasKeyboardFocus { tap() }
+            if hasKeyboardFocus { return }
+            _ = XCUIApplication().keyboards.firstMatch.waitForExistence(timeout: 2)
+            if hasKeyboardFocus { return }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        XCTFail("The field \(identifier) never received keyboard focus after \(attempts) taps", file: file, line: line)
+    }
+
+    var hasKeyboardFocus: Bool {
+        (value(forKey: "hasKeyboardFocus") as? Bool) ?? false
+    }
+
+    /// What the field shows now. An empty field reports its placeholder as its value, so a value equal to the
+    /// placeholder is ambiguous: it may be placeholder or real text that happens to match it.
+    var shownText: String { (value as? String) ?? "" }
+
+    /// Focuses the field, types the text and checks the field now holds exactly the intended text. A slow runner can
+    /// drop a keystroke ("fctory"), so a mismatch is cleared and typed again up to twice before it fails.
+    @MainActor
+    func enterText(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
+        focus(file: file, line: line)
+        typeText(text)
+        for _ in 0..<2 where shownText != text {
+            clearText(file: file, line: line)
+            typeText(text)
+        }
+        XCTAssertEqual(shownText, text, "Typing into \(identifier) produced the wrong text", file: file, line: line)
+    }
+
+    /// Replaces whatever the field holds.
+    @MainActor
+    func clearAndTypeText(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
+        clearText(file: file, line: line)
+        enterText(text, file: file, line: line)
+    }
+
+    /// Empties the field. The caret is first moved to the end (the focus tap may land mid-text), then more delete keys
+    /// than characters are sent. Deleting is repeated until the field is empty or shows only its placeholder; the
+    /// placeholder case is sent one deletion pass regardless, because it may be real text.
+    @MainActor
+    func clearText(file: StaticString = #filePath, line: UInt = #line) {
+        focus(file: file, line: line)
+        var passes = 0
+        repeat {
+            passes += 1
+            let length = shownText.count
+            coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+            typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: length + 5))
+        } while passes < 3 && !shownText.isEmpty && shownText != placeholderValue
+        let left = shownText
+        XCTAssertTrue(
+            left.isEmpty || left == placeholderValue, "Clearing \(identifier) left \"\(left)\" behind", file: file,
+            line: line)
+    }
+}

@@ -26,7 +26,7 @@ class LoadApprovalTest {
         runTest {
             val env = Env()
 
-            val result = LoadApproval(env.approvals, env.connectivity)(env.scope, id)
+            val result = LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, id)
 
             val detail = (result as DomainResult.Success).value
             detail.approval.id shouldBe id
@@ -35,12 +35,34 @@ class LoadApprovalTest {
         }
 
     @Test
+    fun `the name of the agent a hire reports to is resolved from the agents list`() =
+        runTest {
+            val env = Env()
+
+            val result = LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, id)
+            val detail = (result as DomainResult.Success).value
+
+            detail.agentNames["agent-cto"] shouldBe "CTO"
+        }
+
+    @Test
+    fun `a failing agents read does not fail the approval and the names are just missing`() =
+        runTest {
+            val env = Env()
+            env.agents.failures["list"] = DomainError.Unreachable
+
+            val result = LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, id)
+
+            (result as DomainResult.Success).value.agentNames shouldBe emptyMap()
+        }
+
+    @Test
     fun `FR-096 a transient failure is retried three times`() =
         runTest {
             val env = Env()
             env.approvals.failures["get"] = DomainError.Unreachable
 
-            LoadApproval(env.approvals, env.connectivity)(env.scope, id)
+            LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, id)
 
             env.approvals.count("get") shouldBe 4
         }
@@ -50,7 +72,7 @@ class LoadApprovalTest {
         runTest {
             val env = Env()
 
-            val result = LoadApproval(env.approvals, env.connectivity)(env.scope, ApprovalId("nope"))
+            val result = LoadApproval(env.approvals, env.agents, env.connectivity)(env.scope, ApprovalId("nope"))
 
             (result as DomainResult.Failure).error shouldBe DomainError.NotFound
             env.approvals.count("get") shouldBe 1
@@ -63,7 +85,13 @@ class LoadApprovalTest {
             val env = Env()
             env.approvals.failures["comments"] = DomainError.Forbidden
 
-            (LoadApproval(env.approvals, env.connectivity)(env.scope, id) as DomainResult.Failure).error shouldBe
+            (
+                LoadApproval(
+                    env.approvals,
+                    env.agents,
+                    env.connectivity,
+                )(env.scope, id) as DomainResult.Failure
+            ).error shouldBe
                 DomainError.Forbidden
         }
 }

@@ -2,7 +2,7 @@
 
 How test-driven development, fakes, contract suites, Konsist architecture rules and Kover coverage gates fit together in this repository, and how to add a use case or a screen's state holder end to end. The rules are in [AGENTS.md](../AGENTS.md); the structure is in [technical-details.md](../docs/technical-details.md).
 
-Verified against commit `26f4e1c`. Paths below are relative to the repository root; `…` stands for `com/stainedhead/paperclipmobile`.
+Last revised in the Phase 2i review-fix round (branch `feat/phase-2i-iphone-ui`); not re-checked line by line against the code. Paths below are relative to the repository root; `…` stands for `com/stainedhead/paperclipmobile`.
 
 ## The loop
 
@@ -88,7 +88,7 @@ The architecture tests are listed in [technical-details.md](../docs/technical-de
 | Core | `./gradlew koverVerifyCore` | one aggregate over `domain` and `application` |
 | Presentation | `./gradlew koverVerifyPresentation` | `presentation` |
 
-Both need 90% line coverage and both run in `check`. Do not reduce coverage when adding code. To see numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q` and read `build/reports/kover/*.xml` (97.97% and 98.02% at the verified commit). `testing`, `umbrella` and (later) infrastructure are outside the gates.
+Both need 90% line coverage and both run in `check`. Do not reduce coverage when adding code. To see numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q` and read `build/reports/kover/*.xml` (numbers for this branch: `docs/technical-details.md`). `testing`, `umbrella` and (later) infrastructure are outside the gates.
 
 ## Contract tests against a real server
 

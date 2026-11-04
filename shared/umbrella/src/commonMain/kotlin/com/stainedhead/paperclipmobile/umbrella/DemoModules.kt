@@ -6,6 +6,7 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Exposure
 import com.stainedhead.paperclipmobile.domain.HealthReport
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.RunStatus
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.ServerStatus
@@ -57,29 +58,34 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakePairingBrowser
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
+import com.stainedhead.paperclipmobile.testing.fakes.approvePairings
 import org.koin.dsl.module
 
 /**
  * Every port backed by the shared fakes, seeded with the demo data set of the design mocks (ADR-026). The clock is
  * frozen at a mid-week instant; the Home factory holds a fake board key and every company-scoped read sees Acme Labs.
  */
-internal fun demoPortsModule() =
+internal fun demoPortsModule(seeded: Boolean = true) =
     module {
         single<Clock> { FakeClock(DemoFactories.now) }
         single<IdGenerator> { FakeIdGenerator("demo-") }
-        single<InstanceRepository> { FakeInstanceRepository(DemoFactories.instances()) }
+        single<InstanceRepository> { FakeInstanceRepository(if (seeded) DemoFactories.instances() else emptyList()) }
         single<SecretStore> {
             FakeSecretStore().apply {
-                seed(SecretKey(InstanceId(DemoIds.HOME_FACTORY), SecretName.BoardToken), DemoFactories.HOME_TOKEN)
+                if (seeded) {
+                    seed(SecretKey(InstanceId(DemoIds.HOME_FACTORY), SecretName.BoardToken), DemoFactories.HOME_TOKEN)
+                }
             }
         }
         single<AppSettingsStore> {
-            FakeAppSettingsStore(
-                AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = InstanceId(DemoIds.HOME_FACTORY)),
-            )
+            val selected = if (seeded) InstanceId(DemoIds.HOME_FACTORY) else null
+            FakeAppSettingsStore(AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = selected))
         }
-        single<Biometrics> { FakeBiometrics() }
-        single<Connectivity> { FakeConnectivity() }
+        single { FakeBiometrics() }
+        single<Biometrics> { get<FakeBiometrics>() }
+        demoControls()
+        single { FakeConnectivity() }
+        single<Connectivity> { get<FakeConnectivity>() }
         single<PairingBrowser> { FakePairingBrowser() }
         single<HealthGateway> {
             FakeHealthGateway(
@@ -101,6 +107,10 @@ internal fun demoPortsModule() =
                 meWithKeyResult = DomainResult.Success(DemoFactories.access())
                 companiesResult = DomainResult.Success(DemoFactories.companies())
                 keysResult = DomainResult.Success(DemoFactories.boardKeys())
+                val clock = get<Clock>()
+                val repository = get<InstanceRepository>() as FakeInstanceRepository
+                hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }
+                approvePairings(from = { clock.now() })
             }
         }
         demoAttentionPorts()
@@ -108,14 +118,48 @@ internal fun demoPortsModule() =
         signalPorts()
     }
 
-private fun org.koin.core.module.Module.demoAttentionPorts() {
-    single<AttentionGateway>(RawPort) { FakeAttentionGateway(get(), DemoInbox.items()) }
-    single<AttentionCache> { FakeAttentionCache() }
-    single<DecisionGateway>(RawPort) { FakeDecisionGateway(DemoAttentionDetails.decisions()) }
-    single<ApprovalGateway>(RawPort) {
-        FakeApprovalGateway(DemoAttentionDetails.approvals()).apply { issues = DemoAttentionDetails.linkedIssues() }
+private fun org.koin.core.module.Module.demoControls() {
+    single {
+        DemoControls(
+            get(),
+            get(),
+            get<DecisionGateway>(RawPort) as FakeDecisionGateway,
+            get<ApprovalGateway>(RawPort) as FakeApprovalGateway,
+            get<BudgetGateway>(RawPort) as FakeBudgetGateway,
+            DemoReadFailures(
+                get<AgentGateway>(RawPort) as FakeAgentGateway,
+                get<RunGateway>(RawPort) as FakeRunGateway,
+                get<DashboardGateway>(RawPort) as FakeDashboardGateway,
+            ),
+        )
     }
-    single<BudgetGateway>(RawPort) { FakeBudgetGateway(DemoAttentionDetails.incidents()) }
+}
+
+private fun org.koin.core.module.Module.demoAttentionPorts() {
+    single<AttentionGateway>(RawPort) {
+        FakeAttentionGateway(get(), DemoInbox.items()).apply {
+            firstFeedAge = DemoInbox.FIRST_READ_AGE
+            emptyCompanies = setOf(DemoIds.SIDE_PROJECT)
+        }
+    }
+    single<AttentionCache> { FakeAttentionCache() }
+    single<DecisionGateway>(RawPort) {
+        FakeDecisionGateway(DemoAttentionDetails.decisions()).apply {
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
+    single<ApprovalGateway>(RawPort) {
+        FakeApprovalGateway(DemoAttentionDetails.approvals()).apply {
+            issues = DemoAttentionDetails.linkedIssues()
+            commentList = DemoAttentionDetails.approvalComments().toMutableList()
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
+    single<BudgetGateway>(RawPort) {
+        FakeBudgetGateway(DemoAttentionDetails.incidents()).apply {
+            onResolved = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
+    }
 }
 
 private fun org.koin.core.module.Module.demoWorkPorts() {
@@ -127,12 +171,23 @@ private fun org.koin.core.module.Module.demoWorkPorts() {
             DemoWork.plans(),
             DemoWork.attachments(),
             "Billing v2",
-        )
+        ).apply { now = { get<Clock>().now() } }
     }
     single<InteractionGateway>(RawPort) {
-        FakeInteractionGateway(listOf(DemoWork.confirmation()), DemoWork.interactionsByIssue())
+        FakeInteractionGateway(listOf(DemoWork.confirmation()), DemoWork.interactionsByIssue()).apply {
+            onAnswered = { id -> (get<AttentionGateway>(RawPort) as FakeAttentionGateway).resolveSubject(id) }
+        }
     }
-    single<AgentGateway>(RawPort) { FakeAgentGateway(DemoAgents.agents()) }
+    single<AgentGateway>(RawPort) {
+        FakeAgentGateway(DemoAgents.agents()).apply {
+            // A run that was asked for appears like a server's: in the run store, in progress, started now.
+            onRunStarted = { run ->
+                val now = get<Clock>().now()
+                (get<RunGateway>(RawPort) as FakeRunGateway).store[run.id] =
+                    run.copy(status = RunStatus.Running, createdAt = now, startedAt = now)
+            }
+        }
+    }
     single<RunGateway>(
         RawPort,
     ) { FakeRunGateway(DemoAgents.runs(), events = DemoAgents.events(), log = DemoAgents.LOG) }

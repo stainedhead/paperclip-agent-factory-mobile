@@ -603,3 +603,311 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** (3) `BaseUri.parse` drops the default port of the scheme (443 for https, 80 for http) and leading zeros of any port; every stored row is parsed again on read, so older rows need no migration. (4) The compose file cannot echo a marker (anonymous `/api/health` exposes no environment value), so identity is proved by what only the test container holds: a server that is `bootstrap_pending` must accept the invite minted inside the container by `scripts/paperclip-test-server.sh invite` (without it the run refuses before any call that creates something); a server already in use must accept sign-in with the fixed `TESTONLY` account, and the run never signs up on it. Port 3100 is refused even when `PAPERCLIP_TEST_PORT` names it. (5) The 24+ run is removed only when it holds a digit, a capital letter or `+/=`. (6) `InstanceId` rejects `/`, `\` and control characters.
 
 **Consequences.** A server that already holds the fixed TESTONLY account could still be mutated; that account exists only where an earlier run of this test created it. Hex or base64 runs without any digit, capital or `+/=` (24 or more lower case letters only) are no longer redacted; real tokens carry digits.
+## ADR-088: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-001/UI-002)
+
+**Context.** Every screen needs an `@Observable` adapter over a Kotlin holder's `StateFlow`. Writing one per screen invites stale reads (an intent returns before the flow emits) and holders closed from a view's `.task` ending.
+
+**Decision.** `StateHolderProtocol` (conformed to by all 16 holders in one line each) and `HolderModel<Holder>`: `send` applies `holder.state.value` straight after the intent; `observe()` catches up then follows the `SkieSwiftStateFlow` until its task is cancelled, and can restart; cancelling never closes the holder; `close()` is idempotent and called only by an owner (`AppEnvironment` for the shell models, `ModelStore` keyed by route for screens). Everything is `@MainActor`.
+
+**Consequences.** A screen model is `HolderModel<XStateHolder>` plus an extension of typed intent helpers. Tests cover mirroring, no stale read, cancel and restart, and exactly-once close.
+
+## ADR-089: A launch without `-demo` starts at first run on the live seam; the demo graph is opt-in, with scripted Face ID through `DemoControls`
+
+**Status:** Accepted (2026-11-02, UI-001/UI-004)
+
+**Context.** The brief suggested demo by default, but acceptance criterion 8 and the existing first-run UI test require a launch without arguments to show the empty first-run flow. UI tests also need to script Face ID results and count prompts without a device.
+
+**Decision.** `AppGraphProvider` has `DemoGraphProvider` (`-demo` or "Try the demo factory") and `LiveGraphProvider`, a placeholder marked `isAvailable == false` that returns today's fake-backed `createGraph` (ADR-037) until Phase 1b. `PaperclipGraph.demoControls` (demo graph only, null otherwise) scripts `BiometricResult`s and counts prompts; the app reads launch arguments `-demo-biometrics`, `-demo-idle`, `-demo-diagnostics`.
+
+**Consequences.** Real Face ID (LocalAuthentication) arrives with Phase 1b's adapter; until then the graph's `Biometrics` is the fake.
+
+## ADR-090: Destructive Face ID gating stays inside the shared use case; the Swift sheet only forwards and reports
+
+**Status:** Accepted (2026-11-02, UI-004)
+
+**Context.** AGENTS.md puts the `Biometrics` port inside the use case. A Swift sheet that also prompted would double-prompt and could be skipped by another view.
+
+**Decision.** `ConfirmDestructiveSheet` shows the lock glyph, calls `onConfirm` (the screen's confirm intent) and displays the holder's `DeviceAuthIssue`. A Swift test proves that a cancelled scripted prompt leaves the agent unpaused.
+
+**Consequences.** One gate for every platform. Catalog keys are `<namespace>.<caseName>` for each exported key enum, verified by a completeness test (ADR for localisation scheme: this one).
+
+## ADR-091: (superseded by ADR-120) A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-010)
+
+**Context.** `PairingBrowser.open(approvalUrl: Secret)` needs the link, but `Secret.reveal` is hidden from Objective-C on purpose and a Konsist rule limits it to infrastructure and fakes. A Swift conformance to a Kotlin `suspend` interface also needs a `__open` name that SwiftLint and swift-format reject, and an error thrown from Swift into the holder's coroutine would end the app.
+
+**Decision.** `shared/infrastructure/platform` offers `ApprovalPageOpener.open(url: String, onShown: () -> Unit)` (implemented by the shell, never throws) and `OpenerPairingBrowser`, the only place the link leaves its `Secret`. The Swift `ASWebAuthSessionPairingBrowser` opens only `https` links (plain `http` to a local host in debug builds), never logs or keeps the link, and calls back once the page is on screen. Closing the sheet is not a failure: it is how a person finishes approving, and the shared use case finds out by polling.
+
+**Consequences.** Superseded on the 1b merge: 1b's `PairingBrowsers.onMainThread(show, dismiss)` is used instead and `ApprovalPageOpener`/`OpenerPairingBrowser` were deleted (the platform module may not see a `Secret`, a Konsist rule). Original text: Phase 1b passes `OpenerPairingBrowser(opener)` to `createLiveGraph`; only the factory call changes. A sheet that could not be shown cancels the pairing on screen. Real `ASWebAuthenticationSession` behaviour is not exercised on CI.
+
+## ADR-092: Pairing completes on fakes through `approvePairings`, a first-run demo graph, and the graph clock
+
+**Status:** Accepted (2026-11-02, UI-010)
+
+**Context.** On the demo graph a pairing could never finish: the challenge expired at a 2026-11-01 instant while the demo clock was 2026-11-04, polls answered Pending forever, and a used challenge is wiped so it cannot be reused. Updated labels were measured against the wall clock.
+
+**Decision.** `FakeAuthGateway.approvePairings(from)` hands out a fresh challenge per call that expires relative to the graph clock and approves every poll. `PaperclipCore.createFirstRunDemoGraph()` starts with no factory. `PaperclipGraph.nowEpochMillis()` lets the app measure "Updated" against the graph clock. `-demo-first-run` selects that graph in the app.
+
+**Consequences.** First-run, pairing and re-pair flows run in demo mode and UI tests with no server. The live graph uses the wall clock.
+
+## ADR-093: Sign out, revoke and sign out everywhere ask for confirmation but not Face ID
+
+**Status:** Accepted (2026-11-02, UI-010)
+
+**Context.** The Settings mock shows a lock glyph on Sign out everywhere. FR-014 lists the actions that always need the device owner (pause, cancel, destructive decisions, reject, budget raise), and AGENTS.md adds removing a factory; the shared use cases gate exactly those.
+
+**Decision.** The Swift screens ask for a plain confirmation (`ConfirmSheet`, no lock glyph) for sign out, revoke and sign out everywhere, and the lock glyph appears only where the use case prompts (`ConfirmDestructiveSheet`, remove factory).
+
+**Consequences.** Nothing claims a prompt that does not happen. If the owner wants these gated, that is a shared change (use case plus tests) first; the sheets then switch.
+
+
+## ADR-094: The system accessibility audits must pass locally and report, without blocking, in CI
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+
+**Context.** `performAccessibilityAudit` samples screenshots, and its findings depend on the OS: local development runs Xcode 27.2 on the iOS 27.2 simulator, the macOS runner image stops at Xcode 26.6 and the iOS 26.5 runtime (checked with a diagnostics step; no newer Xcode is installed). Across five CI runs of the same product code the audit tests failed differently each time: "Contrast failed" on black text on a white card (Edit form, Settings rows, Manage's "3 factories" caption, Settings' "Paired devices and keys"), "Hit area is too small | Device name" on a field that already has a 44 pt minimum height, and "Audit failed to complete in time" (error -56). Several of those passed on the next run, and none reproduced locally, where all six audits pass on the iPhone Air. The palette's secondary text is about 5.7:1 on its background, so the contrast findings are not a palette defect.
+
+**Decision.** The audits stay real tests, are not deleted and get no new allow-list entries for the label-based known findings. They must pass locally. `ios.yml` runs the functional UI tests and Swift Testing as the blocking step (`TEST_SET=functional`) and the audits as a separate step (`TEST_SET=audits`, `continue-on-error: true`) with a summary and the xcresult uploaded. The audit helper ignores only findings whose element lies under the floating tab bar, because the bar's glass is what the audit measures there; those are printed as `ACCESSIBILITY-AUDIT-UNDER-TAB-BAR`.
+
+**Consequences.** A real accessibility regression shows in the audit step's summary and locally, not as a red check, until the runner has an Xcode whose audit agrees with local development. Revisit when the runner image gains Xcode 27.
+
+## ADR-095: The Inbox screen shows the one app-wide Inbox holder; the refresh session stays with the environment
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+
+**Context.** The Inbox feeds the tab badge, so its holder must exist whenever a factory and company are selected, not only while the tab is visible. A second holder (or a second `RefreshSession`) created by the view would double the polling and an approve on screen would not move the badge.
+
+**Decision.** `InboxView` renders `AppEnvironment.inbox` (the same `HolderModel` that feeds the badge). The environment owns the single refresh session; foreground, background and offline are the shared policy's (`lifecycle.setForeground`). The screen only asks for one more refresh when it comes back into view (a tab re-selected, a pushed screen popped), never on first appearance.
+
+**Consequences.** The refresh timer runs while the app is in the foreground on any tab, which keeps the badge current (ADR-010). Pull to refresh sends `Refresh` and waits for `isRefreshing` to end.
+
+## ADR-096: The demo Inbox behaves like a server: resolving removes the card, the first read is 12 s old, Side Project is empty, and the phone can go offline
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+
+**Context.** UI tests and screenshots need the Inbox to react to approve, keep paused and refresh the way the real feed does, and to show empty and offline states.
+
+**Decision.** `FakeApprovalGateway` and `FakeBudgetGateway` call an `onResolved` hook; the demo wires it to `FakeAttentionGateway.resolveSubject`, so the feed (and the badge, computed by the fake from its items) stops returning the card. The first feed read reports `generatedAt` 12 s before the frozen demo clock, later reads are current, so "Updated 12s ago" becomes "Updated 0s ago" on a refresh. Company `company-side` has an empty feed. `DemoControls.setOnline` drives `FakeConnectivity`; the app's `-demo-offline` launch option applies it once the Inbox has content, so the cached cards are kept (going offline at launch would show the offline-empty state).
+
+**Consequences.** Decisions are not wired the same way (the Decision screen arrives in 2i-3). All of it is in shared fakes and covered by `DemoInboxFlowTest`.
+
+## ADR-097: The Inbox renders the state's order and kinds; cards are a List with swipe actions and a combined text block
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+
+**Decision.** Sections, cards and chips are shown in the order the state gives (shared grouping sorts Critical first, so the budget alert precedes the HIGH approval, unlike the mock; chips are in kind order). The state has no sub-kind ("Plans queue", "Hire agent"), so the kind line is the kind and identifier. A `List` is used because only list rows support swipe actions; Snooze opens a confirmation dialog listing `snoozeOptions`. The card's text block is one button with a combined spoken label; the action buttons stay separate elements. Kinds the app cannot show open `item.webUrl` in `SFSafariViewController`, only for http(s). Decision, approval, budget-incident, issue, run and agent targets map to routes or a sheet that are labelled placeholders until later milestones.
+
+**Consequences.** Mock-fidelity gaps (order, sub-kind) are shared-state decisions; changing them is a shared change.
+
+## ADR-098: Detail screens own their model by route, refresh while visible, and take their hints from the card that opened them
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Context.** The Decision, Approval and Budget screens each have a shared holder that polls (15 s while the item can change, none once final) and that needs, for a decision, facts only the Inbox card knows (agent name, decide-by, snooze key).
+
+**Decision.** `AppEnvironment` creates one model per `ScreenKey` (`decision`, `approval`, `budget`) in the existing `ModelStore` and closes it when its route leaves the stack; the Budget sheet's key is kept while the sheet is presented and released when it is dismissed (`AppRouter.present` and `dismissSheet` now report the change). A view starts `graph.refresh.start(target: holder.refreshTarget)` on appear and stops it on disappear (`refreshWhileVisible`), so the state's `refreshIntervalSeconds` is the only timer. The Inbox card's facts reach the Decision holder through `rememberDecisionHints` (the route carries ids only), mapped back to the strings the shared parser accepts (`DecisionHintMapping`). Dismissing the Budget sheet refreshes the Inbox so a resolved incident's card goes.
+
+**Consequences.** No Swift timers, no leaked holders (tested in `DetailScreenRoutingTests`). A screen opened without a card (a launch option) has no Snooze, as the shared rule says.
+
+## ADR-099: The demo can show a server that moved on: resolved elsewhere, offline after the detail loaded, the server's own spend
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Decision.** `DemoControls` gains `resolveDecisionElsewhere`, `resolveApprovalElsewhere`, `resolveIncidentElsewhere` (the Inbox feed still lists the card, as in a feed read a moment earlier) and `setBudgetServerSpend` (the server's spend is above what the incident showed, so a raise that clears the shown spend gets the server's 422 reason). Launch options: `-demo-resolved-elsewhere decision,approval,budget`, `-demo-offline-after-detail` (offline once the first detail screen has content, because all three holders refuse to load while offline), `-demo-budget-server-spend <cents>`, and `-demo-open decision:<id>|approval:<id>|budget:<id>`. Deciding or dismissing a decision removes its Inbox card through `FakeDecisionGateway.onResolved`; dec-1183 carries a required input with a 40 character limit; effect results carry the server's effect type.
+
+**Consequences.** All behaviour is in shared fakes with tests (`DemoDecisionFlowTest`); no UI-only fake state.
+
+## ADR-100: A hire approval's manager is named by the shared load, not by the view
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Context.** The payload holds only `reportsToAgentId`; the mock shows "Reports to CTO". Resolving an id to a name in Swift would be a rule in the app.
+
+**Decision.** `LoadApproval` reads the agents list best effort and `ApprovalDetail.agentNames` carries the hire's manager; `ApprovalPayloadUi.HireAgent.reportsToName` exposes it (the id remains the fallback). Role words ("qa" reads "QA") and money ("$150" for 15000 cents, cents kept when not whole) are presentation lookups in Swift (`ApprovalPresentation.roleName`, `MoneyFormat`), tested; the same formatter parses the amount typed on the Budget sheet into minor units.
+
+**Consequences.** Android will need the same two lookups; if they should be shared they move to presentation with the existing tests.
+
+## ADR-101: Face ID is the use case's; destructive controls show the lock, a plain Confirm does not; disabled cards are muted, not dimmed
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+
+**Decision.** No screen asks Face ID itself and none adds a second confirmation sheet for a destructive option or a budget raise: the confirm button (lock glyph only when the state says `confirmNeedsDeviceAuth` or `submitNeedsDeviceAuth`; the mock shows the lock on every Confirm, a deviation) sends the intent, and a cancelled prompt comes back as `feedback.deviceAuth` and is shown, with nothing changed. A reject or revision note is asked in a sheet that stays open after a cancelled prompt (`notePrompt` stays set). Selectable cards use `CardSelectButtonStyle`, which mutes a disabled card with secondary text instead of the system's dimming (which failed the contrast audit offline). Detail screens hide the tab bar and keep their action bar outside the scroll view; the UI audit helper reports elements that reach below the action bar's top as `DETAIL-AUDIT-BEHIND-BAR` (scrolled content the bar hides) and returns every other finding.
+
+**Consequences.** One gate for every platform. A reader of the state can tell why nothing happened.
+
+## ADR-102: Runs and agent rows name their issue through a best-effort shared read, not a Swift guess
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Context.** A run carries only an issue id. The mocks show "PAP-1204" and "Add retries to webhook ingest" on Factory home, Agents rows, Agent detail and the Run viewer. Upper-casing the id would work for the demo and be wrong for a real server.
+
+**Decision.** `LoadIssueRefs` (application) reads each distinct issue once, best effort (an unreadable issue is left out, never fails a screen). `LoadDashboard`, `ListAgents`, `LoadAgent` and `LoadRun` use it; `RunRowUi` gains `issueIdentifier`, `issueTitle`, `finishedAtEpochMillis`; `AgentRowUi` gains `currentRun`; `AgentsState` gains `canSetBudget` and `budgetDisabledReason`. The Agents list reads again after a successful Run now.
+
+**Consequences.** One extra read per distinct live issue (N+1, small N). A cheaper batch read would need an upstream change. Android gets the same fields.
+
+## ADR-103: Agent rows follow the shared rules, not the mock: a budget pause offers Budget, View run replaces Run now, Budget is the owner's
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Decision.** The Agents row offers exactly the state's actions plus two navigation buttons: View run (when the agent has a run in progress; it replaces Run now, as the mock's CTO row) and Budget (only when `canSetBudget`; it opens Agent detail, where "Set monthly budget" lives). A budget-paused agent (Engineer 2) has no Resume because the shared rule says a budget pause is lifted by the budget incident (research A1); the mock's Resume is a deviation. Pause is the only row action with the lock glyph (it is the one that asks Face ID; Resume and Run now do not). The mock's "Next heartbeat in 8m" and "last run timed out" are not in the state; rows show "last heartbeat 2m ago".
+
+## ADR-104: Factory home and Agents models belong to a company; Run viewer and Agent detail to their route
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Decision.** `ScreenKey` gains `factoryHome` and `agents` (keyed by factory and company, kept while selected, closed when the company changes) and `agent(id)`, `run(id)` (closed when the route leaves the stack). Views start the shared refresh policy while visible (`refreshWhileVisible`); the Run viewer's 5 s interval while a run is live is the state's. Auto-scroll is the state's: the log toggle and a drag that leaves the bottom send `UserScrolled`/`JumpToLatest`. The cancelled Face ID result is shown as feedback on the screen (the confirm sheet closes when the intent is sent).
+
+## ADR-105: The demo is honest about runs: Run now starts one, and a launch option breaks the reads
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Decision.** `FakeAgentGateway.invokeHeartbeat` puts the agent to work and reports the run (`onRunStarted`); the demo wiring adds it to the run store. `DemoControls.failReads` makes the Factory, Agents and Run reads fail with a server error; launch options `-demo-server-error` and `-demo-open run:<id>|agent:<id>` expose them. The demo's Running-now data, events and log are the mock's.
+
+## ADR-106: The functional iOS tests run as three parallel CI jobs by test class
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+
+**Context.** The functional step took 40.5 minutes on the runner for the 2i-3 head (run 41542545380, 52 minutes in all, 60 minute timeout) and 2i-4 adds about 13 UI tests plus Swift Testing cases.
+
+**Decision.** `scripts/ios-test.sh` takes `SHARD=1|2|3` with `TEST_SET=functional` (a fixed list of test classes per shard, and a check that fails the script if a UI test class is in no shard). `ios.yml` runs a matrix `ios (1)`, `ios (2)`, `ios (3)` and `ios (audits)`; lint and the Kotlin/Native tests run in shard 1 only; the audits job is `continue-on-error` (ADR-094). Every `uses:` stays SHA-pinned. Required status checks named `ios` must be renamed to the four matrix names (audits not required).
+
+**Consequences.** Each shard repeats the setup and the XCFramework build (about 5 minutes) but the longest shard is about a third of the tests.
+
+## ADR-107: The Inbox tab exposes its badge as its accessibility value; the demo refresh timer can be paused for tests
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+
+**Context.** On the CI runner (Xcode 26.6, iOS 26.5) the Inbox tab button's accessibility element had label "Inbox" and no value, although the badge was painted (screenshot: red "3") and the state held badge=3. SwiftUI's `.badge` is drawn by the tab bar but not part of the button's accessibility element, so VoiceOver users and UI tests could not read it. Separately, `testPullToRefreshMakesTheUpdatedLabelCurrent` read "Updated 0s ago" instead of "12s": the shared refresh policy refreshes the visible Inbox every 15 s, a slow runner start (19 s to first read) let the timer fire before the test looked, and the demo clock is frozen so the refreshed read is exactly "0s".
+
+**Decision.** The count is set as the tab button's accessibility value, "N waiting" (catalog key `label.tabBadgeValue`, empty without a badge), a real accessibility improvement; the label stays "Inbox". A `.accessibilityValue` on the SwiftUI `tabItem` did not reach the button (CI run 41557971050 family: hierarchy unchanged), so a zero-size `UIViewControllerRepresentable` inside each tab finds the `UITabBarController` and sets `UITabBarItem.accessibilityValue` (`TabBarAccessibility`). UIKit rebuilds the bar's items without SwiftUI telling us (a detail screen hiding and showing the bar, a sheet closing) and a live button only picks a changed value up when its badge changes, so the helper also sets the values on the view controllers' items, re-assigns the badge text when it changes a value, and re-checks twice a second. UI tests keep reading the badge and now assert on that value. A launch option `-demo-no-auto-refresh` skips starting the Inbox refresh session (pull to refresh and returning to the screen still refresh) and that one test uses it, so its first read is deterministic. No assertion was weakened.
+
+**Consequences.** The Shell test now requires the tab to expose the count instead of accepting its absence. The timer is still covered by the shared RefreshVisibleScreen tests.
+
+## ADR-108: Work list and Issue are built on the existing holders; text input stays in the view
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+
+**Context.** The shared holders for both screens existed. The demo answered a question without telling the Inbox feed and stamped a new comment with the epoch, so it sorted first in the thread.
+
+**Decision.** Swift renders the state and forwards intents; the only shared edits are the demo ones above, test first. Search is sent on submit (no per-keystroke requests, no timers), the comment box and the cards' text fields keep their own text and send change intents, and a failed comment is put back in the box. Create-issue opens the new issue through `createdIssueId`. No Face ID is added: none of these actions is on the destructive list in AGENTS.md.
+
+**Consequences.** Tab counts ("Runs 3") appear once a tab has been read, because the holder reads those tabs lazily; the mock shows them at once.
+
+## ADR-109: The new Work and Issue audits are blocking-free but honest
+
+**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+
+**Decision.** `WorkAuditUITests` asserts the audit returns no findings with plain assertions (no expected failure, no allow-list) and is listed in the audit set of `scripts/ios-test.sh` (non-blocking in CI, ADR-094). The new functional classes `WorkUITests` and `IssueUITests` join shard 3.
+
+
+## ADR-110: The tab bar's accessibility values follow key-value observation, not a timer
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+
+**Context.** ADR-107 set the Inbox badge's accessibility value on the `UITabBarItem`s. UIKit rebuilds those items at moments SwiftUI gives no signal for (a sheet closing, a detail screen's bar returning), so the first version re-checked twice a second with a `Timer`. AGENTS.md and the brief forbid polling timers in views.
+
+**Decision.** The invisible `Applier` controller observes with KVO the bar's `items` and `isHidden`, the bar layer's `position` and the tab controller's `viewControllers`, and re-applies the values (idempotent) on each change, in addition to layout and appearance callbacks. The timer and the 0.6 s one-shot are gone.
+
+**Consequences.** All 50 UI tests of the Inbox, Decision, Approval, Budget and Shell classes that read the badge pass locally on iOS 27.2. Whether UIKit posts these KVO changes on every rebuild of the iOS 26.5 runtime used by CI was verified only by the CI run (see implementation-notes.md); if a rebuild bypasses KVO the badge test is the detector.
+
+## ADR-111: Factory home and Agents audit findings are reported honestly, not expected
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+
+**Context.** Three audits (Factory home, offline Factory home, Agents) used a non-strict `XCTExpectFailure` for "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text in the lower part of the screen (y about 575 to 775 of 874 pt).
+
+**Decision.** No `XCTExpectFailure` remains anywhere (the last dead helper that called it was deleted in the review-fix round, C4). The audits assert an empty finding list like the others and stay in the non-blocking audit set (ADR-094), so CI reports their findings instead of hiding them. Investigated without effect: making the tile and row buttons single elements (`accessibilityElement(.ignore)` on the button, the pattern the Work rows use and which pass), and `contentMargins(.bottom)` for the floating tab bar. The findings track screen position (a tile row is clean at y 540 and flagged at y 620), not a font: the Work list, built the same way, passes. Cause not found.
+
+**Consequences.** The three tests fail locally and in the audit job until the cause is found; they do not block the merge. Findings: Factory home (2 to 4 texts of the Approvals and Budget incidents tiles), offline Factory home (all tiles), Agents (the CTO row, Pause, section header).
+
+## ADR-112: The live seam stays a provider; the real graph is plugged in when Phase 1b merges
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, G5)
+
+**Decision.** `createLiveGraph`, `openLiveGraph` and `LivePlatform` exist only on `feat/phase-1b-adapters` (PR #7), so this branch does not call them (the Kotlin would not compile into the framework). `LiveGraphProvider` already has the Swift half (pairing browser, debug-only insecure local) and its `makeGraph()` is the single line to change. The exact steps are the "Merge checklist" in implementation-notes.md.
+
+**Consequences.** A launch without `-demo` used to show the first-run flow on empty fakes with Face ID that always approved; ADR-114 replaced that with a "not available in this build" screen.
+
+## ADR-113: Hit targets and reduce motion are checked by UI test and environment, not by a shared rule
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+
+**Decision.** `HitTargetUITests` reads every button, switch and text field on each tab root and asserts at least 43.9 x 43.9 pt (rounding tolerance). Explicit animations read `accessibilityReduceMotion`. These are presentation rules with no shared state, so no Kotlin changed.
+
+**Consequences.** The tests were characterisation tests: they passed on first run, no red step. The review-fix round (ADR-118) made the test fail when it measures nothing, and say which controls it cannot see.
+
+## ADR-114: A launch whose real graph cannot open says so and runs nothing; demo flags exist in Debug builds only
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A3, A7); amended on the 1b merge (ADR-120).
+
+**Context.** Before Phase 1b the iPhone app could only build the graph on fakes. `LiveGraphProvider.isAvailable` was never read, so a Release launch ran first-run pairing on `FakeBiometrics` (always approves). All `-demo*` flags and the diagnostics overlay worked in every build.
+
+**Decision.** The rule lives in shared code: `StartupNotice.forLaunch(demo, liveOpened)` returns `LiveGraphUnavailable` for a live launch whose graph did not open. `AppEnvironment` asks it once; on failure it holds a closed stand-in graph (no holder, refresh or biometric port runs) and `RootView` shows the notice with Try again. `LaunchConfiguration` takes `allowsDemoControls`, true only when `DEBUG` is defined, and ignores every `-demo*` argument otherwise; `DiagnosticsOverlay` and the first-run "Try the demo factory" button are Debug only.
+
+**Consequences.** A Release build can reach only the real graph or the notice. The stand-in graph is still constructed (the environment needs a graph object) and closed before any holder runs; no UI path reaches it.
+
+## ADR-115: Typed money is read by one strict shared parser; the app passes only the decimal separator and the currency's digits
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A4, A11, B-19, B-06)
+
+**Context.** Swift parsed the budget amount: it dropped every character that was not a digit, the locale's decimal separator or a minus sign, so "250.50" typed in a comma-decimal locale became 25,050.00 (100 times too much), and the result was passed to a Face ID prompt that does not show it.
+
+**Decision.** `MoneyInput.parse(text, decimalSeparator, fractionDigits)` in `shared/presentation` is the only reader. The other of "." and "," is the grouping mark and is accepted only in groups of exactly three; a mark in the wrong place, two decimal marks, too many decimals, more than 12 whole digits, zero or a negative amount is refused with an `InvalidKey` (`AmountNotNumeric`, `AmountTooManyDecimals`, `AmountTooLarge`, `AmountNotPositive`), never dropped or rounded. The Budget incident and Agent detail holders take the text (`AmountTyped`, `BudgetAmountTyped`), keep the parsed amount and the issue in state, and Agent detail reports a saved budget with `budgetSavedCount` so the form closes only on success. The raise button shows the amount that will be sent.
+
+**Consequences.** An ambiguous input ("250,50" in a point-decimal locale) is refused with a message instead of guessed. The Face ID reason string does not carry the amount: the `Biometrics` port takes a fixed reason; the amount is on the button the person taps.
+
+## ADR-116: Relative times are a function of a clock the view receives, not a value computed once
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A1, B-01, B-09)
+
+**Context.** "Updated 12s ago", card ages and a run's elapsed time were computed once in `body`, so an offline or final screen showed the age of its last render.
+
+**Decision.** `TickingReference` gives each age-showing view a "now": the pinned clock when there is one (the demo's frozen clock, previews, tests), otherwise the date of a `TimelineView(.periodic)` (15 s for ages, 1 s for a running run). The views hold no timer; the schedule is display only. `RelativeAge` uses `Duration.UnitsFormatStyle`: narrow for the compact text, wide for VoiceOver.
+
+**Consequences.** Offline and final screens keep ageing. Unit tests move the clock (`ClockDrivenLabelTests`); no UI test can, because the demo clock is pinned.
+
+## ADR-117: A screen left while its mutation is in flight is closed after the outcome is recorded
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A6)
+
+**Context.** `ModelStore` closed a pushed screen's model when its route left the stack, and closing cancels the holder's coroutines. A back swipe during a request or a Face ID prompt dropped the outcome and the reconcile read.
+
+**Decision.** Each holder says what counts as work (`StateHolderProtocol.isWorking`: submitting, busy, cancelling). `ModelStore.retain` keeps a working model, follows its flow until it is idle, then closes it unless its key came back; `closeAll` (shutdown) still closes at once.
+
+**Consequences.** The back button is not blocked. A model can outlive its screen by one request; a Face ID prompt left unanswered keeps it until the prompt ends.
+
+## ADR-118: Audits set aside only the system tab bar's buttons, and say how many
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review C1 to C4)
+
+**Context.** The audit helpers dropped any finding whose element reached below the top of the tab bar or of the app's own fixed action bar, which included the bar's own buttons. `HitTargetUITests` passed when it measured nothing.
+
+**Decision.** One helper, `auditScreen`, returns every finding except those on a button of the system tab bar (matched by identifier and label, read when the audit runs); those are counted, printed and attached as "system-owned". Content under the bar and the app's own bars are findings. The dead `XCTExpectFailure` helper is deleted. `HitTargetUITests` waits for the screen, uses the bar position from its buttons when its own frame is infinite, fails when fewer controls than a per-tab minimum were measured, and prints how many controls it could not see (below the fold or under the bars).
+
+**Consequences.** Audit findings that were hidden are now reported in the non-blocking audit set; their counts are in implementation-notes.md. `ios.yml` lets only the audit step fail without failing its leg, and fails the leg if no audit test ran.
+
+## ADR-119: What the accessibility audit reports on scrolling screens, and what was changed because of it
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, round 3). The audit job is still non-blocking (ADR-094).
+
+**Context.** After ADR-118 made the audits honest, 16 of 24 audit tests failed. A bisect on the Agents screen found two causes.
+
+**Evidence and decisions.**
+1. *Lazy containers.* "Dynamic Type partially unsupported" and "Text clipped" on mid-screen text disappeared when `LazyVStack` and `LazyVGrid` were replaced by `VStack` and non-lazy rows (Agents 7 findings to 3, Factory home 10 to 5, offline 21 to 7). A lazy container realises and drops views as the audit changes the text size and the audit reads that as unsupported scaling. Agents, Work and the Factory home tiles are now eager (their lists are short or paged).
+2. *Text near or under the bottom bar.* A throwaway screen of 30 plain `Text` rows in a `ScrollView`, no custom styling, fails the audit with "Contrast failed" on the rows whose frames lie at y 796 to 868 on an 874 pt screen. Eight white cards under the same bar pass only while the cards that reach that band do not exist; with a page background behind them, the one card at y 835 fails. A solid tab bar appearance (`UITabBarAppearance` opaque), `toolbarBackground(.visible)`, hiding the tab bar, `scrollEdgeEffectHidden`, `clipped()` and bottom padding all left the findings unchanged, and combining a card into one accessibility element does not hide its text from the audit (11 findings instead of 7). The audit measures every realised text view, including ones clipped by a scroll view or covered by a bar.
+3. *Elements with no element* (Inbox and Shell, frame zero): the issue carries no element at all (`Element:(null)`), so it cannot be traced; the test prints the full issue and the hierarchy.
+
+**Consequences.** What remains (local, Large text): Approval 1 and offline 1, Factories 4, Inbox 3 and offline 9, Manage 5, Agents 3, Factory home 5 and offline 7, Run offline 1, Settings 2, Shell 3, Issue 2 and offline 2, Work 3 and offline 2. Almost all are text in the bottom band or clipped by a scroll view, for which the evidence in 2 applies. They are not hidden, filtered or allow-listed; the tests fail. Clearing them needs either screens whose content ends above the bottom band when audited (a scenario change, not a fix) or giving up an audit-wide empty assertion; that choice is the owner's.
+
+## ADR-120: The iPhone app opens the real graph through `LiveIosGraph.openLiveGraph` and a throwing provider
+
+**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, 1b integration)
+
+**Context.** Phase 1b (merged) provides `LiveIosGraph.openLiveGraph(allowInsecureLocal, pairingBrowser, settings)` (throws instead of aborting), `PairingBrowsers.onMainThread(show, dismiss)` and new outcomes: `AuthDeclined`, `KeyInvalidated`, `ServerKeyOutcome.Declined`, and the "here only" sign-out and removal when the key cannot be read.
+
+**Decision.** `AppGraphProvider.makeGraph()` throws; `LiveGraphProvider` passes `LiveSettings` (the board-key Keychain service, `Application Support/Paperclip`, the localised Face ID reasons) and a main-thread pairing browser that presents the approval page with `ASWebAuthSessionPairingBrowser` and closes it on cancel. The Edit factory sheets and the Manage removal sheet have "here only" variants that say the key stays live on the server. New errors and outcomes have catalog entries and are covered by the completeness tests.
+
+**Consequences.** Not verified from the app against a live Paperclip server; the adapters are covered by Kotlin and contract tests and the launch path by `LiveGraphLaunchTests` and `AppEnvironmentTests` (real graph on a temporary folder).
