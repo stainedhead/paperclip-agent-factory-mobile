@@ -183,7 +183,7 @@ internal val mutationMatrix: List<MutationCase> =
             e,
             r,
             ->
-            SetAgentBudget(e.agents)(e.context(r), AgentFixtures.agents()[2], Money.usdCents(1_000))
+            SetAgentBudget(e.agents, e.deviceAuth)(e.context(r), AgentFixtures.agents()[2], Money.usdCents(1_000))
         },
         MutationCase("CommentOnIssue", setOf(Action.CommentOnIssue), "addComment", {
             it.issues.calls

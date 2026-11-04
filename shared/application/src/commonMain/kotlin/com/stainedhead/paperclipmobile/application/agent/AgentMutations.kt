@@ -131,6 +131,7 @@ class InvokeHeartbeat(
  */
 class SetAgentBudget(
     private val agents: AgentGateway,
+    private val deviceAuth: DeviceAuthGuard,
 ) {
     suspend operator fun invoke(
         context: CompanyContext,
@@ -141,6 +142,8 @@ class SetAgentBudget(
         if (monthly.currency != agent.monthlyBudget.currency) {
             return MutationResult.Invalid(InvalidInput.Amount(ResolutionIssue.WrongCurrency))
         }
+        val auth = deviceAuth(Action.SetAgentBudget)
+        if (auth != BiometricResult.Approved) return MutationResult.NotAuthorized(auth)
         return agents.changed(context, agent) { agents.setBudget(context.scope, agent.id, monthly) }
     }
 }

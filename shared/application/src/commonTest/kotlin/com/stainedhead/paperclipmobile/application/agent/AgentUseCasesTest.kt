@@ -357,7 +357,11 @@ class SetAgentBudgetTest {
         runTest {
             val env = Env()
 
-            val result = SetAgentBudget(env.agents)(env.context(Role.Owner), env.agent("agent-eng-1"), fiveHundred)
+            val result =
+                SetAgentBudget(
+                    env.agents,
+                    env.deviceAuth,
+                )(env.context(Role.Owner), env.agent("agent-eng-1"), fiveHundred)
 
             (result as MutationResult.Done).value.monthlyBudget shouldBe fiveHundred
             env.biometrics.calls shouldBe 0
@@ -368,9 +372,15 @@ class SetAgentBudgetTest {
         runTest {
             val env = Env()
 
-            SetAgentBudget(env.agents)(env.context(Role.Operator), env.agent("agent-eng-1"), fiveHundred) shouldBe
+            SetAgentBudget(
+                env.agents,
+                env.deviceAuth,
+            )(env.context(Role.Operator), env.agent("agent-eng-1"), fiveHundred) shouldBe
                 MutationResult.Denied
-            SetAgentBudget(env.agents)(env.context(Role.Viewer), env.agent("agent-eng-1"), fiveHundred) shouldBe
+            SetAgentBudget(
+                env.agents,
+                env.deviceAuth,
+            )(env.context(Role.Viewer), env.agent("agent-eng-1"), fiveHundred) shouldBe
                 MutationResult.Denied
             env.agents.count("setBudget") shouldBe 0
         }
@@ -380,11 +390,15 @@ class SetAgentBudgetTest {
         runTest {
             val env = Env()
 
-            SetAgentBudget(env.agents)(env.context(), env.agent("agent-eng-1"), Money(100, "EUR")) shouldBe
+            SetAgentBudget(
+                env.agents,
+                env.deviceAuth,
+            )(env.context(), env.agent("agent-eng-1"), Money(100, "EUR")) shouldBe
                 MutationResult.Invalid(InvalidInput.Amount(ResolutionIssue.WrongCurrency))
 
             env.agents.failures["setBudget"] = DomainError.Timeout
-            val result = SetAgentBudget(env.agents)(env.context(), env.agent("agent-eng-1"), fiveHundred)
+            val result =
+                SetAgentBudget(env.agents, env.deviceAuth)(env.context(), env.agent("agent-eng-1"), fiveHundred)
             (result as MutationResult.Reconciled).current.id shouldBe AgentId("agent-eng-1")
             env.agents.count("setBudget") shouldBe 1
             env.agents.count("get") shouldBe 1
