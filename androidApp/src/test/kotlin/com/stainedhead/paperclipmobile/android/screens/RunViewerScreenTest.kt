@@ -100,7 +100,7 @@ class RunViewerScreenTest {
         app.scriptBiometrics(BiometricResult.Cancelled)
 
         rule.onNodeWithTag("run-cancel").performClick()
-        rule.onNodeWithTag("confirm-destructive-sheet").assertIsDisplayed()
+        rule.awaitDisplayed("confirm-destructive-sheet")
         rule.onNodeWithTag("confirm-destructive-lock", useUnmergedTree = true).assertIsDisplayed()
         app.controls.biometricPromptCount shouldBe 0
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()

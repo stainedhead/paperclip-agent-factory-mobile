@@ -102,7 +102,7 @@ class ApprovalScreenTest {
         app.scriptBiometrics(BiometricResult.Cancelled)
 
         rule.onNodeWithTag("approval-reject").performClick()
-        rule.onNodeWithTag("note-sheet").assertIsDisplayed()
+        rule.awaitDisplayed("note-sheet")
         rule.onNodeWithTag("note-lock", useUnmergedTree = true).assertIsDisplayed()
         rule.onNodeWithTag("note-confirm").performClick()
 
@@ -130,7 +130,7 @@ class ApprovalScreenTest {
         show()
 
         rule.onNodeWithTag("approval-request-revision").performClick()
-        rule.onNodeWithTag("note-sheet").assertIsDisplayed()
+        rule.awaitDisplayed("note-sheet")
         rule.hasTag("note-lock") shouldBe false
         rule.onNodeWithTag("note-field").performTextInput("Lower the budget")
         runBlocking { delay(SETTLE_MILLIS) }

@@ -137,7 +137,7 @@ private fun WorkBody(
     if (state.rows.isEmpty()) {
         WorkEmpty(state.search.isNotEmpty())
     } else {
-        for (row in state.rows) WorkRow(row) { onOpenIssue(row.id) }
+        for (row in state.rows) WorkRow(row, onOpen = { onOpenIssue(row.id) })
         if (state.hasMore) LoadMoreRow { send(WorkListIntent.LoadMore) }
     }
 }

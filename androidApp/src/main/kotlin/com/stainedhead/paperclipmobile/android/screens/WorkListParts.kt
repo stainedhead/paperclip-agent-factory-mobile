@@ -197,6 +197,7 @@ fun LoadMoreRow(onLoadMore: () -> Unit) {
 fun WorkRow(
     row: IssueRowUi,
     onOpen: () -> Unit,
+    tagPrefix: String = "work-row",
 ) {
     val colors = AppTheme.colors
     val assignee = assigneeText(row)
@@ -205,7 +206,7 @@ fun WorkRow(
         Modifier
             .heightIn(min = Spacing.minimumTarget)
             .clickable(onClickLabel = stringResource(R.string.work_open_hint), onClick = onOpen)
-            .testTag("work-row-${row.id}"),
+            .testTag("$tagPrefix-${row.id}"),
     ) {
         Row(
             Modifier.clearAndSetSemantics { contentDescription = sentence },

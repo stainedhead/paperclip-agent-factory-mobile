@@ -20,7 +20,6 @@
         <item quantity="one">%1$d waiting</item>
         <item quantity="other">%1$d waiting</item>
     </plurals>
-    <string name="tab_placeholder">This screen arrives in an upcoming release.</string>
     <string name="startup_title">Paperclip can\'t open its data</string>
     <string name="lock_title">Paperclip is locked</string>
     <string name="lock_message">Unlock with your fingerprint, face or screen lock to continue.</string>
@@ -769,4 +768,38 @@
     <string name="verdict_approve">Approve</string>
     <string name="verdict_reject">Reject</string>
     <string name="verdict_defer">Defer</string>
+
+    <!-- Issue (screen 4). -->
+    <string name="issue_identifier_line">%1$s · %2$s</string>
+    <string name="issue_part_of">Part of</string>
+    <string name="issue_blocked_by">Blocked by</string>
+    <string name="issue_link_text">%1$s: %2$s · %3$s</string>
+    <string name="issue_link_description">%1$s: %2$s. %3$s. %4$s</string>
+    <string name="issue_subtasks">Subtasks</string>
+    <string name="issue_add_subtask">Add a subtask</string>
+    <string name="issue_subtask_title">New subtask</string>
+    <string name="issue_subtask_field">Title</string>
+    <string name="issue_subtask_placeholder">What is the subtask?</string>
+    <string name="issue_subtask_save">Add subtask</string>
+    <string name="issue_tabs_label">Issue sections</string>
+    <string name="issue_tab_with_count">%1$s %2$d</string>
+    <string name="issue_no_thread">No comments yet.</string>
+    <string name="issue_plan_empty">There is no plan yet.</string>
+    <string name="issue_runs_empty">No runs yet.</string>
+    <string name="issue_files_empty">No files attached.</string>
+    <string name="issue_files_note">Files can\'t be opened in the app yet. Open the issue in the web app to see them.</string>
+    <string name="issue_loading_tab">Loading</string>
+    <string name="issue_file_line">%1$s · %2$s</string>
+    <string name="issue_comment_field">Comment</string>
+    <string name="issue_comment_placeholder">Comment to the agent</string>
+    <string name="issue_comment_send">Send comment</string>
+    <string name="issue_reopen_toggle">Reopen with this comment</string>
+    <string name="issue_interrupt_toggle">Interrupt the running agent</string>
+    <string name="issue_status_menu">Change status</string>
+    <string name="issue_assignee_unassigned">Unassigned</string>
+    <string name="issue_assignee_me">Me</string>
+    <string name="issue_assignee_change">Change assignee</string>
+    <string name="issue_interactions_unavailable">The agent\'s requests could not be loaded. Pull to refresh.</string>
+    <string name="issue_author_pair">%1$s · %2$s</string>
+    <string name="issue_author_line">%1$s · %2$s · %3$s</string>
 </resources>

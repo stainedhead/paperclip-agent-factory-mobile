@@ -1,12 +1,6 @@
 package com.stainedhead.paperclipmobile.android.shell
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import com.stainedhead.paperclipmobile.android.R
-import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.screens.AgentDetailScreen
 import com.stainedhead.paperclipmobile.android.screens.AgentsScreen
@@ -17,6 +11,7 @@ import com.stainedhead.paperclipmobile.android.screens.EditFactoryScreen
 import com.stainedhead.paperclipmobile.android.screens.FactoriesScreen
 import com.stainedhead.paperclipmobile.android.screens.FactoryHomeScreen
 import com.stainedhead.paperclipmobile.android.screens.InboxScreen
+import com.stainedhead.paperclipmobile.android.screens.IssueScreen
 import com.stainedhead.paperclipmobile.android.screens.ManageFactoriesScreen
 import com.stainedhead.paperclipmobile.android.screens.PairedDevicesScreen
 import com.stainedhead.paperclipmobile.android.screens.RunViewerScreen
@@ -24,9 +19,8 @@ import com.stainedhead.paperclipmobile.android.screens.SettingsScreen
 import com.stainedhead.paperclipmobile.android.screens.WorkListScreen
 
 /**
- * The tab shell with its screens. The Factories family is here (2a-4); the other tab roots and pushed screens arrive
- * with their milestones (2a-5 to 2a-7) and show their title until then, so the shell, the badge and the navigation can
- * be used and tested end to end.
+ * The tab shell with its screens: the five tab roots and every pushed route. Each `when` is exhaustive, so a new tab or
+ * route does not compile until it has a screen.
  */
 @Composable
 fun AppTabs(
@@ -47,6 +41,7 @@ fun AppTabs(
         destination = { route, navigator ->
             when (route) {
                 is AppRoute.Agent -> AgentDetailScreen(session, route, navigator)
+                is AppRoute.Issue -> IssueScreen(session, route, navigator)
                 is AppRoute.Approval -> ApprovalScreen(session, route, navigator)
                 is AppRoute.Run -> RunViewerScreen(session, route, navigator)
                 is AppRoute.Decision -> DecisionScreen(session, route, navigator)
@@ -55,22 +50,7 @@ fun AppTabs(
                 AppRoute.Settings -> SettingsScreen(session, navigator)
                 AppRoute.PairedDevices -> PairedDevicesScreen(session, navigator)
                 AppRoute.Diagnostics -> DiagnosticsScreen(session, navigator)
-                else -> Placeholder(R.string.tab_placeholder, "pushed-placeholder", R.drawable.ic_warning)
             }
         },
-    )
-}
-
-@Composable
-private fun Placeholder(
-    title: Int,
-    tag: String,
-    icon: Int,
-) {
-    EmptyState(
-        icon = painterResource(icon),
-        title = stringResource(title),
-        message = stringResource(R.string.tab_placeholder),
-        modifier = Modifier.testTag(tag),
     )
 }

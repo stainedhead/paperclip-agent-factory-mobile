@@ -128,7 +128,7 @@ class InboxScreenTest {
         app.scriptBiometrics(BiometricResult.Cancelled)
 
         rule.onNodeWithTag("inbox-reject-${hire.id}").performClick()
-        rule.onNodeWithTag("note-sheet").assertIsDisplayed()
+        rule.awaitDisplayed("note-sheet")
         rule.onNodeWithTag("note-field").performTextInput("Too expensive")
         rule.onNodeWithTag("note-confirm").performClick()
 

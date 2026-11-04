@@ -8,9 +8,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.LocalReferenceMillis
@@ -46,6 +48,7 @@ object DemoId {
     const val APPROVAL_HIRE = "ap-hire-qa"
     const val APPROVAL_STRATEGY = "ap-q1-strategy"
     const val INCIDENT = "inc-eng-2"
+    const val ISSUE_BILLING = "pap-1182"
     const val ISSUE_REFUNDS = "pap-1190"
     const val ISSUE_RETRIES = "pap-1204"
     const val AGENT_CEO = "agent-ceo"
@@ -121,6 +124,14 @@ class DemoApp(
 }
 
 fun firstRunApp() = DemoApp(::firstRunOpen)
+
+/**
+ * Sheets slide in while the holders answer on other threads, so a sheet is not on the screen at the moment the tap
+ * returns: wait until the node is displayed before asserting on what it shows.
+ */
+fun ComposeTestRule.awaitDisplayed(tag: String) {
+    waitUntil(WAIT_MILLIS) { runCatching { onNodeWithTag(tag).assertIsDisplayed() }.isSuccess }
+}
 
 fun ComposeTestRule.hasTag(tag: String) = onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
 

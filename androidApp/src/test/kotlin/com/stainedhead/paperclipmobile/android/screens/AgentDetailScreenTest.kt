@@ -107,7 +107,7 @@ class AgentDetailScreenTest {
         app.scriptBiometrics(BiometricResult.Cancelled)
 
         tap("agent-detail-pause")
-        rule.onNodeWithTag("confirm-destructive-sheet").assertIsDisplayed()
+        rule.awaitDisplayed("confirm-destructive-sheet")
         app.controls.biometricPromptCount shouldBe 0
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
@@ -147,7 +147,7 @@ class AgentDetailScreenTest {
         show()
 
         tap("agent-set-budget")
-        rule.onNodeWithTag("agent-budget-form").assertIsDisplayed()
+        rule.awaitDisplayed("agent-budget-form")
         rule.onNodeWithTag("agent-budget-save").assertIsNotEnabled()
         rule.onNodeWithTag("agent-budget-amount").performTextInput("abc")
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("agent-budget-amount-issue") }
