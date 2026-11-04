@@ -2,9 +2,9 @@
 
 Screens and behaviour. Requirements are numbered in the [PRD](../paperclip-agent-factory-mobile-PRD.md). The numbered screen inventory is the PRD's; the order below follows it.
 
-**What exists today.** The shared Kotlin core has a tested state holder for every screen, and the iPhone app (Phase 2i) draws screens 1 to 13, 15 and 16 on the real Phase 1b adapters (and on the demo graph with `-demo` in Debug builds). Screen 14 (Notification settings) belongs to Phase 3.
+**What exists today.** The shared Kotlin core has a tested state holder for every screen. The iPhone app (Phase 2i) and the Android app (Phase 2a, Jetpack Compose) both draw screens 1 to 13, 15 and 16 on the real Phase 1b adapters, and on the demo graph (`-demo` on iPhone, the `demo` Intent extra on Android, both in Debug builds only). Screen 14 (Notification settings) belongs to Phase 3.
 
-**About the images.** Screenshots in `docs/images/` without a `design-` prefix are real captures of the running iPhone app in **demo mode** (fake data only; the pairing screen is never captured). The `design-*.png` files are the original mocks, kept for comparison.
+**About the images.** Screenshots in `docs/images/` without a prefix are real captures of the running iPhone app in **demo mode**; `android-*.png` are the Roborazzi baselines of the Android app, drawn from the demo graph (fake data only; the pairing screen is never captured). The `design-*.png` files are the original mocks, kept for comparison.
 
 ## Roles, device authentication, offline: rules that apply everywhere
 
@@ -65,11 +65,60 @@ What changed for the person using the app after the three reviews of the iPhone 
 Built on `WorkListStateHolder` and `IssueStateHolder`; everything below runs on the demo graph.
 
 - **Work tab.** Search box (sent when you press Search; clearing it shows the filter again), five saved-filter chips, the issue count with its "Updated" time, and one card per issue: number, title, status and priority pills, assignee. "New issue" (Operator and Owner) asks for a title and a priority and opens the new issue. More rows load when you reach the end of the list. Offline: the saved rows stay, with a banner.
-- **Issue screen.** Header as in the mock (number and project, title, status, priority, assignee), the parent and what blocks it as links, subtasks, then Thread, Plan, Runs and Files. Thread lists comments and the agent's request cards in time order. A question card shows its questions and options and sends the answers once all required ones are filled in; the shared card says what is missing. The bar at the bottom changes the status (clock button), takes a comment, and offers "Reopen with this comment" or "Interrupt the running agent" only when the issue allows it. The assignee pill opens a menu of people to assign. Runs open the Run viewer. Files are listed (name, type, size) and open in the web app.
+- **Issue screen.** Header as in the mock (number and project, title, status, priority, assignee), the parent and what blocks it as links, subtasks, then Thread, Plan, Runs and Files. Thread lists comments and the agent's request cards in time order. A question card shows its questions and options and sends the answers once all required ones are filled in; the shared card says what is missing. The bar at the bottom changes the status (clock button), takes a comment, and offers "Reopen with this comment" or "Interrupt the running agent" only when the issue allows it. The assignee pill opens a menu of people to assign. Runs open the Run viewer. Files are listed (name, type, size) and cannot be opened in the app: a note says they open in the web app, and no link is offered (no shared port for the bytes, ADR-064).
 - **No Face ID.** None of these actions is on the destructive list; the prompt count stays unchanged and a failed action is never retried.
 - No design mock exists for the Work list; it is designed from the state and the tokens of the other tabs.
 
-## State holders only (no UI yet)
+## Android app (Phase 2a, demo graph)
+
+The Android UI is Jetpack Compose over the same state holders. Every screen is a thin function over a stateless `*Content(state, send, ...)` that tests and screenshots drive with any state. Behaviour, rules and wording keys are the shared core's, so the roles, device-owner prompts, offline rules and refresh intervals in the table at the top apply unchanged; only the device prompt differs (a system `BiometricPrompt` that accepts a fingerprint, face or the screen lock, instead of Face ID). The images are the Roborazzi baselines in `androidApp/src/test/screenshots`, copied here.
+
+| Screen | Android | Proof (a class in `androidApp/src/test`, unless marked connected) |
+|---|---|---|
+| First run, address step (15) | <img src="images/android-first-run.png" alt="Android first run: Add your first factory, with address and name fields, Check address and Try the demo factory" width="180"> | `MainActivityTest` (the first-run flow walked to its end; a demo launch with no factory reaches first run, and Try the demo factory reaches the Inbox shell), `RootScreenTest.aGraphWithNoFactoryShowsFirstRun`, `RestorationTest`, `ShellLargeTextActionsTest`; connected: `ShellFlowsTest` |
+| Inbox (1) | <img src="images/android-inbox.png" alt="Android Inbox with Decide now cards for a decision, a budget alert and an approval" width="180"> <img src="images/android-inbox-offline.png" alt="Android Inbox offline with a banner, saved cards and disabled actions" width="180"> | `InboxScreenTest`, `InboxVariantsTest`, `InlineActionsBadgeTest`, `InboxFullyDrawnTest`, `LargeTextActionsTest`, `AttentionScreenshotTest`; connected: `AttentionFlowsTest` (snooze and dismiss with Undo) |
+| Decision (2) | <img src="images/android-decision.png" alt="Android Decision with three options and their effects, the destructive one marked with a lock" width="180"> <img src="images/android-decision-large-text.png" alt="Android Decision at font scale 2.0" width="180"> | `DecisionScreenTest`, `DecisionVariantsTest`, `DecisionPresentationTest`; connected: `AttentionFlowsTest` (non-destructive without a prompt; destructive cancelled, then approved) |
+| Approval (3) | <img src="images/android-approval.png" alt="Android Approval of a hire request with its payload, linked work and discussion" width="180"> | `ApprovalScreenTest`, `ApprovalVariantsTest`, `ApprovalPresentationTest`; connected: `AttentionFlowsTest` (approve; reject with a note) |
+| Issue (4) | <img src="images/android-issue.png" alt="Android Issue with Thread, Plan, Runs and Files tabs and a questions card" width="180"> | `IssueScreenTest`, `IssueVariantsTest`, `InteractionCardTest`, `InteractionFlowTest` (main PRD criterion 7), `WebOpenerTest`, `WorkScreenshotTest` |
+| Factory home (5) | <img src="images/android-factory-home.png" alt="Android Factory home with monthly spend, tiles and runs in progress" width="180"> <img src="images/android-factory-home-dark.png" alt="Android Factory home in the dark theme" width="180"> | `FactoryHomeScreenTest`, `OperationsScreenshotTest`, `OperationsLargeTextTest` |
+| Agents (6) | <img src="images/android-agents.png" alt="Android Agents grouped by state with row buttons and a lock glyph on Pause" width="180"> | `AgentsScreenTest`, `AgentVariantsTest`, `OperationsPresentationTest`; connected: `OperationsFlowsTest` (pause cancelled, then approved) |
+| Run viewer (7) | <img src="images/android-run-viewer.png" alt="Android Run viewer with events, log tail and Cancel run" width="180"> | `RunViewerScreenTest`, `RunViewerVariantsTest`, `RunRefreshTest` (5 s while live, none once final; main PRD criterion 8 in virtual time); connected: `OperationsFlowsTest` |
+| Factories (8) | <img src="images/android-factories.png" alt="Android Factories tab with three demo factories and their companies" width="180"> | `FactoriesScreenTest`, `FactoriesScreenshotTest`, `FactoryPresentationTest`; connected: `ShellFlowsTest` (switch factory and company) |
+| Edit factory (9) and Add factory | <img src="images/android-edit-factory.png" alt="Android Edit factory with name, address, companies, access and Pair again" width="180"> | `EditFactoryScreenTest`, `PairingRoutingTest`, `CustomTabsPairingBrowserTest` |
+| Work list (10) | <img src="images/android-work.png" alt="Android Work list with saved filters and issue cards" width="180"> | `WorkListScreenTest`, `WorkListVariantsTest`, `WorkPresentationTest`, `WorkLargeTextTest`; connected: `OperationsFlowsTest` (create an issue) |
+| Agent detail (11) | <img src="images/android-agent-detail.png" alt="Android Agent detail with Pause, Run now, spend and recent runs" width="180"> | `AgentDetailScreenTest`, `AgentVariantsTest` |
+| Budget incident (12) | <img src="images/android-budget-incident.png" alt="Android Budget incident sheet with Keep paused and Raise and resume" width="180"> | `BudgetSheetTest`, `BudgetVariantsTest`; connected: `AttentionFlowsTest` (Keep paused) |
+| Settings (13), Paired devices, Diagnostics | <img src="images/android-settings.png" alt="Android Settings with device name, app lock, lock after, destructive actions and factories" width="180"> <img src="images/android-paired-devices.png" alt="Android Paired devices and keys with Revoke buttons" width="180"> | `SettingsScreenTest`, `PairedDevicesScreenTest`, `DiagnosticsScreenTest`, `DiagnosticsReportTest`, `DiagnosticsRecorderTest`, `AppLogTest` |
+| Manage factories (16) | <img src="images/android-manage-factories.png" alt="Android Edit factories with drag handles and remove buttons" width="180"> | `ManageFactoriesScreenTest`, `ReorderControllerTest` |
+| App lock | <img src="images/android-lock.png" alt="Android lock screen after a cancelled unlock, with the Unlock button" width="180"> | `LockScreenTest`, `RootScreenTest`, `WindowPrivacyTest`, `RecentsPrivacyTest` (API 28, 33 and 36 under Robolectric) |
+
+Two things are checked across every screen: `AccessibilityTest` (name, role, 48 dp target, reading order, status never by colour alone; ADR-134) and the font scale 2.0 guards (`LargeTextActionsTest`, `OperationsLargeTextTest`, `WorkLargeTextTest`, `ShellLargeTextActionsTest`). The device name in the Settings and Paired devices images ("Alex's iPhone") is the shared demo data set's value; the Android app does not read it from the phone.
+
+### Behaviour that is Android's own
+
+- **Device prompt.** A destructive action shows the app's confirmation sheet (lock glyph), then the shared use case asks `BiometricPromptBiometrics`: strong biometrics or the screen lock on API 30 and later, weak biometrics or the screen lock on API 28 and 29. No screen lock means the action is refused, never allowed.
+- **Pairing** opens the approval page in a Custom Tab and finishes with the shared pairing flow ([pairing guide](../user-docs/pairing.md)). The window is `FLAG_SECURE` while the app is locked and while pairing, so Recents shows a blank thumbnail.
+- **Navigation.** Five tabs with a back stack each, system and predictive back, state restored after rotation and process death. A screen's holder is closed when its entry is cleared and kept across rotation (`HolderViewModelTest`, `HolderViewModelRotationTest`).
+- **Theme.** Material 3 from the design tokens; dynamic colour reaches the neutral roles only (ADR-133); dark theme, 360 x 640 dp up to large phones; reduced motion follows the system animation setting; two haptic feelings.
+
+### Parity ledger (final state of Phase 2a)
+
+| Item | iPhone | Android | Where it is tracked |
+|---|---|---|---|
+| Screens 1 to 13, 15, 16 | Built | Built | the table above |
+| Screen 14, Notification settings | Phase 3 | Phase 3 | no state holder yet |
+| QR scan, `paperclipmobile://add` deep link (FR-004), export as QR (FR-008) | Not built | Not built | one follow-up for both platforms (Android PRD, parity ledger) |
+| Live WebSocket events | None (board keys refused); polling | None; polling | [known limitations](./technical-details.md#known-limitations-and-gaps) |
+| Demo mode | `-demo` argument, Debug only | `demo` Intent extra, Debug and `releaseDemo` builds | [configuration reference](../user-docs/configuration-reference.md) |
+| Opening an issue's attachments | Listed, cannot be opened (a note points to the web app) | Listed, cannot be opened (the tab says so) | shared gap: no port for the bytes (ADR-064, ADR-131) |
+| Markdown in comments and plans | Rendered inline | Not rendered: plain text | no inline markdown on Android yet (2a-7 notes) |
+| Factory switcher line on screen headers | Present | Not ported: the Factories tab switches | 2a-5 notes |
+| Pull-to-refresh spinner on Agents, Run viewer, Issue, Work | not compared | None: those states have no `isRefreshing` | shared gap (2a-6 and 2a-7 notes) |
+| Unsupported interaction kinds | Open in the web app | Open in the web app, https only | `WebOpenerTest` |
+| Android only | n/a | Predictive back, dynamic colour for neutrals, Custom Tabs, screen-lock fallback in the prompt, Keystore keys with StrongBox where present | ADR-123, ADR-125, ADR-133 |
+| Not proven on a device | | New-fingerprint invalidation, the system prompt on a destructive action with enrolled credentials, StrongBox hardware, a pairing against the pinned server, TalkBack, Pixel 6 and Samsung | [known limitations](./technical-details.md#known-limitations-and-gaps), ADR-137 |
+
+## Screen reference: state holders
 
 Each screen below is a `StateFlow<State>` plus `onIntent(Intent)` in `shared/presentation`, reached through `PaperclipGraph`. "Mock" means a design image exists; the rest have no image.
 
