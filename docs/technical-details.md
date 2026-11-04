@@ -300,6 +300,10 @@ Decisions are in ADR-030 to ADR-037; the fix spec is `specs/archive/261101-phase
 | Role gating | Every flag goes through `Permissions` and `DeviceAuthPolicy` (`RoleGating.kt`); a 403 on a read or a mutation re-resolves the role once. |
 | CI | `contract-smoke.sh`, SHA-pinned actions and a digest-pinned scanner (see CI). |
 
+## Behaviour added by the Phase 2a Android review fixes, shared core (Group 1)
+
+Spec `specs/261104-phase-2a-android-ui-auto-review`. Protected Keystore keys are authorised per use through a `CryptoObject` and the prompt is shown with the store lock free and a bounded caller (ADR-139, ADR-140). `SetAgentBudget` asks the device owner for a raise or zero (`Action.RaiseAgentBudget`, `DeviceAuthPolicy.budgetSetAction`, `AgentDetailState.saveBudgetNeedsDeviceAuth`; ADR-141, DEC-1). Android counts as online when the default network declares internet access (ADR-142, DEC-2). `InboxState.isWorking`; the budget holder forgets the amount when Raise is left. Rules that were copies in the apps now live in `shared/presentation`: `RunStatusUi.isLive`, `AgentRowUi.visibleActions` and `offersViewRun`, `ToneUi` and `tone` on the status enums, `FactoryStatusDecision` and `ExpiryDecision`, `DecideByUi.hintText`. The iPhone uses them; androidApp still holds its copies until its own switch (Groups 2 and 3).
+
 ## iPhone polish, tab bar and the live seam (2i-6)
 
 - **Tab bar values.** SwiftUI paints `.badge` but, on iOS 26, does not give the tab button an accessibility value. `TabBarAccessibility` sets it on the `UITabBarItem`s. UIKit rebuilds items at moments SwiftUI does not announce, so an invisible controller key-value observes the bar's `items`, its hidden state and layer position and the controller's `viewControllers`, and re-applies once per change. There is no timer (ADR-110).
