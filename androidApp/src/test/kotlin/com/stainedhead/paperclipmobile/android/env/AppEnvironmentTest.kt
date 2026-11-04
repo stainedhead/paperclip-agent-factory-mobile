@@ -3,8 +3,6 @@ package com.stainedhead.paperclipmobile.android.env
 import com.stainedhead.paperclipmobile.presentation.FirstRunIntent
 import com.stainedhead.paperclipmobile.presentation.ProbeStatus
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
-import com.stainedhead.paperclipmobile.umbrella.AndroidGraphOpen
-import com.stainedhead.paperclipmobile.umbrella.PaperclipCore
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -17,28 +15,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-
-/** A provider a test scripts: each call to [makeGraph] pops the next outcome. */
-private class ScriptedProvider(
-    override val mode: GraphMode,
-    outcomes: List<() -> AndroidGraphOpen>,
-) : AppGraphProvider {
-    private val remaining = ArrayDeque(outcomes)
-
-    var calls = 0
-        private set
-
-    override fun makeGraph(): AndroidGraphOpen {
-        calls++
-        return remaining.removeFirst()()
-    }
-}
-
-private fun demoOpen() = AndroidGraphOpen.Opened(PaperclipCore.createDemoGraph())
-
-private fun firstRunOpen() = AndroidGraphOpen.Opened(PaperclipCore.createFirstRunDemoGraph())
-
-private fun unavailable() = AndroidGraphOpen.Unavailable(IllegalStateException("database locked"))
 
 private const val WAIT_MILLIS = 10_000L
 private const val DEMO_BADGE = 3

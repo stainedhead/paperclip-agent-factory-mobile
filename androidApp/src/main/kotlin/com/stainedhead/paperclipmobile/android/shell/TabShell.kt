@@ -1,0 +1,143 @@
+package com.stainedhead.paperclipmobile.android.shell
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.stainedhead.paperclipmobile.android.R
+import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
+import com.stainedhead.paperclipmobile.android.designsystem.AppType
+
+/**
+ * Five tabs, one back stack each (AND-012). A tab keeps its pushed screens while another tab is shown; selecting the
+ * selected tab again returns to its root, as the platform does. The Inbox badge is [inboxBadge], the server's count;
+ * the shell never computes it.
+ *
+ * [tabRoot] draws a tab's first screen and may push a route; [destination] draws a pushed route and may pop it.
+ */
+@Composable
+fun TabShell(
+    inboxBadge: Int,
+    tabRoot: @Composable (tab: AppTab, push: (AppRoute) -> Unit) -> Unit,
+    destination: @Composable (route: AppRoute, pop: () -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var selected by rememberSaveable { mutableStateOf(AppTab.Inbox) }
+    val controllers = AppTab.entries.associateWith { rememberNavController() }
+    val stateHolder = rememberSaveableStateHolder()
+    Scaffold(
+        modifier = modifier,
+        containerColor = AppTheme.colors.background,
+        bottomBar = {
+            TabBar(selected, inboxBadge) { tab ->
+                if (tab == selected) {
+                    controllers.getValue(tab).popBackStack(TabRoot, inclusive = false)
+                } else {
+                    selected = tab
+                }
+            }
+        },
+    ) { padding ->
+        Box(Modifier.padding(padding)) {
+            stateHolder.SaveableStateProvider(selected.name) {
+                TabHost(selected, controllers.getValue(selected), tabRoot, destination)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TabHost(
+    tab: AppTab,
+    controller: NavHostController,
+    tabRoot: @Composable (AppTab, (AppRoute) -> Unit) -> Unit,
+    destination: @Composable (AppRoute, () -> Unit) -> Unit,
+) {
+    NavHost(controller, startDestination = TabRoot) {
+        composable<TabRoot> { tabRoot(tab) { route -> controller.navigate(route) } }
+        screen<AppRoute.Decision>(controller, destination)
+        screen<AppRoute.Approval>(controller, destination)
+        screen<AppRoute.Issue>(controller, destination)
+        screen<AppRoute.Agent>(controller, destination)
+        screen<AppRoute.Run>(controller, destination)
+        screen<AppRoute.ManageFactories>(controller, destination)
+        screen<AppRoute.EditFactory>(controller, destination)
+        screen<AppRoute.Settings>(controller, destination)
+        screen<AppRoute.PairedDevices>(controller, destination)
+    }
+}
+
+private inline fun <reified R : AppRoute> NavGraphBuilder.screen(
+    controller: NavHostController,
+    noinline destination: @Composable (AppRoute, () -> Unit) -> Unit,
+) {
+    composable<R> { entry -> destination(entry.toRoute<R>()) { controller.popBackStack() } }
+}
+
+@Composable
+private fun TabBar(
+    selected: AppTab,
+    inboxBadge: Int,
+    onSelect: (AppTab) -> Unit,
+) {
+    val colors = AppTheme.colors
+    NavigationBar(containerColor = colors.surface) {
+        for (tab in AppTab.entries) {
+            val badge = tab.badge(inboxBadge)
+            val spoken = badge?.let { pluralStringResource(R.plurals.tab_badge_value, it, it) }
+            NavigationBarItem(
+                selected = tab == selected,
+                onClick = { onSelect(tab) },
+                modifier =
+                    Modifier
+                        .testTag("tab-${tab.name}")
+                        .semantics { if (spoken != null) stateDescription = spoken },
+                icon = {
+                    BadgedBox(
+                        badge = {
+                            if (badge != null) {
+                                Badge(containerColor = colors.destructive, contentColor = colors.onAccent) {
+                                    Text(badge.toString(), style = AppType.micro)
+                                }
+                            }
+                        },
+                    ) { Icon(painterResource(tab.icon), contentDescription = null) }
+                },
+                label = { Text(stringResource(tab.title), style = AppType.micro) },
+                colors =
+                    NavigationBarItemDefaults.colors(
+                        selectedIconColor = colors.accent,
+                        selectedTextColor = colors.accent,
+                        indicatorColor = colors.accentSoft,
+                        unselectedIconColor = colors.textSecondary,
+                        unselectedTextColor = colors.textSecondary,
+                    ),
+            )
+        }
+    }
+}
