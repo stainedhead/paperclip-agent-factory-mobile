@@ -87,6 +87,9 @@ kotlin {
         implementation(project(":shared:infrastructure:securestore"))
         implementation(project(":shared:infrastructure:platform"))
     }
+    sourceSets.getByName("androidHostTest").dependencies {
+        implementation(libs.ktor.client.mock)
+    }
     sourceSets.jvmTest {
         kotlin.srcDir(sharedStubSources)
         dependencies {

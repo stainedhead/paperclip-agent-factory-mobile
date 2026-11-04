@@ -96,7 +96,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 85 tests in 19 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 86 tests in 19 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -200,7 +200,7 @@ Numbers from the last local run (2026-11-03, after merging Phase 1b into the iPh
 | `shared/infrastructure/securestore`, `platform` | 3 and 6 |
 | Android host (`testAndroidHostTest`, includes `commonTest`) | securestore 23, platform 18 |
 | Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`) | securestore 15 (2 are skipped phase tests of a manual lock-screen run), platform 6, persistence 5, umbrella 2 |
-| Konsist (`konsistTest`) | 85 |
+| Konsist (`konsistTest`) | 86 |
 | Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard) |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
