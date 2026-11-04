@@ -162,7 +162,7 @@ class AgentDetailScreenTest {
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("agent-budget-form") }
         rule.waitUntil(WAIT_MILLIS) { rule.texts("agent-budget").firstOrNull()?.contains("$1,500") == true }
         rule.onNodeWithTag("agent-budget").assertTextEquals("Monthly budget: $1,500 · 16% used")
-        // A raise (1,000 to 1,500) asks the device owner once (DEC-1, R-004); the cancel and decrease cases are Group 2.
+        // A raise (1,000 to 1,500) asks the device owner once (DEC-1, R-004); cancel and decrease cases: Group 2.
         app.controls.biometricPromptCount shouldBe 1
     }
 
