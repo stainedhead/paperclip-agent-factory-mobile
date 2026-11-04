@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Complete |
 | Phase 2 Architecture and plan | Complete |
 | Phase 3 Task breakdown | Complete |
-| Phase 4 Implementation (Groups 1 to 5) | Not Started |
+| Phase 4 Implementation (Groups 1 to 5) | In progress (Group 1) |
 | Phase 5 Completion and archive | Not Started |
 
 Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC-2 (R-012) are in force; owner may overturn.
@@ -25,7 +25,7 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 
 ## Fix checklist (tick when merged to the branch with its regression test; note commit hashes in implementation-notes.md)
 
-- [ ] T-001 R-001 (P1) Protected Keystore keys are not bound to the prompt; ADR-123's 5 second window claim is false
+- [x] T-001 R-001 (P1) Protected Keystore keys are not bound to the prompt; ADR-123's 5 second window claim is false (tests d1343a2, fc95a15; fix c445d44)
 - [ ] T-002 R-002 (P1) A biometric prompt can hang forever with the store mutex held; the lock is held across the user's prompt
 - [ ] T-004 R-004 (P1) `SetAgentBudget` raises money with no device-owner prompt, contradicting AGENTS.md
 - [ ] T-007 R-007 (P1) An in-flight inline approve/reject is cancelled when the Inbox holder closes (ADR-117 not applied)
