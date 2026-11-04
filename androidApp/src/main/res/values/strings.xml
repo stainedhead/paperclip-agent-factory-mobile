@@ -6,4 +6,30 @@
     <string name="biometric_unlock_reason">Unlock Paperclip</string>
     <string name="biometric_confirm_reason">Confirm this action</string>
     <string name="biometric_write_reason">Protect the key for this factory</string>
+
+    <!-- Shared labels. -->
+    <string name="common_loading">Loading…</string>
+    <string name="common_updated_ago">Updated %1$s ago</string>
+
+    <!-- Compact ages as in the mocks: 12s, 8m, 1h, 3d. -->
+    <string name="age_seconds">%1$ds</string>
+    <string name="age_minutes">%1$dm</string>
+    <string name="age_hours">%1$dh</string>
+    <string name="age_days">%1$dd</string>
+    <plurals name="age_spoken_seconds">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <plurals name="age_spoken_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <plurals name="age_spoken_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <plurals name="age_spoken_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
 </resources>
