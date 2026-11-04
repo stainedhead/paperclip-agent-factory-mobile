@@ -11,6 +11,87 @@
     <string name="common_loading">Loading…</string>
     <string name="common_updated_ago">Updated %1$s ago</string>
 
+    <string name="common_retry">Try again</string>
+    <string name="common_sign_in_again">Sign in again</string>
+    <string name="common_dismiss">Dismiss</string>
+    <string name="common_offline">You\'re offline. Showing what was last loaded.</string>
+
+    <!-- ErrorKey: one message per key (PRD FR-097). -->
+    <string name="error_unreachable">Can\'t reach the factory. Check your connection or VPN.</string>
+    <string name="error_certificate_invalid">The factory\'s security certificate could not be verified.</string>
+    <string name="error_timeout">The factory took too long to answer.</string>
+    <string name="error_signed_out">You\'re signed out of this factory. Sign in again to continue.</string>
+    <string name="error_no_permission">Your role doesn\'t allow this.</string>
+    <string name="error_not_found">That item no longer exists.</string>
+    <string name="error_conflict">Someone else changed this first. Refresh to see the latest.</string>
+    <string name="error_rejected">The factory rejected the request.</string>
+    <string name="error_server_error">The factory had a problem. Try again in a moment.</string>
+    <string name="error_rate_limited">Too many requests. Wait a moment and try again.</string>
+    <string name="error_malformed">The factory sent something this app can\'t read.</string>
+    <string name="error_invalid_key">That doesn\'t look like a board key. Nothing was sent.</string>
+    <string name="error_storage_failed">This phone\'s secure storage refused to keep the key.</string>
+    <string name="error_auth_declined">Paperclip could not read this phone\'s key: the fingerprint, face or screen lock was declined, or the phone is locked. Nothing was sent. Try again.</string>
+    <string name="error_key_invalidated">This phone\'s key for the factory is no longer valid (for example after a fingerprint change). Pair this phone again.</string>
+    <string name="error_current_key_unknown">This phone doesn\'t know which key is its own, so it won\'t revoke keys.</string>
+
+    <!-- ActionsDisabledReason: why the buttons beside it are off. -->
+    <string name="disabled_offline">You\'re offline. Actions are unavailable.</string>
+    <string name="disabled_viewer_role">Your role is Viewer, so you can look but not change anything.</string>
+    <string name="disabled_owner_role">Only an owner can do this.</string>
+
+    <!-- AddressIssue. -->
+    <string name="address_missing_scheme">Start the address with https://</string>
+    <string name="address_must_use_https">Use a secure https:// address</string>
+    <string name="address_missing_host">Add the server name after https://</string>
+    <string name="address_invalid_host">The server name has characters that are not allowed</string>
+    <string name="address_invalid_port">The port must be a number from 1 to 65535</string>
+    <string name="address_invalid_path">The path after the server name has characters that are not allowed</string>
+    <string name="address_remove_credentials">Remove the user name and password from the address</string>
+    <string name="address_remove_query_or_fragment">Remove everything after the server address</string>
+
+    <!-- DeviceAuthIssue: why the device owner was not confirmed. -->
+    <string name="device_auth_cancelled">Authentication was cancelled. Nothing was changed.</string>
+    <string name="device_auth_failed">The fingerprint, face or screen lock didn\'t recognise you. Nothing was changed.</string>
+    <string name="device_auth_locked_out">Biometric sign-in is locked. Use your screen lock, then try again.</string>
+    <string name="device_auth_unavailable">A fingerprint, face or screen lock isn\'t set up on this phone.</string>
+
+    <!-- StartupNotice. -->
+    <string name="startup_live_graph_unavailable">Paperclip could not open its data on this phone right now. Nothing was changed or deleted. Try again in a moment.</string>
+
+    <!-- SeverityUi (shown in capitals; the word carries the meaning, the colour only reinforces it). -->
+    <string name="severity_critical">Critical</string>
+    <string name="severity_high">High</string>
+    <string name="severity_medium">Medium</string>
+    <string name="severity_low">Low</string>
+
+    <!-- First run: the check of an address, the pairing and the factory\'s role. -->
+    <string name="probe_idle">Not checked yet</string>
+    <string name="probe_probing">Checking…</string>
+    <string name="probe_accepted">Server found</string>
+    <string name="probe_refused">This server cannot be used</string>
+    <string name="probe_failed">Could not check the address</string>
+    <string name="refusal_local_trusted">This server runs in local trusted mode, which has no sign-in. Paperclip Mobile only connects to servers that require sign-in.</string>
+    <string name="refusal_unknown_deployment_mode">This server did not say how it signs people in, so it cannot be used safely.</string>
+    <string name="refusal_bootstrap_pending">This server has not finished its first-time setup. Finish setup in the web app first.</string>
+    <string name="refusal_not_ready">This server says it is not ready yet. Try again in a moment.</string>
+    <string name="pairing_idle">Ready to pair</string>
+    <string name="pairing_waiting">Waiting for your approval…</string>
+    <string name="pairing_cancelled">Pairing was cancelled.</string>
+    <string name="pairing_expired">The approval request expired. Try again.</string>
+    <string name="pairing_failed">Pairing did not complete.</string>
+    <string name="name_issue_empty">Enter a name.</string>
+    <string name="name_issue_too_long">Use at most 40 characters.</string>
+    <string name="name_issue_taken">Another factory already has this name.</string>
+    <string name="exposure_private">private network</string>
+    <string name="exposure_public">public</string>
+    <string name="exposure_unknown">exposure unknown</string>
+    <string name="role_owner">Owner</string>
+    <string name="role_operator">Operator</string>
+    <string name="role_viewer">Viewer</string>
+    <string name="status_signed_in">Connected</string>
+    <string name="status_signed_out">Signed out</string>
+    <string name="status_needs_re_pairing">Needs pairing again</string>
+
     <!-- Compact ages as in the mocks: 12s, 8m, 1h, 3d. -->
     <string name="age_seconds">%1$ds</string>
     <string name="age_minutes">%1$dm</string>

@@ -11,6 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.stainedhead.paperclipmobile.android.R
+import com.stainedhead.paperclipmobile.presentation.ActionsDisabledReason
+import com.stainedhead.paperclipmobile.presentation.ErrorKey
+import com.stainedhead.paperclipmobile.presentation.ErrorUi
+import com.stainedhead.paperclipmobile.presentation.SeverityUi
 
 private const val SAMPLE_UPDATED_AT = 1_000_000L
 private const val SAMPLE_NOW = 1_012_000L
@@ -36,6 +40,29 @@ private fun ButtonsAndPills() {
     CompositionLocalProvider(LocalReferenceMillis provides SAMPLE_NOW) { UpdatedLabel(SAMPLE_UPDATED_AT) }
     LoadingState(stringResource(R.string.common_loading))
 }
+
+@Composable
+private fun Cards() {
+    AttentionCard(
+        severity = SeverityUi.Critical,
+        kind = "Decision · Plans queue",
+        age = "8m",
+        title = "Ship the billing migration to production?",
+        subtitle = "CTO proposes 3 options · PAP-1182 · blocks 4 tasks",
+        onOpen = {},
+    ) { AppButton("Review options", {}) }
+    ErrorBanner(ErrorUi(ErrorKey.Rejected, "Budget must be higher."), onRetry = {})
+    DisabledReason(ActionsDisabledReason.Offline)
+    OfflineBanner(SAMPLE_UPDATED_AT)
+}
+
+@Preview(name = "Cards, light", showBackground = true)
+@Composable
+fun CardsLightPreview() = PreviewSurface(darkTheme = false) { Cards() }
+
+@Preview(name = "Cards, dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+fun CardsDarkPreview() = PreviewSurface(darkTheme = true) { Cards() }
 
 @Preview(name = "Buttons and pills, light", showBackground = true)
 @Composable
