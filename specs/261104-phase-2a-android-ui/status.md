@@ -45,7 +45,7 @@ Update this file after every task and phase. It is the single source of progress
   - [ ] T2.1 `AndroidLivePlatform`
   - [ ] T2.2 `AndroidLiveGraph.openLiveGraph(context, allowInsecureLocal, pairingBrowser, settings): AndroidGraph
   - [ ] T2.3 Extend `LiveWiringRulesTest` / `LiveGraphTest` to Android wiring
-  - [ ] T2.4 `AndroidLiveSettings`
+  - [x] T2.4 `AndroidLiveSettings`
 - [ ] 2a-3 Shell, design system, first run
   - [ ] T3.1 `PaperclipApplication`, `AppEnvironment`, `AppGraphProvider`
   - [ ] T3.2 `HolderViewModel<S,I>` and lifecycle tests: clear closes the holder, rotation does not
