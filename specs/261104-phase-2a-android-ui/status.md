@@ -48,7 +48,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T2.4 `AndroidLiveSettings`
 - [ ] 2a-3 Shell, design system, first run
   - [x] T3.1 `PaperclipApplication`, `AppEnvironment`, `AppGraphProvider`
-  - [ ] T3.2 `HolderViewModel<S,I>` and lifecycle tests: clear closes the holder, rotation does not
+  - [x] T3.2 `HolderViewModel<S,I>` and lifecycle tests: clear closes the holder, rotation does not
   - [ ] T3.3 Design system: theme, tokens, `AttentionCard`, `StatusPill`, `SeverityLabel`, `UpdatedLabel`, `Disab
   - [ ] T3.4 `strings.xml` + `*Labels.kt`
   - [ ] T3.5 `AppRoute` type-safe routes, `TabShell`
