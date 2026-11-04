@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Complete |
 | Phase 2 Architecture and plan | Complete |
 | Phase 3 Task breakdown | Complete |
-| Phase 4 Implementation (Groups 1 to 5) | In progress (Group 1) |
+| Phase 4 Implementation (Groups 1 to 5) | Group 1 done (shared core); Groups 2 to 5 not started |
 | Phase 5 Completion and archive | Not Started |
 
 Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC-2 (R-012) are in force; owner may overturn.
@@ -27,14 +27,14 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 
 - [x] T-001 R-001 (P1) Protected Keystore keys are not bound to the prompt; ADR-123's 5 second window claim is false (tests d1343a2, fc95a15; fix c445d44)
 - [x] T-002 R-002 (P1) A biometric prompt can hang forever with the store mutex held; the lock is held across the user's prompt (tests 5c35532, cdce680; seam 9af6488; fix b6a2a25)
-- [ ] T-004 R-004 (P1) `SetAgentBudget` raises money with no device-owner prompt, contradicting AGENTS.md
-- [ ] T-007 R-007 (P1) An in-flight inline approve/reject is cancelled when the Inbox holder closes (ADR-117 not applied)
-- [ ] T-024 R-024 (P2) The raise amount can be hidden from the field but still sent
-- [ ] T-019 R-019 (P2) Business rules live in androidApp (principle 5, "build once")
-- [ ] T-010 R-010 (P2) `AndroidKeystoreBackend.open()` does not wrap `getKey`
-- [ ] T-011 R-011 (P2) The protected path and the real prompt path have no automated proof
-- [ ] T-012 R-012 (P2) Connectivity counts "online" only when the network is VALIDATED
-- [ ] T-013 R-013 (P2) `RecordFiles` robustness
+- [x] T-004 R-004 (P1) `SetAgentBudget` raises money with no device-owner prompt, contradicting AGENTS.md (prep 3efcda7, bd83ffa; tests a085268; fix 1d7ed1a; iPhone fc19899, 9d0ad58; Android lock glyph and AgentDetailScreenTest stay with Group 2)
+- [x] T-007 R-007 (P1) An in-flight inline approve/reject is cancelled when the Inbox holder closes (ADR-117 not applied) (SHARED HALF ONLY: test 9d53913, fix 7feba41; GraphSession deferral and idle-waiter cancel stay with Group 3)
+- [x] T-024 R-024 (P2) The raise amount can be hidden from the field but still sent (SHARED HALF ONLY: test 8fe9d06, fix acd6326, iPhone d8f8dab; BudgetSheet field text stays with Group 2)
+- [x] T-019 R-019 (P2) Business rules live in androidApp (principle 5, "build once") (SHARED HALF, rules 1 to 4 moved: tests c071287, acb5059, 463f18f, 8fc8fa4; fixes df54fb8, 662fa1e, 65effb1, e76b252; iPhone switch 603677f, e258bbb, 27f3348, d7ac4ae. Not moved: InboxCardLink.of, cardContext, AgentFilter.includes, formatting helpers; androidApp copies and the Konsist rule forbidding them stay with Groups 2 to 4)
+- [x] T-010 R-010 (P2) `AndroidKeystoreBackend.open()` does not wrap `getKey` (test 9c6582b, fix af8c55a)
+- [x] T-011 R-011 (P2) The protected path and the real prompt path have no automated proof (launcher tests 9af6488, cdce680; contract cases 5fdd23c; the cases pass at once on the fake because R-001 landed first)
+- [x] T-012 R-012 (P2) Connectivity counts "online" only when the network is VALIDATED (test 2b2d0a3, fix 04119ab)
+- [x] T-013 R-013 (P2) `RecordFiles` robustness (test 22505a3, fix 0abf91a)
 - [ ] T-003 R-003 (P1) Typed text is lost on state change and on rotation: approval comment, reject and revision notes, budget amount
 - [ ] T-023 R-023 (P2) `FormField` is single-line and strips newlines (iPhone parity)
 - [ ] T-025 R-025 (P2) `FormField` TalkBack semantics hide typed text and the validation issue
@@ -72,4 +72,5 @@ None.
 
 ## Recent activity
 
+- 2026-11-04: Group 1 (shared core) implemented: T-001, T-002, T-004, T-007 (shared half), T-010 to T-013, T-019 (shared half), T-024 (shared half). Open for the Group 2 and 3 agents: the androidApp halves named on the lines above, plus switching androidApp to the shared members (`RunStatusUi.isLive`, `AgentRowUi.visibleActions` and `offersViewRun`, `ToneUi` on the status enums, `FactoryStatusDecision`, `ExpiryDecision`, `DecideByUi.hintText`, `InboxState.isWorking`, `AgentDetailState.saveBudgetNeedsDeviceAuth`), the Roborazzi baselines for the lock glyph, `AgentDetailScreenTest` (a raise now prompts once) and an `AuthHost` that returns the prompt activity only while started.
 - 2026-11-04: spec created from the review PRD (`/dev-flow:create-spec`).
