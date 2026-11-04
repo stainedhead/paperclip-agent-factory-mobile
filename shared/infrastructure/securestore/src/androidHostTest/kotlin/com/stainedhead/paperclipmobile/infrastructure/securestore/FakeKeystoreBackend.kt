@@ -34,7 +34,7 @@ internal class FakeKeystoreBackend : KeystoreBackend {
             key = Key(protection)
             keys[alias] = key
         }
-        if (key.protection && !authenticated) return SealOutcome.NeedsAuthentication
+        if (key.protection && !consumeAuthentication()) return SealOutcome.NeedsAuthentication
         return SealOutcome.Sealed(IV, scramble(plaintext) + tag(alias, aad))
     }
 
@@ -59,7 +59,7 @@ internal class FakeKeystoreBackend : KeystoreBackend {
                 OpenOutcome.Invalidated
             }
 
-            key.protection && !authenticated -> {
+            key.protection && !consumeAuthentication() -> {
                 OpenOutcome.NeedsAuthentication
             }
 
@@ -82,6 +82,9 @@ internal class FakeKeystoreBackend : KeystoreBackend {
     }
 
     override fun aliases(prefix: String): List<String> = keys.keys.filter { it.startsWith(prefix) }
+
+    /** A user-authentication key is authorised for one use: the approval is spent by the operation it allowed. */
+    private fun consumeAuthentication(): Boolean = authenticated.also { authenticated = false }
 
     private fun scramble(bytes: ByteArray) = ByteArray(bytes.size) { (bytes[it].toInt() xor SCRAMBLE).toByte() }
 

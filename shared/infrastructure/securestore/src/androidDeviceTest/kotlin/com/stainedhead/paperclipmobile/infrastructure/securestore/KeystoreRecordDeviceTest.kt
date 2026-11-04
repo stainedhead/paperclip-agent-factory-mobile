@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.infrastructure.securestore
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.security.keystore.KeyInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.stainedhead.paperclipmobile.domain.InstanceId
@@ -18,11 +19,13 @@ import com.stainedhead.paperclipmobile.testing.contract.SecretStoreContract
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeFalse
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.security.KeyStore
 import java.util.UUID
+import javax.crypto.SecretKeyFactory
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -124,6 +127,29 @@ class KeystoreRecordDeviceTest {
             )
             assertEquals(SecretReadResult.Missing, store.get(key, "test"))
         }
+
+    @Test
+    fun aProtectedKeyIsAuthorisedForOneUseAndNotForAWindowOfSeconds() {
+        val keyguard = context.getSystemService(KeyguardManager::class.java)
+        assumeTrue("needs a secure lock screen", keyguard.isDeviceSecure)
+        val prefix = "pafm.test.${UUID.randomUUID()}/".also { prefixes += it }
+        val backend = AndroidKeystoreBackend(prefix)
+        val sealed = backend.seal("k", byteArrayOf(1), byteArrayOf(2), protection = true)
+        assertTrue(sealed is SealOutcome.Sealed || sealed is SealOutcome.NeedsAuthentication, "got $sealed")
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val aesKey = keyStore.getKey(prefix + "k", null) as JceSecretKey
+        val info =
+            SecretKeyFactory
+                .getInstance(
+                    aesKey.algorithm,
+                    "AndroidKeyStore",
+                ).getKeySpec(aesKey, KeyInfo::class.java)
+        assertEquals(
+            0,
+            (info as KeyInfo).userAuthenticationValidityDurationSeconds,
+            "a validity window lets any recent unlock or other app's authentication satisfy a protected read",
+        )
+    }
 
     @Test
     fun theBackendSealsAndOpensAndRejectsAWrongAssociatedData() {

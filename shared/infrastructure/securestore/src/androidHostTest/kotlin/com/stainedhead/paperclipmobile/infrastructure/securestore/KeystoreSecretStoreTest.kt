@@ -10,6 +10,7 @@ import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
 import com.stainedhead.paperclipmobile.testing.TestData
+import com.stainedhead.paperclipmobile.testing.contract.ProtectedStoreHarness
 import com.stainedhead.paperclipmobile.testing.contract.SecretStoreContract
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
@@ -25,6 +26,19 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 
 class KeystoreSecretStoreContractTest : SecretStoreContract() {
+    override fun createProtected(): ProtectedStoreHarness {
+        val fixture = StoreFixture()
+        return object : ProtectedStoreHarness() {
+            override val store: SecretStore = fixture.store
+            override val prompts: Int get() = fixture.prompts.size
+            override var approve: Boolean
+                get() = fixture.answer == BiometricResult.Approved
+                set(value) {
+                    fixture.answer = if (value) BiometricResult.Approved else BiometricResult.Cancelled
+                }
+        }
+    }
+
     override fun create(): SecretStore =
         KeystoreSecretStore(FakeKeystoreBackend(), RecordFiles(tempDir()), { BiometricResult.Unavailable }, "write")
 
