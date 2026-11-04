@@ -40,7 +40,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T1.4 `ConnectivityManagerConnectivity`: default-network callback to `StateFlow<Boolean>`
   - [x] T1.5 Persistence emulator test for `openAndroidPersistence`
   - [x] T1.6 Konsist / `InfrastructureDeviceRulesTest` update: the secret store names no SharedPreferences, no wr
-  - [ ] T1.7 ADR: Keystore design, `AuthHost`, why not `security-crypto`
+  - [x] T1.7 ADR: Keystore design, `AuthHost`, why not `security-crypto`
 - [ ] 2a-2 Android live graph entry point (shared PR)
   - [ ] T2.1 `AndroidLivePlatform`
   - [ ] T2.2 `AndroidLiveGraph.openLiveGraph(context, allowInsecureLocal, pairingBrowser, settings): AndroidGraph

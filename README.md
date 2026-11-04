@@ -21,7 +21,7 @@ All screenshots are taken in demo mode (fake data, never a real factory); the pa
 | [docs/product-summary.md](./docs/product-summary.md) | What the app does, in plain words, and where it stands |
 | [docs/product-details.md](./docs/product-details.md) | The 16 screens: state holder, behaviour by role, device authentication, offline; mocks versus built |
 | [docs/technical-details.md](./docs/technical-details.md) | Modules, graph API, layering rules, mutation order, refresh policy, errors, tests and coverage, iOS interop, known limitations |
-| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-122 (the numbering is not contiguous): why we chose what we chose |
+| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-123 (the numbering is not contiguous): why we chose what we chose |
 | [user-docs/README.md](./user-docs/README.md) | Index of the guides below |
 | [user-docs/getting-started.md](./user-docs/getting-started.md) | Prerequisites, build, gates, XCFramework, iOS tests, demo graph |
 | [user-docs/configuration-reference.md](./user-docs/configuration-reference.md) | Every build and configuration knob and validation rule |
