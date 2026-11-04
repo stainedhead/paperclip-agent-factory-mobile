@@ -6,6 +6,7 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.crypto.Cipher
 import kotlin.coroutines.resume
@@ -42,15 +43,54 @@ internal interface PromptLauncher {
 }
 
 /**
- * Shows the real `BiometricPrompt` in the activity [host] reports. Whether the device can authenticate is asked first
- * ([availability]), so "nothing enrolled" is [PromptOutcome.Unavailable] rather than a prompt that cannot succeed.
- * Cancelling the calling coroutine cancels the prompt.
+ * The place a system prompt can be shown: in the app, the resumed activity. It is a seam so the launcher's handling of
+ * a prompt that cannot be shown, that throws, or that is cancelled is tested without an activity.
+ */
+internal interface PromptScreen {
+    /** Whether the device can authenticate the device owner right now (for a crypto object when [forCipher]). */
+    fun canAuthenticate(forCipher: Boolean): Boolean
+
+    /** Runs [block] on the main thread. */
+    fun post(block: () -> Unit)
+
+    /** On the main thread: whether the prompt can be shown at this moment (the activity is started, state not saved). */
+    fun canShowNow(): Boolean
+
+    /**
+     * On the main thread: shows the system prompt and later reports its one result to [onResult]. Returns what cancels
+     * the prompt. May throw [IllegalStateException] or [IllegalArgumentException] when the system refuses to show it.
+     */
+    fun show(
+        text: String,
+        cipher: Cipher?,
+        onResult: (PromptOutcome) -> Unit,
+    ): () -> Unit
+}
+
+/** Where the launcher finds the screen, or `null` when the app is not in the foreground. */
+internal fun interface PromptScreenSource {
+    suspend fun current(): PromptScreen?
+}
+
+/**
+ * Shows the system `BiometricPrompt` on the screen the source reports. Whether the device can authenticate is asked
+ * first, so "nothing enrolled" is [PromptOutcome.Unavailable] rather than a prompt that cannot succeed. Cancelling the
+ * calling coroutine cancels the prompt.
  */
 internal class ActivityPromptLauncher(
-    private val host: AuthHost,
-    private val availability: (Context) -> Boolean = ::canAuthenticate,
-    private val cipherAvailability: (Context) -> Boolean = ::canAuthenticateForCipher,
+    private val source: PromptScreenSource,
 ) : PromptLauncher {
+    /** The prompt in the activity [host] reports; [availability] answers whether the device can authenticate. */
+    constructor(
+        host: AuthHost,
+        availability: (Context) -> Boolean = ::canAuthenticate,
+        cipherAvailability: (Context) -> Boolean = ::canAuthenticateForCipher,
+    ) : this(
+        PromptScreenSource {
+            host.current()?.let { ActivityPromptScreen(it, availability, cipherAvailability) }
+        },
+    )
+
     override suspend fun prompt(text: String): PromptOutcome = show(text, null)
 
     override suspend fun promptWithCipher(
@@ -62,49 +102,68 @@ internal class ActivityPromptLauncher(
         text: String,
         cipher: Cipher?,
     ): PromptOutcome {
-        val activity = host.current() ?: return PromptOutcome.Unavailable
-        if (!(if (cipher == null) availability else cipherAvailability)(activity)) return PromptOutcome.Unavailable
+        val screen = source.current() ?: return PromptOutcome.Unavailable
+        if (!screen.canAuthenticate(forCipher = cipher != null)) return PromptOutcome.Unavailable
         return suspendCancellableCoroutine { continuation ->
-            val executor = ContextCompat.getMainExecutor(activity)
-            executor.execute {
-                val callback =
-                    object : BiometricPrompt.AuthenticationCallback() {
-                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                            if (continuation.isActive) continuation.resume(succeeded(cipher, result))
-                        }
-
-                        override fun onAuthenticationError(
-                            errorCode: Int,
-                            errString: CharSequence,
-                        ) {
-                            if (continuation.isActive) continuation.resume(PromptOutcome.Error(errorCode))
-                        }
-                    }
-                val prompt = BiometricPrompt(activity, executor, callback)
-                val info =
-                    BiometricPrompt.PromptInfo
-                        .Builder()
-                        .setTitle(text)
-                        .setAllowedAuthenticators(
-                            if (cipher ==
-                                null
-                            ) {
-                                authenticatorsFor(Build.VERSION.SDK_INT)
-                            } else {
-                                CIPHER_AUTHENTICATORS
-                            },
-                        ).setConfirmationRequired(false)
-                        .build()
-                continuation.invokeOnCancellation { executor.execute { prompt.cancelAuthentication() } }
-                if (cipher ==
-                    null
-                ) {
-                    prompt.authenticate(info)
-                } else {
-                    prompt.authenticate(info, BiometricPrompt.CryptoObject(cipher))
-                }
+            var cancel: (() -> Unit)? = null
+            screen.post {
+                val handle = screen.show(text, cipher) { if (continuation.isActive) continuation.resume(it) }
+                cancel = handle
             }
+            continuation.invokeOnCancellation { screen.post { cancel?.invoke() } }
         }
+    }
+}
+
+/** The real screen: the resumed [FragmentActivity] and its `BiometricPrompt`. */
+internal class ActivityPromptScreen(
+    private val activity: FragmentActivity,
+    private val availability: (Context) -> Boolean,
+    private val cipherAvailability: (Context) -> Boolean,
+) : PromptScreen {
+    private val executor = ContextCompat.getMainExecutor(activity)
+
+    override fun canAuthenticate(forCipher: Boolean): Boolean =
+        if (forCipher) cipherAvailability(activity) else availability(activity)
+
+    override fun post(block: () -> Unit) = executor.execute(block)
+
+    override fun canShowNow(): Boolean =
+        activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) &&
+            !activity.supportFragmentManager.isStateSaved
+
+    override fun show(
+        text: String,
+        cipher: Cipher?,
+        onResult: (PromptOutcome) -> Unit,
+    ): () -> Unit {
+        val callback =
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) =
+                    onResult(succeeded(cipher, result))
+
+                override fun onAuthenticationError(
+                    errorCode: Int,
+                    errString: CharSequence,
+                ) = onResult(PromptOutcome.Error(errorCode))
+            }
+        val prompt = BiometricPrompt(activity, executor, callback)
+        val authenticators = if (cipher == null) authenticatorsFor(Build.VERSION.SDK_INT) else CIPHER_AUTHENTICATORS
+        val info =
+            BiometricPrompt.PromptInfo
+                .Builder()
+                .setTitle(text)
+                .setAllowedAuthenticators(authenticators)
+                .setConfirmationRequired(false)
+                .build()
+        if (cipher ==
+            null
+        ) {
+            prompt.authenticate(info)
+        } else {
+            prompt.authenticate(info, BiometricPrompt.CryptoObject(cipher))
+        }
+        return { prompt.cancelAuthentication() }
     }
 }
 
