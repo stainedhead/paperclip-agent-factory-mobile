@@ -16,6 +16,7 @@ class StateIsWorkingTest {
         EditInstanceState().isWorking shouldBe false
         SettingsState().isWorking shouldBe false
         AgentsState().isWorking shouldBe false
+        InboxState().isWorking shouldBe false
     }
 
     @Test
@@ -29,5 +30,6 @@ class StateIsWorkingTest {
         EditInstanceState(isBusy = true).isWorking shouldBe true
         SettingsState(isBusy = true).isWorking shouldBe true
         AgentsState(busyAgentId = "agent-1").isWorking shouldBe true
+        InboxState(isMutating = true).isWorking shouldBe true
     }
 }
