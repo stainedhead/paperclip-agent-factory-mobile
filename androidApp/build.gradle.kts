@@ -1,11 +1,27 @@
 plugins {
     id("pafm.android-app")
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.roborazzi)
 }
 
 dependencies {
+    // The only shared module the app imports (AGENTS.md "Swift and Kotlin Interop" has the same rule for iOS).
+    implementation(project(":shared:umbrella"))
+    implementation(libs.coroutines.core)
+    implementation(libs.serialization.json)
+
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.process)
+    // FragmentActivity (BiometricPrompt needs one) comes with the biometric library; Custom Tabs for pairing.
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.browser)
     implementation(libs.androidx.compose.runtime)
     // The UI libraries must be app dependencies (not test-only) so their R classes reach the Robolectric classpath.
     implementation(libs.androidx.compose.foundation)
@@ -30,10 +46,15 @@ dependencies {
     // Hosts the empty Activity the Compose rule launches under Robolectric.
     debugImplementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
 android {
     namespace = "com.stainedhead.paperclipmobile.android"
+    buildFeatures {
+        // BuildConfig.DEBUG decides whether launch extras may steer the app onto fakes (demo mode, debug builds only).
+        buildConfig = true
+    }
     defaultConfig {
         applicationId = "com.stainedhead.paperclipmobile"
         versionCode = 1

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Paperclip</string>
+
+    <!-- The sentences the system authentication prompt shows (the device owner: fingerprint, face or screen lock). -->
+    <string name="biometric_unlock_reason">Unlock Paperclip</string>
+    <string name="biometric_confirm_reason">Confirm this action</string>
+    <string name="biometric_write_reason">Protect the key for this factory</string>
 </resources>

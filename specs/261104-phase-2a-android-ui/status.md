@@ -47,7 +47,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T2.3 Extend `LiveWiringRulesTest` / `LiveGraphTest` to Android wiring
   - [x] T2.4 `AndroidLiveSettings`
 - [ ] 2a-3 Shell, design system, first run
-  - [ ] T3.1 `PaperclipApplication`, `AppEnvironment`, `AppGraphProvider`
+  - [x] T3.1 `PaperclipApplication`, `AppEnvironment`, `AppGraphProvider`
   - [ ] T3.2 `HolderViewModel<S,I>` and lifecycle tests: clear closes the holder, rotation does not
   - [ ] T3.3 Design system: theme, tokens, `AttentionCard`, `StatusPill`, `SeverityLabel`, `UpdatedLabel`, `Disab
   - [ ] T3.4 `strings.xml` + `*Labels.kt`
