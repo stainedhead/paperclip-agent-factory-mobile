@@ -6,7 +6,10 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 
 ## Technical decisions
 
-- [none yet] Candidates already identified: AGP 9.5 built-in Kotlin result for the application module (research Q5); Roborazzi/Robolectric/JUnit runner choice (research Q6); `withDeviceTest` DSL (research Q2); behaviour of an undecryptable Keystore record on read (research open question 5).
+- **Research Q5 resolved (T0.1/T0.2): AGP 9.5.0 built-in Kotlin needs no extra Kotlin plugin.** `:androidApp` applies only `com.android.application` (through the `pafm.android-app` convention plugin in `build-logic`) plus `org.jetbrains.kotlin.plugin.compose`; `src/main/kotlin` is compiled by AGP's built-in Kotlin (task `compileDebugKotlin`, output under `build/intermediates/built_in_kotlinc`). `org.jetbrains.kotlin.android` is not applied. The Compose compiler plugin does require the Compose runtime on the classpath (the build failed with `IncompatibleComposeRuntimeVersionException` until `compose-runtime` was added), so the module depends on the BOM and the runtime from the start.
+- SDK constants (`compileSdk` 37, `minSdk` 28, namespace root) live in `build-logic/src/main/kotlin/PafmAndroid.kt` and are used by both `pafm.kmp-library` and `pafm.android-app` (T0.1 refactor step). `targetSdk` equals `compileSdk`.
+- **Catalog (T0.2).** Latest stable versions that resolve (checked by resolving every entry in a throwaway configuration, 141 artifacts): Compose BOM 2026.09.00; activity-compose 1.13.0; navigation-compose 2.10.2; lifecycle (viewmodel/runtime-compose, process) 2.11.0; biometric 1.1.0 (1.4.0-alpha07 exists, alpha not taken); browser 1.10.0; core-splashscreen 1.2.0; core-ktx 1.19.1; profileinstaller 1.4.1; androidx.test runner 1.7.0, core 1.7.0, ext-junit 1.3.0; Roborazzi 1.77.0; Robolectric 4.17; JUnit 4.13.2; junit-vintage-engine 6.1.3 (same version as the pinned `junit` 6.1.3, so a Vintage engine exists for the pinned JUnit platform: research Q6 sub-question answered). `CatalogRulesTest` (Konsist) fails on any literal dependency or plugin version in a `*.gradle.kts` (settings foojay plugin excepted).
+- [pending] `withDeviceTest` DSL (research Q2, T0.7); Roborazzi/Robolectric/JUnit runner choice (research Q6, T0.8); behaviour of an undecryptable Keystore record on read (research open question 5, T1.1).
 
 ## Edge cases and solutions
 
