@@ -9,7 +9,6 @@ import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.domain.SecretReadResult
 import com.stainedhead.paperclipmobile.domain.SecretWriteResult
-import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.infrastructure.persistence.openAndroidPersistence
 import com.stainedhead.paperclipmobile.infrastructure.securestore.KeystoreSecretStore
 import com.stainedhead.paperclipmobile.testing.TestData
@@ -38,7 +37,7 @@ class SecretsAbsentDeviceTest {
         runBlocking {
             KeystoreSecretStore(
                 context,
-                { BiometricResult.Unavailable },
+                { _, _ -> null },
                 "x",
             ).deleteNamespace(InstanceId("a"))
         }
@@ -55,7 +54,7 @@ class SecretsAbsentDeviceTest {
     @Test
     fun theBoardKeyIsInNoFileOfTheAppNotEvenTheDatabase() =
         runBlocking {
-            val store = KeystoreSecretStore(context, { BiometricResult.Unavailable }, "protect")
+            val store = KeystoreSecretStore(context, { _, _ -> null }, "protect")
             val persistence = openAndroidPersistence(context, FakeClock())
             persistence.instances.add(TestData.instance("a", "Home factory"))
             assertEquals(
@@ -81,7 +80,7 @@ class SecretsAbsentDeviceTest {
     @Test
     fun theBoardKeyIsNotInTheLogAfterItIsStoredAndRead() =
         runBlocking {
-            val store = KeystoreSecretStore(context, { BiometricResult.Unavailable }, "protect")
+            val store = KeystoreSecretStore(context, { _, _ -> null }, "protect")
             assertEquals(
                 SecretWriteResult.Stored,
                 store.put(secretKey, Secret.of(TestData.TOKEN), SecretPolicy(requireUserPresence = false)),
