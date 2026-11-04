@@ -6,7 +6,6 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.crypto.Cipher
@@ -54,7 +53,7 @@ internal interface PromptScreen {
     /** Runs [block] on the main thread. */
     fun post(block: () -> Unit)
 
-    /** On the main thread: whether the prompt can be shown now (the activity is started, its state not saved). */
+    /** On the main thread: whether the prompt can be shown now (activity alive, fragment state not saved). */
     fun canShowNow(): Boolean
 
     /**
@@ -152,8 +151,7 @@ internal class ActivityPromptScreen(
     override fun post(block: () -> Unit) = executor.execute(block)
 
     override fun canShowNow(): Boolean =
-        activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) &&
-            !activity.supportFragmentManager.isStateSaved
+        !activity.isFinishing && !activity.isDestroyed && !activity.supportFragmentManager.isStateSaved
 
     override fun show(
         text: String,
