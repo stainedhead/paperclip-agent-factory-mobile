@@ -389,6 +389,38 @@ class BudgetAmountInputTest {
         }
 
     @Test
+    fun `R-024 an amount typed before choosing Keep paused is gone when Raise is chosen again`() =
+        runTest {
+            val holder = raising(budgetEnv())
+            holder.onIntent(typed(25_000))
+            runCurrent()
+            holder.state.value.amountMinorUnits shouldBe 25_000L
+
+            holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.KeepPaused))
+            runCurrent()
+            holder.state.value.amountMinorUnits shouldBe null
+
+            holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
+            runCurrent()
+            holder.state.value.amountMinorUnits shouldBe null
+            holder.state.value.amountIssue shouldBe null
+            holder.state.value.canSubmit shouldBe false
+        }
+
+    @Test
+    fun `R-024 choosing the same option again keeps what was typed`() =
+        runTest {
+            val holder = raising(budgetEnv())
+            holder.onIntent(typed(25_000))
+            runCurrent()
+
+            holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
+            runCurrent()
+
+            holder.state.value.amountMinorUnits shouldBe 25_000L
+        }
+
+    @Test
     fun `A4 the amount the person will approve is in the state`() =
         runTest {
             val holder = raising(budgetEnv())
