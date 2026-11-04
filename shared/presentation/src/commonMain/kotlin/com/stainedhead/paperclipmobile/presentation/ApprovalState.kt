@@ -22,6 +22,16 @@ enum class ApprovalStatusUi {
     Rejected,
     Cancelled,
     Unknown,
+    ;
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Approved -> ToneUi.Success
+                Rejected -> ToneUi.Critical
+                Pending, RevisionRequested -> ToneUi.Warn
+                Cancelled, Unknown -> ToneUi.Neutral
+            }
 }
 
 /** The payload of each approval type as the screen shows it (PRD FR-050). Every field may be missing. */

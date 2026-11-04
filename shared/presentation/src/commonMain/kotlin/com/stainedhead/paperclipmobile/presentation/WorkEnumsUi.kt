@@ -19,6 +19,15 @@ enum class RunStatusUi {
 
     /** A run that has not ended: it can still change, so it is timed to the second and refreshed (PRD FR-090). */
     val isLive: Boolean get() = this == Running || this == Queued || this == ScheduledRetry
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Running, Succeeded -> ToneUi.Success
+                Failed, TimedOut -> ToneUi.Critical
+                Cancelled, Interrupted -> ToneUi.Warn
+                Queued, ScheduledRetry, Unknown -> ToneUi.Neutral
+            }
 }
 
 internal fun RunStatus.toUi(): RunStatusUi =
@@ -43,6 +52,16 @@ enum class IssueStatusUi {
     Blocked,
     Cancelled,
     Unknown,
+    ;
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Blocked -> ToneUi.Critical
+                Done -> ToneUi.Success
+                InReview -> ToneUi.Warn
+                Backlog, Todo, InProgress, Cancelled, Unknown -> ToneUi.Neutral
+            }
 }
 
 internal fun IssueStatus.toUi(): IssueStatusUi =
@@ -75,6 +94,15 @@ enum class IssuePriorityUi {
     Medium,
     Low,
     Unknown,
+    ;
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Critical -> ToneUi.Critical
+                High -> ToneUi.Warn
+                Medium, Low, Unknown -> ToneUi.Neutral
+            }
 }
 
 internal fun IssuePriority.toUi(): IssuePriorityUi =
@@ -104,6 +132,16 @@ enum class AgentStatusUi {
     PendingApproval,
     Terminated,
     Unknown,
+    ;
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Running -> ToneUi.Success
+                Error -> ToneUi.Critical
+                Paused, PendingApproval -> ToneUi.Warn
+                Active, Idle, Terminated, Unknown -> ToneUi.Neutral
+            }
 }
 
 internal fun AgentStatus.toUi(): AgentStatusUi =

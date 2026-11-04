@@ -60,6 +60,16 @@ enum class EffectStatusUi {
     Skipped,
     Failed,
     Unknown,
+    ;
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Executed -> ToneUi.Success
+                Skipped -> ToneUi.Warn
+                Failed -> ToneUi.Critical
+                Claimed, Unknown -> ToneUi.Neutral
+            }
 }
 
 /** [reason] is the server's code, for example `target_changed`. */
