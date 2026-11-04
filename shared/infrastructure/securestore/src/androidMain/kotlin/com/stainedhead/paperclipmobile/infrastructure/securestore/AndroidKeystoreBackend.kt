@@ -10,6 +10,7 @@ import java.security.GeneralSecurityException
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyStore
 import java.security.ProviderException
+import java.security.UnrecoverableKeyException
 import javax.crypto.BadPaddingException
 import javax.crypto.Cipher
 import javax.crypto.IllegalBlockSizeException
@@ -82,8 +83,8 @@ internal class AndroidKeystoreBackend(
         ciphertext: ByteArray,
         aad: ByteArray,
     ): OpenOutcome {
-        val key = loadKey(aliasPrefix + alias) ?: return OpenOutcome.KeyMissing
         return try {
+            val key = loadKey(aliasPrefix + alias) ?: return OpenOutcome.KeyMissing
             val perUse = requiresAuthentication(key)
             // A user-authentication key from before per-use authorisation can no longer be trusted: pair again.
             if (perUse && authorisationWindowSeconds(key) != PER_USE_AUTHORIZATION) return OpenOutcome.Invalidated
@@ -218,13 +219,14 @@ private fun keyStore(): KeyStore = KeyStore.getInstance(PROVIDER).apply { load(n
 internal fun keystoreKey(alias: String): SecretKey? = keyStore().getKey(alias, null) as? SecretKey
 
 /**
- * What a failed decryption means. Only a permanently invalidated key is [OpenOutcome.Invalidated]; a record that does
- * not decrypt under a healthy key (bad tag, bad block, bad IV) is [OpenOutcome.Undecryptable]; everything else is
+ * What a failed decryption or key load means. Only a permanently invalidated key or a key the Keystore can no longer
+ * recover ([UnrecoverableKeyException], R-010) is [OpenOutcome.Invalidated]; a record that does not decrypt under a
+ * healthy key (bad tag, bad block, bad IV) is [OpenOutcome.Undecryptable]; everything else is
  * [OpenOutcome.Unreadable] and changes nothing.
  */
 internal fun openFailure(failure: Exception): OpenOutcome =
     when (failure) {
-        is KeyPermanentlyInvalidatedException -> OpenOutcome.Invalidated
+        is KeyPermanentlyInvalidatedException, is UnrecoverableKeyException -> OpenOutcome.Invalidated
 
         is BadPaddingException,
         is IllegalBlockSizeException,

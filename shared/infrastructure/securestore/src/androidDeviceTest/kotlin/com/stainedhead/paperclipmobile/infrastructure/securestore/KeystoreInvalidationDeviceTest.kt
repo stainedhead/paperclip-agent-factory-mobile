@@ -66,6 +66,6 @@ class KeystoreInvalidationDeviceTest {
         assertEquals(OpenOutcome.Undecryptable, openFailure(InvalidAlgorithmParameterException()))
         assertEquals(OpenOutcome.Unreadable, openFailure(KeyStoreException()))
         assertEquals(OpenOutcome.Unreadable, openFailure(ProviderException()))
-        assertEquals(OpenOutcome.Unreadable, openFailure(UnrecoverableKeyException()))
+        assertEquals(OpenOutcome.Invalidated, openFailure(UnrecoverableKeyException()))
     }
 }
