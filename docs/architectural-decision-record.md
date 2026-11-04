@@ -980,3 +980,21 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** One graph per process; rotation and recreation reuse it. A Custom Tab cannot be closed from the app. Spotless needs the Composable naming exception repeated in the Spotless block, and detekt ignores composables for naming and parameter and function counts.
 
+## ADR-126: Diagnostics are typed values kept by the app, redacted by construction, copied and never sent
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T4.5)
+
+**Context.** AND-018 asks for a local diagnostics screen with a copyable report that holds no URL, host, token, key id, company or user data, and for one logging wrapper. The shared core offers no diagnostics source.
+
+**Decision.** `DiagnosticsReport` holds only enums and the app's own checked version name; fields the app cannot observe are `Recorded.NotRecorded`. A failed graph open is classified by the types in its cause chain (never its text). The session feeds the recorder from the shared app and first-run states and the edit screen from its own. "Copy report" writes text built from enum names only to the clipboard. `AppLog` is off in release and rejects secrets, addresses, tokens and ids in debug; Konsist keeps `android.util.Log` inside it.
+
+**Consequences.** Server compatibility, and Keystore errors that no screen reports, show "Not recorded" until the shared core exposes them (reported as a gap). `StorageUnavailableException` is matched by name because the app cannot import the persistence module.
+
+## ADR-127: Reorder by long-press drag with accessibility moves; a re-pair from Edit is secure and cancellable like first run
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T4.2, T4.3)
+
+**Decision.** `ReorderableColumn` follows the finger locally and sends one `Reordered(allIds)` on drop; one-step moves are TalkBack custom actions. `GraphSession.cancelPairingAttempts` ends every waiting pairing (first run and edit) when the approval page cannot be shown, and `ReportPairingWait` makes the window secure while a re-pair waits, so no baseline or screenshot shows it.
+
+**Consequences.** The shared core remains the authority on whether an order is accepted; the next list it publishes replaces the local one.
+

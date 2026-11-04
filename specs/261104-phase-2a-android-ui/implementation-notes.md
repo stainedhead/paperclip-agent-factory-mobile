@@ -26,6 +26,13 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 - Robolectric: size the window (`@Config(qualifiers)`) and `performScrollTo()` before clicking; holders run on Dispatchers.Default so tests use `waitUntil`.
 - Emulator smoke (Pixel_9_Pro): demo launch shows Inbox shell with badge 3; `demo_first_run` shows first run; live launch shows the lock (black screencap: FLAG_SECURE) with the no-screen-lock message.
 
+## 2a-4 notes
+
+- Live-graph emulator check used `adb shell locksettings set-pin 1234` (demo extra for screens; PIN set so the live graph can open).
+- Demo values: Cloud factory is SignedOut with an expired key, so it reads "Key expired" (as in the mock), only Test factory reads "Signed out".
+- Gaps in shared (not changed): the demo graph binds `FakePairingBrowser` and takes no browser, so the edit screen's re-pair cannot be proven end to end through the Custom Tab launcher (covered separately by `CustomTabsPairingBrowserTest` and `PairingRoutingTest`); `DemoControls` has no delete counter (cancelled prompt is proven by prompt count and an unchanged list); no source for server compatibility or Keystore error classes (Not recorded); the demo `listKeys` answers every factory alike.
+- Holder-fed text fields keep typed text locally and tests wait a moment before asking the holder what it made of it.
+
 ## Edge cases and solutions
 
 - T0.4: with `warningsAsErrors` Android Lint flagged `NewerVersionAvailable` (it reads the root catalog), `DataExtractionRules` (needs `fullBackupContent` for API 28 to 30), `MissingApplicationIcon` and `UnusedResources`. Fixed with `androidApp/lint.xml` (version-currency checks ignored: Dependabot owns them), `backup_rules.xml` and a placeholder adaptive icon (final artwork in T8.3). The planted `Planted.kt` (unformatted, unused private member) and `layout/planted.xml` (`android:text="Hello"`) failed spotless, detekt (once `androidApp/src` joined its source set) and lint `HardcodedText` before being removed.
