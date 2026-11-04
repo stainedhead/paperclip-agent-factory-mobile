@@ -59,7 +59,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] 2a-4 Factories family (8, 9, 13, 16, Paired devices)
   - [x] T4.1 Factories screen
   - [x] T4.2 Add / Edit factory
-  - [ ] T4.3 Manage factories: reorder and remove
+  - [x] T4.3 Manage factories: reorder and remove
   - [ ] T4.4 Settings and Paired devices
   - [ ] T4.5 Diagnostics screen, redacted copy report, logging wrapper
 - [ ] 2a-5 Inbox, Decision, Approval, Budget incident

@@ -5,6 +5,8 @@ import com.stainedhead.paperclipmobile.presentation.EditInstanceIntent
 import com.stainedhead.paperclipmobile.presentation.EditInstanceState
 import com.stainedhead.paperclipmobile.presentation.FactoriesIntent
 import com.stainedhead.paperclipmobile.presentation.FactoriesState
+import com.stainedhead.paperclipmobile.presentation.ManageFactoriesIntent
+import com.stainedhead.paperclipmobile.presentation.ManageFactoriesState
 
 /*
  * One function per screen that owns a shared state holder. The key names the screen, the entity it shows and the graph
@@ -27,4 +29,10 @@ fun rememberEditHolder(
 ): HolderViewModel<EditInstanceState, EditInstanceIntent> =
     rememberHolderViewModel("edit-${session.id}-${instanceId ?: "new"}") {
         session.openGraph().createEditInstanceStateHolder(instanceId).screenHolder()
+    }
+
+@Composable
+fun rememberManageHolder(session: GraphSession): HolderViewModel<ManageFactoriesState, ManageFactoriesIntent> =
+    rememberHolderViewModel("manage-${session.id}") {
+        session.openGraph().createManageFactoriesStateHolder().screenHolder()
     }

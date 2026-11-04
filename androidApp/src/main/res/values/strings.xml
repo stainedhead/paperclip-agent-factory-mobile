@@ -243,4 +243,19 @@
     <string name="remove_confirm">Remove</string>
     <string name="remove_here_only_message">This phone\'s key could not be read, so it cannot be revoked on the server. Removing deletes the factory from this phone only; the key stays live on the server until you revoke it in the web app.</string>
     <string name="remove_here_only_confirm">Remove here only</string>
+
+    <!-- Manage factories (screen 16). -->
+    <string name="common_done">Done</string>
+    <string name="manage_title">Edit factories</string>
+    <plurals name="manage_count">
+        <item quantity="one">%1$d factory</item>
+        <item quantity="other">%1$d factories</item>
+    </plurals>
+    <string name="manage_hint">Drag to reorder. The top factory opens first on launch unless you open another.</string>
+    <string name="manage_remove_action">Remove %1$s</string>
+    <string name="manage_reorder_handle">Reorder %1$s</string>
+    <string name="manage_move_up">Move up</string>
+    <string name="manage_move_down">Move down</string>
+    <string name="manage_reorder_rejected">The order could not be saved. Try again.</string>
+    <string name="remove_footer">Your work in Paperclip is not affected.</string>
 </resources>
