@@ -5,8 +5,10 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import javax.crypto.Cipher
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 /** A screen the test drives: posts run at once, and the test decides what the "system prompt" says and when. */
 internal class FakePromptScreen : PromptScreen {
@@ -98,6 +100,36 @@ class ActivityPromptLauncherTest {
             screen.cancelled shouldBe 0
             outcome.cancel()
             screen.cancelled shouldBe 1
+        }
+
+    @Test
+    fun `R-002 a prompt the activity can no longer show at post time answers unavailable and does not hang`() =
+        runTest {
+            screen.showable = false
+            withTimeout(1.seconds) { launcher.prompt("Unlock it") } shouldBe PromptOutcome.Unavailable
+            screen.shown shouldBe emptyList()
+        }
+
+    @Test
+    fun `R-002 a system prompt that throws answers unavailable instead of crashing`() =
+        runTest {
+            for (failure in listOf(
+                IllegalStateException("state saved"),
+                IllegalArgumentException("no fragment manager"),
+            )) {
+                screen.failToShow = failure
+                withTimeout(1.seconds) { launcher.prompt("Unlock it") } shouldBe PromptOutcome.Unavailable
+            }
+        }
+
+    @Test
+    fun `R-002 a caller cancelled before the prompt was posted never shows it`() =
+        runTest {
+            screen.postsRun = false
+            val outcome = async(start = CoroutineStart.UNDISPATCHED) { launcher.prompt("Unlock it") }
+            outcome.cancel()
+            screen.posted.forEach { it() }
+            screen.shown shouldBe emptyList()
         }
 
     @Test
