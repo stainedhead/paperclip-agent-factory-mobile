@@ -79,7 +79,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] 2a-8 Polish, accessibility, security hardening (AND-070)
   - [ ] T8.1 Font scale 2.0 semantics and screenshots for the named primary actions
   - [ ] T8.2 TalkBack names and order, Compose accessibility checks per screen family
-  - [ ] T8.3 Dark theme, dynamic-color neutrals, 360x640 dp and large phones, reduced motion, haptics, adaptive i
+  - [x] T8.3 Dark theme, dynamic-color neutrals, 360x640 dp and large phones, reduced motion, haptics, adaptive icon (placeholder art), splash (ADR-133). Found and fixed two font-scale 2.0 defects: Approval header pill, tab label wrap
   - [x] T8.4 Recents and `FLAG_SECURE` behaviour on API 28, 33, latest (Robolectric on the real activity at 28, 33, 36; emulator check API 37 only: demo Inbox in Recents is a black thumbnail; no API 28 or 33 image is installed)
   - [x] T8.5 R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and live mode (demo through the `releaseDemo` type, ADR-132)
   - [ ] T8.6 `:androidApp:benchmark` module, baseline profile, Macrobenchmark cold start

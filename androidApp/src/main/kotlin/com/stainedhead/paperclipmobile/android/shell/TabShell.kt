@@ -11,6 +11,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,12 +20,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.Density
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -34,6 +37,9 @@ import androidx.navigation.toRoute
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.AppType
+import com.stainedhead.paperclipmobile.android.designsystem.enterTransition
+import com.stainedhead.paperclipmobile.android.designsystem.exitTransition
+import com.stainedhead.paperclipmobile.android.designsystem.rememberReducedMotion
 
 /**
  * Five tabs, one back stack each (AND-012). A tab keeps its pushed screens while another tab is shown; selecting the
@@ -91,7 +97,15 @@ private fun TabHost(
                 select = { tab -> select(tab) },
             )
         }
-    NavHost(controller, startDestination = TabRoot) {
+    val reduced = rememberReducedMotion()
+    NavHost(
+        controller,
+        startDestination = TabRoot,
+        enterTransition = { enterTransition(reduced) },
+        exitTransition = { exitTransition(reduced) },
+        popEnterTransition = { enterTransition(reduced) },
+        popExitTransition = { exitTransition(reduced) },
+    ) {
         composable<TabRoot> { tabRoot(tab, navigator) }
         screen<AppRoute.Decision>(navigator, destination)
         screen<AppRoute.Approval>(navigator, destination)
@@ -111,6 +125,22 @@ private inline fun <reified R : AppRoute> NavGraphBuilder.screen(
     noinline destination: @Composable (AppRoute, TabNavigator) -> Unit,
 ) {
     composable<R> { entry -> destination(entry.toRoute<R>(), navigator) }
+}
+
+private const val TAB_FONT_SCALE_CAP = 1.3f
+
+/**
+ * Five labels share the width, so the bar's text stops growing at 1.3 (Material's guidance for navigation bars); the
+ * icons, the badge and every screen keep the person's full setting. A word is never broken across lines.
+ */
+@Composable
+private fun TabLabel(title: String) {
+    val density = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(density.density, minOf(density.fontScale, TAB_FONT_SCALE_CAP)),
+    ) {
+        Text(title, style = AppType.micro, maxLines = 1, softWrap = false)
+    }
 }
 
 @Composable
@@ -142,7 +172,7 @@ private fun TabBar(
                         },
                     ) { Icon(painterResource(tab.icon), contentDescription = null) }
                 },
-                label = { Text(stringResource(tab.title), style = AppType.micro) },
+                label = { TabLabel(stringResource(tab.title)) },
                 colors =
                     NavigationBarItemDefaults.colors(
                         selectedIconColor = colors.accent,

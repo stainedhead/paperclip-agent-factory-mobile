@@ -28,6 +28,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
 import com.stainedhead.paperclipmobile.android.designsystem.ErrorBanner
 import com.stainedhead.paperclipmobile.android.designsystem.LoadingState
 import com.stainedhead.paperclipmobile.android.designsystem.Radius
+import com.stainedhead.paperclipmobile.android.designsystem.RejectHapticOnChange
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.labels.message
@@ -44,6 +45,7 @@ fun FeedbackBanner(
     modifier: Modifier = Modifier,
 ) {
     val colors = AppTheme.colors
+    RejectHapticOnChange(feedback)
     Row(
         modifier
             .fillMaxWidth()

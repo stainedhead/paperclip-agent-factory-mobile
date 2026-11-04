@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -25,6 +26,8 @@ class MainActivity : FragmentActivity() {
     private lateinit var privacy: PrivacyShield
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Before super: swaps the starting theme (the splash screen) for Theme.Paperclip once the first frame is ready.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as PaperclipApplication
@@ -38,7 +41,7 @@ class MainActivity : FragmentActivity() {
         lifecycle.addObserver(AuthHostRegistration(this))
         lifecycle.addObserver(PairingPageObserver(this, app))
         setContent {
-            PaperclipTheme {
+            PaperclipTheme(dynamicNeutrals = true) {
                 RootScreen(
                     environment = environment,
                     lock = { LockScreen(it) },

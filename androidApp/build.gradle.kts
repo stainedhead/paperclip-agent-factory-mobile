@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.browser)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.compose.runtime)
     // The UI libraries must be app dependencies (not test-only) so their R classes reach the Robolectric classpath.
     implementation(libs.androidx.compose.foundation)

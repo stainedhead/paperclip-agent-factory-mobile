@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.AppButton
 import com.stainedhead.paperclipmobile.android.designsystem.ButtonKind
+import com.stainedhead.paperclipmobile.android.designsystem.ConfirmHapticOnIncrease
 import com.stainedhead.paperclipmobile.android.designsystem.ErrorBanner
 import com.stainedhead.paperclipmobile.android.designsystem.OfflineBanner
 import com.stainedhead.paperclipmobile.android.designsystem.ScreenTitleBar
@@ -76,6 +77,7 @@ fun IssueContent(
     var showsSubtask by rememberSaveable { mutableStateOf(false) }
     val header = state.header
     val hasContent = state.phase == DetailPhase.Content && header != null
+    ConfirmHapticOnIncrease(state.commentSentCount)
     Column(modifier.fillMaxSize().imePadding().testTag("issue-root")) {
         ScreenTitleBar(header?.identifier.orEmpty(), Modifier.padding(horizontal = Spacing.page), onBack)
         PullToRefreshBox(

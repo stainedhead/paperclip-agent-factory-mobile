@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.BarIconButton
+import com.stainedhead.paperclipmobile.android.designsystem.ConfirmHapticOnRise
 import com.stainedhead.paperclipmobile.android.designsystem.ErrorBanner
 import com.stainedhead.paperclipmobile.android.designsystem.OfflineBanner
 import com.stainedhead.paperclipmobile.android.designsystem.ScreenTitleBar
@@ -66,6 +67,7 @@ fun DecisionContent(
     modifier: Modifier = Modifier,
 ) {
     var snoozeOpen by rememberSaveable { mutableStateOf(false) }
+    ConfirmHapticOnRise(state.finalState != null)
     Column(modifier.fillMaxSize().imePadding().testTag("decision-root")) {
         ScreenTitleBar(
             stringResource(R.string.decision_nav_title),

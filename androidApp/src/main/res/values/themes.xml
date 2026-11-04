@@ -5,4 +5,14 @@
         <item name="android:windowBackground">@color/window_background</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <!--
+        The splash screen (AndroidX core-splashscreen, so API 28 to 30 look like API 31 and later): the page colour with
+        the clip mark, no animation, no branding image. It hands over to Theme.Paperclip when the first frame is ready.
+    -->
+    <style name="Theme.Paperclip.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/window_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <item name="postSplashScreenTheme">@style/Theme.Paperclip</item>
+    </style>
 </resources>

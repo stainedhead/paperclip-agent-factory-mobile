@@ -1,33 +1,58 @@
 package com.stainedhead.paperclipmobile.android.designsystem
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+
+/**
+ * The seven neutral roles that may follow the wallpaper (Material You) on Android 12 and later. Brand colours, severity
+ * and destructive tones are never in here: a critical item must look critical on every wallpaper (AND-015).
+ */
+@Immutable
+class Neutrals(
+    scheme: ColorScheme,
+    darkTheme: Boolean,
+) {
+    // Cards sit above the page as in the mocks: the page is the lowest container in dark, the low one in light.
+    val background: Color = if (darkTheme) scheme.surfaceContainerLowest else scheme.surfaceContainerLow
+    val surface: Color = if (darkTheme) scheme.surfaceContainerLow else scheme.surfaceContainerLowest
+    val muted: Color = scheme.surfaceContainerHigh
+    val hairline: Color = scheme.outlineVariant
+    val border: Color = scheme.outline
+    val textPrimary: Color = scheme.onSurface
+    val textSecondary: Color = scheme.onSurfaceVariant
+}
 
 /** The colours Material 3 has no role for (hairlines, soft tones), resolved for the theme in use. */
 @Immutable
 class AppColors(
     private val darkTheme: Boolean,
+    neutrals: Neutrals? = null,
 ) {
-    val background: Color = Palette.background.color(darkTheme)
-    val surface: Color = Palette.surface.color(darkTheme)
-    val muted: Color = Palette.muted.color(darkTheme)
-    val hairline: Color = Palette.hairline.color(darkTheme)
-    val border: Color = Palette.border.color(darkTheme)
-    val textPrimary: Color = Palette.textPrimary.color(darkTheme)
-    val textSecondary: Color = Palette.textSecondary.color(darkTheme)
+    val background: Color = neutrals?.background ?: Palette.background.color(darkTheme)
+    val surface: Color = neutrals?.surface ?: Palette.surface.color(darkTheme)
+    val muted: Color = neutrals?.muted ?: Palette.muted.color(darkTheme)
+    val hairline: Color = neutrals?.hairline ?: Palette.hairline.color(darkTheme)
+    val border: Color = neutrals?.border ?: Palette.border.color(darkTheme)
+    val textPrimary: Color = neutrals?.textPrimary ?: Palette.textPrimary.color(darkTheme)
+    val textSecondary: Color = neutrals?.textSecondary ?: Palette.textSecondary.color(darkTheme)
     val accent: Color = Palette.accent.color(darkTheme)
     val onAccent: Color = Palette.onAccent.color(darkTheme)
     val accentSoft: Color = Palette.accentSoft.color(darkTheme)
@@ -107,14 +132,26 @@ private val MaterialType =
 
 /**
  * The app theme (AND-015): the mocks' tokens as a Material 3 colour scheme, light or dark. [darkTheme] is a parameter,
- * so screenshots and tests do not depend on the host. Dynamic colour for neutrals is added in the polish milestone.
+ * so screenshots and tests do not depend on the host. With [dynamicNeutrals] on Android 12 and later the neutral roles
+ * (page, cards, hairlines, text) follow the wallpaper; the accent, severity and destructive colours stay the brand's.
  */
 @Composable
 fun PaperclipTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicNeutrals: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val colors = AppColors(darkTheme)
+    val context = LocalContext.current
+    val neutrals =
+        if (dynamicNeutrals && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Neutrals(
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context),
+                darkTheme,
+            )
+        } else {
+            null
+        }
+    val colors = remember(darkTheme, neutrals) { AppColors(darkTheme, neutrals) }
     CompositionLocalProvider(LocalAppColors provides colors) {
         MaterialTheme(colorScheme = scheme(colors, darkTheme), typography = MaterialType, content = content)
     }

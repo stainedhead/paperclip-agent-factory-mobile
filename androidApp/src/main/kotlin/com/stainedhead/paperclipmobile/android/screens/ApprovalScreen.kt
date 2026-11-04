@@ -19,8 +19,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stainedhead.paperclipmobile.android.R
+import com.stainedhead.paperclipmobile.android.designsystem.AdaptiveRow
 import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.AppType
+import com.stainedhead.paperclipmobile.android.designsystem.ConfirmHapticOnRise
 import com.stainedhead.paperclipmobile.android.designsystem.ErrorBanner
 import com.stainedhead.paperclipmobile.android.designsystem.OfflineBanner
 import com.stainedhead.paperclipmobile.android.designsystem.ResultCard
@@ -74,6 +76,7 @@ fun ApprovalContent(
     onOpenIssue: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    ConfirmHapticOnRise(state.isResolved)
     Column(modifier.fillMaxSize().imePadding().testTag("approval-root")) {
         ScreenTitleBar(stringResource(R.string.approval_nav_title), Modifier.padding(horizontal = Spacing.page), onBack)
         Column(
@@ -167,10 +170,7 @@ private fun ApprovalHeader(state: ApprovalState) {
     val type = state.type?.takeIf { it != ApprovalTypeUi.Unsupported }?.let { stringResource(it.stringRes()) }
     val kindLine = listOfNotNull(kind, type).joinToString(" · ").uppercase()
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
-        ) {
+        AdaptiveRow(spacing = Spacing.medium) {
             Text(kindLine, Modifier.testTag("approval-kind-line"), style = AppType.label, color = colors.warn)
             state.status?.let { StatusPill(stringResource(it.stringRes()), it.tone()) }
         }
