@@ -3,7 +3,7 @@
 **Created:** 2026-11-04
 **Status:** Draft
 **Owner:** J
-**Related:** [Main PRD](./paperclip-agent-factory-mobile-PRD.md) · [INTENT.md](./INTENT.md) · [AGENTS.md](./AGENTS.md) · [Design mocks](./Paperclip-Remote-mobile-UI-design.html) · [Phase 2i iPhone PRD](./specs/archive/261102-phase-2i-iphone-ui/phase-2i-iphone-ui-PRD.md) · [Technical details](./docs/technical-details.md) · [Product details](./docs/product-details.md)
+**Related:** [Main PRD](../../paperclip-agent-factory-mobile-PRD.md) · [INTENT.md](../../INTENT.md) · [AGENTS.md](../../AGENTS.md) · [Design mocks](../../Paperclip-Remote-mobile-UI-design.html) · [Phase 2i iPhone PRD](../261102-phase-2i-iphone-ui/phase-2i-iphone-ui-PRD.md) · [Technical details](../../docs/technical-details.md) · [Product details](../../docs/product-details.md)
 
 ---
 

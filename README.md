@@ -16,7 +16,7 @@ All screenshots are taken in demo mode (fake data, never a real factory); the pa
 |---|---|
 | [INTENT.md](./INTENT.md) | Why the product exists and how to make trade-offs |
 | [PRD](./paperclip-agent-factory-mobile-PRD.md) | Requirements, screens, release plan |
-| [Android PRD](./paperclip-agent-factory-android-PRD.md) | Phase 2a: the Android app on the shared core, device services, milestones |
+| [Android PRD](./specs/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md) | Phase 2a: the Android app on the shared core, device services, milestones |
 | [AGENTS.md](./AGENTS.md) | How we build: toolchain, TDD, Clean Architecture, security rules |
 | [docs/product-summary.md](./docs/product-summary.md) | What the app does, in plain words, and where it stands |
 | [docs/product-details.md](./docs/product-details.md) | The 16 screens: state holder, behaviour by role, device authentication, offline; mocks versus built |
