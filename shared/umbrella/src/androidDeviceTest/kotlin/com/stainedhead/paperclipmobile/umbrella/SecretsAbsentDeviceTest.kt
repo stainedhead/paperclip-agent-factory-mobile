@@ -78,6 +78,26 @@ class SecretsAbsentDeviceTest {
             assertTrue((store.get(secretKey, "test") as SecretReadResult.Found).secret == Secret.of(TestData.TOKEN))
         }
 
+    @Test
+    fun theBoardKeyIsNotInTheLogAfterItIsStoredAndRead() =
+        runBlocking {
+            val store = KeystoreSecretStore(context, { BiometricResult.Unavailable }, "protect")
+            assertEquals(
+                SecretWriteResult.Stored,
+                store.put(secretKey, Secret.of(TestData.TOKEN), SecretPolicy(requireUserPresence = false)),
+            )
+            store.get(secretKey, "test")
+
+            val log =
+                Runtime
+                    .getRuntime()
+                    .exec(arrayOf("logcat", "-d"))
+                    .inputStream
+                    .readBytes()
+            assertTrue(log.isNotEmpty(), "the log must have been read")
+            assertFalse(log.containsSubsequence(TestData.TOKEN.encodeToByteArray()), "the token is in the log")
+        }
+
     private fun ByteArray.containsSubsequence(needle: ByteArray): Boolean =
         (0..size - needle.size).any { start -> needle.indices.all { this[start + it] == needle[it] } }
 }

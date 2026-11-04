@@ -76,7 +76,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T7.1 Work list
   - [x] T7.2 Issue: Thread / Plan / Runs / Files
   - [x] T7.3 Interaction forms (attachments listed but not opened: shared-core gap, see implementation-notes.md and ADR-131)
-- [ ] 2a-8 Polish, accessibility, security hardening (AND-070)
+- [x] 2a-8 Polish, accessibility, security hardening (AND-070)
   - [x] T8.1 Font scale 2.0 semantics and screenshots for the named primary actions (attention, operations, Work, Issue, shell families; emulator at 2.0 checked on Inbox, Decision, Agents and first run)
   - [x] T8.2 TalkBack names and order, accessibility audit per screen family (ADR-134): role and name defects found and fixed; framework checks unusable under Robolectric and TalkBack not run, recorded
   - [x] T8.3 Dark theme, dynamic-color neutrals, 360x640 dp and large phones, reduced motion, haptics, adaptive icon (placeholder art), splash (ADR-133). Found and fixed two font-scale 2.0 defects: Approval header pill, tab label wrap
@@ -85,7 +85,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T8.6 `:androidApp:benchmark` module, baseline profile, Macrobenchmark cold start (ADR-135; emulator numbers only, see the Performance record)
   - [x] T8.7 Merged-manifest permission / exported-component test (exact permission set, three build types, APK check with aapt2); the manual Pixel and Samsung BiometricPrompt and StrongBox pass is NOT done (no such devices here)
   - [x] T8.8 End-to-end demo-flow test (criterion 2): 14 connected tests on the Pixel_9_Pro emulator, all passing (ADR-136)
-  - [ ] T8.9 Emulator live-graph smoke (criteria 4, 5, 6)
+  - [x] T8.9 Emulator live-graph smoke (criteria 4, 5, 6): everything that needs no server executed and passing; the pairing against the pinned server was NOT executed (Docker daemon would not start here); fingerprint enrolment and the system prompt on a destructive action were NOT proven (ADR-137)
 - [ ] 2a-9 Documentation, screenshots, release gate
   - [ ] T9.1 README, product-summary, product-details
   - [ ] T9.2 `user-docs/` Android notes
@@ -93,6 +93,8 @@ Update this file after every task and phase. It is the single source of progress
   - [ ] T9.4 Close status, run `/dev-flow:review-code`, fix findings one commit each, archive the spec
 
 - 2026-11-04: milestone 2a-7 implemented (T7.1 to T7.3): Work list, Issue (header, subtasks, Thread, Plan, Runs, Files, comment bar, status and assignee menus), the five interaction forms and the web-app door for unsupported kinds, placeholders removed. Gates: spotlessCheck, detekt, lint, konsistTest, allTests, :androidApp:testDebugUnitTest (482, 0 failures), :androidApp:verifyRoborazziDebug (55 baselines, 6 new), assembleDebug and assembleRelease. Emulator smoke on Pixel_9_Pro (demo): Work list and a subtask's Issue. Attachments cannot be opened (no shared port, ADR-064): reported. ADR-131.
+
+- 2026-11-04: milestone 2a-8 completed (T8.6, T8.8, T8.9). `:androidApp:benchmark` with baseline profile and nightly CI job (ADR-135), 14 connected demo-flow tests (ADR-136), live proofs that need no server plus an unrun pairing script (ADR-137). Measured: cold start to the Inbox with content 307 ms median of 10 on the emulator; the 5% jank budget is not met on the emulator. The pairing against the pinned server, fingerprint enrolment and the real prompt on a destructive action were not executed.
 
 ## Main PRD acceptance criteria mapping (filled in T9.3)
 
@@ -138,9 +140,27 @@ Measured 2026-11-04 on the Pixel_9_Pro AVD (`sdk_gphone64_arm64`, API 37, arm64,
 
 The connected tests count device-owner prompts through the demo graph's `DemoControls` (the same counter the Robolectric tests read). The real system `BiometricPrompt` is not shown on the demo graph, which scripts its answers; see T8.9 for what the real prompt proof covers.
 
-## Live graph proofs (T8.9)
+## Live graph proofs (T8.9, ADR-137)
 
-[TBD in T8.9]
+Run 2026-11-04 on the Pixel_9_Pro AVD (API 37, arm64, PIN 1234 set).
+
+**Executed and passing**
+
+| Claim | Proof | Result |
+|---|---|---|
+| A launch without the demo flag opens the real graph at first run (criterion 6) | `scripts/android-live-smoke.sh`, step 1: debug app after `pm clear`, `uiautomator dump` shows the first-run or lock screen and none of the demo data. Also `AndroidLiveGraphDeviceTest.theRealGraphOpensAtTheEmptyFirstRunState` and `theDevicePortsAreTheRealAdaptersAndNoneIsAFake` (real Keystore store, real prompt adapter, real connectivity, no fake) | OK |
+| The board key is only in the Keystore-wrapped record: not in SQLDelight, shared preferences, no_backup, cache or any file (criterion 5) | `SecretsAbsentDeviceTest.theBoardKeyIsInNoFileOfTheAppNotEvenTheDatabase`: real Keystore store and real SQLite file side by side, every file under the data directory scanned (database, WAL, `shared_prefs`, `no_backup`, cache, secret records), and the record read back | OK |
+| ... nor in the log | `SecretsAbsentDeviceTest.theBoardKeyIsNotInTheLogAfterItIsStoredAndRead` (new): `logcat -d` after the store and read; plus `scripts/android-live-smoke.sh` step 2 on the running app (`run-as` over 13 files plus the whole log, pattern `pcp_board_`) | OK |
+| The Keystore key is AES-256, not exportable; records live in `noBackupFilesDir`; flipped bytes and a missing key read as Missing | `theKeyIsAnAes256KeyThatCannotBeExported`, `theRecordsLiveInNoBackupFilesDir`, `aRecordWithFlippedBytesReadsAsMissing`, `aRecordRestoredWithoutItsKeyReadsAsMissing` (`:shared:infrastructure:securestore:connectedAndroidDeviceTest`, 12 passed, 3 skipped, see below) | OK |
+| A backup export holds no token | `allowBackup=false` in the debug and release manifests; `bmgr backupnow com.stainedhead.paperclipmobile` answered "Backup is not allowed"; `adb backup` waits for a confirmation on the device and exported 0 bytes within its 15 s | OK, with the caveat that `adb backup` was not confirmed on the device, so the archive was empty rather than inspected |
+| A release build refuses a stored `http` address (criterion 6) | `AndroidLiveGraphDeviceTest.aReleaseGraphRefusesAStoredHttpAddressBeforeAnyRequest`: an `http://localhost:3100` instance and key stored through the real stores, the graph opened with `allowInsecureLocal = false` (the release value of `LiveGraphProvider`), the first read answers `CertificateInvalid` before any request. And `scripts/android-live-smoke.sh` step 4: the release APK's manifest has `usesCleartextTraffic=false` and no network security config, so the OS refuses cleartext as well. This is the release **configuration** and the release **manifest**; a stored record cannot be planted into the release APK's own data without root | OK |
+
+**NOT executed**
+
+- **Pairing against the pinned Paperclip server (criterion 4 and the live half of 5).** The Docker daemon would not start in this session (`open -a Docker` started no process; `docker info` could not reach `docker.sock`; Podman has no machine, and the pinned image is amd64 only). The pinned image exists on ghcr.io (`2026.1023.0`, manifest fetched), but it was not pulled or run. No live-server number or claim is made. `scripts/android-live-pairing.sh` is written for the owner or a runner with Docker: it starts the server, makes the first board user, routes the device with `adb reverse` to `http://localhost:3199` (the origin the server trusts; `10.0.2.2` would hit INVALID_ORIGIN and is cleartext-allowed in debug only), approves the app's pairing challenge as the board user (the browser's part, since the Custom Tab cannot be driven headlessly), and after you pair by hand checks the Keystore record, the files, the log and `bmgr`. The script itself has not run once; expect to fix it on first use.
+- **Enrolling a new fingerprint makes the next read report re-pair-needed.** Needs a Settings UI walk with an enrolled fingerprint on a device with the Keystore bound to biometric enrolment; the emulator has a PIN only. Covered at the logic level by the `FakeKeystoreBackend` tests (T1.1) and by the securestore phase tests `invalidationPhaseOneCreatesAUserAuthenticationKeyUnderALockScreen` and `invalidationPhaseTwoFindsNoUsableKeyAfterTheLockScreenWasRemoved`, which **skipped** (3 of 15 skipped in the securestore device run) because they need an orchestrated lock-screen change. Not proven on a device.
+- **The system biometric prompt on a destructive action with enrolled credentials.** The demo graph scripts the device-owner answers; the real prompt needs a paired factory. Not shown on the emulator.
+- **Manual Pixel and Samsung pass** (T8.7): no such devices.
 
 ## Blockers
 
