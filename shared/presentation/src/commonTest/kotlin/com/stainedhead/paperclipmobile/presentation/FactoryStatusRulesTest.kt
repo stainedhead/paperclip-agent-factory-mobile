@@ -37,9 +37,13 @@ class FactoryStatusRulesTest {
 
     @Test
     fun `R-019 the expiry decision carries the days and a tone`() {
-        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.NoExpiry, null)) shouldBe ExpiryDecision(ExpiryKindUi.None, null, ToneUi.Neutral)
-        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.Expired, 0)) shouldBe ExpiryDecision(ExpiryKindUi.Expired, null, ToneUi.Warn)
-        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.Valid, 23)) shouldBe ExpiryDecision(ExpiryKindUi.Days, 23, ToneUi.Neutral)
-        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.ExpiringSoon, 3)) shouldBe ExpiryDecision(ExpiryKindUi.Days, 3, ToneUi.Warn)
+        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.NoExpiry, null)) shouldBe
+            ExpiryDecision(ExpiryKindUi.None, null, ToneUi.Neutral)
+        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.Expired, 0)) shouldBe
+            ExpiryDecision(ExpiryKindUi.Expired, null, ToneUi.Warn)
+        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.Valid, 23)) shouldBe
+            ExpiryDecision(ExpiryKindUi.Days, 23, ToneUi.Neutral)
+        ExpiryDecision.of(ExpiryUi(KeyExpiryUi.ExpiringSoon, 3)) shouldBe
+            ExpiryDecision(ExpiryKindUi.Days, 3, ToneUi.Warn)
     }
 }
