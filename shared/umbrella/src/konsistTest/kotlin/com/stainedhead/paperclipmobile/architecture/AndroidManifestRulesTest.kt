@@ -62,6 +62,33 @@ class AndroidManifestRulesTest {
     }
 
     @Test
+    fun `the Compose test host may be exported in a debug build only, and the profile receiver never`() {
+        fun manifest(vararg components: String) =
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
+                <application android:allowBackup="false" android:dataExtractionRules="@xml/r"
+                    android:usesCleartextTraffic="false" android:networkSecurityConfig="@xml/n">
+                    <activity android:name="$LAUNCHER_ACTIVITY" android:exported="true">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                    ${components.joinToString("\n")}
+                </application>
+            </manifest>
+            """.trimIndent()
+        val testHost = """<activity android:name="androidx.activity.ComponentActivity" android:exported="true" />"""
+        val receiver =
+            """<receiver android:name="androidx.profileinstaller.ProfileInstallReceiver" android:exported="true" />"""
+        Assertions.assertEquals(emptyList<String>(), manifestFindings(manifest(testHost), debug = true))
+        Assertions.assertTrue(
+            manifestFindings(manifest(testHost), debug = false).any { it.contains("ComponentActivity") },
+        )
+        Assertions.assertTrue(manifestFindings(manifest(receiver), debug = true).any { it.contains("ProfileInstall") })
+    }
+
+    @Test
     fun `the cleartext scan flags a base config and an extra domain`() {
         val planted =
             """

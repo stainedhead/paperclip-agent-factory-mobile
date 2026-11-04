@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- The whole permission set (AND-002). A library that adds another fails AndroidManifestRulesTest. -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -22,5 +23,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            androidx.profileinstaller (pulled in by Compose) declares an exported receiver so tooling can trigger profile
+            installation over adb. The app installs its profile at startup without it, and an exported receiver is
+            attack surface, so it is removed. T8.6 re-adds it for the benchmark build type only, in review.
+        -->
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            tools:node="remove" />
     </application>
 </manifest>

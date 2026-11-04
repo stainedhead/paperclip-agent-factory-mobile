@@ -14,6 +14,13 @@ private val ALLOWED_PERMISSIONS =
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.USE_BIOMETRIC",
     )
+
+/**
+ * `debugImplementation(compose-ui-test-manifest)` declares this activity exported so the instrumentation process can
+ * start it. It exists in the debug variant only; in release it would be a finding. (Reviewed in T1.3, specs
+ * 261104-phase-2a-android-ui.)
+ */
+internal const val DEBUG_TEST_HOST = "androidx.activity.ComponentActivity"
 private val COMPONENT_TAGS = listOf("activity", "activity-alias", "service", "receiver", "provider")
 
 internal fun parseXml(xml: String): Element {
@@ -62,19 +69,22 @@ private fun permissionFindings(manifest: Element): List<String> {
         .map { "permission $it" }
 }
 
-private fun exportedFindings(application: Element): List<String> {
+private fun exportedFindings(
+    application: Element,
+    debug: Boolean,
+): List<String> {
     val exported =
         COMPONENT_TAGS.flatMap { application.children(it) }.filter {
             it.attr("exported") == "true" ||
                 (it.attr("exported").isEmpty() && it.children("intent-filter").isNotEmpty())
         }
-    val names = exported.map { it.attr("name") }
+    val names = exported.map { it.attr("name") }.filterNot { debug && it == DEBUG_TEST_HOST }
     return when {
         names != listOf(LAUNCHER_ACTIVITY) -> {
             listOf("exported components $names (only the launcher Activity may be exported)")
         }
 
-        !exported.single().isLauncher() -> {
+        !exported.single { it.attr("name") == LAUNCHER_ACTIVITY }.isLauncher() -> {
             listOf("the exported component is not the launcher")
         }
 
@@ -91,7 +101,7 @@ internal fun manifestFindings(
 ): List<String> {
     val manifest = parseXml(xml)
     val application = manifest.children("application").singleOrNull() ?: return listOf("no <application>")
-    return applicationFindings(application, debug) + permissionFindings(manifest) + exportedFindings(application)
+    return applicationFindings(application, debug) + permissionFindings(manifest) + exportedFindings(application, debug)
 }
 
 /** Hosts that may use cleartext in a network security config; `*` stands for a base config that allows it. */
