@@ -125,7 +125,7 @@ struct OperationsModelTests {
     // MARK: Agent detail
 
     @Test func agentDetailShowsEngineerOneAndAnOwnerSetsTheBudget() async {
-        let (graph, _) = graph()
+        let (graph, controls) = graph()
         let model = AgentDetailModel(
             holder: graph.agents.createAgentDetailStateHolder(
                 instanceId: home, companyId: acme, agentId: "agent-eng-1"))
@@ -138,9 +138,29 @@ struct OperationsModelTests {
 
         model.typeBudget(text: "1500", currency: "USD", locale: Locale(identifier: "en_US"))
         #expect(await eventually { model.state.canSaveBudget })
+        #expect(model.state.saveBudgetNeedsDeviceAuth, "a raise asks the device owner and shows the lock glyph")
         model.saveBudget()
         #expect(await eventually { model.state.monthlyBudget?.minorUnits == 150_000 })
         #expect(model.state.budgetSavedCount == 1)
+        #expect(controls.biometricPromptCount == 1, "DEC-1: a budget raise is a Face ID action")
+        observing.cancel()
+        model.close()
+    }
+
+    @Test func aBudgetDecreaseAsksNothingAndShowsNoLockGlyph() async {
+        let (graph, controls) = graph()
+        let model = AgentDetailModel(
+            holder: graph.agents.createAgentDetailStateHolder(
+                instanceId: home, companyId: acme, agentId: "agent-eng-1"))
+        let observing = Task { await model.observe() }
+        #expect(await eventually { model.state.phase == .content })
+
+        model.typeBudget(text: "500", currency: "USD", locale: Locale(identifier: "en_US"))
+        #expect(await eventually { model.state.canSaveBudget })
+        #expect(model.state.saveBudgetNeedsDeviceAuth == false)
+        model.saveBudget()
+        #expect(await eventually { model.state.monthlyBudget?.minorUnits == 50_000 })
+        #expect(controls.biometricPromptCount == 0)
         observing.cancel()
         model.close()
     }

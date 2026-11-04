@@ -275,10 +275,19 @@ private struct BudgetForm: View {
                 title: AgentDetailLabel.budgetField.text, placeholder: AgentDetailLabel.budgetPlaceholder.text,
                 text: $text, issue: state.budgetAmountIssue.map { L10n.text($0) },
                 keyboard: .decimalPad, capitalization: .never, identifier: "agent-budget-amount")
-            Button(AgentDetailLabel.budgetSave.text) { model.saveBudget() }
-                .buttonStyle(.app(.primary))
-                .disabled(!state.canSaveBudget)
-                .accessibilityIdentifier("agent-budget-save")
+            Button {
+                model.saveBudget()
+            } label: {
+                // A raise (or zero) asks the device owner first (DEC-1): the shared holder decides, the lock says so.
+                if state.saveBudgetNeedsDeviceAuth {
+                    Label(AgentDetailLabel.budgetSave.text, systemImage: "lock.fill")
+                } else {
+                    Text(AgentDetailLabel.budgetSave.text)
+                }
+            }
+            .buttonStyle(.app(.primary))
+            .disabled(!state.canSaveBudget)
+            .accessibilityIdentifier("agent-budget-save")
             Button(AgentDetailLabel.budgetCancel.text) { dismiss() }
                 .buttonStyle(.app(.secondary))
                 .accessibilityIdentifier("agent-budget-cancel")
