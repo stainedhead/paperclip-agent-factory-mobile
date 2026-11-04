@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Debug builds may reach a local Paperclip over http on the emulator host and localhost only (AGENTS.md). -->
-    <application android:networkSecurityConfig="@xml/network_security_config" />
+    <application android:networkSecurityConfig="@xml/network_security_config">
+        <!--
+            androidx.compose.ui:ui-tooling declares an exported activity for interactive previews on a device. The
+            app's previews run in Android Studio, and nothing but the launcher Activity may be exported, so it is removed.
+        -->
+        <activity
+            android:name="androidx.compose.ui.tooling.PreviewActivity"
+            tools:node="remove" />
+    </application>
 </manifest>

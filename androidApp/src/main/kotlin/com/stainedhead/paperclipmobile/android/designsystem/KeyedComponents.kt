@@ -258,7 +258,7 @@ private fun CardText(
     val stacked = LocalDensity.current.fontScale >= STACK_FONT_SCALE
     val tag: @Composable () -> Unit = {
         if (severity != null) SeverityLabel(severity)
-        Text("· $kind", style = AppType.label, color = colors.textSecondary)
+        Text(stringResource(R.string.card_kind, kind), style = AppType.label, color = colors.textSecondary)
     }
     if (stacked) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {

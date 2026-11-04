@@ -60,6 +60,7 @@
     <string name="secure_app_lock">Lock app with fingerprint, face or screen lock</string>
     <string name="secure_app_lock_help">Ask to unlock when you open the app.</string>
     <string name="secure_finish">Start using Paperclip</string>
+    <string name="card_kind">\u00B7 %1$s</string>
     <string name="common_retry">Try again</string>
     <string name="common_sign_in_again">Sign in again</string>
     <string name="common_dismiss">Dismiss</string>

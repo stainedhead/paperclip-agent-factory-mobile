@@ -70,6 +70,14 @@ kotlin {
                     },
                 ).withPropertyName("scannedSources")
                 .withPathSensitivity(PathSensitivity.RELATIVE)
+            // The app rules read the Compose app's sources and resources, so editing them re-runs the rules too.
+            inputs
+                .files(
+                    rootProject.fileTree("androidApp/src") {
+                        include("**/*.kt", "**/*.xml")
+                    },
+                ).withPropertyName("scannedAppSources")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
             useJUnitPlatform()
         }
     }
