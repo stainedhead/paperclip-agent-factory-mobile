@@ -1,11 +1,16 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.LocalReferenceMillis
 import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
@@ -59,7 +64,12 @@ class DemoApp(
         content: @Composable () -> Unit,
     ) {
         val now = checkNotNull(session.graph).nowEpochMillis
-        PaperclipTheme(darkTheme) { CompositionLocalProvider(LocalReferenceMillis provides now, content) }
+        PaperclipTheme(darkTheme) {
+            // The root screen paints the page; a screen shown on its own gets the same background here.
+            Box(Modifier.fillMaxSize().background(AppTheme.colors.background)) {
+                CompositionLocalProvider(LocalReferenceMillis provides now, content)
+            }
+        }
     }
 
     override fun close() {
