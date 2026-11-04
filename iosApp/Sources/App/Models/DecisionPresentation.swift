@@ -5,22 +5,13 @@ import PaperclipKit
 /// `today`, `this_week`, `whenever` or an ISO date; this only writes the same words back.
 enum DecisionHintMapping {
     static func hints(originAgentName: String?, decideBy: DecideByUi, dismissalKey: String?) -> DecisionHints {
-        DecisionHints(originAgentName: originAgentName, decideBy: decideByText(decideBy), dismissalKey: dismissalKey)
+        DecisionHints(originAgentName: originAgentName, decideBy: decideBy.hintText, dismissalKey: dismissalKey)
     }
 
     static func hints(_ item: InboxItemUi) -> DecisionHints {
         hints(originAgentName: item.originAgentName, decideBy: item.decideBy, dismissalKey: item.dismissalKey)
     }
 
-    private static func decideByText(_ decideBy: DecideByUi) -> String? {
-        switch decideBy.kind {
-        case .today: "today"
-        case .thisWeek: "this_week"
-        case .whenever: "whenever"
-        case .onDate: decideBy.isoDate
-        case .none: nil
-        }
-    }
 }
 
 /// The words of the Decision screen, composed from the shared UI model. Nothing here decides anything: which options
