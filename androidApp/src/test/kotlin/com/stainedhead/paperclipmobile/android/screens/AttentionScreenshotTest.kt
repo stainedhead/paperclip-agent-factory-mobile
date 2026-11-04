@@ -96,6 +96,27 @@ class AttentionScreenshotTest {
     @Test
     fun decisionLargeText() = decision(darkTheme = false, fontScale = LARGE_TEXT)
 
+    private fun approval(
+        darkTheme: Boolean,
+        fontScale: Float? = null,
+    ) = capture(
+        "approval",
+        darkTheme,
+        fontScale,
+        { rule.hasTag("approval-row-name") && rule.hasTag("approval-approve") },
+    ) {
+        ApprovalScreen(app.session, AppRoute.Approval(DemoId.APPROVAL_HIRE), app.navigator)
+    }
+
+    @Test
+    fun approvalLight() = approval(darkTheme = false)
+
+    @Test
+    fun approvalDark() = approval(darkTheme = true)
+
+    @Test
+    fun approvalLargeText() = approval(darkTheme = false, fontScale = LARGE_TEXT)
+
     @Test
     fun inboxLight() = inbox(darkTheme = false)
 

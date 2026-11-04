@@ -45,6 +45,7 @@ object DemoId {
     const val APPROVAL_HIRE = "ap-hire-qa"
     const val APPROVAL_STRATEGY = "ap-q1-strategy"
     const val INCIDENT = "inc-eng-2"
+    const val ISSUE_REFUNDS = "pap-1190"
 }
 
 /** One demo graph and its session for a screen test; [close] releases everything the screen test owned. */

@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
 import com.stainedhead.paperclipmobile.android.env.GraphSession
+import com.stainedhead.paperclipmobile.android.screens.ApprovalScreen
 import com.stainedhead.paperclipmobile.android.screens.DecisionScreen
 import com.stainedhead.paperclipmobile.android.screens.DiagnosticsScreen
 import com.stainedhead.paperclipmobile.android.screens.EditFactoryScreen
@@ -38,6 +39,7 @@ fun AppTabs(
         },
         destination = { route, navigator ->
             when (route) {
+                is AppRoute.Approval -> ApprovalScreen(session, route, navigator)
                 is AppRoute.Decision -> DecisionScreen(session, route, navigator)
                 is AppRoute.EditFactory -> EditFactoryScreen(session, route.id, navigator)
                 AppRoute.ManageFactories -> ManageFactoriesScreen(session, navigator)

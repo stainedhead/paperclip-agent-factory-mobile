@@ -1,0 +1,34 @@
+package com.stainedhead.paperclipmobile.android.screens
+
+import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
+import com.stainedhead.paperclipmobile.presentation.ApprovalStatusUi
+import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.Test
+
+/** AND-041: the lookups of the Approval screen; which actions exist and when is the shared state's. */
+class ApprovalPresentationTest {
+    @Test
+    fun `a common role reads as its acronym and any other as plain words`() {
+        roleName("qa") shouldBe "QA"
+        roleName("CTO") shouldBe "CTO"
+        roleName("product_designer") shouldBe "Product designer"
+        roleName("") shouldBe null
+        roleName(null) shouldBe null
+    }
+
+    @Test
+    fun `a status has a tone, and colour only backs the word up`() {
+        ApprovalStatusUi.Approved.tone() shouldBe StatusTone.Success
+        ApprovalStatusUi.Rejected.tone() shouldBe StatusTone.Critical
+        ApprovalStatusUi.Pending.tone() shouldBe StatusTone.Warn
+        ApprovalStatusUi.RevisionRequested.tone() shouldBe StatusTone.Warn
+        ApprovalStatusUi.Cancelled.tone() shouldBe StatusTone.Neutral
+        ApprovalStatusUi.Unknown.tone() shouldBe StatusTone.Neutral
+    }
+
+    @Test
+    fun `risks read as a bulleted list and none as nothing`() {
+        bullets(listOf("Downtime", "Cost")) shouldBe "• Downtime\n• Cost"
+        bullets(emptyList()) shouldBe null
+    }
+}

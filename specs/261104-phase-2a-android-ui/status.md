@@ -65,7 +65,7 @@ Update this file after every task and phase. It is the single source of progress
 - [ ] 2a-5 Inbox, Decision, Approval, Budget incident
   - [x] T5.1 Inbox
   - [x] T5.2 Decision
-  - [ ] T5.3 Approval
+  - [x] T5.3 Approval
   - [ ] T5.4 Budget incident sheet
   - [ ] T5.5 Offline and viewer variants across the family
 - [ ] 2a-6 Factory home, Agents, Agent detail, Run viewer

@@ -14,6 +14,9 @@ import com.stainedhead.paperclipmobile.domain.IdlePeriod
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.presentation.ActionsDisabledReason
 import com.stainedhead.paperclipmobile.presentation.AddressIssue
+import com.stainedhead.paperclipmobile.presentation.ApprovalActionUi
+import com.stainedhead.paperclipmobile.presentation.ApprovalStatusUi
+import com.stainedhead.paperclipmobile.presentation.ApprovalTypeUi
 import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
 import com.stainedhead.paperclipmobile.presentation.DecisionFinalKind
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
@@ -26,6 +29,7 @@ import com.stainedhead.paperclipmobile.presentation.FeedbackKind
 import com.stainedhead.paperclipmobile.presentation.InboxGroupUi
 import com.stainedhead.paperclipmobile.presentation.InlineActionUi
 import com.stainedhead.paperclipmobile.presentation.InvalidKey
+import com.stainedhead.paperclipmobile.presentation.NotePromptKind
 import com.stainedhead.paperclipmobile.presentation.PairedDevicesStatus
 import com.stainedhead.paperclipmobile.presentation.PairingStatus
 import com.stainedhead.paperclipmobile.presentation.ProbeStatus
@@ -147,5 +151,14 @@ class KeyLabelsTest {
         check("effect_status", EffectStatusUi.entries, EffectStatusUi::stringRes)
         check("execution", ExecutionStatusUi.entries, ExecutionStatusUi::stringRes)
         check("decision_final", DecisionFinalKind.entries, DecisionFinalKind::stringRes)
+    }
+
+    @Test
+    fun everyApprovalKeyHasText() {
+        check("approval_type", ApprovalTypeUi.entries, ApprovalTypeUi::stringRes)
+        check("approval_status", ApprovalStatusUi.entries, ApprovalStatusUi::stringRes)
+        check("approval_done", ApprovalStatusUi.entries, ApprovalStatusUi::doneStringRes)
+        check("approval_action", ApprovalActionUi.entries, ApprovalActionUi::stringRes)
+        check("note_prompt", NotePromptKind.entries, NotePromptKind::stringRes)
     }
 }
