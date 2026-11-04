@@ -55,7 +55,7 @@ class ToneRulesTest {
     }
 
     @Test
-    fun `R-019 approval, effect and budget threshold tones`() {
+    fun `R-019 approval and effect and budget threshold tones`() {
         ApprovalStatusUi.Approved.tone shouldBe ToneUi.Success
         ApprovalStatusUi.Rejected.tone shouldBe ToneUi.Critical
         ApprovalStatusUi.Pending.tone shouldBe ToneUi.Warn
