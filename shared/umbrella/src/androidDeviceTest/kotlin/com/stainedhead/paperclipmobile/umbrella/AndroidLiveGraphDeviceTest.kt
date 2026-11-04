@@ -20,6 +20,7 @@ import com.stainedhead.paperclipmobile.domain.port.Connectivity
 import com.stainedhead.paperclipmobile.domain.port.FeedQuery
 import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
+import com.stainedhead.paperclipmobile.infrastructure.persistence.PaperclipPersistence
 import com.stainedhead.paperclipmobile.infrastructure.persistence.openAndroidPersistence
 import com.stainedhead.paperclipmobile.presentation.FirstRunStep
 import com.stainedhead.paperclipmobile.testing.TestData
@@ -76,20 +77,17 @@ class AndroidLiveGraphDeviceTest {
         runBlocking {
             val graph = open()
 
-            assertEquals(
-                FirstRunStep.Address,
-                graph
-                    .createFirstRunStateHolder()
-                    .state.value.step,
-            )
-            val factories = graph.createSettingsStateHolder()
-            val loaded = withTimeout(20.seconds) { factories.state.first { it.deviceName.isNotEmpty() } }
+            val firstRun = graph.createFirstRunStateHolder()
+            assertEquals(FirstRunStep.Address, firstRun.state.value.step)
+            val settingsHolder = graph.createSettingsStateHolder()
+            val factories = graph.createFactoriesStateHolder()
+            val loaded = withTimeout(20.seconds) { settingsHolder.state.first { it.deviceName.isNotEmpty() } }
             assertEquals(emptyList(), loaded.factories)
-            assertTrue(
-                graph
-                    .createFactoriesStateHolder()
-                    .state.value.isEmpty,
-            )
+            assertTrue(factories.state.value.isEmpty)
+            // The holders go first: a holder still reading the database when it is closed would crash the process.
+            firstRun.close()
+            settingsHolder.close()
+            factories.close()
         }
 
     @Test
@@ -147,6 +145,25 @@ class AndroidLiveGraphDeviceTest {
         platform.persistence.close()
 
         assertEquals(1, closed)
+    }
+
+    @Test
+    fun aNetworkMonitorThatCannotBeCreatedClosesTheDatabaseAlreadyOpened() {
+        var database: PaperclipPersistence? = null
+
+        val failure =
+            runCatching {
+                AndroidLivePlatform(
+                    secretStore = FakeSecretStore(),
+                    biometrics = FakeBiometrics(),
+                    openPersistence = { clock -> openAndroidPersistence(context, clock).also { database = it } },
+                    openConnectivity = { error("the system refused the network monitor") },
+                )
+            }.exceptionOrNull()
+
+        assertIs<IllegalStateException>(failure)
+        val closed = database ?: error("the database was never opened")
+        assertTrue(runCatching { runBlocking { closed.instances.get(InstanceId("any")) } }.isFailure)
     }
 
     @Test

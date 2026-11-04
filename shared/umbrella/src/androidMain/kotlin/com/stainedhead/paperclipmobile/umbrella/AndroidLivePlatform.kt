@@ -37,7 +37,9 @@ internal class AndroidLivePlatform(
     override val idGenerator: IdGenerator = UuidIdGenerator()
     override val timeZone: DeviceTimeZone = SystemDeviceTimeZone()
     override val persistence: PaperclipPersistence = openPersistence(clock)
-    override val connectivity: Connectivity = openConnectivity()
+    override val connectivity: Connectivity =
+        // The graph never receives a platform that failed to build, so the database is closed here.
+        runCatching(openConnectivity).onFailure { persistence.close() }.getOrThrow()
 
     /** Unregisters the network callback; the graph closes the database and the HTTP client itself. */
     override fun release() {
