@@ -55,7 +55,14 @@ class KeystoreSecretStore internal constructor(
         writeReason,
     )
 
+    /** Guards the record files and the keys. Never held while the person is being asked (R-002). */
     private val lock = Mutex()
+
+    /** One prompt at a time: the system shows a single prompt, and a second would cancel the first. */
+    private val promptLock = Mutex()
+
+    /** Counts deletions, under [lock]; a write whose prompt overlapped one must not bring the secret back. */
+    private var removals = 0L
 
     companion object {
         /** The prefix of the app's Keystore keys unless the app chooses another. */
@@ -66,20 +73,23 @@ class KeystoreSecretStore internal constructor(
         key: SecretKey,
         value: Secret,
         policy: SecretPolicy,
-    ): SecretWriteResult = withContext(Dispatchers.IO) { lock.withLock { putNow(key.path, value, policy) } }
+    ): SecretWriteResult = withContext(Dispatchers.IO) { putNow(key.path, value, policy) }
 
     override suspend fun get(
         key: SecretKey,
         reason: String,
-    ): SecretReadResult = withContext(Dispatchers.IO) { lock.withLock { getNow(key.path, reason) } }
+    ): SecretReadResult = withContext(Dispatchers.IO) { getNow(key.path, reason) }
 
-    override suspend fun delete(key: SecretKey) = withContext(Dispatchers.IO) { lock.withLock { removeNow(key.path) } }
+    override suspend fun delete(key: SecretKey) =
+        withContext(Dispatchers.IO) {
+            removeLocked { removeNow(files, backend, key.path) }
+        }
 
     override suspend fun deleteNamespace(instanceId: InstanceId) =
         withContext(Dispatchers.IO) {
-            lock.withLock {
+            removeLocked {
                 val prefix = SecretKey.namespacePrefix(instanceId)
-                files.paths().filter { it.startsWith(prefix) }.forEach { removeNow(it) }
+                files.paths().filter { it.startsWith(prefix) }.forEach { removeNow(files, backend, it) }
                 // A key whose record is already gone must not outlive its factory either.
                 backend.aliases(prefix).forEach { backend.deleteKey(it) }
             }
@@ -108,17 +118,28 @@ class KeystoreSecretStore internal constructor(
         try {
             val alias = aliasFor(path, protection)
             val aad = path.encodeToByteArray()
-            var sealed = backend.seal(alias, bytes, aad, protection)
-            if (sealed is SealOutcome.NeedsAuthentication) {
-                // The prompt authorises this one cipher; the answer is the cipher, or null when the person did not.
-                val authorised = authenticate(writeReason, sealed.cipher)
-                sealed = if (authorised == null) SealOutcome.Failed else backend.finishSeal(authorised, bytes, aad)
+            // First step under the lock: either the whole write, or the cipher the person has to authorise.
+            val begun =
+                lock.withLock {
+                    val sealed = backend.seal(alias, bytes, aad, protection)
+                    if (sealed is SealOutcome.NeedsAuthentication) {
+                        WriteStep.Ask(sealed.cipher, removals)
+                    } else {
+                        WriteStep.Done(storeSealed(files, backend, path, protection, sealed))
+                    }
+                }
+            if (begun !is WriteStep.Ask) return (begun as WriteStep.Done).result
+            // The person is asked with the lock free: every other secret operation carries on meanwhile.
+            val authorised =
+                promptLock.withLock { authenticate(writeReason, begun.cipher) } ?: return SecretWriteResult.Failed
+            return lock.withLock {
+                // A delete during the prompt wins: the secret the person meant to protect is gone.
+                if (removals != begun.removals) {
+                    SecretWriteResult.Failed
+                } else {
+                    storeSealed(files, backend, path, protection, backend.finishSeal(authorised, bytes, aad))
+                }
             }
-            if (sealed !is SealOutcome.Sealed) return SecretWriteResult.Failed
-            files.write(path, SecretRecord(protection, sealed.iv, sealed.ciphertext).encode())
-            // The record now names this key; the key of the other mode is dead weight (best effort).
-            runCatching { backend.deleteKey(aliasFor(path, !protection)) }
-            return SecretWriteResult.Stored
         } catch (_: RecordFileException) {
             return SecretWriteResult.Failed
         } finally {
@@ -130,49 +151,119 @@ class KeystoreSecretStore internal constructor(
         path: String,
         reason: String,
     ): SecretReadResult {
+        val aad = path.encodeToByteArray()
+        val begun = lock.withLock { beginRead(path, aad) }
+        if (begun !is ReadStep.Ask) return (begun as ReadStep.Done).result
+        // The person is asked with the lock free: every other secret operation carries on meanwhile.
+        val authorised = promptLock.withLock { authenticate(reason, begun.cipher) } ?: return SecretReadResult.Denied
+        return lock.withLock {
+            val now =
+                try {
+                    files.read(path)
+                } catch (_: RecordFileException) {
+                    return@withLock SecretReadResult.Denied
+                }
+            val record = now?.let(SecretRecord::decode)
+            when {
+                now == null || record == null -> SecretReadResult.Missing
+
+                // Replaced while the prompt was open: the person approved the old secret, not this one. Ask again.
+                !now.contentEquals(begun.stored) -> SecretReadResult.Denied
+
+                else -> readResult(backend.finishOpen(authorised, record.ciphertext, aad))
+            }
+        }
+    }
+
+    private fun beginRead(
+        path: String,
+        aad: ByteArray,
+    ): ReadStep {
         val stored =
             try {
                 files.read(path)
             } catch (_: RecordFileException) {
-                return SecretReadResult.Denied
-            } ?: return SecretReadResult.Missing
-        val record = SecretRecord.decode(stored) ?: return SecretReadResult.Missing
-        val alias = aliasFor(path, record.protection)
-        val aad = path.encodeToByteArray()
-        var outcome = backend.open(alias, record.iv, record.ciphertext, aad)
-        if (outcome is OpenOutcome.NeedsAuthentication) {
-            val authorised = authenticate(reason, outcome.cipher)
-            outcome =
-                if (authorised ==
-                    null
-                ) {
-                    OpenOutcome.Unreadable
-                } else {
-                    backend.finishOpen(authorised, record.ciphertext, aad)
-                }
-        }
-        return when (outcome) {
-            is OpenOutcome.Opened -> found(outcome.plaintext)
-            OpenOutcome.KeyMissing, OpenOutcome.Undecryptable -> SecretReadResult.Missing
-            OpenOutcome.Invalidated -> SecretReadResult.Invalidated
-            is OpenOutcome.NeedsAuthentication, OpenOutcome.Unreadable -> SecretReadResult.Denied
+                return ReadStep.Done(SecretReadResult.Denied)
+            } ?: return ReadStep.Done(SecretReadResult.Missing)
+        val record = SecretRecord.decode(stored) ?: return ReadStep.Done(SecretReadResult.Missing)
+        val outcome = backend.open(aliasFor(path, record.protection), record.iv, record.ciphertext, aad)
+        return if (outcome is OpenOutcome.NeedsAuthentication) {
+            ReadStep.Ask(outcome.cipher, stored)
+        } else {
+            ReadStep.Done(readResult(outcome))
         }
     }
 
-    private fun found(plaintext: ByteArray): SecretReadResult {
-        val secret = Secret.of(plaintext.decodeToString())
-        plaintext.fill(0)
-        return SecretReadResult.Found(secret)
-    }
-
-    private fun removeNow(path: String) {
-        // The record first: if a key cannot be deleted afterwards, nothing readable is left behind.
-        files.delete(path)
-        backend.deleteKey(aliasFor(path, true))
-        backend.deleteKey(aliasFor(path, false))
-    }
+    private suspend fun removeLocked(block: () -> Unit) =
+        lock.withLock {
+            removals++
+            block()
+        }
 
     override fun toString(): String = "KeystoreSecretStore"
+}
+
+/** What the first, locked step of a write found: nothing left to ask, or a cipher for the person to authorise. */
+private sealed interface WriteStep {
+    class Done(
+        val result: SecretWriteResult,
+    ) : WriteStep
+
+    class Ask(
+        val cipher: Cipher,
+        val removals: Long,
+    ) : WriteStep
+}
+
+/** The same for a read; [Ask] remembers the record bytes the cipher belongs to. */
+private sealed interface ReadStep {
+    class Done(
+        val result: SecretReadResult,
+    ) : ReadStep
+
+    class Ask(
+        val cipher: Cipher,
+        val stored: ByteArray,
+    ) : ReadStep
+}
+
+private fun storeSealed(
+    files: RecordFiles,
+    backend: KeystoreBackend,
+    path: String,
+    protection: Boolean,
+    sealed: SealOutcome,
+): SecretWriteResult {
+    if (sealed !is SealOutcome.Sealed) return SecretWriteResult.Failed
+    files.write(path, SecretRecord(protection, sealed.iv, sealed.ciphertext).encode())
+    // The record now names this key; the key of the other mode is dead weight (best effort).
+    runCatching { backend.deleteKey(aliasFor(path, !protection)) }
+    return SecretWriteResult.Stored
+}
+
+private fun removeNow(
+    files: RecordFiles,
+    backend: KeystoreBackend,
+    path: String,
+) {
+    // The record first: if a key cannot be deleted afterwards, nothing readable is left behind.
+    files.delete(path)
+    backend.deleteKey(aliasFor(path, true))
+    backend.deleteKey(aliasFor(path, false))
+}
+
+private fun readResult(outcome: OpenOutcome): SecretReadResult =
+    when (outcome) {
+        is OpenOutcome.Opened -> found(outcome.plaintext)
+        OpenOutcome.KeyMissing, OpenOutcome.Undecryptable -> SecretReadResult.Missing
+        OpenOutcome.Invalidated -> SecretReadResult.Invalidated
+        is OpenOutcome.NeedsAuthentication, OpenOutcome.Unreadable -> SecretReadResult.Denied
+    }
+
+private fun found(plaintext: ByteArray): SecretReadResult {
+    val secret = Secret.of(plaintext.decodeToString())
+    plaintext.fill(0)
+    return SecretReadResult.Found(secret)
 }
 
 /** One key per secret and mode, so changing the protection never touches the key the current record depends on. */

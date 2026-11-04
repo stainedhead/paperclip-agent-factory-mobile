@@ -7,6 +7,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.crypto.Cipher
 import kotlin.coroutines.resume
@@ -53,7 +54,7 @@ internal interface PromptScreen {
     /** Runs [block] on the main thread. */
     fun post(block: () -> Unit)
 
-    /** On the main thread: whether the prompt can be shown at this moment (the activity is started, state not saved). */
+    /** On the main thread: whether the prompt can be shown now (the activity is started, its state not saved). */
     fun canShowNow(): Boolean
 
     /**
@@ -107,13 +108,35 @@ internal class ActivityPromptLauncher(
         return suspendCancellableCoroutine { continuation ->
             var cancel: (() -> Unit)? = null
             screen.post {
-                val handle = screen.show(text, cipher) { if (continuation.isActive) continuation.resume(it) }
-                cancel = handle
+                // Between the caller's check and this moment the caller may have gone or the activity stopped; an
+                // unresumed continuation would hang the caller (and whatever it holds) for ever.
+                when {
+                    !continuation.isActive -> Unit
+                    !screen.canShowNow() -> continuation.resume(PromptOutcome.Unavailable)
+                    else -> cancel = showOrUnavailable(screen, text, cipher, continuation)
+                }
             }
             continuation.invokeOnCancellation { screen.post { cancel?.invoke() } }
         }
     }
 }
+
+/** Shows the prompt; a system that refuses (state saved, no fragment manager) answers unavailable, never throws. */
+private fun showOrUnavailable(
+    screen: PromptScreen,
+    text: String,
+    cipher: Cipher?,
+    continuation: CancellableContinuation<PromptOutcome>,
+): (() -> Unit)? =
+    try {
+        screen.show(text, cipher) { if (continuation.isActive) continuation.resume(it) }
+    } catch (_: IllegalStateException) {
+        continuation.resume(PromptOutcome.Unavailable)
+        null
+    } catch (_: IllegalArgumentException) {
+        continuation.resume(PromptOutcome.Unavailable)
+        null
+    }
 
 /** The real screen: the resumed [FragmentActivity] and its `BiometricPrompt`. */
 internal class ActivityPromptScreen(
