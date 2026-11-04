@@ -23,6 +23,7 @@ import com.stainedhead.paperclipmobile.presentation.ApprovalTypeUi
 import com.stainedhead.paperclipmobile.presentation.BudgetChoice
 import com.stainedhead.paperclipmobile.presentation.BudgetOutcomeUi
 import com.stainedhead.paperclipmobile.presentation.BudgetThresholdUi
+import com.stainedhead.paperclipmobile.presentation.CommentAuthorUi
 import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
 import com.stainedhead.paperclipmobile.presentation.DecisionFinalKind
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
@@ -34,7 +35,15 @@ import com.stainedhead.paperclipmobile.presentation.FactoryStatusUi
 import com.stainedhead.paperclipmobile.presentation.FeedbackKind
 import com.stainedhead.paperclipmobile.presentation.InboxGroupUi
 import com.stainedhead.paperclipmobile.presentation.InlineActionUi
+import com.stainedhead.paperclipmobile.presentation.InteractionKindUi
+import com.stainedhead.paperclipmobile.presentation.InteractionPrimaryUi
+import com.stainedhead.paperclipmobile.presentation.InteractionReadOnlyUi
+import com.stainedhead.paperclipmobile.presentation.InteractionStatusUi
 import com.stainedhead.paperclipmobile.presentation.InvalidKey
+import com.stainedhead.paperclipmobile.presentation.IssueFilterUi
+import com.stainedhead.paperclipmobile.presentation.IssuePriorityUi
+import com.stainedhead.paperclipmobile.presentation.IssueStatusUi
+import com.stainedhead.paperclipmobile.presentation.IssueTab
 import com.stainedhead.paperclipmobile.presentation.NotePromptKind
 import com.stainedhead.paperclipmobile.presentation.PairedDevicesStatus
 import com.stainedhead.paperclipmobile.presentation.PairingStatus
@@ -48,6 +57,7 @@ import com.stainedhead.paperclipmobile.presentation.SnoozePresetUi
 import com.stainedhead.paperclipmobile.presentation.SourceKindUi
 import com.stainedhead.paperclipmobile.presentation.SpendWindowUi
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
+import com.stainedhead.paperclipmobile.presentation.VerdictUi
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
 import org.junit.Test
@@ -184,5 +194,19 @@ class KeyLabelsTest {
         check("agent_group", AgentGroupUi.entries, AgentGroupUi::stringRes)
         check("agent_action", AgentActionUi.entries, AgentActionUi::stringRes)
         check("spend_window", SpendWindowUi.entries, SpendWindowUi::stringRes)
+    }
+
+    @Test
+    fun everyWorkKeyHasText() {
+        check("issue_status", IssueStatusUi.entries, IssueStatusUi::stringRes)
+        check("issue_priority", IssuePriorityUi.entries, IssuePriorityUi::stringRes)
+        check("issue_filter", IssueFilterUi.entries, IssueFilterUi::stringRes)
+        check("issue_tab", IssueTab.entries, IssueTab::stringRes)
+        check("comment_author", CommentAuthorUi.entries, CommentAuthorUi::stringRes)
+        check("interaction_kind", InteractionKindUi.entries, InteractionKindUi::stringRes)
+        check("interaction_status", InteractionStatusUi.entries, InteractionStatusUi::stringRes)
+        check("interaction_read_only", InteractionReadOnlyUi.entries, InteractionReadOnlyUi::stringRes)
+        check("interaction_primary", InteractionPrimaryUi.entries, InteractionPrimaryUi::stringRes)
+        check("verdict", VerdictUi.entries, VerdictUi::stringRes)
     }
 }

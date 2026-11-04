@@ -73,7 +73,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T6.2 Agents and Agent detail
   - [x] T6.3 Run viewer
 - [ ] 2a-7 Work list and Issue
-  - [ ] T7.1 Work list
+  - [x] T7.1 Work list
   - [ ] T7.2 Issue: Thread / Plan / Runs / Files
   - [ ] T7.3 Interaction forms
 - [ ] 2a-8 Polish, accessibility, security hardening (AND-070)

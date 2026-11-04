@@ -21,6 +21,7 @@ import com.stainedhead.paperclipmobile.android.screens.ManageFactoriesScreen
 import com.stainedhead.paperclipmobile.android.screens.PairedDevicesScreen
 import com.stainedhead.paperclipmobile.android.screens.RunViewerScreen
 import com.stainedhead.paperclipmobile.android.screens.SettingsScreen
+import com.stainedhead.paperclipmobile.android.screens.WorkListScreen
 
 /**
  * The tab shell with its screens. The Factories family is here (2a-4); the other tab roots and pushed screens arrive
@@ -38,9 +39,9 @@ fun AppTabs(
             when (tab) {
                 AppTab.Inbox -> InboxScreen(session, navigator)
                 AppTab.Factory -> FactoryHomeScreen(session, navigator)
+                AppTab.Work -> WorkListScreen(session, navigator)
                 AppTab.Agents -> AgentsScreen(session, navigator)
                 AppTab.Factories -> FactoriesScreen(session, navigator)
-                else -> Placeholder(tab.title, "tab-root-${tab.name}", tab.icon)
             }
         },
         destination = { route, navigator ->
