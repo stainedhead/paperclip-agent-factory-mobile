@@ -8,7 +8,7 @@ final class AgentDetailUITests: XCTestCase {
 
     @MainActor
     func testItShowsTheAgentSetsABudgetPausesWithFaceIDAndOpensAFinishedRun() {
-        // Prompts in order: unlock, the budget raise (DEC-1: a raise asks the device owner), a cancelled pause, the pause.
+        // Prompts in order: unlock, the budget raise (DEC-1), a cancelled pause, the pause.
         let app = launchAgents(biometrics: "approved,approved,cancelled,approved")
         app.scroll(to: "agent-row-\(OpsIds.engineer1)", in: "agents-root")
         app.element("agent-row-\(OpsIds.engineer1)").tap()
