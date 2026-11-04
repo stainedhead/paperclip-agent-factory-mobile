@@ -10,6 +10,8 @@ dependencies {
     // The UI libraries must be app dependencies (not test-only) so their R classes reach the Robolectric classpath.
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui)
+    // Compose already pulls it in at run time; declared so the manifest can name (and remove) its exported receiver.
+    implementation(libs.androidx.profileinstaller)
 
     // Unit tests: JUnit 4 + Robolectric for Compose and Roborazzi; JUnit 5 for pure tests through the Vintage engine.
     testImplementation(platform(libs.androidx.compose.bom))
