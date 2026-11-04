@@ -38,6 +38,8 @@ private const val PER_USE_AUTHORIZATION = 0
  */
 internal class AndroidKeystoreBackend(
     private val aliasPrefix: String = KeystoreSecretStore.DEFAULT_KEY_ALIAS_PREFIX,
+    /** Loads a key by its full alias; a seam so tests can make the Keystore refuse. */
+    private val loadKey: (String) -> SecretKey? = ::keystoreKey,
 ) : KeystoreBackend {
     override fun seal(
         alias: String,
@@ -80,7 +82,7 @@ internal class AndroidKeystoreBackend(
         ciphertext: ByteArray,
         aad: ByteArray,
     ): OpenOutcome {
-        val key = keyStore().getKey(aliasPrefix + alias, null) as? SecretKey ?: return OpenOutcome.KeyMissing
+        val key = loadKey(aliasPrefix + alias) ?: return OpenOutcome.KeyMissing
         return try {
             val perUse = requiresAuthentication(key)
             // A user-authentication key from before per-use authorisation can no longer be trusted: pair again.
@@ -146,7 +148,7 @@ internal class AndroidKeystoreBackend(
         aad: ByteArray,
         protection: Boolean,
     ): SealOutcome {
-        var key = keyStore().getKey(full, null) as? SecretKey
+        var key = loadKey(full)
         if (protection && key != null && authorisationWindowSeconds(key) != PER_USE_AUTHORIZATION) {
             // A user-authentication key from before per-use authorisation: the new value gets a new key.
             keyStore().deleteEntry(full)
@@ -211,6 +213,9 @@ private fun requiresAuthentication(key: SecretKey): Boolean = keyInfo(key).isUse
 private fun authorisationWindowSeconds(key: SecretKey): Int = keyInfo(key).userAuthenticationValidityDurationSeconds
 
 private fun keyStore(): KeyStore = KeyStore.getInstance(PROVIDER).apply { load(null) }
+
+/** The AES key stored under [alias], or `null`. May throw what the Keystore throws. */
+internal fun keystoreKey(alias: String): SecretKey? = keyStore().getKey(alias, null) as? SecretKey
 
 /**
  * What a failed decryption means. Only a permanently invalidated key is [OpenOutcome.Invalidated]; a record that does
