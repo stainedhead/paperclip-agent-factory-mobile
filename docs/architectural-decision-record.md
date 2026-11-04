@@ -998,3 +998,27 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** The shared core remains the authority on whether an order is accepted; the next list it publishes replaces the local one.
 
+
+## ADR-128: The Inbox renders the session's holder, a decision carries what its card knew on its route, and a sheet owns its holder through a sheet-scoped store
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T5.1 to T5.4)
+
+**Context.** The iPhone Inbox model belongs to the app environment: it feeds the tab badge and owns the refresh session, so the Inbox screen only renders it. The Decision endpoint has neither the agent name nor the decide-by (ADR-018), and Snooze is offered only when the screen was opened from an Inbox card (ADR-025); the iPhone app keeps those hints in an in-memory table. A budget incident is a sheet, not a back stack entry, so a `HolderViewModel` created inside it would be scoped to the screen under it and outlive the sheet.
+
+**Decision.**
+1. `InboxScreen` collects `GraphSession.inbox` and renders that holder. It never closes it and never starts a second refresh session (the session already starts one when the selection changes and stops it when it changes again). It sends one `Refresh` when the screen returns to the foreground (not on first composition) and when the budget sheet closes, because the incident may have been resolved in it. Detail screens (Decision, Approval, Budget) start `graph.refresh.start(holder.refreshTarget)` when they start and stop it when they stop (`RefreshWhileVisible`), unless the session has refresh off. `ScreenHolder` gained `refreshTarget` and an in-flight check for the three holders (ADR-117).
+2. `AppRoute.Decision(id, originAgentName, decideBy, dismissalKey, identifier)` carries the hints, with `decideBy` written back in the shared parser's words (`today`, `this_week`, `whenever`, an ISO date). They are plain strings, they survive process death with the route (the in-memory table would lose Snooze), and a route opened another way has a null `dismissalKey`, so no Snooze.
+3. `WithSheetHolders` gives a sheet its own `ViewModelStore` and clears it when the sheet leaves the composition, so the budget holder follows the same `HolderViewModel` rule as a screen (closed after the outcome if a mutation is in flight). Which incident is open is `rememberSaveable` in the Inbox, so it survives rotation and the sheet re-reads.
+4. A destructive step is never taken from a composable: Reject (inline and on the approval), a destructive Decision option and Raise and resume send their intent and the shared use case asks `Biometrics`; a declined prompt comes back as feedback and nothing is called. The note sheet is open exactly while the state carries a prompt.
+
+**Consequences.** The Inbox tab and the badge share one holder, as on iPhone. A route is longer than "ids only" but still plain data. The demo graph has no viewer, so viewer variants are rendered from states built in the test (the states are what the shared holders produce for that role; their rules are tested in `shared/presentation`). `DemoControls` has no decide, approve or resolve counters, so a declined prompt is proven by the prompt count, the unchanged screen and the absence of a result, not by call counts (reported as a gap).
+
+## ADR-129: Swipes only send intents and TalkBack has the same actions; the Undo offer, the payloads and the money are plain renderings of shared state
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T5.1 to T5.4)
+
+**Context.** An Inbox card can be snoozed or dismissed with a five-second Undo. On Android a `SwipeToDismissBox` can leave a row displaced after the gesture, a swipe is not available to TalkBack, and a Material `Snackbar` has its own timer that would disagree with the shared one.
+
+**Decision.** Swiping toward the end opens the snooze presets, toward the start dismisses; `confirmValueChange` sends the intent and returns false, so a card never stays swiped (it goes, or comes back after Undo, with the shared state). Snooze and Dismiss are also custom accessibility actions of the card's open target. Swipes and actions are off while the shared state says actions are unavailable (offline, viewer). The Undo offer is a bar shown exactly while `state.undo` is set; the five seconds are the holder's. Approval payloads are plain text (the iPhone app renders inline Markdown; no Markdown library is added for it). Money uses `NumberFormat` with the currency's own digits and drops zero cents; a typed amount is passed to the holder with the locale's decimal separator and the currency's digits and read by shared code. An input's `maxLength` is shown as a counter and never enforced by the field, so the shared `InputTooLong` rule stays the only one. Only `https` addresses are opened for an unknown kind.
+
+**Consequences.** Android renders payload text without emphasis. A long press and drag on a card is not used, so it does not clash with scrolling. The Undo bar is not a Material `Snackbar`, so it does not queue or time itself.

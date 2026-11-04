@@ -62,12 +62,12 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T4.3 Manage factories: reorder and remove
   - [x] T4.4 Settings and Paired devices
   - [x] T4.5 Diagnostics screen, redacted copy report, logging wrapper
-- [ ] 2a-5 Inbox, Decision, Approval, Budget incident
+- [x] 2a-5 Inbox, Decision, Approval, Budget incident
   - [x] T5.1 Inbox
   - [x] T5.2 Decision
   - [x] T5.3 Approval
   - [x] T5.4 Budget incident sheet
-  - [ ] T5.5 Offline and viewer variants across the family
+  - [x] T5.5 Offline and viewer variants across the family
 - [ ] 2a-6 Factory home, Agents, Agent detail, Run viewer
   - [ ] T6.1 Factory home
   - [ ] T6.2 Agents and Agent detail
@@ -96,7 +96,9 @@ Update this file after every task and phase. It is the single source of progress
 
 | Main PRD criterion | Android test | State |
 |---|---|---|
-| 1 to 9, 11 to 13 | [TBD] | Not Started |
+| 5 A decision with three options shows each option's effects; choosing one calls `decide`, then shows per-effect results | `DecisionScreenTest.everyOptionShowsItsEffectsBeforeAnythingIsChosen`, `aNonDestructiveChoiceGoesThroughWithoutAskingTheDeviceOwnerAndShowsWhatHappened`, `aDestructiveChoiceWaitsForTheDeviceOwnerAndDoesNothingWhenTheyCancel`; `DecisionVariantsTest.aPartialRunShowsEachEffectWithItsOwnStatusAndWhyOneWasSkipped` | Passing (2a-5) |
+| 6 Every inline Inbox action resolves the item and the badge count updates without a manual refresh | `InlineActionsBadgeTest.approvingKeepingPausedAndRejectingEachResolveTheirCardAndTheBadgeFollows`; `BudgetSheetTest` (raise and keep paused from the sheet) | Passing (2a-5) |
+| 1 to 4, 7 to 9, 11 to 13 | [TBD] | Not Started |
 
 ## Performance record (T8.6)
 
@@ -114,3 +116,4 @@ None.
 - 2026-11-04: milestone 2a-1 implemented (T1.1 to T1.7). Gates observed: spotlessCheck, detekt, lint, allTests, konsistTest (85 tests), koverVerifyCore, koverVerifyPresentation, :androidApp:assembleDebug, connectedAndroidDeviceTest on the Pixel_9_Pro emulator (securestore 15 with 2 phase tests skipped, platform 6, persistence 5, umbrella 2, 0 failures). Found and fixed: the Android SQLite framework silently replaced a corrupt database (T1.5); the merged-manifest rule was already red on profileinstaller. Not proven on the emulator: a real KeyPermanentlyInvalidatedException after a new fingerprint, the system BiometricPrompt UI, and StrongBox hardware (see ADR-123, T8.9).
 - 2026-11-04: milestone 2a-3 implemented (T3.1 to T3.9). Gates observed: spotlessCheck, detekt, lint, konsistTest (90), allTests, :androidApp:testDebugUnitTest (125), verifyRoborazziDebug (7 baselines), assembleDebug, assembleRelease. Emulator smoke on Pixel_9_Pro: demo Inbox shell with badge 3, demo first run, live launch lock screen (FLAG_SECURE). ADR-125.
 - 2026-11-04: milestone 2a-4 implemented (T4.1 to T4.5). Gates: spotlessCheck, detekt, lint, konsistTest (92), :androidApp:testDebugUnitTest (222), verifyRoborazziDebug (22 baselines). Emulator smoke on Pixel_9_Pro (demo). ADR-126, ADR-127.
+- 2026-11-04: milestone 2a-5 implemented (T5.1 to T5.5): Inbox, Decision, Approval, Budget incident sheet, offline and viewer variants. Gates: spotlessCheck, detekt, lint, konsistTest, :androidApp:testDebugUnitTest, verifyRoborazziDebug (baselines for inbox, inbox offline, decision, approval and budget in light, dark and font scale 2.0). ADR-128, ADR-129.
