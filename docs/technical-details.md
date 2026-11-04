@@ -330,6 +330,8 @@ Decisions are in ADR-030 to ADR-037; the fix spec is `specs/archive/261101-phase
 - **Release build (T8.5, ADR-132).** `release` is minified and shrunk by R8 with `androidApp/proguard-rules.pro` (it strips `android.util.Log`; no keep rule was needed). Signing reads `PAFM_UPLOAD_*` environment variables and falls back to the debug key; `versionName` is the catalog's `android-app`, `versionCode` the commit count. `releaseDemo` (own application id, debug-signed) is the shipping build plus the demo entry. `scripts/android-release-smoke.sh live|demo` installs and launches either and fails on a crash, a class-loading error, a wrong permission set or a missing screen.
 - **Manifest (T8.7).** The merged manifests of debug, release and releaseDemo are checked for the exact permission set and exported components (`AndroidManifestRulesTest`); the script repeats the permission and debuggable check on the built APK with `aapt2`.
 - **Recents and `FLAG_SECURE` (T8.4).** `RecentsPrivacyTest` drives the real `MainActivity` under Robolectric at API 28, 33 and 36.
+- **Accessibility (T8.2, ADR-134).** `AccessibilityTest` audits the semantics tree of every screen family (name, role, 48 dp target, reading order, status never by colour alone); the framework checks are not usable under Robolectric and TalkBack was not run.
+- **Font scale (T8.1).** `LargeTextActionsTest`, `OperationsLargeTextTest`, `WorkLargeTextTest` and `ShellLargeTextActionsTest` assert the named primary actions at 2.0.
 - **Theme, motion, haptics, splash, layouts (T8.3, ADR-133).** `Neutrals`, `Motion.kt`, `Haptics.kt`, `Theme.Paperclip.Starting`, `LayoutVariantsScreenshotTest`.
 
 ## Known limitations and gaps

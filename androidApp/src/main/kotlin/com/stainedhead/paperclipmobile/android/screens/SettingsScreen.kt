@@ -34,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -156,26 +157,29 @@ private fun ThisPhone(
     SectionHeader(stringResource(R.string.settings_this_phone))
     CardSurface { DeviceName(sessionId, state, send) }
     CardGroup {
-        CardRow(title = stringResource(R.string.settings_app_lock), modifier = Modifier.testTag("settings-app-lock")) {
+        val lockName = stringResource(R.string.settings_app_lock)
+        CardRow(title = lockName, modifier = Modifier.testTag("settings-app-lock")) {
             Switch(
                 checked = state.appLockEnabled,
                 onCheckedChange = { send(SettingsIntent.AppLockToggled(it)) },
-                modifier = Modifier.testTag("settings-app-lock-toggle"),
+                modifier = Modifier.testTag("settings-app-lock-toggle").semantics { contentDescription = lockName },
                 colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.onAccent),
             )
         }
     }
     CardGroup { IdlePeriodRow(state, send) }
     CardGroup {
-        CardRow(
-            title = stringResource(R.string.settings_destructive),
-            help = stringResource(R.string.settings_destructive_help),
-        ) {
+        val destructiveName = stringResource(R.string.settings_destructive)
+        CardRow(title = destructiveName, help = stringResource(R.string.settings_destructive_help)) {
             Switch(
                 checked = state.destructiveActionAuthAlwaysOn,
                 onCheckedChange = {},
                 enabled = false,
-                modifier = Modifier.testTag("settings-destructive-toggle"),
+                modifier =
+                    Modifier.testTag("settings-destructive-toggle").semantics {
+                        contentDescription =
+                            destructiveName
+                    },
             )
         }
     }
@@ -277,7 +281,12 @@ private fun Factories(
             val status = FactoryStatusPresentation.of(factory.status, factory.expiry)
             CardRow(
                 title = factory.name,
-                modifier = Modifier.clickable { onOpen(factory.id) }.testTag("settings-factory-${factory.id}"),
+                modifier =
+                    Modifier
+                        .clickable(
+                            role = Role.Button,
+                        ) { onOpen(factory.id) }
+                        .testTag("settings-factory-${factory.id}"),
             ) {
                 Text(
                     stringResource(status.label.stringRes()),
@@ -317,7 +326,12 @@ private fun Door(
     CardRow(
         title = stringResource(title),
         help = help?.let { stringResource(it) },
-        modifier = Modifier.heightIn(min = Spacing.minimumTarget).clickable(onClick = onClick).testTag(tag),
+        modifier =
+            Modifier
+                .heightIn(
+                    min = Spacing.minimumTarget,
+                ).clickable(role = Role.Button, onClick = onClick)
+                .testTag(tag),
     ) {
         Icon(
             painterResource(R.drawable.ic_chevron_right),

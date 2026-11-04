@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -189,7 +190,7 @@ private fun RowText(
     Column(
         modifier
             .heightIn(min = Spacing.minimumTarget)
-            .clickable(onClick = onOpen)
+            .clickable(role = Role.Button, onClick = onOpen)
             .padding(vertical = Spacing.medium)
             .testTag("manage-open-${row.id}"),
         verticalArrangement = Arrangement.spacedBy(Spacing.hairline),

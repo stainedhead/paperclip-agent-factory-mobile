@@ -159,7 +159,7 @@ private fun AgentRowHeader(
         Modifier
             .fillMaxWidth()
             .heightIn(min = Spacing.minimumTarget)
-            .clickable(onClickLabel = stringResource(R.string.agents_open_hint), onClick = onOpen)
+            .clickable(onClickLabel = stringResource(R.string.agents_open_hint), role = Role.Button, onClick = onOpen)
             .testTag("agent-row-${row.id}"),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(Spacing.extraLarge),

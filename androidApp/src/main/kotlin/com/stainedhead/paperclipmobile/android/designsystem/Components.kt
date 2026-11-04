@@ -243,7 +243,7 @@ internal fun StatusTone.background(colors: AppColors): Color =
         StatusTone.Neutral -> colors.muted
     }
 
-private fun StatusTone.symbol(): Int =
+internal fun StatusTone.symbol(): Int =
     when (this) {
         StatusTone.Success -> R.drawable.ic_check_circle
         StatusTone.Warn -> R.drawable.ic_warning
@@ -385,6 +385,8 @@ fun FormField(
                     .fillMaxWidth()
                     .heightIn(min = Spacing.minimumTarget)
                     .onFocusChanged { onFocusChanged?.invoke(it.isFocused) }
+                    // The visible title is a separate Text, so the field is named for TalkBack here.
+                    .semantics { contentDescription = title }
                     .testTag(tag),
             enabled = enabled,
             singleLine = true,

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.ActionRow
@@ -89,7 +90,9 @@ fun AgentWork(
         SectionHeader(stringResource(R.string.agent_detail_current_issue))
         val issue = state.currentIssue
         if (issue != null) {
-            CardSurface(Modifier.clickable { onOpenIssue(issue.id) }.testTag("agent-current-issue")) {
+            CardSurface(
+                Modifier.clickable(role = Role.Button) { onOpenIssue(issue.id) }.testTag("agent-current-issue"),
+            ) {
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = Spacing.minimumTarget),
                     verticalAlignment = Alignment.CenterVertically,

@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -275,15 +276,16 @@ private fun SecureStep(
         }
     }
     CardGroup {
+        val lockName = stringResource(R.string.secure_app_lock)
         CardRow(
-            title = stringResource(R.string.secure_app_lock),
+            title = lockName,
             help = stringResource(R.string.secure_app_lock_help),
             modifier = Modifier.testTag("app-lock-row"),
         ) {
             Switch(
                 checked = state.appLockEnabled,
                 onCheckedChange = { holder.send(FirstRunIntent.AppLockChosen(it)) },
-                modifier = Modifier.testTag("app-lock-toggle"),
+                modifier = Modifier.testTag("app-lock-toggle").semantics { contentDescription = lockName },
                 colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.onAccent),
             )
         }

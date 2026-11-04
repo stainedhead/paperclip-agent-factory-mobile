@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -207,7 +208,7 @@ fun WorkRow(
     CardSurface(
         Modifier
             .heightIn(min = Spacing.minimumTarget)
-            .clickable(onClickLabel = stringResource(R.string.work_open_hint), onClick = onOpen)
+            .clickable(onClickLabel = stringResource(R.string.work_open_hint), role = Role.Button, onClick = onOpen)
             .testTag("$tagPrefix-${row.id}"),
     ) {
         Row(

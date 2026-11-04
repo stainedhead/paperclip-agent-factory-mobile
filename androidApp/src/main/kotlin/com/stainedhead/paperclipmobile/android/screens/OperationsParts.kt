@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.stainedhead.paperclipmobile.android.R
@@ -119,7 +120,7 @@ fun RunListRow(
         modifier
             .fillMaxWidth()
             .heightIn(min = Spacing.minimumTarget)
-            .clickable(onClickLabel = stringResource(R.string.run_open_hint), onClick = onOpen)
+            .clickable(onClickLabel = stringResource(R.string.run_open_hint), role = Role.Button, onClick = onOpen)
             .padding(vertical = Spacing.medium)
             .testTag(tag),
         verticalAlignment = Alignment.CenterVertically,

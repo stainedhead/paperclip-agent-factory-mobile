@@ -1,0 +1,183 @@
+package com.stainedhead.paperclipmobile.android.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.dp
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
+import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
+import com.stainedhead.paperclipmobile.android.designsystem.symbol
+import com.stainedhead.paperclipmobile.android.shell.AppRoute
+import com.stainedhead.paperclipmobile.android.shell.LockActions
+import com.stainedhead.paperclipmobile.android.shell.LockScreen
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import org.junit.After
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+private val BILLING =
+    AppRoute.Decision(DemoId.DECISION_BILLING, "CTO", "today", "attention:decision:dec-1182", "PAP-1182")
+
+/**
+ * T8.2, what TalkBack gets from each screen family on the demo graph: a name, a role and a 48 dp target on every
+ * control, and a reading order that follows the layout. Failures are fixed, not listed; the checks Robolectric cannot
+ * make are in ADR-134. The audit itself is proven by a screen with planted violations.
+ */
+@RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(qualifiers = "w411dp-h2000dp-xxhdpi")
+class AccessibilityTest {
+    @get:Rule
+    val rule = createComposeRule()
+
+    private val app = DemoApp()
+
+    @After
+    fun tearDown() = app.close()
+
+    private var findings = emptyList<String>()
+
+    private fun audited(
+        ready: () -> Boolean,
+        content: @Composable () -> Unit,
+    ): List<String> {
+        rule.waitUntil(WAIT_MILLIS) { app.appState.selectedCompanyId != null }
+        var density =
+            androidx.compose.ui.unit
+                .Density(1f)
+        rule.setContent {
+            density = LocalDensity.current
+            app.Themed { content() }
+        }
+        rule.waitUntil(WAIT_MILLIS, ready)
+        rule.waitForIdle()
+        findings = audit(rule.onRoot().fetchSemanticsNode(), density)
+        return findings
+    }
+
+    @Test
+    fun inbox() {
+        audited({ rule.cardCount() > 0 }) { InboxScreen(app.session, app.navigator) } shouldBe emptyList()
+    }
+
+    @Test
+    fun decision() {
+        audited({ rule.hasTag("decision-confirm") }) { DecisionScreen(app.session, BILLING, app.navigator) } shouldBe
+            emptyList()
+    }
+
+    @Test
+    fun approval() {
+        audited({ rule.hasTag("approval-approve") }) {
+            ApprovalScreen(app.session, AppRoute.Approval(DemoId.APPROVAL_HIRE), app.navigator)
+        } shouldBe emptyList()
+    }
+
+    @Test
+    fun factoryHome() {
+        audited({ rule.hasTag("factory-run-run-cto-live") }) { FactoryHomeScreen(app.session, app.navigator) } shouldBe
+            emptyList()
+    }
+
+    @Test
+    fun agents() {
+        audited(
+            { rule.hasTag("agent-${DemoId.AGENT_CTO}-pause") },
+        ) { AgentsScreen(app.session, app.navigator) } shouldBe
+            emptyList()
+    }
+
+    @Test
+    fun agentDetail() {
+        audited({ rule.hasTag("agent-detail-pause") }) {
+            AgentDetailScreen(app.session, AppRoute.Agent(DemoId.AGENT_ENGINEER_1), app.navigator)
+        } shouldBe emptyList()
+    }
+
+    @Test
+    fun runViewer() {
+        audited({ rule.hasTag("run-log") && rule.hasTag("run-cancel") }) {
+            RunViewerScreen(app.session, AppRoute.Run(DemoId.RUN_LIVE), app.navigator)
+        } shouldBe emptyList()
+    }
+
+    @Test
+    fun work() {
+        audited(
+            { rule.hasTag("work-row-${DemoId.ISSUE_RETRIES}") },
+        ) { WorkListScreen(app.session, app.navigator) } shouldBe
+            emptyList()
+    }
+
+    @Test
+    fun issue() {
+        audited({ rule.hasTag("issue-comment-send") }) {
+            IssueScreen(app.session, AppRoute.Issue(DemoId.ISSUE_RETRIES), app.navigator)
+        } shouldBe emptyList()
+    }
+
+    @Test
+    fun factories() {
+        audited({ rule.hasTag("add-factory-button") }) { FactoriesScreen(app.session, app.navigator) } shouldBe
+            emptyList()
+    }
+
+    @Test
+    fun editFactory() {
+        audited(
+            { rule.hasTag("edit-save-button") },
+        ) { EditFactoryScreen(app.session, DemoId.HOME, app.navigator) } shouldBe
+            emptyList()
+    }
+
+    @Test
+    fun settings() {
+        audited({ rule.hasTag("settings") }) { SettingsScreen(app.session, app.navigator) } shouldBe emptyList()
+    }
+
+    @Test
+    fun lock() {
+        audited({ true }) { LockScreen(LockActions(null) {}) } shouldBe emptyList()
+    }
+
+    @Test
+    fun theAuditReportsAnUnnamedRolelessControl() {
+        audited({ true }) {
+            Box {
+                Box(Modifier.size(20.dp).background(Color.Red).clickable {})
+            }
+        }.joinToString("\n").let {
+            it shouldContain "no name"
+            it shouldContain "no role"
+        }
+    }
+
+    @Test
+    fun noToneIsToldByColourAloneEachHasItsOwnSymbolAndTheWordsAreShown() {
+        StatusTone.entries
+            .map { it.symbol() }
+            .toSet()
+            .size shouldBe StatusTone.entries.size
+        audited({ true }) {
+            Column {
+                StatusTone.entries.forEach { StatusPill("state ${it.name}", it) }
+            }
+        }
+        StatusTone.entries.forEach { rule.onNodeWithText("state ${it.name}").assertIsDisplayed() }
+    }
+}

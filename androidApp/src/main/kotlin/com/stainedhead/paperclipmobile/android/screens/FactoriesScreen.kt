@@ -224,6 +224,7 @@ private fun FactoryHeader(
                 .clickable(
                     enabled = !row.isSelected,
                     onClickLabel = stringResource(R.string.factories_switch_to, row.name),
+                    role = Role.Button,
                     onClick = onSwitch,
                 ).testTag("factory-header-${row.id}"),
             verticalAlignment = Alignment.CenterVertically,

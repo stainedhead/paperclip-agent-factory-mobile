@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
@@ -106,8 +107,11 @@ private fun AutoScrollToggle(
     Box(
         Modifier
             .heightIn(min = Spacing.minimumTarget)
-            .clickable(onClickLabel = stringResource(R.string.run_autoscroll_hint), onClick = onToggle)
-            .padding(horizontal = Spacing.medium)
+            .clickable(
+                onClickLabel = stringResource(R.string.run_autoscroll_hint),
+                role = Role.Button,
+                onClick = onToggle,
+            ).padding(horizontal = Spacing.medium)
             .testTag("run-autoscroll"),
         contentAlignment = Alignment.Center,
     ) {

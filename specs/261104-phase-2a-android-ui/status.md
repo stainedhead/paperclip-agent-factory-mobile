@@ -78,7 +78,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T7.3 Interaction forms (attachments listed but not opened: shared-core gap, see implementation-notes.md and ADR-131)
 - [ ] 2a-8 Polish, accessibility, security hardening (AND-070)
   - [x] T8.1 Font scale 2.0 semantics and screenshots for the named primary actions (attention, operations, Work, Issue, shell families; emulator at 2.0 checked on Inbox, Decision, Agents and first run)
-  - [ ] T8.2 TalkBack names and order, Compose accessibility checks per screen family
+  - [x] T8.2 TalkBack names and order, accessibility audit per screen family (ADR-134): role and name defects found and fixed; framework checks unusable under Robolectric and TalkBack not run, recorded
   - [x] T8.3 Dark theme, dynamic-color neutrals, 360x640 dp and large phones, reduced motion, haptics, adaptive icon (placeholder art), splash (ADR-133). Found and fixed two font-scale 2.0 defects: Approval header pill, tab label wrap
   - [x] T8.4 Recents and `FLAG_SECURE` behaviour on API 28, 33, latest (Robolectric on the real activity at 28, 33, 36; emulator check API 37 only: demo Inbox in Recents is a black thumbnail; no API 28 or 33 image is installed)
   - [x] T8.5 R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and live mode (demo through the `releaseDemo` type, ADR-132)

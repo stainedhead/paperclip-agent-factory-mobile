@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -221,11 +222,12 @@ internal fun EditPins(
     LaunchedEffect(state.pins) { pin = "" }
     val colors = AppTheme.colors
     CardGroup {
-        CardRow(title = stringResource(R.string.edit_pin_title), help = stringResource(R.string.edit_pin_help)) {
+        val pinName = stringResource(R.string.edit_pin_title)
+        CardRow(title = pinName, help = stringResource(R.string.edit_pin_help)) {
             Switch(
                 checked = state.pinningEnabled,
                 onCheckedChange = { send(EditInstanceIntent.PinningToggled(it)) },
-                modifier = Modifier.testTag("edit-pin-toggle"),
+                modifier = Modifier.testTag("edit-pin-toggle").semantics { contentDescription = pinName },
                 colors = SwitchDefaults.colors(checkedTrackColor = colors.accent, checkedThumbColor = colors.onAccent),
             )
         }

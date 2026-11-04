@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -164,7 +165,10 @@ private fun RunHeader(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = Spacing.minimumTarget)
-                    .clickable(onClickLabel = stringResource(R.string.run_open_issue)) { onOpenIssue(issueId) }
+                    .clickable(
+                        onClickLabel = stringResource(R.string.run_open_issue),
+                        role = Role.Button,
+                    ) { onOpenIssue(issueId) }
                     .padding(vertical = Spacing.medium)
                     .testTag("run-issue"),
                 style = AppType.body,
