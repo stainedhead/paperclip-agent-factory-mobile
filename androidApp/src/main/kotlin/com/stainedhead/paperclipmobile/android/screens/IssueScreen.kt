@@ -135,7 +135,7 @@ private fun IssueBody(
     state.tabError?.let { ErrorBanner(it, onRetry = { send(IssueIntent.TabSelected(state.tab)) }) }
     when (state.tab) {
         IssueTab.Thread -> {
-            IssueThread(state)
+            IssueThread(state, send)
             if (state.canCreateSubtask) {
                 AppButton(
                     stringResource(R.string.issue_add_subtask),

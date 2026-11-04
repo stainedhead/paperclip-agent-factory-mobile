@@ -20,13 +20,17 @@ import com.stainedhead.paperclipmobile.android.designsystem.rememberNowMillis
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.CommentAuthorUi
 import com.stainedhead.paperclipmobile.presentation.IssueCommentUi
+import com.stainedhead.paperclipmobile.presentation.IssueIntent
 import com.stainedhead.paperclipmobile.presentation.IssueState
 
 private const val MILLIS_PER_SECOND = 1_000L
 
 /** The Thread tab: the comments in time order, as the shared state lists them. */
 @Composable
-fun IssueThread(state: IssueState) {
+fun IssueThread(
+    state: IssueState,
+    send: (IssueIntent) -> Unit,
+) {
     Column(Modifier.testTag("issue-thread"), verticalArrangement = Arrangement.spacedBy(Spacing.large)) {
         if (state.interactionsUnavailable) {
             Text(
@@ -45,7 +49,10 @@ fun IssueThread(state: IssueState) {
                 )
             }
         }
-        for (item in state.thread) item.comment?.let { CommentCard(it) }
+        for (item in state.thread) {
+            item.comment?.let { CommentCard(it) }
+            item.interaction?.let { InteractionCard(it, state.isBusy, send) }
+        }
     }
 }
 

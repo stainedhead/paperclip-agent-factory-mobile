@@ -800,6 +800,18 @@
     <string name="issue_assignee_me">Me</string>
     <string name="issue_assignee_change">Change assignee</string>
     <string name="issue_interactions_unavailable">The agent\'s requests could not be loaded. Pull to refresh.</string>
+    <plurals name="issue_questions_count">
+        <item quantity="one">%1$d question</item>
+        <item quantity="other">%1$d questions</item>
+    </plurals>
+    <string name="issue_optional_question">%1$s (optional)</string>
+    <string name="issue_other_field">Something else</string>
+    <string name="issue_answer_placeholder">Type an answer</string>
+    <string name="issue_reject_reason">Why are you rejecting this?</string>
+    <string name="issue_reject_reason_required">Reason (required)</string>
+    <string name="issue_item_reason">Reason</string>
+    <string name="issue_open_in_web">Open in the web app</string>
+    <string name="issue_open_web_failed">The web app could not be opened. Only addresses that start with https open.</string>
     <string name="issue_author_pair">%1$s · %2$s</string>
     <string name="issue_author_line">%1$s · %2$s · %3$s</string>
 </resources>

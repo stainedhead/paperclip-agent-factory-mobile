@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,6 +50,9 @@ import com.stainedhead.paperclipmobile.presentation.IssueRefUi
 import com.stainedhead.paperclipmobile.presentation.IssueState
 
 private val MenuGlyph = 16.dp
+
+/** The row chevron points down on a chip that opens a menu. */
+private const val MENU_CHEVRON_DEGREES = 90f
 
 /**
  * The top of the Issue screen, as in the mock: "PAP-1204 · project", the title, then status, priority and assignee as
@@ -182,7 +186,7 @@ private fun AssigneePill(
             Icon(
                 painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
-                Modifier.size(MenuGlyph),
+                Modifier.size(MenuGlyph).rotate(MENU_CHEVRON_DEGREES),
                 tint = colors.textSecondary,
             )
         }

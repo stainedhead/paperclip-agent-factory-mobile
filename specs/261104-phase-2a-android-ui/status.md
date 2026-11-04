@@ -72,10 +72,10 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T6.1 Factory home
   - [x] T6.2 Agents and Agent detail
   - [x] T6.3 Run viewer
-- [ ] 2a-7 Work list and Issue
+- [x] 2a-7 Work list and Issue
   - [x] T7.1 Work list
   - [x] T7.2 Issue: Thread / Plan / Runs / Files
-  - [ ] T7.3 Interaction forms
+  - [x] T7.3 Interaction forms (attachments listed but not opened: shared-core gap, see implementation-notes.md and ADR-131)
 - [ ] 2a-8 Polish, accessibility, security hardening (AND-070)
   - [ ] T8.1 Font scale 2.0 semantics and screenshots for the named primary actions
   - [ ] T8.2 TalkBack names and order, Compose accessibility checks per screen family
@@ -92,13 +92,18 @@ Update this file after every task and phase. It is the single source of progress
   - [ ] T9.3 Map main PRD acceptance criteria 1 to 9 and 11 to 13 to named Android tests in `status.md`
   - [ ] T9.4 Close status, run `/dev-flow:review-code`, fix findings one commit each, archive the spec
 
+- 2026-11-04: milestone 2a-7 implemented (T7.1 to T7.3): Work list, Issue (header, subtasks, Thread, Plan, Runs, Files, comment bar, status and assignee menus), the five interaction forms and the web-app door for unsupported kinds, placeholders removed. Gates: spotlessCheck, detekt, lint, konsistTest, allTests, :androidApp:testDebugUnitTest (482, 0 failures), :androidApp:verifyRoborazziDebug (55 baselines, 6 new), assembleDebug and assembleRelease. Emulator smoke on Pixel_9_Pro (demo): Work list and a subtask's Issue. Attachments cannot be opened (no shared port, ADR-064): reported. ADR-131.
+
 ## Main PRD acceptance criteria mapping (filled in T9.3)
 
 | Main PRD criterion | Android test | State |
 |---|---|---|
 | 5 A decision with three options shows each option's effects; choosing one calls `decide`, then shows per-effect results | `DecisionScreenTest.everyOptionShowsItsEffectsBeforeAnythingIsChosen`, `aNonDestructiveChoiceGoesThroughWithoutAskingTheDeviceOwnerAndShowsWhatHappened`, `aDestructiveChoiceWaitsForTheDeviceOwnerAndDoesNothingWhenTheyCancel`; `DecisionVariantsTest.aPartialRunShowsEachEffectWithItsOwnStatusAndWhyOneWasSkipped` | Passing (2a-5) |
 | 6 Every inline Inbox action resolves the item and the badge count updates without a manual refresh | `InlineActionsBadgeTest.approvingKeepingPausedAndRejectingEachResolveTheirCardAndTheBadgeFollows`; `BudgetSheetTest` (raise and keep paused from the sheet) | Passing (2a-5) |
-| 1 to 4, 7 to 9, 11 to 13 | [TBD] | Not Started |
+| 7 An `ask_user_questions` interaction can be answered on the phone and the answer appears in the web app thread | `InteractionFlowTest.answeringValidatesLiveOneQuestionAtATimeAndAChoiceReplacesTheOneBeforeIt`, `aTypedAnswerInPlaceOfAnOptionCompletesTheSecondQuestionAndKeepsEveryCharacter`, `sendingTheAnswersMarksTheCardAnsweredAndTheQuestionLeavesTheInboxFeed` (demo graph, real holder, the demo `onAnswered` hook); `InteractionCardTest` (the other four kinds and the unsupported kind) | Android half passing (2a-7): the answer goes through the shared holder to the gateway, the card reads Answered and the Inbox feed drops the question. "Appears in the web app thread" needs a real server: T8.9 and the shared contract tests for `respond` |
+| 1 to 4, 8, 9, 11 to 13 | [TBD] | Not Started |
+
+Wording check (2a-7): the main PRD's criterion 7 is the `ask_user_questions` one above; tasks.md T7.3 points at it. The Android PRD's own criterion 7 is about lifecycle (holders closed on leaving, kept on rotation) and belongs to T3.2 and T8.x, not to the Work and Issue milestone.
 
 ## Performance record (T8.6)
 
