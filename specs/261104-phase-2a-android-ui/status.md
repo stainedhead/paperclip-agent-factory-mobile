@@ -34,12 +34,12 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T0.8 Test runner decision and wiring (JUnit 4 + Robolectric for Compose/Roborazzi; ADR)
   - [x] T0.5 `.github/workflows/android.yml` (after T0.7 and T0.8)
 - [ ] 2a-1 Android device services (shared PR, merges before UI)
-  - [ ] T1.1 `KeystoreBackend` seam + `KeystoreSecretStore` over `FakeKeystoreBackend`
+  - [x] T1.1 `KeystoreBackend` seam + `KeystoreSecretStore` over `FakeKeystoreBackend`
   - [ ] T1.2 Real backend: AES-256-GCM key
   - [ ] T1.3 `BiometricPromptBiometrics` + `AuthHost`
   - [ ] T1.4 `ConnectivityManagerConnectivity`: default-network callback to `StateFlow<Boolean>`
   - [ ] T1.5 Persistence emulator test for `openAndroidPersistence`
-  - [ ] T1.6 Konsist / `InfrastructureDeviceRulesTest` update: the secret store names no SharedPreferences, no wr
+  - [x] T1.6 Konsist / `InfrastructureDeviceRulesTest` update: the secret store names no SharedPreferences, no wr
   - [ ] T1.7 ADR: Keystore design, `AuthHost`, why not `security-crypto`
 - [ ] 2a-2 Android live graph entry point (shared PR)
   - [ ] T2.1 `AndroidLivePlatform`

@@ -31,12 +31,27 @@ class InfrastructureDeviceRulesTest {
     }
 
     @Test
-    fun `the secret store never reaches a database, a file or user defaults`() {
+    fun `the secret store never reaches a database, user defaults or a backed-up directory`() {
         val offenders =
-            report(secureStoreRoot) {
-                forbiddenImports(it.readText(), PERSISTENCE_IMPORTS) + codeMentions(it.readText(), FOUNDATION_STORES)
+            report(secureStoreRoot) { file ->
+                secretStoreViolations(file.name, file.readText())
             }
-        Assertions.assertTrue(offenders.isEmpty(), "A secret may live only in the Keychain: $offenders")
+        Assertions.assertTrue(offenders.isEmpty(), "A secret may live only in the Keychain or Keystore: $offenders")
+    }
+
+    @Test
+    fun `the secret store reaches a file only in the one record file class, below noBackupFilesDir`() {
+        val sources = mainSources(secureStoreRoot)
+        val recordFiles = sources.single { it.name == RECORD_FILES }
+        Assertions.assertTrue(
+            codeMentions(recordFiles.readText(), listOf("noBackupFilesDir")).isNotEmpty(),
+            "The records must be placed below noBackupFilesDir",
+        )
+        val others = sources.filter { it.name != RECORD_FILES }
+        Assertions.assertTrue(others.isNotEmpty(), "The rule would pass vacuously")
+        val directoryAccess =
+            others.flatMap { codeMentions(it.readText(), listOf("File(", "FileOutputStream", "noBackupFilesDir")) }
+        Assertions.assertTrue(directoryAccess.isEmpty(), "Only $RECORD_FILES touches files: $directoryAccess")
     }
 
     @Test
@@ -75,6 +90,29 @@ class InfrastructureDeviceRulesTest {
     }
 
     @Test
+    fun `the Android secret store checks see SharedPreferences, a backed-up directory and a log of a secret`() {
+        fun flagged(
+            file: String,
+            source: String,
+        ) = secretStoreViolations(file, source).isNotEmpty()
+        Assertions.assertTrue(flagged("Store.kt", "import android.content.SharedPreferences"))
+        Assertions.assertTrue(flagged("Store.kt", "val p = context.getSharedPreferences(\"x\", 0)"))
+        Assertions.assertTrue(flagged("Store.kt", "val d = context.filesDir"))
+        Assertions.assertTrue(flagged("Store.kt", "val d = context.cacheDir"))
+        Assertions.assertTrue(flagged("Store.kt", "val d = context.getExternalFilesDir(null)"))
+        Assertions.assertTrue(flagged("Store.kt", "val d = context.dataDir"))
+        Assertions.assertTrue(flagged("Store.kt", "context.openFileOutput(\"x\", 0)"))
+        Assertions.assertTrue(flagged("Store.kt", "import android.util.Log"))
+        Assertions.assertTrue(flagged("Store.kt", "import java.io.File"))
+        Assertions.assertTrue(flagged("Store.kt", "import java.nio.file.Files"))
+        Assertions.assertTrue(flagged("Store.kt", "import androidx.datastore.core.DataStore"))
+        Assertions.assertFalse(flagged(RECORD_FILES, "import java.io.File\nimport java.nio.file.Files"))
+        Assertions.assertTrue(flagged(RECORD_FILES, "import android.content.SharedPreferences"))
+        Assertions.assertFalse(flagged("Store.kt", "val d = File(context.noBackupFilesDir, \"secrets\")"))
+        Assertions.assertTrue(PRINTING.containsMatchIn("Log.d(\"tag\", secret.toString())"))
+    }
+
+    @Test
     fun `the checks see a stray import, a file API, a print and a public declaration`() {
         val source = "import $APP_PACKAGE.application.X\nimport java.io.File\nimport app.cash.sqldelight.db.SqlDriver\n"
         Assertions.assertEquals(
@@ -98,7 +136,27 @@ class InfrastructureDeviceRulesTest {
         )
     }
 
+    /** Violations of the secret store rules in one source file; only the record file class may use `java.io`. */
+    private fun secretStoreViolations(
+        fileName: String,
+        source: String,
+    ): List<String> {
+        val banned = if (fileName == RECORD_FILES) PERSISTENCE_IMPORTS - FILE_IMPORTS else PERSISTENCE_IMPORTS
+        val code = source.lines().map { it.trim() }.filterNot { it.startsWith("*") || it.startsWith("//") }
+        return forbiddenImports(source, banned) +
+            codeMentions(source, FOUNDATION_STORES) +
+            code.filter { BACKED_UP_DIRECTORIES.containsMatchIn(it) }
+    }
+
     private companion object {
+        const val RECORD_FILES = "RecordFiles.kt"
+        val BACKED_UP_DIRECTORIES =
+            Regex(
+                """\b(filesDir|cacheDir|externalCacheDir|externalMediaDirs|dataDir|getFilesDir|getCacheDir|""" +
+                    """getExternalFilesDir|getExternalCacheDir|getDataDir|openFileOutput|getDir|""" +
+                    """getSharedPreferences|getDatabasePath)\b""",
+            )
+        val FILE_IMPORTS = listOf("java.io.", "java.nio.file.")
         val ALLOWED_IMPORTS =
             listOf(
                 "kotlin.",
@@ -118,6 +176,7 @@ class InfrastructureDeviceRulesTest {
                 "androidx.datastore.",
                 "android.content.SharedPreferences",
                 "android.database.",
+                "android.util.Log",
                 "java.io.",
                 "java.nio.file.",
                 "kotlinx.io.",
@@ -129,7 +188,7 @@ class InfrastructureDeviceRulesTest {
             )
         val FOUNDATION_STORES = listOf("NSUserDefaults", "NSFileManager", "NSFileHandle", "NSKeyedArchiver")
         val PRINTING = Regex("""\b(println|print|NSLog|Log\.[a-z])\(""")
-        val SECURE_STORE_SURFACE = setOf("KeychainSecretStore", "UnavailableSecretStore")
+        val SECURE_STORE_SURFACE = setOf("KeychainSecretStore", "KeystoreSecretStore", "UnavailableSecretStore")
         val PLATFORM_SURFACE =
             setOf(
                 "SystemClock",

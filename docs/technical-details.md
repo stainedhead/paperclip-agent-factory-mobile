@@ -96,7 +96,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 82 tests in 19 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 85 tests in 19 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -342,7 +342,7 @@ Process:
 - **Connectivity**: `NwConnectivity` over `PathSource` (`nw_path_monitor` on its own serial queue), online until the first path, `close()` cancels. The foreground flag is still the umbrella's `AppLifecycleBridge`, driven by the app.
 - **Android and JVM**: `UnavailableSecretStore`, `UnavailableBiometrics` (never approve, never store), `OptimisticConnectivity`. System clock, UUID ids and the device zone are common code. ADR-053.
 - **Key invalidation: what is verified and what is not (F-B-7, ADR-083).** The store maps only `errSecItemNotFound` plus the surviving `#protected` marker to `Invalidated`; `errSecAuthFailed`, `errSecInteractionNotAllowed`, `errSecUserCanceled` and `errSecNotAvailable` are `Denied` (retry, nothing is deleted). Verified on the simulator (scripted backend, `KeychainSecretStoreTest`, and the real Keychain in `KeychainSecretStoreTests.swift`): the mapping, the marker rules, the replace-then-delete order, the delete order (marker first), and that an authentication failure on a protected item stays `Denied`. **Not verified on a device**: that iOS answers a read after a biometric-set change with `errSecItemNotFound` (the whole re-pair path assumes it), that a Face ID prompt really appears (the plist key is there since F-B-9, the simulator has no Face ID), and that a passcode change keeps the item. Manual device check, to be recorded in `status.md`: (1) pair a factory with Face ID on a test iPhone; (2) kill and relaunch, read works after the prompt; (3) Settings, Face ID and Passcode, reset Face ID and enrol again; (4) open the app: it must say the key was invalidated and offer pairing, not "denied" in a loop; (5) cancel the prompt: it must say denied and keep the key; (6) change the passcode only: the key must still work. If step 4 shows a denied loop, `errSecAuthFailed` is what the OS returns for an invalidated item: resolve it by checking the marker as `Invalidated` and update ADR-083 and the test `F-B-7`.
-- Konsist (`InfrastructureDeviceRulesTest`): only domain/stdlib/platform imports, no database/file/user-defaults API in `securestore`, no `Secret` in `platform`, no printing, fixed public surface.
+- Konsist (`InfrastructureDeviceRulesTest`): only domain/stdlib/platform imports, no database, SharedPreferences, DataStore or user-defaults API and no backed-up directory (`filesDir`, `cacheDir`, `getExternalFilesDir`, `dataDir`, `openFileOutput`, `getSharedPreferences`) in `securestore`; the Android record store touches files only in `RecordFiles`, below `noBackupFilesDir`; no `Secret` in `platform`; no printing or `android.util.Log`; fixed public surface. Planted-violation tests cover each form.
 
 ## Attention, decision, approval and budget gateways (Phase 1b-4a)
 
