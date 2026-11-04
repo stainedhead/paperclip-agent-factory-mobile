@@ -37,7 +37,7 @@ struct RunRowPresentation: Equatable {
         let issue = row.issueIdentifier
         title = [row.agentName, issue].compactMap { $0 }.joined(separator: " \u{00B7} ")
         issueLine = [issue, row.issueTitle].compactMap { $0 }.joined(separator: " \u{00B7} ").nilIfEmpty
-        isLive = Self.isLive(row.status)
+        isLive = row.status.isLive
         if let started = row.startedAtEpochMillis?.int64Value {
             let startedAt = Date(timeIntervalSince1970: Double(started) / 1000)
             let finishedAt = row.finishedAtEpochMillis.map { Date(timeIntervalSince1970: Double($0.int64Value) / 1000) }
@@ -51,10 +51,6 @@ struct RunRowPresentation: Equatable {
     /// How long a run has gone: to `now` while it runs, to its end once it has finished.
     static func elapsedText(startedAt: Date, finishedAt: Date?, now: Date) -> String {
         RunTime.elapsed(seconds: (finishedAt ?? now).timeIntervalSince(startedAt))
-    }
-
-    static func isLive(_ status: RunStatusUi) -> Bool {
-        status == .running || status == .queued || status == .scheduledRetry
     }
 
     static func tone(_ status: RunStatusUi) -> StatusTone {
@@ -82,7 +78,7 @@ struct AgentRowPresentation: Equatable {
             tone = .critical
         } else {
             tone = Self.tone(row.status)
-            if row.status == .running, let run = row.currentRun, RunRowPresentation.isLive(run.status) {
+            if row.status == .running, let run = row.currentRun, run.status.isLive {
                 let presentation = RunRowPresentation(row: run, referenceDate: referenceDate)
                 parts += [run.issueIdentifier, presentation.compact].compactMap { $0 }
             } else if let heartbeat = row.lastHeartbeatAtEpochMillis?.int64Value, row.lifecycleState == nil {

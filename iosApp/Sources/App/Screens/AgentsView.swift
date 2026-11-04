@@ -214,8 +214,8 @@ private struct AgentRowCard: View {
     /// The buttons: the state's actions, View run when it is running, Budget for an owner. While the agent is running a
     /// run, View run takes the place of Run now (the mock's CTO row).
     @ViewBuilder private var buttons: some View {
-        let live = row.currentRun.flatMap { RunRowPresentation.isLive($0.status) ? $0 : nil }
-        let actions = row.actions.filter { !($0 == .runNow && live != nil) }
+        let live = row.currentRun.flatMap { $0.status.isLive ? $0 : nil }
+        let actions = row.visibleActions
         let showsBudget = state.canSetBudget && row.hasBudget
         if !actions.isEmpty || live != nil || showsBudget {
             FlowLayout(spacing: Spacing.medium) {
