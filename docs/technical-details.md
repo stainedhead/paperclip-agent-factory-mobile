@@ -96,7 +96,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 92 tests in 21 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 97 tests in 22 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -118,6 +118,7 @@ Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsi
 | `AndroidAppRulesTest` | `androidApp` imports no `infrastructure.*` package except `infrastructure.platform`, never calls `Secret.reveal`, has no `Text("literal")` and no `BiometricPrompt` in a file that declares composables. Each scan has a planted-violation test. |
 | `AndroidAppLoggingRulesTest` | `androidApp` uses `android.util.Log` only inside `AppLog` (debug-only, rejects secrets, addresses and ids); everything else logs through it. Planted-violation test. |
 | `AndroidAppHygieneRulesTest` | `androidApp` has no inline `@Suppress`, `@SuppressLint` or `@SuppressWarnings`, and puts nothing secret-looking (secret, token, key, approval link) into `rememberSaveable`, `SavedStateHandle` or `outState`. Planted-violation tests. The task re-runs when `androidApp/src` changes. |
+| `AndroidReleaseBuildRulesTest` | The release type is minified and shrunk with `androidApp/proguard-rules.pro` (no blanket keep or `-dontobfuscate`), `Log` is stripped, signing comes from `PAFM_UPLOAD_*` environment variables with no key file or literal password in the repository, `versionName` is the catalog's `android-app` and `versionCode` the commit count, and only the `releaseDemo` type (own application id) turns the demo entry on. |
 | `DocumentedCountsRulesTest` | The Konsist count written in this file is the real number of `@Test` methods. |
 
 Each rule also asserts it can see the code it guards (the infrastructure rule via its fixture), so an empty scan cannot pass vacuously, and the infrastructure rule scans every `src/<set>Main` source set (commonMain, iosMain, androidMain, jvmMain) of every module and fails when a Kotlin file sits outside them. Today the five infrastructure modules are stubs, so on the real tree it checks nothing yet; a fixture test with a module that has only `iosMain` and `androidMain` files proves it reports a violation there (F-D-7).
@@ -202,7 +203,7 @@ Numbers from the last local run (2026-11-03, after merging Phase 1b into the iPh
 | `shared/infrastructure/securestore`, `platform` | 3 and 6 |
 | Android host (`testAndroidHostTest`, includes `commonTest`) | securestore 23, platform 19, umbrella 72 |
 | Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`) | securestore 15 (2 are skipped phase tests of a manual lock-screen run), platform 6, persistence 5, umbrella 8 |
-| Konsist (`konsistTest`) | 92 |
+| Konsist (`konsistTest`) | 97 |
 | Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard) |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.

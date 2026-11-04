@@ -50,11 +50,12 @@ class PaperclipApplication : Application() {
     @Synchronized
     fun environment(intent: Intent?): AppEnvironment =
         environment ?: run {
-            val launch = LaunchConfiguration.from(intent, BuildConfig.DEBUG)
+            val demoControls = BuildConfig.DEBUG || BuildConfig.DEMO_ENTRY
+            val launch = LaunchConfiguration.from(intent, demoControls)
             AppEnvironment(
                 providerFor(launch),
                 MainScope(),
-                BuildConfig.DEBUG,
+                demoControls,
                 DiagnosticsRecorder(BuildConfig.VERSION_NAME),
                 AppLog(BuildConfig.DEBUG),
             ).also {

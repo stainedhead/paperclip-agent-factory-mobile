@@ -1055,3 +1055,18 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 7. Tests that touch a sheet wait until its node is displayed (`awaitDisplayed`): a sheet slides in while the holders answer on other threads, so it is not on screen at the moment the tap returns. Three older tests asserted it immediately and failed intermittently in the full run; they now wait too.
 
 **Consequences.** The Work list and Issue need no Android business rule; the comment and answer flows keep the person's words through every failure. Files cannot be opened from Android until the shared core has a port (the iPhone has the same gap and the same note). The only app-side lookups are colours (`IssueStatusUi.tone()`, `IssuePriorityUi.tone()`), the chip order (`IssueFilterOrder`) and the "https only" door. The Issue screen does not render inline markdown (the iPhone does): comment and plan text is shown as written.
+
+## ADR-132: The release build is R8-minified and signed from the environment; the demo entry exists only in a separate `releaseDemo` type
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T8.5)
+
+**Context.** Release was unminified and unsigned, so it could not be installed. The PRD asks for R8, `Log` stripped, keep rules in `androidApp/proguard-rules.pro`, `versionCode` from the commit count, `versionName` from the catalog, and a release key that is a CI secret. It also asks for the release APK to be launched in demo mode, while a shipping release deliberately ignores demo launch extras and hides "Try the demo factory" (a shipped app must not be steerable onto fakes).
+
+**Decision.**
+1. `release` sets `isMinifyEnabled` and `isShrinkResources` with `proguard-android-optimize.txt` and the app's rules. The only rule so far strips `android.util.Log` (the PRD's requirement). No keep rule was needed: R8 full mode produced no missing-class errors and the launched APK ran Inbox, Decision and every tab without a crash or class-loading error in logcat, so serialization, SQLDelight, Koin and Ktor keep rules come from the libraries. A rule is added only for a reproduced failure, and `AndroidReleaseBuildRulesTest` forbids blanket keeps.
+2. Signing reads `PAFM_UPLOAD_STORE_FILE`, `PAFM_UPLOAD_STORE_PASSWORD`, `PAFM_UPLOAD_KEY_ALIAS`, `PAFM_UPLOAD_KEY_PASSWORD`. Without them the release APK is signed with the debug key so it installs on a test device; that APK is not a distribution artifact. No key or password is in the repository (`*.jks`, `*.keystore` are ignored and a Konsist rule scans for key files).
+3. `versionName` is the catalog's `android-app` version; `versionCode` is `git rev-list --count HEAD` (1 when git is unavailable). CI must fetch full history for a correct number.
+4. `releaseDemo` is `release` plus `BuildConfig.DEMO_ENTRY = true`, application id suffix `.demo`, debug-signed. It runs the identical R8 pipeline and code, so launching it proves the minified demo graph. The shipping `release` type never has the flag (Konsist rule). The alternative, honouring demo extras in `release`, would have weakened the guarantee that a shipped app cannot be put on fakes.
+5. `scripts/android-release-smoke.sh live|demo` builds, installs, launches, and fails on a missing process, a fatal exception, a class-loading error or a missing expected screen (the lock prompt or first run for live; the Inbox for demo).
+
+**Consequences.** One extra build type exists and must never be distributed. The live check proves the minified live graph opens (Keystore, database, Koin) up to the lock; it does not prove a pairing or a real server call under R8 (T8.9 and the pinned server). Baseline-profile and benchmark builds (T8.6) will add their own type.

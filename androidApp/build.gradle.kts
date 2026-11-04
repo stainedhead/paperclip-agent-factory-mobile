@@ -59,8 +59,34 @@ android {
     }
     defaultConfig {
         applicationId = "com.stainedhead.paperclipmobile"
-        versionCode = 1
-        versionName = "0.1.0"
+        // The commit count: monotonic on one branch and needs no file edit per build. CI must fetch full history.
+        versionCode =
+            providers
+                .exec {
+                    commandLine("git", "rev-list", "--count", "HEAD")
+                    isIgnoreExitValue = true
+                }.standardOutput.asText
+                .map { it.trim().toIntOrNull() ?: 1 }
+                .getOrElse(1)
+        versionName =
+            libs.versions.android.app
+                .get()
+        // Only the releaseDemo build type turns the demo entry on (debug has it through BuildConfig.DEBUG).
+        buildConfigField("boolean", "DEMO_ENTRY", "false")
+    }
+    signingConfigs {
+        // The upload key is a CI secret or a local file, never committed (.gitignore excludes *.jks and *.keystore).
+        // Without it the release build is signed with the debug key so it installs on a test device; such an APK is
+        // not a distribution artifact (ADR-132).
+        create("upload") {
+            val store = providers.environmentVariable("PAFM_UPLOAD_STORE_FILE").orNull
+            if (store != null) {
+                storeFile = file(store)
+                storePassword = providers.environmentVariable("PAFM_UPLOAD_STORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("PAFM_UPLOAD_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("PAFM_UPLOAD_KEY_PASSWORD").orNull
+            }
+        }
     }
     lint {
         // Zero new warnings is the gate (AGENTS.md); user-facing text lives in string resources.
@@ -86,7 +112,20 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            val upload = signingConfigs.getByName("upload")
+            signingConfig = if (upload.storeFile != null) upload else signingConfigs.getByName("debug")
+        }
+        // The shipping build plus the demo entry, so the R8 output can be launched without a server (ADR-132). It has
+        // its own application id, is signed with the debug key and is never distributed.
+        create("releaseDemo") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            applicationIdSuffix = ".demo"
+            signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("boolean", "DEMO_ENTRY", "true")
         }
     }
 }

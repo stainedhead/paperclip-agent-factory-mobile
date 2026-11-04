@@ -81,7 +81,7 @@ Update this file after every task and phase. It is the single source of progress
   - [ ] T8.2 TalkBack names and order, Compose accessibility checks per screen family
   - [ ] T8.3 Dark theme, dynamic-color neutrals, 360x640 dp and large phones, reduced motion, haptics, adaptive i
   - [ ] T8.4 Recents and `FLAG_SECURE` behaviour on API 28, 33, latest
-  - [ ] T8.5 R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and l
+  - [x] T8.5 R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and live mode (demo through the `releaseDemo` type, ADR-132)
   - [ ] T8.6 `:androidApp:benchmark` module, baseline profile, Macrobenchmark cold start
   - [ ] T8.7 Merged-manifest permission / exported-component test
   - [ ] T8.8 End-to-end demo-flow test (criterion 2)

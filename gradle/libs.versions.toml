@@ -20,6 +20,8 @@ sqldelight = "2.4.1"
 androidx-sqlite = "2.7.1"
 # Paperclip server release the contract tests and fixtures are pinned to. Bump in its own PR.
 paperclip-server = "2026.1023.0"
+# The Android app's versionName. Its versionCode is the commit count (androidApp/build.gradle.kts).
+android-app = "0.1.0"
 
 # Android UI. The Compose BOM pins every androidx.compose artifact; the others are the latest stable that resolves.
 compose-bom = "2026.09.00"
