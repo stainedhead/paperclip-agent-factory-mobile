@@ -3,6 +3,11 @@ package com.stainedhead.paperclipmobile.android.labels
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.stainedhead.paperclipmobile.android.diagnostics.GraphOpenOutcome
+import com.stainedhead.paperclipmobile.android.diagnostics.KeyErrorClass
+import com.stainedhead.paperclipmobile.android.diagnostics.PairingOutcome
+import com.stainedhead.paperclipmobile.android.diagnostics.ServerCompatibility
+import com.stainedhead.paperclipmobile.android.diagnostics.stringRes
 import com.stainedhead.paperclipmobile.application.instance.InstanceNameIssue
 import com.stainedhead.paperclipmobile.domain.Exposure
 import com.stainedhead.paperclipmobile.domain.IdlePeriod
@@ -100,4 +105,12 @@ class KeyLabelsTest {
     @Test
     fun everyPairedDevicesStatusHasText() =
         check("paired_devices", PairedDevicesStatus.entries, PairedDevicesStatus::stringRes)
+
+    @Test
+    fun everyDiagnosticsValueHasText() {
+        check("graph_open", GraphOpenOutcome.entries, GraphOpenOutcome::stringRes)
+        check("key_error", KeyErrorClass.entries, KeyErrorClass::stringRes)
+        check("pairing_outcome", PairingOutcome.entries, PairingOutcome::stringRes)
+        check("server_compat", ServerCompatibility.entries, ServerCompatibility::stringRes)
+    }
 }

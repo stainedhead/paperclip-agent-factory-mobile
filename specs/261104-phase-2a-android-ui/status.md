@@ -61,7 +61,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T4.2 Add / Edit factory
   - [x] T4.3 Manage factories: reorder and remove
   - [x] T4.4 Settings and Paired devices
-  - [ ] T4.5 Diagnostics screen, redacted copy report, logging wrapper
+  - [x] T4.5 Diagnostics screen, redacted copy report, logging wrapper
 - [ ] 2a-5 Inbox, Decision, Approval, Budget incident
   - [ ] T5.1 Inbox
   - [ ] T5.2 Decision

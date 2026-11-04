@@ -1,5 +1,9 @@
 package com.stainedhead.paperclipmobile.android.env
 
+import com.stainedhead.paperclipmobile.android.diagnostics.DiagnosticsRecorder
+import com.stainedhead.paperclipmobile.android.diagnostics.PairingOutcome
+import com.stainedhead.paperclipmobile.android.diagnostics.toKeyErrorClass
+import com.stainedhead.paperclipmobile.android.diagnostics.toPairingOutcome
 import com.stainedhead.paperclipmobile.application.refresh.RefreshSession
 import com.stainedhead.paperclipmobile.presentation.AppIntent
 import com.stainedhead.paperclipmobile.presentation.AppState
@@ -19,12 +23,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
+
+/** What a session is given besides its graph: whether the Inbox refreshes by itself, and where diagnostics go. */
+data class SessionOptions(
+    val autoRefresh: Boolean = true,
+    val diagnostics: DiagnosticsRecorder = DiagnosticsRecorder(UNKNOWN_VERSION),
+)
 
 /**
  * Everything one open graph owns for the life of the app shell: the app holder (lock, selected factory and company),
@@ -38,13 +49,16 @@ class GraphSession internal constructor(
     val graph: PaperclipGraph?,
     val notice: StartupNotice?,
     parent: CoroutineScope,
-    autoRefresh: Boolean = true,
+    options: SessionOptions = SessionOptions(),
 ) {
+    /** What the app has seen of itself, for the Diagnostics screen; the session feeds it, screens read it. */
+    val diagnostics: DiagnosticsRecorder = options.diagnostics
+
     private val scope = CoroutineScope(parent.coroutineContext + SupervisorJob(parent.coroutineContext[Job]))
     private val lock = Any()
     private var refreshSession: RefreshSession? = null
     private var closed = false
-    private val autoRefresh = autoRefresh
+    private val autoRefresh = options.autoRefresh
     private val pairingCancels = CopyOnWriteArrayList<() -> Unit>()
 
     val app: ScreenHolder<AppState, AppIntent>? = graph?.createAppStateHolder()?.screenHolder()
@@ -70,6 +84,7 @@ class GraphSession internal constructor(
             .stateIn(scope, SharingStarted.Eagerly, 0)
 
     init {
+        recordDiagnostics()
         app?.let { holder ->
             scope.launch {
                 holder.state
@@ -90,6 +105,44 @@ class GraphSession internal constructor(
             }
         }
     }
+
+    /** Feeds the diagnostics from the shared states: the last unlock result, key error and pairing outcome. */
+    private fun recordDiagnostics() {
+        app?.let { holder ->
+            scope.launch {
+                holder.state
+                    .map { it.unlockIssue }
+                    .distinctUntilChanged()
+                    .filterNotNull()
+                    .collect(diagnostics::recordBiometric)
+            }
+        }
+        firstRun?.let { holder ->
+            scope.launch {
+                holder.state
+                    .map { state -> state.pairingOutcome() }
+                    .distinctUntilChanged()
+                    .filterNotNull()
+                    .collect(diagnostics::recordPairing)
+            }
+            scope.launch {
+                holder.state
+                    .map { it.error?.key?.toKeyErrorClass() }
+                    .distinctUntilChanged()
+                    .filterNotNull()
+                    .collect(diagnostics::recordKeyError)
+            }
+        }
+    }
+
+    private fun FirstRunState.pairingOutcome(): PairingOutcome? =
+        if (step == FirstRunStep.Secure ||
+            step == FirstRunStep.Done
+        ) {
+            PairingOutcome.Approved
+        } else {
+            pairing.toPairingOutcome()
+        }
 
     private fun followSelection(
         instance: String?,
@@ -140,3 +193,5 @@ class GraphSession internal constructor(
         firstRun?.close()
     }
 }
+
+private const val UNKNOWN_VERSION = "0.0.0"

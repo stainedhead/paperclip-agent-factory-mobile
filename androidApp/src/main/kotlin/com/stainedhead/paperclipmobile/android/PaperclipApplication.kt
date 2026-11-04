@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.stainedhead.paperclipmobile.android.diagnostics.AppLog
+import com.stainedhead.paperclipmobile.android.diagnostics.DiagnosticsRecorder
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
 import com.stainedhead.paperclipmobile.android.env.AppGraphProvider
 import com.stainedhead.paperclipmobile.android.env.DemoGraphProvider
@@ -49,7 +51,13 @@ class PaperclipApplication : Application() {
     fun environment(intent: Intent?): AppEnvironment =
         environment ?: run {
             val launch = LaunchConfiguration.from(intent, BuildConfig.DEBUG)
-            AppEnvironment(providerFor(launch), MainScope(), BuildConfig.DEBUG).also {
+            AppEnvironment(
+                providerFor(launch),
+                MainScope(),
+                BuildConfig.DEBUG,
+                DiagnosticsRecorder(BuildConfig.VERSION_NAME),
+                AppLog(BuildConfig.DEBUG),
+            ).also {
                 environment = it
                 launch.scriptedBiometrics.forEach { result ->
                     it.session.value.graph

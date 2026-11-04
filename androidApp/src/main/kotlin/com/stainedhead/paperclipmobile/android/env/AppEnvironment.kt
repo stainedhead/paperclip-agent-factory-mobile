@@ -1,5 +1,9 @@
 package com.stainedhead.paperclipmobile.android.env
 
+import com.stainedhead.paperclipmobile.android.diagnostics.AppLog
+import com.stainedhead.paperclipmobile.android.diagnostics.DiagnosticsRecorder
+import com.stainedhead.paperclipmobile.android.diagnostics.GraphOpenOutcome
+import com.stainedhead.paperclipmobile.android.diagnostics.toGraphOpenOutcome
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
 import com.stainedhead.paperclipmobile.umbrella.AndroidGraphOpen
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +23,9 @@ class AppEnvironment(
     private val scope: CoroutineScope,
     /** True in a debug build only: "Try the demo factory" is offered and demo launch extras are honoured. */
     val demoEntryAvailable: Boolean,
+    /** What the Diagnostics screen shows; it outlasts a replaced graph. */
+    val diagnostics: DiagnosticsRecorder = DiagnosticsRecorder(UNKNOWN_VERSION),
+    private val log: AppLog = AppLog.Off,
 ) {
     private val lock = Any()
     private var provider: AppGraphProvider = provider
@@ -72,13 +79,29 @@ class AppEnvironment(
         return when (opened) {
             is AndroidGraphOpen.Opened -> {
                 opened.graph.lifecycle.setForeground(foreground)
-                GraphSession(id, provider.mode, opened.graph, null, scope)
+                recordOpen(GraphOpenOutcome.Opened)
+                GraphSession(id, provider.mode, opened.graph, null, scope, SessionOptions(diagnostics = diagnostics))
             }
 
             is AndroidGraphOpen.Unavailable -> {
+                recordOpen(opened.cause.toGraphOpenOutcome())
                 val notice = StartupNotice.forLaunch(demo = provider.mode == GraphMode.Demo, liveOpened = false)
-                GraphSession(id, provider.mode, null, notice ?: StartupNotice.LiveGraphUnavailable, scope)
+                GraphSession(
+                    id,
+                    provider.mode,
+                    null,
+                    notice ?: StartupNotice.LiveGraphUnavailable,
+                    scope,
+                    SessionOptions(diagnostics = diagnostics),
+                )
             }
         }
     }
+
+    private fun recordOpen(outcome: GraphOpenOutcome) {
+        diagnostics.recordGraphOpen(outcome)
+        log.debug("graph", "open finished", outcome)
+    }
 }
+
+private const val UNKNOWN_VERSION = "0.0.0"

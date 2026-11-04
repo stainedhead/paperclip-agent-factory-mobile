@@ -300,4 +300,31 @@
     <string name="revoke_message">Anything using this key loses access to the factory.</string>
     <string name="revoke_this_phone_message">This is this phone’s key. Revoking it signs this phone out of the factory.</string>
     <string name="revoke_confirm">Revoke key</string>
+
+    <!-- Diagnostics (AND-018): typed values the app keeps about itself; nothing is sent anywhere. -->
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_intro">What this app knows about itself, as plain values. Copy the report to paste it where you choose. It holds no addresses, names, keys or tokens, and nothing is sent anywhere.</string>
+    <string name="diagnostics_app_version">App version</string>
+    <string name="diagnostics_server_compatibility">Server compatibility</string>
+    <string name="diagnostics_graph_open">Data opened</string>
+    <string name="diagnostics_key_error">Key storage error</string>
+    <string name="diagnostics_biometric">Last unlock or confirmation</string>
+    <string name="diagnostics_pairing">Last pairing</string>
+    <string name="diagnostics_not_recorded">Not recorded</string>
+    <string name="diagnostics_copy">Copy report</string>
+    <string name="diagnostics_copied">Report copied</string>
+    <string name="graph_open_opened">Opened</string>
+    <string name="graph_open_unavailable_storage">Unavailable: storage</string>
+    <string name="graph_open_unavailable_keystore">Unavailable: key storage</string>
+    <string name="graph_open_unavailable_other">Unavailable: other cause</string>
+    <string name="key_error_storage_failed">Key could not be saved</string>
+    <string name="key_error_key_invalidated">Key no longer valid</string>
+    <string name="key_error_auth_declined">Key could not be read</string>
+    <string name="key_error_current_key_unknown">Own key not known</string>
+    <string name="pairing_outcome_approved">Approved</string>
+    <string name="pairing_outcome_cancelled">Cancelled</string>
+    <string name="pairing_outcome_expired">Expired</string>
+    <string name="pairing_outcome_failed">Failed</string>
+    <string name="server_compat_compatible">Compatible</string>
+    <string name="server_compat_incompatible">Not compatible</string>
 </resources>

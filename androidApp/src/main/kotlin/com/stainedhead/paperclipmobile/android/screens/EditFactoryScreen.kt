@@ -21,6 +21,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -36,6 +37,9 @@ import com.stainedhead.paperclipmobile.android.designsystem.ErrorBanner
 import com.stainedhead.paperclipmobile.android.designsystem.HairlineDivider
 import com.stainedhead.paperclipmobile.android.designsystem.ScreenTitleBar
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
+import com.stainedhead.paperclipmobile.android.diagnostics.PairingOutcome
+import com.stainedhead.paperclipmobile.android.diagnostics.toKeyErrorClass
+import com.stainedhead.paperclipmobile.android.diagnostics.toPairingOutcome
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.rememberEditHolder
 import com.stainedhead.paperclipmobile.android.labels.stringRes
@@ -72,6 +76,7 @@ fun EditFactoryScreen(
         val stopListening = session.onPairingCancelled { send(EditInstanceIntent.PairCancelled) }
         onDispose { stopListening() }
     }
+    RecordDiagnostics(session, state)
     LaunchedEffect(state.saved) { if (state.saved) navigator.pop() }
     LaunchedEffect(state.removed) { if (state.removed) navigator.popToRoot() }
     Column(Modifier.fillMaxSize().testTag("edit-factory")) {
@@ -93,6 +98,28 @@ fun EditFactoryScreen(
         DiscardDialog(onKeep = { showsDiscard = false }, onDiscard = { navigator.pop() })
     }
     state.confirmation?.let { Confirmation(it, state, send) }
+}
+
+/** Tells the diagnostics how a re-pair ended and which key problem was seen: classes and outcomes, never details. */
+@Composable
+private fun RecordDiagnostics(
+    session: GraphSession,
+    state: EditInstanceState,
+) {
+    var wasWaiting by remember { mutableStateOf(false) }
+    LaunchedEffect(state.error?.key) {
+        state.error
+            ?.key
+            ?.toKeyErrorClass()
+            ?.let(session.diagnostics::recordKeyError)
+    }
+    LaunchedEffect(state.pairing) {
+        state.pairing.toPairingOutcome()?.let(session.diagnostics::recordPairing)
+        if (wasWaiting && state.pairing == PairingStatus.Idle && state.error == null) {
+            session.diagnostics.recordPairing(PairingOutcome.Approved)
+        }
+        wasWaiting = state.pairing == PairingStatus.Waiting
+    }
 }
 
 @Composable

@@ -34,6 +34,11 @@ internal fun literalTexts(source: String): List<String> = codeLines(source).filt
 internal fun composableBiometricCalls(source: String): List<String> =
     if ("@Composable" in source) codeLines(source).filter { "BiometricPrompt" in it } else emptyList()
 
+private val SYSTEM_LOG = Regex("""^import android\.util\.Log\b|(?<![A-Za-z0-9_.])Log\.(?:v|d|i|w|e|wtf)\(""")
+
+/** Lines that use `android.util.Log` directly; the app logs through `AppLog` only (AND-018). */
+internal fun directLogUse(source: String): List<String> = codeLines(source).filter { SYSTEM_LOG.containsMatchIn(it) }
+
 private val SUPPRESSION = Regex("""@(?:file:)?Suppress(?:Lint|Warnings)?\b""")
 
 /** A rule is changed in its config file, never switched off where it fires (AGENTS.md "Toolchain"). */

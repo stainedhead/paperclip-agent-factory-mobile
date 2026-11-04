@@ -15,6 +15,8 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.stainedhead.paperclipmobile.android.diagnostics.PairingOutcome
+import com.stainedhead.paperclipmobile.android.diagnostics.Recorded
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
@@ -143,6 +145,18 @@ class EditFactoryScreenTest {
         rule.onNodeWithTag("edit-pair-again").performScrollTo().performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.onNodeWithTag("edit-status").hasText("Connected") }
+    }
+
+    @Test
+    fun aRePairThatWasApprovedIsRecordedInTheDiagnosticsAsAnOutcomeOnly() {
+        show(DemoId.CLOUD)
+        rule.waitUntil(WAIT_MILLIS) { rule.hasText("Cloud factory") }
+
+        rule.onNodeWithTag("edit-pair-again").performScrollTo().performClick()
+
+        rule.waitUntil(WAIT_MILLIS) {
+            app.session.diagnostics.report.value.pairing == Recorded.Value(PairingOutcome.Approved)
+        }
     }
 
     @Test
