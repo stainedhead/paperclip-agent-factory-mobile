@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.android.screens
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -150,6 +151,19 @@ class ApprovalScreenTest {
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("Please add a test plan") }
         rule.onAllNodesWithText("Please add a test plan").assertCountEquals(1)
+    }
+
+    @Test
+    fun aHalfWrittenCommentSurvivesGoingOfflineAndBack() {
+        show()
+        rule.onNodeWithTag("approval-comment-field").performScrollTo().performTextInput("half written")
+
+        app.controls.setOnline(false)
+        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("offline-banner") }
+        app.controls.setOnline(true)
+        rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("offline-banner") && rule.hasTag("approval-comment-field") }
+
+        rule.onNodeWithTag("approval-comment-field").performScrollTo().assertTextContains("half written")
     }
 
     @Test
