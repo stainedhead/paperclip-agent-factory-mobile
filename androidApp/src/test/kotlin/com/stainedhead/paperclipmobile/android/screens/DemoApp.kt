@@ -47,6 +47,18 @@ object DemoId {
     const val APPROVAL_STRATEGY = "ap-q1-strategy"
     const val INCIDENT = "inc-eng-2"
     const val ISSUE_REFUNDS = "pap-1190"
+    const val ISSUE_RETRIES = "pap-1204"
+    const val AGENT_CEO = "agent-ceo"
+    const val AGENT_CTO = "agent-cto"
+    const val AGENT_ENGINEER_1 = "agent-eng-1"
+    const val AGENT_ENGINEER_2 = "agent-eng-2"
+    const val AGENT_QA = "agent-qa"
+    const val AGENT_DESIGNER = "agent-design"
+    const val RUN_LIVE = "run-1204-live"
+    const val RUN_CTO_LIVE = "run-cto-live"
+    const val RUN_FAILED = "run-1204-failed"
+    const val RUN_DONE = "run-1204-done"
+    const val RUN_QA_TIMEOUT = "run-qa-1190"
 }
 
 /** One demo graph and its session for a screen test; [close] releases everything the screen test owned. */

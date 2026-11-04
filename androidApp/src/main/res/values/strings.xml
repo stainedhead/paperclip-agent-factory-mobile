@@ -636,4 +636,41 @@
     </plurals>
     <string name="factory_running_now">Running now</string>
     <string name="factory_nothing_running">Nothing is running right now.</string>
+
+    <!-- Agents (screen 6) and Agent detail (screen 11). -->
+    <plurals name="agents_count">
+        <item quantity="one">%1$d agent</item>
+        <item quantity="other">%1$d agents</item>
+    </plurals>
+    <string name="agents_filters_label">Filter agents</string>
+    <string name="agents_filter_all">All</string>
+    <string name="agents_filter_running">Running %1$d</string>
+    <string name="agents_filter_attention">Attention %1$d</string>
+    <string name="agents_filter_empty">No agents match this filter.</string>
+    <string name="agents_empty_title">No agents yet</string>
+    <string name="agents_empty_message">Agents appear here once they are created in the web app.</string>
+    <string name="agents_paused_by_budget">Paused by budget hard stop</string>
+    <string name="agents_last_heartbeat">last heartbeat %1$s ago</string>
+    <string name="agents_view_run">View run</string>
+    <string name="agents_budget">Budget</string>
+    <string name="agents_open_hint">Opens the agent\'s details</string>
+    <string name="agents_working">Working…</string>
+    <string name="agents_pause_title">Pause %1$s?</string>
+    <string name="agents_pause_message">It stops picking up new work until you resume it.</string>
+    <string name="agents_pause_confirm">Pause agent</string>
+    <string name="agent_detail_role">Role: %1$s</string>
+    <string name="agent_detail_reports_to">Reports to: %1$s</string>
+    <string name="agent_detail_current_issue">Current issue</string>
+    <string name="agent_detail_idle_now">Not working on an issue right now.</string>
+    <string name="agent_detail_recent_runs">Recent runs</string>
+    <string name="agent_detail_no_runs">No runs yet.</string>
+    <string name="agent_detail_month_spend">Spent this month</string>
+    <string name="agent_detail_budget_line">Monthly budget: %1$s · %2$d%% used</string>
+    <string name="agent_detail_no_budget">No monthly budget set.</string>
+    <string name="agent_detail_set_budget">Set monthly budget</string>
+    <string name="agent_detail_budget_title">Monthly budget for %1$s</string>
+    <string name="agent_detail_budget_help">Enter the new monthly limit in %1$s.</string>
+    <string name="agent_detail_budget_field">Monthly budget</string>
+    <string name="agent_detail_budget_placeholder">Amount</string>
+    <string name="agent_detail_budget_save">Save budget</string>
 </resources>

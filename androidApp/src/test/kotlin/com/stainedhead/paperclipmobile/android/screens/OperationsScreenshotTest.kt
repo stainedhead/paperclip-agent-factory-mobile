@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -81,4 +82,42 @@ class OperationsScreenshotTest {
 
     @Test
     fun factoryHomeLargeText() = factoryHome(darkTheme = false, fontScale = LARGE_TEXT)
+
+    private fun agents(
+        darkTheme: Boolean,
+        fontScale: Float? = null,
+    ) = capture(
+        "agents",
+        darkTheme,
+        fontScale,
+        { rule.hasTag("agent-row-${DemoId.AGENT_CTO}") && rule.hasTag("agent-${DemoId.AGENT_CTO}-pause") },
+    ) { AgentsScreen(app.session, app.navigator) }
+
+    @Test
+    fun agentsLight() = agents(darkTheme = false)
+
+    @Test
+    fun agentsDark() = agents(darkTheme = true)
+
+    @Test
+    fun agentsLargeText() = agents(darkTheme = false, fontScale = LARGE_TEXT)
+
+    private fun agentDetail(
+        darkTheme: Boolean,
+        fontScale: Float? = null,
+    ) = capture(
+        "agent-detail",
+        darkTheme,
+        fontScale,
+        { rule.hasTag("agent-detail-pause") && rule.hasTag("agent-run-${DemoId.RUN_DONE}") },
+    ) { AgentDetailScreen(app.session, AppRoute.Agent(DemoId.AGENT_ENGINEER_1), app.navigator) }
+
+    @Test
+    fun agentDetailLight() = agentDetail(darkTheme = false)
+
+    @Test
+    fun agentDetailDark() = agentDetail(darkTheme = true)
+
+    @Test
+    fun agentDetailLargeText() = agentDetail(darkTheme = false, fontScale = LARGE_TEXT)
 }

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -54,5 +55,27 @@ class OperationsLargeTextTest {
 
         for (tile in listOf("agents", "work", "approvals", "budget")) rule.assertTarget("factory-tile-$tile")
         rule.assertTarget("factory-run-run-cto-live")
+    }
+
+    @Test
+    fun theAgentRowButtonsFitAndAreAtLeast48dpTall() {
+        showAtLargest({ rule.hasTag("agent-${DemoId.AGENT_CTO}-pause") }) { AgentsScreen(app.session, app.navigator) }
+
+        rule.assertTarget("agent-row-${DemoId.AGENT_CTO}")
+        rule.assertTarget("agent-${DemoId.AGENT_CTO}-view-run")
+        rule.assertTarget("agent-${DemoId.AGENT_CTO}-pause")
+        rule.assertTarget("agent-${DemoId.AGENT_QA}-run-now")
+        rule.assertTarget("agent-${DemoId.AGENT_QA}-budget")
+    }
+
+    @Test
+    fun theAgentDetailActionsFitAndAreAtLeast48dpTall() {
+        showAtLargest({ rule.hasTag("agent-detail-pause") }) {
+            AgentDetailScreen(app.session, AppRoute.Agent(DemoId.AGENT_ENGINEER_1), app.navigator)
+        }
+
+        rule.assertTarget("agent-detail-pause")
+        rule.assertTarget("agent-detail-run-now")
+        rule.assertTarget("agent-set-budget")
     }
 }

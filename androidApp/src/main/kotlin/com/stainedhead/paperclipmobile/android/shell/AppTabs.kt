@@ -8,6 +8,8 @@ import androidx.compose.ui.res.stringResource
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
 import com.stainedhead.paperclipmobile.android.env.GraphSession
+import com.stainedhead.paperclipmobile.android.screens.AgentDetailScreen
+import com.stainedhead.paperclipmobile.android.screens.AgentsScreen
 import com.stainedhead.paperclipmobile.android.screens.ApprovalScreen
 import com.stainedhead.paperclipmobile.android.screens.DecisionScreen
 import com.stainedhead.paperclipmobile.android.screens.DiagnosticsScreen
@@ -35,12 +37,14 @@ fun AppTabs(
             when (tab) {
                 AppTab.Inbox -> InboxScreen(session, navigator)
                 AppTab.Factory -> FactoryHomeScreen(session, navigator)
+                AppTab.Agents -> AgentsScreen(session, navigator)
                 AppTab.Factories -> FactoriesScreen(session, navigator)
                 else -> Placeholder(tab.title, "tab-root-${tab.name}", tab.icon)
             }
         },
         destination = { route, navigator ->
             when (route) {
+                is AppRoute.Agent -> AgentDetailScreen(session, route, navigator)
                 is AppRoute.Approval -> ApprovalScreen(session, route, navigator)
                 is AppRoute.Decision -> DecisionScreen(session, route, navigator)
                 is AppRoute.EditFactory -> EditFactoryScreen(session, route.id, navigator)

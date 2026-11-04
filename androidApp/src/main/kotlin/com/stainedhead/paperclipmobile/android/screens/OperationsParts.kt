@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,6 +43,7 @@ private val AvatarSize = 40.dp
 private val MeterHeight = 8.dp
 private val Chevron = 16.dp
 private const val MILLIS_PER_SECOND = 1_000L
+private const val STACK_FONT_SCALE = 1.3f
 
 /** The circle with an agent's letters. Decoration only: the name is always written next to it. */
 @Composable
@@ -112,6 +114,7 @@ fun RunListRow(
 ) {
     val colors = AppTheme.colors
     val now by rememberNowMillis()
+    val stacked = LocalDensity.current.fontScale >= STACK_FONT_SCALE
     Row(
         modifier
             .fillMaxWidth()
@@ -125,21 +128,49 @@ fun RunListRow(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.hairline)) {
             Text(runTitle(row), style = AppType.body, color = colors.textPrimary)
             row.issueTitle?.let { Text(it, style = AppType.secondary, color = colors.textSecondary) }
+            if (stacked) RunTrail(row, now, stacked = true)
         }
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Spacing.hairline)) {
-            runAge(row, now)?.let { Text(it.compactText(), style = AppType.body, color = colors.textPrimary) }
-            Text(
-                stringResource(row.status.stringRes()),
-                style = AppType.secondary,
-                color = row.status.tone().foreground(colors),
-            )
-        }
+        if (!stacked) RunTrail(row, now, stacked = false)
         Icon(
             painterResource(R.drawable.ic_chevron_right),
             contentDescription = null,
             Modifier.size(Chevron),
             tint = colors.textSecondary,
         )
+    }
+}
+
+/** How long and how it went: beside the title, or under it when the font is large. */
+@Composable
+private fun RunTrail(
+    row: RunRowUi,
+    nowMillis: Long,
+    stacked: Boolean,
+) {
+    val colors = AppTheme.colors
+    val age: @Composable () -> Unit = {
+        runAge(row, nowMillis)?.let { Text(it.compactText(), style = AppType.body, color = colors.textPrimary) }
+    }
+    val status: @Composable () -> Unit = {
+        Text(
+            stringResource(row.status.stringRes()),
+            style = AppType.secondary,
+            color = row.status.tone().foreground(colors),
+        )
+    }
+    if (stacked) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            age()
+            status()
+        }
+    } else {
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Spacing.hairline)) {
+            age()
+            status()
+        }
     }
 }
 
