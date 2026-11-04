@@ -1138,3 +1138,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Criterion 6's release refusal is proven as the release configuration plus the release manifest, not as a planted record in the release APK. The pairing script and its approval trick are unverified until someone with Docker runs it once; the first run is also its test. Enrolling a fingerprint and the real prompt on a destructive action remain open until a device with them is used.
 
+
+## ADR-138: Android documentation images are copies of the Roborazzi baselines, demo graph only
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T9.2)
+
+**Context.** AGENTS.md asks for real screenshots from the Roborazzi (Android) runs once the app exists, captured from demo mode, never showing real data or the pairing screen. The baselines in `androidApp/src/test/screenshots` already are such captures, each checked by `verifyRoborazziDebug`, and they are 720 px wide with the full screen height, so they show a whole screen without a device.
+
+**Decision.** (1) The documents use copies of selected light-theme baselines (plus one dark, one offline and one font scale 2.0 image), named `android-<screen>.png`, in `docs/images/` and, for the user guides, `user-docs/images/`. They are copied by hand when a screen changes, in the same pull request as the baseline; a copy that differs from its baseline is a docs gap. (2) The pairing screen has no Roborazzi baseline and none is added: the Custom Tab approval page is the browser's, not ours, and the first-run address step stands for the flow. (3) The images come from the demo graph only, so they hold the shared demo data set's values (for example the device name "Alex's iPhone" in Settings), which are not read from the phone.
+
+**Consequences.** No second screenshot pipeline and no device needed to refresh the documentation. The copies can drift from the baselines until someone re-copies them; the markdown link check catches a missing image but not a stale one. The 720 px images are large (about 2 to 3 MB per ten images), so the docs show them at 180 to 260 px wide.

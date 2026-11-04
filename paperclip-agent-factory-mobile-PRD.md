@@ -99,7 +99,7 @@ Dependency rule: `presentation → application → domain`; every `infrastructur
 | Realtime | Ktor WebSockets | `/api/companies/{id}/events/ws` |
 | Cache | SQLDelight | Native driver on iOS, Android driver on Android, in-memory driver in tests |
 | Non-secret settings | SQLDelight tables `instance_config` (per factory) and `app_settings` (this phone: device name, app lock, idle period, notification defaults) | No secrets, ever |
-| Secrets | iOS Keychain (`kSecClassGenericPassword`), Android Keystore AES-GCM key wrapping an encrypted DataStore file | Not `androidx.security:security-crypto` (deprecated) |
+| Secrets | iOS Keychain (`kSecClassGenericPassword`), Android Keystore AES-GCM key wrapping an encrypted record file in `noBackupFilesDir` (as built, ADR-123; no DataStore) | Not `androidx.security:security-crypto` (deprecated) |
 | DI | Koin (shared graph), thin platform modules | |
 | iOS UI | SwiftUI, iOS 17+, Observation | Consumes `PaperclipKit.xcframework` via Swift Package |
 | Android UI | Jetpack Compose, Material 3, minSdk 28, targetSdk latest | Navigation Compose |

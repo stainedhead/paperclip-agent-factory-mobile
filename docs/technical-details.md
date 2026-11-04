@@ -1,6 +1,6 @@
 # Technical details
 
-How the code is organised and built, as it exists on the branch `feat/phase-1a-shared-contracts`. The rules behind it are in [AGENTS.md](../AGENTS.md); the reasons for the main choices are in the [decision record](./architectural-decision-record.md). The behaviour of each screen is in [product-details.md](./product-details.md). For a hands-on start see [user-docs/getting-started.md](../user-docs/getting-started.md).
+How the code is organised and built, as it exists on the branch `worktree-android-prd` (shared core, iPhone app and Android app). The rules behind it are in [AGENTS.md](../AGENTS.md); the reasons for the main choices are in the [decision record](./architectural-decision-record.md). The behaviour of each screen is in [product-details.md](./product-details.md). For a hands-on start see [user-docs/getting-started.md](../user-docs/getting-started.md).
 
 ## State of the build
 
@@ -8,9 +8,9 @@ How the code is organised and built, as it exists on the branch `feat/phase-1a-s
 |---|---|
 | Shared core: domain, application, presentation, testing fakes, umbrella | Built (Phase 1a). Runs entirely on fakes. |
 | Real adapters (`shared/infrastructure/*`) | `api` has the HTTP client (text and ranged byte paths), `ErrorMapper`, and the health, auth, attention, decision, approval, budget, dashboard, agent, run, issue and interaction gateways (Phase 1b-1, 1b-4a, 1b-4b); `persistence` has the SQLDelight database and the three SQL adapters (Phase 1b-2); `securestore` and `platform` have the device services (Phase 1b-3); `realtime` is a stub. |
-| Live graph (`PaperclipCore.createLiveGraph`) | Built (Phase 1b-5a): the real adapters behind the same graph surface, on iOS device services; the iPhone app uses it for every launch without `-demo` (Phase 2i). Android is refused until its app phase. |
+| Live graph (`PaperclipCore.createLiveGraph`) | Built (Phase 1b-5a): the real adapters behind the same graph surface, on iOS device services; the iPhone app uses it for every launch without `-demo` (Phase 2i) and the Android app for every launch without the `demo` extra, through `AndroidLiveGraph.openLiveGraph` (Phase 2a). The context-free `createLiveGraph` still refuses Android by design. |
 | iPhone app | All main screens (Phase 2i), on the live graph, or on the demo graph with `-demo` in Debug builds. |
-| Android app | Foundations, device services and the live graph entry point (Phase 2a, milestones 2a-0 to 2a-2): `:androidApp` builds an empty launcher Activity with the hardened manifest, Compose and Roborazzi test wiring; the shared modules have `KeystoreSecretStore`, `BiometricPromptBiometrics` + `AuthHost` and `ConnectivityManagerConnectivity`, with host and emulator tests; `AndroidLiveGraph.openLiveGraph` builds the real graph from a `Context` (milestone 2a-2). Shell, design system and first run (milestone 2a-3): `PaperclipApplication` owns one `AppEnvironment` (graph session, app, first-run and Inbox-badge holders) per process, `HolderViewModel` closes a screen's holder when its entry is cleared, Material 3 theme and design-system components from the mock tokens, five-tab `TabShell` with per-tab back stacks, `RootScreen`, `LockScreen`, confirm sheets, `FLAG_SECURE` on lock and pairing, `CustomTabsPairingBrowser` and the First-run screen; 125 JVM/Robolectric unit tests and 7 Roborazzi baselines in `androidApp`. Factories family (milestone 2a-4): Factories, Add/Edit factory, Manage factories (drag-to-reorder with accessibility moves, removal behind confirmation and the shared device-authentication use case), Settings, Paired devices and Diagnostics (typed, redacted, copy-only report and the `AppLog` wrapper), a `TabNavigator` for pushed screens and a re-pair that hides the window and is cancelled with the first-run pairing; 222 unit tests (incl. 22 screenshot checks) and 22 Roborazzi baselines in `androidApp`. Attention family (milestone 2a-5): the Inbox renders the session's Inbox holder (groups by decide-by, filter chips from the server counts, inline Approve, Reject with note and Keep paused where the state offers them, swipe and TalkBack snooze and dismiss with the state-driven Undo, pull to refresh, "Updated" label, "Open in the web app" for an unknown kind), Decision (effects before the tap, destructive styling with a lock glyph, inputs, execution results, resolved-elsewhere finals, Snooze only from a card), Approval (payload per type, Reject with note behind the shared device-owner gate, Request revision, Comment) and the Budget incident sheet (a sheet-scoped holder, amount above the observed spend, the server's reason on 422); detail screens refresh while visible through `graph.refresh`; 325 unit tests and 37 Roborazzi baselines (the attention screens in light, dark and font scale 2.0) in `androidApp`. Operations family (milestone 2a-6): Factory home (month spend against budget with the bar and percent, the three spend windows, four tiles that show the tab holding what they count, runs in progress), Agents (Needs attention, Running, Paused and Idle groups, filter chips, status line with the lifecycle word and last heartbeat, row buttons by state and role, Pause behind a confirmation and the shared device-owner gate), Agent detail (role, reports to, current issue and run, month spend, recent runs, Pause, Resume, Run now, the owner-only Set monthly budget sheet) and the Run viewer (events by offset, an auto-scrolling log tail that stops following when the person scrolls away, Cancel behind a confirmation and the device-owner gate); each detail screen refreshes while visible, the Run viewer every 5 seconds while live and never once finished; 405 unit tests and 49 Roborazzi baselines in `androidApp`. Debug-only launch extras `demo`, `demo_first_run`, `demo_biometrics`. See ADR-121 to ADR-130. |
+| Android app | Built (Phase 2a, milestones 2a-0 to 2a-8; documentation 2a-9): `:androidApp` (Jetpack Compose, Material 3) draws screens 1 to 13, 15 and 16, the app lock, Diagnostics and Paired devices on the live graph, or on the demo graph from the debug-only `demo` Intent extra and the `releaseDemo` build. Device services (`KeystoreSecretStore`, `BiometricPromptBiometrics` + `AuthHost`, `ConnectivityManagerConnectivity`) and the live graph entry point are in shared modules with host and emulator tests. R8-minified release build with an environment-signed upload key, a Macrobenchmark module with a baseline profile, and `android.yml`. 538 JVM/Robolectric unit tests in 80 classes and 73 Roborazzi images in `androidApp`, 14 connected demo-flow tests. **Not proven:** a pairing against the pinned server, the system prompt with an enrolled fingerprint, new-fingerprint key invalidation, StrongBox, TalkBack, a Pixel 6 or Samsung run, and the frame budget (see Known limitations). Details per milestone: "Android app" and the sections after it; decisions ADR-121 to ADR-137. |
 | Push relay | Not started. |
 
 No Paperclip server is contacted by either `PaperclipCore.createGraph` or `PaperclipCore.createDemoGraph`; both are wired to the fakes in `shared/testing`. `PaperclipCore.createLiveGraph` is the one that talks to servers (see "The live graph").
@@ -20,7 +20,8 @@ No Paperclip server is contacted by either `PaperclipCore.createGraph` or `Paper
 Dependencies point inward only (enforced by Konsist, see below):
 
 ```
-iosApp (SwiftUI)  ──imports only──►  shared/umbrella  (Koin graph, PaperclipKit.xcframework)
+iosApp (SwiftUI)     ──imports only──►  shared/umbrella  (Koin graph, PaperclipKit.xcframework)
+androidApp (Compose) ──imports only──►  shared/umbrella  (the same graph, as an Android library)
                                           │
                        presentation ─► application ─► domain ◄─ infrastructure/*
 ```
@@ -37,8 +38,10 @@ iosApp (SwiftUI)  ──imports only──►  shared/umbrella  (Koin graph, Pap
 | `shared/infrastructure/securestore` | `KeychainSecretStore` (iOS, Security.framework behind an internal `KeychainBackend`), `KeystoreSecretStore` (Android, Android Keystore behind an internal `KeystoreBackend`, records in `noBackupFilesDir`), `UnavailableSecretStore` (JVM). See "Device services" below. | Built (1b-3; Android Keystore 2a-1) |
 | `shared/infrastructure/platform` | `SystemClock`, `UuidIdGenerator`, `SystemDeviceTimeZone`, `LocalAuthenticationBiometrics`, `NwConnectivity` (iOS), `UnavailableBiometrics`, `OptimisticConnectivity`. | Built (1b-3) |
 | `shared/infrastructure/realtime` | Only a `build.gradle.kts`. | Stub |
+| `androidApp` | The Android application (`com.android.application` through the `pafm.android-app` convention plugin, AGP built-in Kotlin, Compose). Package root `com.stainedhead.paperclipmobile.android`: `env` (`PaperclipApplication`, `AppEnvironment`, `AppGraphProvider`, `LaunchConfiguration`, `HolderViewModel`), `shell` (routes, tabs, lock, pairing security), `screens` (one file family per screen), `designsystem`, `labels` (shared keys to `strings.xml`), `diagnostics`, `pairing` (Custom Tabs), `auth`. Imports no infrastructure package except the platform types the umbrella exposes (`AndroidAppRulesTest`). Source sets `main`, `debug`, `test` (JUnit 4 + Robolectric + Roborazzi, JUnit 5 for pure tests), `androidTest` (connected demo-flow tests), `benchmark`. | Built (2a) |
+| `androidApp/benchmark` | `com.android.test` module (convention plugin `pafm.android-test`): `StartupBenchmark`, a frame-timing fling, `BaselineProfileGenerator`. Targets the app's `benchmark` and `nonMinified` build types. Compiled by `check`, run on demand. | Built (2a-8) |
 
-Every module is a Kotlin Multiplatform library with the targets `jvm` (fast tests, the future push relay), `android` (AGP's KMP library plugin, minSdk 28, compileSdk 37, host tests) and `iosArm64` / `iosSimulatorArm64`. Targets, the JDK 21 toolchain, "warnings are errors" and the common test dependencies live in the convention plugin `build-logic/src/main/kotlin/pafm.kmp-library.gradle.kts`.
+Every `shared/*` module is a Kotlin Multiplatform library with the targets `jvm` (fast tests, the future push relay), `android` (AGP's KMP library plugin, minSdk 28, compileSdk 37, host tests) and `iosArm64` / `iosSimulatorArm64`. Targets, the JDK 21 toolchain, "warnings are errors" and the common test dependencies live in the convention plugin `build-logic/src/main/kotlin/pafm.kmp-library.gradle.kts`.
 
 Package root: `com.stainedhead.paperclipmobile`. Every dependency version is in `gradle/libs.versions.toml`, including `paperclip-server`, the Paperclip release that contract tests and fixtures are pinned to (`2026.1023.0`). See [configuration-reference.md](../user-docs/configuration-reference.md).
 
@@ -189,22 +192,24 @@ Every port except `Connectivity` and `AppLifecycle` (a `StateFlow` already guara
 
 ## Tests and coverage
 
-Numbers from the last local run (2026-11-03, after merging Phase 1b into the iPhone branch; JUnit XML under `shared/*/build/test-results`):
+Numbers from the last local run (2026-11-04, branch `worktree-android-prd`; read from the JUnit XML under `*/build/test-results`, after `./gradlew allTests :androidApp:testDebugUnitTest konsistTest`, all with 0 failures and 0 skipped):
 
-| Where | Tests (JVM) |
+| Where | Tests |
 |---|---|
-| `shared/domain` | 147 |
-| `shared/application` | 340 |
-| `shared/presentation` | 381 |
+| `shared/domain` | 147 (JVM, Android host and iOS simulator alike) |
+| `shared/application` | 340 (same on all three) |
+| `shared/presentation` | 381 JVM; 377 on the Android host and the iOS simulator |
 | `shared/testing` | 56 |
-| `shared/umbrella` | 81 |
-| `shared/infrastructure/api` | 338; `contractTest` needs a server and was not run locally |
-| `shared/infrastructure/persistence` | 61 |
-| `shared/infrastructure/securestore`, `platform` | 3 and 6 |
-| Android host (`testAndroidHostTest`, includes `commonTest`) | securestore 23, platform 19, umbrella 72 |
-| Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`) | securestore 15 (2 are skipped phase tests of a manual lock-screen run), platform 6, persistence 5, umbrella 8 |
-| Konsist (`konsistTest`) | 100 |
-| Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard) |
+| `shared/umbrella` | 83 JVM; 74 Android host; 68 iOS simulator |
+| `shared/infrastructure/api` | 338 JVM; 336 Android host; 335 iOS simulator. `contractTest` needs a server and was not run locally |
+| `shared/infrastructure/persistence` | 61 JVM; 51 Android host; 56 iOS simulator |
+| `shared/infrastructure/securestore` | 3 JVM; 23 Android host; 35 iOS simulator |
+| `shared/infrastructure/platform` | 6 JVM; 19 Android host; 17 iOS simulator |
+| `androidApp` unit tests (`:androidApp:testDebugUnitTest`) | 538 in 80 classes (Robolectric on API 36, JUnit 4 plus JUnit 5 through the Vintage engine); 73 PNG files in `androidApp/src/test/screenshots` (72 baselines and the smoke image) checked by `verifyRoborazziDebug` |
+| Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`; not re-run for this table) | declared: securestore 15, platform 6, persistence 5, umbrella 9. Last recorded run (status.md, T8.9, Pixel_9_Pro API 37): securestore 12 passed and 3 skipped (the lock-screen phase tests among them), the others all passed |
+| Android connected demo-flow (`:androidApp:connectedDebugAndroidTest`, emulator only; not re-run for this table) | 14 declared; last recorded run 14 passed (Android Test Orchestrator, one process per test) |
+| Konsist (`konsistTest`) | 102 tests in 23 files |
+| Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard); recorded 2026-11-03, not re-run for this table |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
 
@@ -215,7 +220,7 @@ Kover coverage, regenerated with `rm -rf build/reports/kover && ./gradlew koverX
 | Domain + application, one aggregate | `koverVerifyCore` | 98.03% (2685 covered, 54 missed) | 90% |
 | Presentation | `koverVerifyPresentation` | 98.10% (4431 covered, 86 missed) | 90% |
 
-Kover rules cannot filter by package, so there are two custom variants, `core` and `presentation` (ADR-007). `koverVerify` alone checks nothing meaningful. Infrastructure, `testing` and `umbrella` are outside the gates.
+Kover rules cannot filter by package, so there are two custom variants, `core` and `presentation` (ADR-007). `koverVerify` alone checks nothing meaningful. Infrastructure, `testing`, `umbrella` and the app modules (`androidApp`, `iosApp`) are outside the gates; the figures above were regenerated on 2026-11-04 and did not change with the Android work, because the app adds no shared line.
 
 ## Quality gates
 
@@ -228,7 +233,7 @@ Kover rules cannot filter by package, so there are two custom variants, `core` a
 | Architecture | Konsist | see above |
 | Coverage | Kover | `koverVerifyCore`, `koverVerifyPresentation` |
 | Tests | kotlin.test, Kotest, Turbine, coroutines-test | `allTests`: JVM, Android host and iOS simulator |
-| Android Lint | AGP | `lint` |
+| Android Lint | AGP | `lint` (the app: `warningsAsErrors`, `HardcodedText` is an error, `lint.xml` ignores the version-currency checks that Dependabot owns) |
 | Swift | SwiftLint `--strict`, swift-format `--strict`, Swift Testing, XCUITest | `ios.yml` and `./scripts/ios-test.sh` |
 
 Each gate was shown to fail on a deliberate violation before it was trusted.
@@ -259,6 +264,7 @@ The Swift interop review (acceptance criterion 6, in the spec's implementation n
 | Workflow | Runs on | Does |
 |---|---|---|
 | `shared.yml` | ubuntu | `./gradlew check lint --continue` |
+| `android.yml` | ubuntu | Job `verify`: `:androidApp:lint :androidApp:testDebugUnitTest :androidApp:verifyRoborazziDebug :androidApp:assembleRelease`. Job `emulator` (KVM, API 34 x86_64 `google_apis`): `connectedAndroidDeviceTest` of securestore, platform, persistence and umbrella, then `:androidApp:connectedDebugAndroidTest`. Job `benchmark`: `scripts/run-benchmarks.sh`, nightly (03:17 UTC) and on manual dispatch only. Triggers: pull request, push to `main`, schedule, dispatch. |
 | `ios.yml` | macOS | `iosSimulatorArm64Test`, XCFramework, SwiftLint, swift-format, Xcode unit and UI tests |
 | `contract.yml` | ubuntu | starts the pinned Paperclip in Docker and runs `scripts/contract-smoke.sh` (the anonymous `/api/health` fields and the pairing challenge create and poll shapes); nightly and on manual dispatch the same script runs against `latest`, in a job with no `continue-on-error`, so API drift turns it red. After the smoke script the job creates a bootstrap invite in the container, runs `./gradlew :shared:infrastructure:api:contractTest` (the real adapters against the live server) and uploads its report. The contract task itself fails on a `VERDICT: FAIL` (see "The live contract test"). The pinned server does serve `GET /api/openapi.json` (`server/dist/app.js:543` mounts `routes/openapi.js`); the adapters' DTOs are hand-written from the dist sources and checked by fixtures and the live run, and a drift check against that document is not implemented (deferred, F-C-7). |
 | `security.yml` | ubuntu | gitleaks (built from `docker/gitleaks/Dockerfile`, v8.30.1 pinned by digest) on the full history |
@@ -304,6 +310,20 @@ Decisions are in ADR-030 to ADR-037; the fix spec is `specs/archive/261101-phase
 
 `WorkListView` (Work tab root, model keyed by factory and company, kept while the tab exists so the filter and search survive) and `IssueView` (pushed by `.issue(id)` from the Work list, Inbox, Run viewer, Agent detail and subtasks, model keyed by the route). Text the person types (search, comment, answers, reasons) stays in view state and only change intents go to the holder, because the holder renders asynchronously. A comment that fails comes back into the box. Demo changes: answering a question tells the Inbox feed (`FakeInteractionGateway.onAnswered`) and new demo comments are stamped with the demo clock (`FakeIssueGateway(now = ...)`). See ADR-108 and ADR-109.
 
+## The Android app (Phase 2a)
+
+**Entry.** `PaperclipApplication` builds one `AppEnvironment` per process: an `AppGraphProvider` (`DemoGraphProvider`, `FirstRunDemoGraphProvider`, `LiveGraphProvider`) chosen from `LaunchConfiguration`, a `GraphSession` that owns the graph, the app, first-run and Inbox-badge holders and the refresh session, and the process-wide `AndroidAuthHost`. `LiveGraphProvider` calls `AndroidLiveGraph.openLiveGraph(context, allowInsecureLocal = BuildConfig.DEBUG, ...)`; an `Unavailable` result becomes a "cannot start yet" screen with Try again and never a fake graph (ADR-124, ADR-125). `MainActivity` is the only exported component, registers itself as the `AuthHost` while resumed; `FLAG_SECURE` is set on its window while the app is locked and during pairing (`shell/PrivacyShield.kt`). Screens own their holders through `HolderViewModel` (cleared with the back stack entry, kept across rotation, `HolderViewModelTest`); the Inbox holder is the session's, so the tab badge stays current while another tab is shown.
+
+**Launch extras (debug and `releaseDemo` builds only; a shipping release ignores them).** `demo`, `demo_first_run`, `demo_biometrics` (scripted prompt answers `cancelled,failed,approved`), `demo_inbox_cards` (extra generated Inbox cards, for the frame-timing benchmark). See [configuration-reference.md](../user-docs/configuration-reference.md).
+
+**Device services (Keystore, BiometricPrompt, connectivity)** are described under "Device services". Two deviations from the plan are recorded there and in ADR-123: protected Keystore keys use a **5 second user-authentication window** (`setUserAuthenticationParameters(5, STRONG | CREDENTIAL)`, API 30 and later) rather than a per-use `CryptoObject`, so the store asks the injected prompt first and the activity never enters `securestore`; and below API 30 a protected write fails instead of falling back to an unprotected key. The consequence is that the key stays usable for five seconds after any successful prompt, not only for the one operation the prompt was shown for.
+
+**Build types.** `debug`; `release` (R8 and resource shrinking, `Log` calls stripped, signed by the `upload` config when `PAFM_UPLOAD_STORE_FILE`, `PAFM_UPLOAD_STORE_PASSWORD`, `PAFM_UPLOAD_KEY_ALIAS` and `PAFM_UPLOAD_KEY_PASSWORD` are set, otherwise by the debug key and not a distribution artifact); `releaseDemo` (release plus the demo entry, application id suffix `.demo`, debug-signed); `benchmark` (`releaseDemo` plus a profileable manifest, suffix `.benchmark`); `nonMinified` (`benchmark` without R8, to record the baseline profile). `versionName` is the catalog's `android-app` (0.1.0); `versionCode` is `git rev-list --count HEAD`, so every checkout that builds a release must have the full history (`fetch-depth: 0` in `android.yml`); without git it falls back to 1. Permissions: exactly `INTERNET`, `ACCESS_NETWORK_STATE` and `USE_BIOMETRIC` (`AndroidManifestRulesTest` on the merged manifests of three build types; `scripts/android-release-smoke.sh` repeats it on the APK with `aapt2`). `allowBackup=false`, data-extraction rules exclude everything, `usesCleartextTraffic=false`; the debug source set alone adds a network security config that allows cleartext to `localhost` and `10.0.2.2`.
+
+**Test stack.** `androidApp/src/test`: JUnit 4 with Robolectric 4.17 (API 36; there is no API 37 Robolectric jar) for Compose UI tests and Roborazzi, and JUnit 5 for pure tests, both on the one `testDebugUnitTest` task through the Vintage engine (ADR-121). `shared/**` stays on kotlin.test. `androidTest` runs under the Android Test Orchestrator on a device. Method names in `androidTest` and `androidDeviceTest` are camelCase (DEX 039).
+
+**Scripts** (all need `adb` and a running device): `android-release-smoke.sh live|demo`, `android-live-smoke.sh` (no server needed), `android-live-pairing.sh` (needs Docker; written and never run), `run-benchmarks.sh`, `generate-baseline-profile.sh`.
+
 ## Operations screens on Android (2a-6)
 
 `FactoryHomeScreen` and `AgentsScreen` are tab roots: they wait for the app holder's selected factory and company (`rememberSelection`, a spinner until it is set) and own their holder through `HolderViewModel`, keyed by session, factory and company. `AgentDetailScreen` and `RunViewerScreen` are pushed routes (`AppRoute.Agent`, `AppRoute.Run`) and key their holder by the route's id. Each screen is a thin function over a stateless `*Content(state, send, ...)` that tests and screenshots drive with any state (a viewer, an operator, an unknown outcome), and each calls `RefreshWhileVisible(session, holder.refreshTarget)`, which starts `graph.refresh` when the screen starts and stops it when it stops. The intervals are the holders': 15 seconds, 5 while an agent has a run in progress or the run is live, none for a finished run.
@@ -347,6 +367,15 @@ Behaviour:
 4. **Decision details.** `GET /decisions/{id}` has neither `decideBy` nor the agent name; the Decision screen receives them as hints from the Inbox card (ADR-018). Opened from anywhere else it shows neither, and no Snooze (ADR-025).
 5. **Priority filter.** "Critical and high" is filtered on the device, so a page can hold fewer rows than the page size (ADR-022).
 
+Android (Phase 2a; each item is also in `specs/261104-phase-2a-android-ui/status.md`):
+
+6. **Frame budget not met on the emulator.** The 200-card Inbox fling on the Pixel_9_Pro emulator (API 37, arm64, host GPU) had 67% of frames over their deadline against a budget of 5% (2502 frames; CPU P50 17.0 ms, P90 34.0 ms). An emulator says little about a phone, but this is a regression baseline and an open item for a Pixel 6 run; it was not investigated further. Cold start to the Inbox with content was 307 ms median of 10 (budget 1.5 s), emulator only. The nightly `benchmark` job has not run on GitHub.
+7. **Unproven on a device.** A pairing against the pinned server (`scripts/android-live-pairing.sh` was never run: no Docker daemon); new-fingerprint invalidation of the Keystore key (the two phase tests skip without an orchestrated lock-screen change); the system `BiometricPrompt` on a destructive action with enrolled credentials; StrongBox; a manual Pixel and Samsung pass; TalkBack (accessibility is audited from the semantics tree only, ADR-134); `FLAG_SECURE` and Recents on API 28 and 33 (Robolectric only; the emulator check was API 37).
+8. **`android.yml` has not run on the hosted runners.** It uses the tasks that passed locally; the local emulator was API 37 arm64, CI's is API 34 x86_64.
+9. **Shared-core gaps that the Android UI reports rather than works around:** no port for attachment bytes (files are listed, not opened); no `isRefreshing` on the Agents, Run viewer, Issue and Work states (no pull-to-refresh spinner there); no Viewer membership in the demo data, so viewer variants are built states; `DemoControls` exposes only the prompt count, so some "nothing was sent" proofs read the screen instead of a call counter; the demo graph binds `FakePairingBrowser`, so the Custom Tab launch is proven by `CustomTabsPairingBrowserTest` and `PairingRoutingTest`, not end to end.
+10. **Not rendered on Android:** inline markdown in comments and plans. Not ported: the iPhone's factory switcher line on screen headers.
+11. **Placeholder art.** The adaptive launcher icon and splash are placeholders (ADR-133).
+
 Model gaps (the design mocks show these; the model has no field, so the demo state does not):
 
 - An agent's next heartbeat time (not in the server's agent list).
@@ -369,7 +398,7 @@ Process:
 - Schema: `src/commonMain/sqldelight/.../db/*.sq` and `1.sqm` (version 2). `1.db` and `2.db` are committed snapshots checked by `verifyCommonMainPaperclipDatabaseMigration` in `check`. A change to a `.sq` file needs a new `N.sqm`, a regenerated snapshot (`generateCommonMainPaperclipDatabaseSchema`) and a migration test.
 - One database per app; the three SQL adapters share one serial dispatcher (ADR-043). `PaperclipPersistence.recreated` tells whether an unusable file was replaced by an empty one (ADR-042); a `paperclip.db.sweep-pending` marker file, written before the wipe and removed only after `SweepOrphanSecrets` completed, keeps that true across a failed reopen or a kill (ADR-085). `BaseUri` drops the default port, so one address has one spelling (ADR-087).
 - Files: iOS `Application Support/PaperclipData/paperclip.db` (folder and files excluded from backup), Android `noBackupFilesDir/paperclip.db` (plus `paperclip.db.sweep-pending`), JVM a given file or memory. On Android the framework's own reaction to an unreadable file (delete it and silently open an empty one, then retry) is switched off (`KeepCorruptFileCallback.onCorruption` does nothing), so `openRecovering` sees the failure, sets the sweep marker and wipes; `AndroidPersistenceDeviceTest` (emulator) proved the framework default skipped the marker and the secret sweep.
-- Tests: the existing `InstanceRepository`, `AppSettingsStore` and `AttentionCache` contract suites run against the SQL adapters on the JVM, the Android host test (JDBC driver) and the iOS simulator (native driver, temp file), plus tests for mapping, migration, recovery, concurrency, secrets and (iOS) backup exclusion. The Android driver factory is compile-checked only.
+- Tests: the existing `InstanceRepository`, `AppSettingsStore` and `AttentionCache` contract suites run against the SQL adapters on the JVM, the Android host test (JDBC driver) and the iOS simulator (native driver, temp file), plus tests for mapping, migration, recovery, concurrency, secrets and (iOS) backup exclusion. The Android driver factory is exercised on an emulator by `AndroidPersistenceDeviceTest` (corrupt-file recovery, sweep marker, no secrets in the file).
 
 
 ## Device services (Phase 1b-3)

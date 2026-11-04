@@ -72,12 +72,12 @@ androidApp (Compose) ──► shared/umbrella (graph) ──► presentation �
 
 | Module | Change | Source set |
 |---|---|---|
-| `androidApp/` (new, `com.android.application`) | Compose UI, Application class, Activity, navigation, resources, manifest, network security config, backup rules | `main`, `debug`, `test`, `androidTest` |
-| `shared/infrastructure/securestore` | `KeystoreSecretStore(context)` + internal `KeystoreBackend` seam (mirrors iOS `KeychainBackend`) | `androidMain`, tests in `androidDeviceTest` + `androidHostTest` (fake backend) |
-| `shared/infrastructure/platform` | `BiometricPromptBiometrics(host)`, `ConnectivityManagerConnectivity(context)` | `androidMain`, `androidDeviceTest` |
+| `androidApp/` (new, `com.android.application`) | Compose UI, Application class, Activity, navigation, resources, manifest, network security config, backup rules. As built: also the `release`, `releaseDemo`, `benchmark` and `nonMinified` build types | `main`, `debug`, `test`, `androidTest`, `benchmark` |
+| `shared/infrastructure/securestore` | `KeystoreSecretStore(context, authenticate, writeReason)` + internal `KeystoreBackend` seam (mirrors iOS `KeychainBackend`); as built, records are files in `noBackupFilesDir`, not DataStore (ADR-123) | `androidMain`, tests in `androidDeviceTest` + `androidHostTest` (fake backend) |
+| `shared/infrastructure/platform` | `BiometricPromptBiometrics(host, reasons)`, `ConnectivityManagerConnectivity(context)` | `androidMain`, `androidDeviceTest` |
 | `shared/umbrella` | `AndroidLivePlatform` (internal) in `androidMain`; public `AndroidLiveGraph.openLiveGraph(context, allowInsecureLocal, pairingBrowser, settings)` (`@Throws`-equivalent: returns a result type, see below); replaces the `error(...)` in `defaultLivePlatform()` | `androidMain`, `androidHostTest` |
-| `androidApp/benchmark` (new, `com.android.test`; added in spec review) | Macrobenchmark `StartupBenchmark`, frame timing, baseline profile generator (task 8.6) | `main` |
-| `gradle/libs.versions.toml` | Compose BOM, activity-compose, navigation-compose, lifecycle-runtime-compose, androidx.biometric, androidx.browser, datastore (see Dependencies), Roborazzi, Compose UI test | catalog only |
+| `androidApp/benchmark` (new, `com.android.test`; added in spec review) | Macrobenchmark `StartupBenchmark`, frame timing, baseline profile generator (task 8.6, ADR-135) | `main` |
+| `gradle/libs.versions.toml` | Compose BOM, activity-compose, navigation-compose, lifecycle-runtime-compose, androidx.biometric, androidx.browser, Roborazzi, Compose UI test, benchmark, orchestrator (DataStore was not needed: ADR-123) | catalog only |
 | `.github/workflows/android.yml` (new) | lint, unit, screenshot tests, `assembleRelease`, instrumented tests on an emulator | CI |
 
 `settings.gradle.kts` adds `:androidApp`. The module dependency set is `implementation(project(":shared:umbrella"))`; presentation/application/domain arrive through the umbrella's `api` exports, matching how the iOS app sees the framework.

@@ -70,9 +70,9 @@ No production code is written without a failing test first. Bug fixes start with
 | domain, application, presentation | `commonTest` | kotlin.test, Kotest assertions, Turbine, `kotlinx-coroutines-test` | Use fakes from `shared/testing`. Runs on JVM and iOS simulator. |
 | api, realtime | `commonTest` | Ktor `MockEngine`, JSON fixtures recorded from the pinned Paperclip server | One test per endpoint mapping and per error shape |
 | persistence | `commonTest` | SQLDelight in-memory driver | |
-| securestore, platform | `androidDeviceTest`, `iosTest` | Real Keychain / Keystore on simulator and emulator | Verify secrets never reach SQLDelight or backups |
+| securestore, platform, persistence, umbrella | `androidDeviceTest`, `iosTest` | Real Keychain / Keystore on simulator and emulator | Verify secrets never reach SQLDelight or backups. `androidDeviceTest` is enabled per module that has `src/androidDeviceTest`; run it with `connectedAndroidDeviceTest` (not part of `check`). |
 | contract | `contractTest` (JVM) | Ktor client against Paperclip in Docker, pinned version | Runs in CI, not on every local build |
-| Android UI | `androidApp/src/test`, `androidTest` | JUnit 5, Compose UI test, Roborazzi screenshots | UI renders state; behaviour is tested in shared |
+| Android UI | `androidApp/src/test`, `androidTest` | JUnit 4 + Robolectric for Compose UI tests and Roborazzi screenshots (both are JUnit 4 based); JUnit 5 for pure tests, on the same task through the Vintage engine; `androidTest` is AndroidX Test with the Orchestrator | UI renders state; behaviour is tested in shared (ADR-121). `shared/**` stays on kotlin.test. |
 | iOS UI | `iosAppTests`, `iosAppUITests` | Swift Testing, XCTest, XCUITest | Same rule |
 
 MockK is JVM-only and is **not** used in `commonTest`. Prefer hand-written fakes in `shared/testing`; use Mokkery only when a fake would be more code than the test.
@@ -149,7 +149,7 @@ GitHub Actions in `.github/workflows/`, one workflow per row:
 | Workflow | Runner | Pipeline |
 |---|---|---|
 | `shared.yml` | ubuntu | spotless → detekt → konsist → allTests (JVM) → kover verify |
-| `android.yml` | ubuntu | lint → unit tests → Compose screenshot tests → assembleRelease |
+| `android.yml` | ubuntu | `verify`: lint → unit tests → Roborazzi verify → assembleRelease; `emulator`: device tests of the shared modules and `androidApp` demo flows; `benchmark`: nightly and on demand |
 | `ios.yml` | macos | XCFramework → SwiftLint → swift-format → xcodebuild test |
 | `contract.yml` | ubuntu | start pinned Paperclip in Docker → contract tests; nightly against latest |
 | `security.yml` | ubuntu | secret scanning, dependency vulnerability scan |
