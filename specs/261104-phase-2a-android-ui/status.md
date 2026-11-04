@@ -24,7 +24,7 @@ Update this file after every task and phase. It is the single source of progress
 
 ## Milestones and tasks
 
-- [ ] 2a-0 Foundations (androidApp skeleton, catalog, device-test source set, test runner, CI; order T0.1 to T0.4, T0.6, T0.7, T0.8, T0.5)
+- [x] 2a-0 Foundations (androidApp skeleton, catalog, device-test source set, test runner, CI; order T0.1 to T0.4, T0.6, T0.7, T0.8, T0.5)
   - [x] T0.1 Add `:androidApp`
   - [x] T0.2 Version catalog entries
   - [x] T0.3 Manifest and resources: only the launcher Activity exported, `allowBackup=false`, `dataExtractionRul
@@ -32,7 +32,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T0.6 Konsist rules for `androidApp`
   - [x] T0.7 Enable `withDeviceTest {}`
   - [x] T0.8 Test runner decision and wiring (JUnit 4 + Robolectric for Compose/Roborazzi; ADR)
-  - [ ] T0.5 `.github/workflows/android.yml` (after T0.7 and T0.8)
+  - [x] T0.5 `.github/workflows/android.yml` (after T0.7 and T0.8)
 - [ ] 2a-1 Android device services (shared PR, merges before UI)
   - [ ] T1.1 `KeystoreBackend` seam + `KeystoreSecretStore` over `FakeKeystoreBackend`
   - [ ] T1.2 Real backend: AES-256-GCM key
@@ -109,4 +109,5 @@ None.
 ## Recent activity
 
 - 2026-11-04: spec created from the PRD (`/dev-flow:create-spec`).
+- 2026-11-04: milestone 2a-0 implemented (T0.1 to T0.8, T0.5 last). Gates observed: spotlessCheck, detekt, lint, allTests, konsistTest, check, assembleDebug/Release, testDebugUnitTest, verifyRoborazziDebug green; the 4 smoke device tests passed on the Pixel_9_Pro AVD (API 37 arm64). android.yml has not run on GitHub yet. Decisions in implementation-notes.md, ADR-121 and ADR-122.
 - 2026-11-04: `/dev-flow:review-spec`. Added T0.8 (test runner), T8.8, T8.9; reordered 2a-0; benchmark module added to the module tables; Keystore Missing-on-undecryptable and `namespaces()` tests added to T1.1/T1.2; edge-case, decisions and open-question sections added to spec.md; traceability tables added to tasks.md; PRD "28 Swift files" corrected to 24. Task count 57.
