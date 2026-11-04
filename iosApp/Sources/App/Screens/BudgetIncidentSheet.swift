@@ -51,6 +51,8 @@ private struct BudgetScreen: View {
         }
         .background(Palette.background.color)
         .sensoryFeedback(.success, trigger: state.outcome)
+        // The shared holder forgets the amount when Raise is left (R-024); the field must not keep showing it.
+        .onChange(of: state.choice) { _, choice in if choice != .raiseAndResume { amountText = "" } }
         .task { await model.observe() }
         .refreshWhileVisible(graph: environment.graph, target: model.holder.refreshTarget)
     }
