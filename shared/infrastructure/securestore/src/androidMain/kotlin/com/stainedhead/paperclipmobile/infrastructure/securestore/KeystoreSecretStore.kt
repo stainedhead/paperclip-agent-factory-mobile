@@ -39,20 +39,27 @@ class KeystoreSecretStore internal constructor(
 ) : SecretStore {
     /**
      * The Keystore of this app. [authenticate] shows the device owner prompt with the text it is given and reports what
-     * the person did; [writeReason] is that text when a protected secret is being stored.
+     * the person did; [writeReason] is that text when a protected secret is being stored. [keyAliasPrefix] names the
+     * app's keys in the Keystore.
      */
     constructor(
         context: Context,
         authenticate: suspend (String) -> BiometricResult,
         writeReason: String,
+        keyAliasPrefix: String = DEFAULT_KEY_ALIAS_PREFIX,
     ) : this(
-        AndroidKeystoreBackend(),
+        AndroidKeystoreBackend(keyAliasPrefix),
         RecordFiles.noBackup(context),
         authenticate,
         writeReason,
     )
 
     private val lock = Mutex()
+
+    companion object {
+        /** The prefix of the app's Keystore keys unless the app chooses another. */
+        const val DEFAULT_KEY_ALIAS_PREFIX = "pafm.secret/"
+    }
 
     override suspend fun put(
         key: SecretKey,

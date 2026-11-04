@@ -83,6 +83,17 @@ class BiometricPromptBiometricsTest {
         }
 
     @Test
+    fun `AND-001 the secret store can ask for a prompt with its own text and gets the same result mapping`() =
+        runTest {
+            biometrics.authenticateWithText("Unlock the board key") shouldBe BiometricResult.Approved
+            launcher.next = PromptOutcome.Error(BiometricPrompt.ERROR_LOCKOUT)
+            biometrics.authenticateWithText("Unlock the board key") shouldBe BiometricResult.LockedOut
+            launcher.next = PromptOutcome.Unavailable
+            biometrics.authenticateWithText("Unlock the board key") shouldBe BiometricResult.Unavailable
+            launcher.texts shouldBe List(PROMPTS) { "Unlock the board key" }
+        }
+
+    @Test
     fun `AND-002 every prompt asks the launcher again so an approval is never remembered`() =
         runTest {
             repeat(PROMPTS) { biometrics.authenticate(AuthReason.ConfirmDestructiveAction) }

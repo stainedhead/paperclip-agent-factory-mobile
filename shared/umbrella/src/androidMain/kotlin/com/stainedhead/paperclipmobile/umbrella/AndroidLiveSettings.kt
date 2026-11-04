@@ -1,5 +1,7 @@
 package com.stainedhead.paperclipmobile.umbrella
 
+import com.stainedhead.paperclipmobile.infrastructure.securestore.KeystoreSecretStore
+
 /**
  * What the Android app chooses when it opens the live graph (AND-004), the counterpart of `IosLiveSettings`. The
  * sentences are the localized text the system prompt shows: [unlockReason] when unlocking the app, [confirmReason]
@@ -11,13 +13,9 @@ data class AndroidLiveSettings(
     val unlockReason: String,
     val confirmReason: String,
     val writeReason: String,
-    val keyAliasPrefix: String = DEFAULT_KEY_ALIAS_PREFIX,
+    val keyAliasPrefix: String = KeystoreSecretStore.DEFAULT_KEY_ALIAS_PREFIX,
 ) {
     init {
         require(keyAliasPrefix.isNotBlank()) { "The key alias prefix must not be blank" }
-    }
-
-    companion object {
-        const val DEFAULT_KEY_ALIAS_PREFIX = "pafm.secret/"
     }
 }

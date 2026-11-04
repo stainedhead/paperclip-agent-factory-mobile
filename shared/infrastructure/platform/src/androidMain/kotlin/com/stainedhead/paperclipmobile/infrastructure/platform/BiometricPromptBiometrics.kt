@@ -21,7 +21,15 @@ class BiometricPromptBiometrics internal constructor(
     constructor(host: AuthHost, reasons: ReasonTexts) : this(ActivityPromptLauncher(host), reasons)
 
     override suspend fun authenticate(reason: AuthReason): BiometricResult =
-        when (val outcome = launcher.prompt(reasons.textFor(reason))) {
+        authenticateWithText(reasons.textFor(reason))
+
+    /**
+     * The same prompt and result mapping with a sentence the caller chooses. The Keystore secret store asks for it
+     * when the key it needs demands the device owner (the text says which secret is being read), so every prompt of the
+     * app goes through this one class and fails closed the same way.
+     */
+    suspend fun authenticateWithText(text: String): BiometricResult =
+        when (val outcome = launcher.prompt(text)) {
             PromptOutcome.Succeeded -> BiometricResult.Approved
             PromptOutcome.Unavailable -> BiometricResult.Unavailable
             is PromptOutcome.Error -> mapPromptError(outcome.code)

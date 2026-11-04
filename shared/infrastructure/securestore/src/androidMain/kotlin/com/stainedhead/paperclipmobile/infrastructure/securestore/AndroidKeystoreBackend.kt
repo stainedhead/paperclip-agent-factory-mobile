@@ -33,7 +33,7 @@ private const val AUTH_WINDOW_SECONDS = 5
  * key. [aliasPrefix] keeps this app's keys apart from any other use of the Keystore (and tests apart from each other).
  */
 internal class AndroidKeystoreBackend(
-    private val aliasPrefix: String = "pafm.secret/",
+    private val aliasPrefix: String = KeystoreSecretStore.DEFAULT_KEY_ALIAS_PREFIX,
 ) : KeystoreBackend {
     override fun seal(
         alias: String,
