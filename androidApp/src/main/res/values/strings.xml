@@ -569,4 +569,71 @@
     <string name="invalid_answer_question_required">Answer every required question.</string>
     <string name="invalid_answer_verdict_not_enabled">A verdict isn\'t enabled for this question.</string>
     <string name="invalid_answer_reason_required">Add a reason.</string>
+
+    <!-- Operations: the words of agents and runs (key enums), then Factory home (screen 5). -->
+    <string name="agent_status_active">Active</string>
+    <string name="agent_status_paused">Paused</string>
+    <string name="agent_status_idle">Idle</string>
+    <string name="agent_status_running">Running</string>
+    <string name="agent_status_error">Error</string>
+    <string name="agent_status_pending_approval">Pending approval</string>
+    <string name="agent_status_terminated">Terminated</string>
+    <string name="agent_status_unknown">Unknown</string>
+    <string name="run_status_queued">Queued</string>
+    <string name="run_status_scheduled_retry">Retry scheduled</string>
+    <string name="run_status_running">Running</string>
+    <string name="run_status_succeeded">Succeeded</string>
+    <string name="run_status_interrupted">Interrupted</string>
+    <string name="run_status_failed">Failed</string>
+    <string name="run_status_cancelled">Cancelled</string>
+    <string name="run_status_timed_out">Timed out</string>
+    <string name="run_status_unknown">Unknown</string>
+    <string name="agent_group_needs_attention">Needs attention</string>
+    <string name="agent_group_running">Running</string>
+    <string name="agent_group_paused">Paused</string>
+    <string name="agent_group_idle">Idle</string>
+    <string name="agent_action_pause">Pause</string>
+    <string name="agent_action_resume">Resume</string>
+    <string name="agent_action_run_now">Run now</string>
+    <string name="spend_window_last5_hours">5h</string>
+    <string name="spend_window_last24_hours">24h</string>
+    <string name="spend_window_last7_days">7d</string>
+    <string name="run_title_with_issue">%1$s · %2$s</string>
+    <string name="run_open_hint">Opens the live run</string>
+    <string name="factory_month_spend">Spend this month</string>
+    <string name="factory_utc_month">UTC month</string>
+    <string name="factory_spend_of">%1$s of %2$s</string>
+    <string name="factory_spend_percent">%1$d%% of the monthly budget used</string>
+    <string name="factory_spend_windows_label">Spend in the last 5 hours, 24 hours and 7 days</string>
+    <string name="factory_spend_unavailable">Spend by time window is unavailable right now.</string>
+    <string name="factory_tile_agents">Agents</string>
+    <string name="factory_tile_work">Work</string>
+    <string name="factory_tile_approvals">Approvals</string>
+    <string name="factory_tile_budget">Budget incidents</string>
+    <plurals name="factory_agents_running">
+        <item quantity="one">%1$d running</item>
+        <item quantity="other">%1$d running</item>
+    </plurals>
+    <plurals name="factory_agents_error_paused">
+        <item quantity="one">%1$d error · %2$d paused</item>
+        <item quantity="other">%1$d error · %2$d paused</item>
+    </plurals>
+    <plurals name="factory_work_open">
+        <item quantity="one">%1$d open</item>
+        <item quantity="other">%1$d open</item>
+    </plurals>
+    <plurals name="factory_work_blocked_in_progress">
+        <item quantity="one">%1$d blocked · %2$d in progress</item>
+        <item quantity="other">%1$d blocked · %2$d in progress</item>
+    </plurals>
+    <plurals name="factory_approvals_pending">
+        <item quantity="one">%1$d pending</item>
+        <item quantity="other">%1$d pending</item>
+    </plurals>
+    <plurals name="factory_incidents_open">
+        <item quantity="one">%1$d open</item>
+        <item quantity="other">%1$d open</item>
+    </plurals>
+    <string name="factory_running_now">Running now</string>
+    <string name="factory_nothing_running">Nothing is running right now.</string>
 </resources>

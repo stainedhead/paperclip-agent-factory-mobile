@@ -13,6 +13,7 @@ import com.stainedhead.paperclipmobile.android.screens.DecisionScreen
 import com.stainedhead.paperclipmobile.android.screens.DiagnosticsScreen
 import com.stainedhead.paperclipmobile.android.screens.EditFactoryScreen
 import com.stainedhead.paperclipmobile.android.screens.FactoriesScreen
+import com.stainedhead.paperclipmobile.android.screens.FactoryHomeScreen
 import com.stainedhead.paperclipmobile.android.screens.InboxScreen
 import com.stainedhead.paperclipmobile.android.screens.ManageFactoriesScreen
 import com.stainedhead.paperclipmobile.android.screens.PairedDevicesScreen
@@ -33,6 +34,7 @@ fun AppTabs(
         tabRoot = { tab, navigator ->
             when (tab) {
                 AppTab.Inbox -> InboxScreen(session, navigator)
+                AppTab.Factory -> FactoryHomeScreen(session, navigator)
                 AppTab.Factories -> FactoriesScreen(session, navigator)
                 else -> Placeholder(tab.title, "tab-root-${tab.name}", tab.icon)
             }

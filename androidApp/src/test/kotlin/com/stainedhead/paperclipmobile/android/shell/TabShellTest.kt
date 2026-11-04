@@ -35,6 +35,7 @@ class TabShellTest {
                         Text("root ${tab.name}")
                         AppButton("push settings", { nav.push(AppRoute.Settings) })
                         AppButton("push decision", { nav.push(AppRoute.Decision("dec-1")) })
+                        AppButton("show agents", { nav.select(AppTab.Agents) })
                     }
                 },
                 destination = { route, _ -> Text("screen $route") },
@@ -96,5 +97,15 @@ class TabShellTest {
         rule.onNodeWithTag("tab-Inbox").performClick()
 
         rule.onNodeWithText("root Inbox").assertIsDisplayed()
+    }
+
+    @Test
+    fun aScreenCanAskTheShellToShowAnotherTab() {
+        rule.setContent { Shell(badge = 0) }
+
+        rule.onNodeWithText("show agents").performClick()
+
+        rule.onNodeWithTag("tab-Agents").assertIsSelected()
+        rule.onNodeWithText("root Agents").assertIsDisplayed()
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -66,7 +67,7 @@ fun TabShell(
     ) { padding ->
         Box(Modifier.padding(padding)) {
             stateHolder.SaveableStateProvider(selected.name) {
-                TabHost(selected, controllers.getValue(selected), tabRoot, destination)
+                TabHost(selected, controllers.getValue(selected), tabRoot, destination) { selected = it }
             }
         }
     }
@@ -78,13 +79,16 @@ private fun TabHost(
     controller: NavHostController,
     tabRoot: @Composable (AppTab, TabNavigator) -> Unit,
     destination: @Composable (AppRoute, TabNavigator) -> Unit,
+    onSelect: (AppTab) -> Unit,
 ) {
+    val select by rememberUpdatedState(onSelect)
     val navigator =
         remember(controller) {
             TabNavigator(
                 push = { route -> controller.navigate(route) },
                 pop = { controller.popBackStack() },
                 popToRoot = { controller.popBackStack(TabRoot, inclusive = false) },
+                select = { tab -> select(tab) },
             )
         }
     NavHost(controller, startDestination = TabRoot) {

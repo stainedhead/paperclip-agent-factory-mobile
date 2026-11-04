@@ -22,6 +22,7 @@ import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
 import com.stainedhead.paperclipmobile.android.env.demoOpen
 import com.stainedhead.paperclipmobile.android.env.firstRunOpen
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
+import com.stainedhead.paperclipmobile.android.shell.AppTab
 import com.stainedhead.paperclipmobile.android.shell.TabNavigator
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.umbrella.AndroidGraphOpen
@@ -62,7 +63,16 @@ class DemoApp(
     val pushed = mutableListOf<AppRoute>()
     var pops = 0
     var popsToRoot = 0
-    val navigator = TabNavigator(push = { pushed += it }, pop = { pops++ }, popToRoot = { popsToRoot++ })
+
+    /** The tabs a screen asked the shell to show. */
+    val selected = mutableListOf<AppTab>()
+    val navigator =
+        TabNavigator(
+            push = { pushed += it },
+            pop = { pops++ },
+            popToRoot = { popsToRoot++ },
+            select = { selected += it },
+        )
 
     fun scriptBiometrics(result: BiometricResult) = controls.scriptBiometrics(result)
 

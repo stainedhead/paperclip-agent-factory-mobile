@@ -69,7 +69,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T5.4 Budget incident sheet
   - [x] T5.5 Offline and viewer variants across the family
 - [ ] 2a-6 Factory home, Agents, Agent detail, Run viewer
-  - [ ] T6.1 Factory home
+  - [x] T6.1 Factory home
   - [ ] T6.2 Agents and Agent detail
   - [ ] T6.3 Run viewer
 - [ ] 2a-7 Work list and Issue

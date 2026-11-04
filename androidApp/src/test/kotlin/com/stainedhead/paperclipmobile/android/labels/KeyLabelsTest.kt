@@ -14,6 +14,9 @@ import com.stainedhead.paperclipmobile.domain.IdlePeriod
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.presentation.ActionsDisabledReason
 import com.stainedhead.paperclipmobile.presentation.AddressIssue
+import com.stainedhead.paperclipmobile.presentation.AgentActionUi
+import com.stainedhead.paperclipmobile.presentation.AgentGroupUi
+import com.stainedhead.paperclipmobile.presentation.AgentStatusUi
 import com.stainedhead.paperclipmobile.presentation.ApprovalActionUi
 import com.stainedhead.paperclipmobile.presentation.ApprovalStatusUi
 import com.stainedhead.paperclipmobile.presentation.ApprovalTypeUi
@@ -38,10 +41,12 @@ import com.stainedhead.paperclipmobile.presentation.PairingStatus
 import com.stainedhead.paperclipmobile.presentation.ProbeStatus
 import com.stainedhead.paperclipmobile.presentation.RemovalEffect
 import com.stainedhead.paperclipmobile.presentation.RoleUi
+import com.stainedhead.paperclipmobile.presentation.RunStatusUi
 import com.stainedhead.paperclipmobile.presentation.ServerKeyOutcome
 import com.stainedhead.paperclipmobile.presentation.SeverityUi
 import com.stainedhead.paperclipmobile.presentation.SnoozePresetUi
 import com.stainedhead.paperclipmobile.presentation.SourceKindUi
+import com.stainedhead.paperclipmobile.presentation.SpendWindowUi
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
@@ -170,5 +175,14 @@ class KeyLabelsTest {
         check("budget_threshold", BudgetThresholdUi.entries, BudgetThresholdUi::stringRes)
         check("budget_choice", BudgetChoice.entries, BudgetChoice::stringRes)
         check("budget_outcome", BudgetOutcomeUi.entries, BudgetOutcomeUi::stringRes)
+    }
+
+    @Test
+    fun everyOperationsKeyHasText() {
+        check("agent_status", AgentStatusUi.entries, AgentStatusUi::stringRes)
+        check("run_status", RunStatusUi.entries, RunStatusUi::stringRes)
+        check("agent_group", AgentGroupUi.entries, AgentGroupUi::stringRes)
+        check("agent_action", AgentActionUi.entries, AgentActionUi::stringRes)
+        check("spend_window", SpendWindowUi.entries, SpendWindowUi::stringRes)
     }
 }
