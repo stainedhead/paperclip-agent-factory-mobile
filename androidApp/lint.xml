@@ -5,4 +5,7 @@
     <issue id="NewerVersionAvailable" severity="ignore" />
     <issue id="GradleDependency" severity="ignore" />
     <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <!-- androidx.lifecycle 2.11 ships a lint.jar that references newer lint APIs than AGP 9.5's lint; lint skips that
+         jar's checks and reports the library, which is not something this project can fix. Revisit on an AGP bump. -->
+    <issue id="ObsoleteLintCustomCheck" severity="ignore" />
 </lint>

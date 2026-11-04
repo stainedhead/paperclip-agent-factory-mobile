@@ -911,3 +911,23 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** `AppGraphProvider.makeGraph()` throws; `LiveGraphProvider` passes `LiveSettings` (the board-key Keychain service, `Application Support/Paperclip`, the localised Face ID reasons) and a main-thread pairing browser that presents the approval page with `ASWebAuthSessionPairingBrowser` and closes it on cancel. The Edit factory sheets and the Manage removal sheet have "here only" variants that say the key stays live on the server. New errors and outcomes have catalog entries and are covered by the completeness tests.
 
 **Consequences.** Not verified from the app against a live Paperclip server; the adapters are covered by Kotlin and contract tests and the launch path by `LiveGraphLaunchTests` and `AppEnvironmentTests` (real graph on a temporary folder).
+
+## ADR-121: The Android app's unit tests run on JUnit 4 + Robolectric, pure tests on JUnit 5 through the Vintage engine
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T0.8)
+
+**Context.** AGENTS.md lists JUnit 5, Compose UI test and Roborazzi for Android UI tests. Compose UI test rules (`createComposeRule`), Robolectric and Roborazzi are JUnit 4 (`@RunWith(AndroidJUnit4::class)`), and instrumented tests (`AndroidJUnitRunner`) are JUnit 4 by nature. Pure tests (labels, presentation helpers, the route table, key-to-string completeness) gain nothing from Robolectric and read better in JUnit 5.
+
+**Decision.** `androidApp/src/test` has one Gradle test task on the JUnit Platform (`unitTests.all { useJUnitPlatform() }`). The pinned platform (catalog `junit` 6.1.3) has a matching Vintage engine (`org.junit.vintage:junit-vintage-engine:6.1.3`, catalog `junit-vintage-engine`), so JUnit 4 + Robolectric tests (Compose, Roborazzi) and JUnit 5 tests execute in the same `testDebugUnitTest` run; verified with `PureJvmSmokeTest` (JUnit 5), `ComposeSmokeTest` and `RoborazziSmokeTest` (JUnit 4 + Robolectric). `androidTest` stays JUnit 4. `shared/**` tests stay on kotlin.test / JUnit 5 as AGENTS.md says; the AGENTS.md "Where tests live" Android UI row is amended in T9.1.
+
+**Consequences.** Robolectric 4.17 does not ship API 37 (the app's `compileSdk`/`targetSdk`), so `src/test/resources/robolectric.properties` pins `sdk=36` for unit tests only. On JDK 21 Robolectric needs `--add-opens=java.base/java.io=ALL-UNNAMED` and `--add-exports=java.base/jdk.internal.access=ALL-UNNAMED` on the test JVM (set in `androidApp/build.gradle.kts`). The Compose and View libraries must be app dependencies, not test-only, or their `R` classes are missing at test time. Roborazzi baselines live in `androidApp/src/test/screenshots` (`recordRoborazziDebug`, `verifyRoborazziDebug`; verify fails when a baseline is missing).
+
+## ADR-122: Android build foundations: built-in Kotlin, one shared SDK constant, opt-in device tests, merged-manifest rules
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T0.1 to T0.7)
+
+**Context.** `:androidApp` is the first `com.android.application` module; the shared modules use the KMP library plugin. The Android SDK values, the instrumented-test setup and the manifest security posture each need one place to live.
+
+**Decision.** (1) AGP 9.5.0 compiles the app's Kotlin with its built-in Kotlin support: the module applies `com.android.application` and the Compose compiler plugin and no `org.jetbrains.kotlin.android`. (2) `PafmAndroid` in `build-logic` holds `compileSdk`, `minSdk` and the namespace root for both `pafm.kmp-library` and `pafm.android-app`. (3) `withDeviceTest { instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }` is enabled only in modules that have `src/androidDeviceTest`; `check` never depends on a `connected*` task. Device test methods use camelCase names because DEX 039 rejects spaces. (4) `AndroidManifestRulesTest` (Konsist) checks the merged debug and release manifests (`processDebugManifest`, `processReleaseManifest` are `konsistTest` inputs): no backup, no cleartext, three permissions, only the launcher exported, debug cleartext for `localhost` and `10.0.2.2` only. (5) Android Lint runs with `warningsAsErrors` and `HardcodedText` as an error; version-currency checks are ignored in `androidApp/lint.xml` because Dependabot owns them.
+
+**Consequences.** A library that adds a permission or an exported component (for example `profileinstaller` in T8.6, `biometric` in T1.3) fails the manifest rule until the rule's allow list is changed in review (T8.7). `konsistTest` now runs two manifest merges before it starts.

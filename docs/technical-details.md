@@ -10,7 +10,7 @@ How the code is organised and built, as it exists on the branch `feat/phase-1a-s
 | Real adapters (`shared/infrastructure/*`) | `api` has the HTTP client (text and ranged byte paths), `ErrorMapper`, and the health, auth, attention, decision, approval, budget, dashboard, agent, run, issue and interaction gateways (Phase 1b-1, 1b-4a, 1b-4b); `persistence` has the SQLDelight database and the three SQL adapters (Phase 1b-2); `securestore` and `platform` have the device services (Phase 1b-3); `realtime` is a stub. |
 | Live graph (`PaperclipCore.createLiveGraph`) | Built (Phase 1b-5a): the real adapters behind the same graph surface, on iOS device services; the iPhone app uses it for every launch without `-demo` (Phase 2i). Android is refused until its app phase. |
 | iPhone app | All main screens (Phase 2i), on the live graph, or on the demo graph with `-demo` in Debug builds. |
-| Android app | Not started. There is no `androidApp/` directory. The shared modules do build an Android library target. |
+| Android app | Foundations only (Phase 2a, milestone 2a-0): `:androidApp` builds an empty launcher Activity with the hardened manifest, Compose and Roborazzi test wiring and device-test source sets in the shared modules. No screens yet. See ADR-121 and ADR-122. |
 | Push relay | Not started. |
 
 No Paperclip server is contacted by either `PaperclipCore.createGraph` or `PaperclipCore.createDemoGraph`; both are wired to the fakes in `shared/testing`. `PaperclipCore.createLiveGraph` is the one that talks to servers (see "The live graph").
