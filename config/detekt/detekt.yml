@@ -22,14 +22,20 @@ style:
     active: true
 
 naming:
-  # Test functions use backticked sentences.
+  # Test functions use backticked sentences; Compose functions that emit UI are PascalCase nouns (Compose API guidelines).
   FunctionNaming:
-    ignoreAnnotated: ['Test']
+    ignoreAnnotated: ['Test', 'Composable']
   # Constants may carry digits and underscores, for example `START_EPOCH_SECONDS` or `HTTP_429`.
   TopLevelPropertyNaming:
     constantPattern: '[A-Z][A-Za-z0-9_]*'
 
 complexity:
+  # A composable takes its content, its modifier and a few options with defaults; that is how Compose APIs are shaped.
+  LongParameterList:
+    ignoreAnnotated: ['Composable']
+  # A design-system file holds one function per component; the component count is the point of the file.
+  TooManyFunctions:
+    ignoreAnnotatedFunctions: ['Composable']
   # Restates the default (60) so that raising it is a visible edit to this file.
   LongMethod:
     threshold: 60

@@ -28,6 +28,9 @@ spotless {
             },
         )
         ktlint(libs.versions.ktlint.get())
+            // Compose functions that emit UI are PascalCase nouns (the Compose API guidelines); Spotless does not pass
+            // this .editorconfig property on to ktlint, so it is repeated here.
+            .editorConfigOverride(mapOf("ktlint_function_naming_ignore_when_annotated_with" to "Test,Composable"))
     }
     kotlinGradle {
         target(

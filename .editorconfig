@@ -13,8 +13,9 @@ max_line_length = 120
 ij_kotlin_allow_trailing_comma = true
 ij_kotlin_allow_trailing_comma_on_call_site = true
 ktlint_code_style = ktlint_official
-# Test names are sentences in backticks.
-ktlint_function_naming_ignore_when_annotated_with = Test
+# Test names are sentences in backticks. Compose functions that emit UI are named as nouns in PascalCase, which is the
+# Compose API guideline and what the platform's own composables do; the androidApp module is the only user.
+ktlint_function_naming_ignore_when_annotated_with = Test,Composable
 
 [*.{yml,yaml,json,md,swift}]
 indent_size = 2
