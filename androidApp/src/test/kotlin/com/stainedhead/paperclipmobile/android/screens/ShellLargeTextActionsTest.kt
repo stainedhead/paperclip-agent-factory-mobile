@@ -21,7 +21,8 @@ private const val LARGEST = 2.0f
 /**
  * T8.1 for the app's own screens (the lock, first run, Factories, add and edit a factory): at font scale 2.0 on a
  * 360 dp screen the named primary actions are displayed, not clipped, and at least 48 dp tall. The attention family is
- * in `LargeTextActionsTest`, the operations screens in `OperationsLargeTextTest`, Work and Issue in `WorkLargeTextTest`.
+ * in `LargeTextActionsTest`, the operations screens in `OperationsLargeTextTest`, Work and Issue in
+ * `WorkLargeTextTest`.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h4000dp-xhdpi")
