@@ -91,12 +91,5 @@ struct DecisionExecutionSection: View {
         .accessibilityIdentifier("decision-execution")
     }
 
-    private func tone(_ status: EffectStatusUi) -> OutcomeRow.Tone {
-        switch status {
-        case .executed: .success
-        case .skipped: .warn
-        case .failed: .critical
-        case .claimed, .unknown: .neutral
-        }
-    }
+    private func tone(_ status: EffectStatusUi) -> OutcomeRow.Tone { OutcomeRow.Tone(status.tone) }
 }

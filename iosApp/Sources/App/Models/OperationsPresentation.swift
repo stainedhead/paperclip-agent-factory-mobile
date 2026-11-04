@@ -53,14 +53,7 @@ struct RunRowPresentation: Equatable {
         RunTime.elapsed(seconds: (finishedAt ?? now).timeIntervalSince(startedAt))
     }
 
-    static func tone(_ status: RunStatusUi) -> StatusTone {
-        switch status {
-        case .running, .succeeded: .success
-        case .failed, .timedOut: .critical
-        case .cancelled, .interrupted: .warn
-        case .queued, .scheduledRetry, .unknown: .neutral
-        }
-    }
+    static func tone(_ status: RunStatusUi) -> StatusTone { StatusTone(status.tone) }
 }
 
 /// One row of the Agents tab: the line under the name, the colour of its status, the avatar letters.
@@ -90,14 +83,7 @@ struct AgentRowPresentation: Equatable {
         statusLine = parts.joined(separator: " \u{00B7} ")
     }
 
-    static func tone(_ status: AgentStatusUi) -> StatusTone {
-        switch status {
-        case .running: .success
-        case .error: .critical
-        case .paused, .pendingApproval: .warn
-        case .active, .idle, .terminated, .unknown: .neutral
-        }
-    }
+    static func tone(_ status: AgentStatusUi) -> StatusTone { StatusTone(status.tone) }
 
     /// Two or three letters for the avatar: a short all-capitals name as it is ("CTO", "QA agent" gives "QA"), a
     /// name ending in a number as its first letter and the number ("Engineer 2" gives "E2"), otherwise two letters.

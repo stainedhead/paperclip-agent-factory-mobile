@@ -4,22 +4,9 @@ import PaperclipKit
 /// How the Work list and Issue screens word and colour what the shared state says. Nothing here decides what is
 /// allowed or offered: that is the state's. These are lookups and joins.
 enum IssueTone {
-    static func status(_ status: IssueStatusUi) -> StatusTone {
-        switch status {
-        case .blocked: .critical
-        case .done: .success
-        case .inReview: .warn
-        case .backlog, .todo, .inProgress, .cancelled, .unknown: .neutral
-        }
-    }
+    static func status(_ status: IssueStatusUi) -> StatusTone { StatusTone(status.tone) }
 
-    static func priority(_ priority: IssuePriorityUi) -> StatusTone {
-        switch priority {
-        case .critical: .critical
-        case .high: .warn
-        case .medium, .low, .unknown: .neutral
-        }
-    }
+    static func priority(_ priority: IssuePriorityUi) -> StatusTone { StatusTone(priority.tone) }
 }
 
 /// The saved filters in the order of the chips.
