@@ -53,4 +53,4 @@ Test first; shared first, UI second; fakes behind seams (`KeystoreBackend`, `Aut
 
 ## References
 
-[paperclip-agent-factory-android-PRD.md](./paperclip-agent-factory-android-PRD.md) · [../261102-phase-2i-iphone-ui/research.md](../261102-phase-2i-iphone-ui/research.md)
+[paperclip-agent-factory-android-PRD.md](./paperclip-agent-factory-android-PRD.md) · [../261102-phase-2i-iphone-ui/research.md](../../261102-phase-2i-iphone-ui/research.md)

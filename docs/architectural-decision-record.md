@@ -914,7 +914,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-121: The Android app's unit tests run on JUnit 4 + Robolectric, pure tests on JUnit 5 through the Vintage engine
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T0.8)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T0.8)
 
 **Context.** AGENTS.md lists JUnit 5, Compose UI test and Roborazzi for Android UI tests. Compose UI test rules (`createComposeRule`), Robolectric and Roborazzi are JUnit 4 (`@RunWith(AndroidJUnit4::class)`), and instrumented tests (`AndroidJUnitRunner`) are JUnit 4 by nature. Pure tests (labels, presentation helpers, the route table, key-to-string completeness) gain nothing from Robolectric and read better in JUnit 5.
 
@@ -924,7 +924,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-122: Android build foundations: built-in Kotlin, one shared SDK constant, opt-in device tests, merged-manifest rules
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T0.1 to T0.7)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T0.1 to T0.7)
 
 **Context.** `:androidApp` is the first `com.android.application` module; the shared modules use the KMP library plugin. The Android SDK values, the instrumented-test setup and the manifest security posture each need one place to live.
 
@@ -934,7 +934,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-123: Android device services: an AES-GCM Keystore store with file records, `AuthHost` for the prompt, no `security-crypto`
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T1.1 to T1.7)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T1.1 to T1.7)
 
 **Context.** Phase 2a needs Android actuals for `SecretStore`, `Biometrics` and `Connectivity`. The iOS store leans on the Keychain, which holds items, prompts and survives the app. Android has no such item store: the Keystore holds keys, not values, and `BiometricPrompt` needs a resumed `FragmentActivity` while the port is called from a use case.
 
@@ -951,7 +951,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-124: The Android live graph is opened through `AndroidLiveGraph.openLiveGraph`, with a process-wide `AndroidAuthHost`
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T2.1 to T2.4)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T2.1 to T2.4)
 
 **Context.** The shared graph needs a `LivePlatform`, but Android's database and Keystore need a `Context` and the prompt needs the resumed activity, so `PaperclipCore.createLiveGraph(allowInsecureLocal, pairingBrowser)` cannot serve Android. The entry point the PRD fixes has no parameter for the activity.
 
@@ -966,7 +966,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-125: The Android shell: one process-wide environment owns the graph and the long-lived holders; screens own theirs through `HolderViewModel`
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T3.1 to T3.9)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T3.1 to T3.9)
 
 **Context.** The iPhone `AppEnvironment` owns the graph and the app, first-run and Inbox models; screen models live in a store keyed by route. Android needs the same split, survive rotation, and never fall back to fakes when the live graph cannot open.
 
@@ -982,7 +982,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-126: Diagnostics are typed values kept by the app, redacted by construction, copied and never sent
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T4.5)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T4.5)
 
 **Context.** AND-018 asks for a local diagnostics screen with a copyable report that holds no URL, host, token, key id, company or user data, and for one logging wrapper. The shared core offers no diagnostics source.
 
@@ -992,7 +992,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-127: Reorder by long-press drag with accessibility moves; a re-pair from Edit is secure and cancellable like first run
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T4.2, T4.3)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T4.2, T4.3)
 
 **Decision.** `ReorderableColumn` follows the finger locally and sends one `Reordered(allIds)` on drop; one-step moves are TalkBack custom actions. `GraphSession.cancelPairingAttempts` ends every waiting pairing (first run and edit) when the approval page cannot be shown, and `ReportPairingWait` makes the window secure while a re-pair waits, so no baseline or screenshot shows it.
 
@@ -1001,7 +1001,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-128: The Inbox renders the session's holder, a decision carries what its card knew on its route, and a sheet owns its holder through a sheet-scoped store
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T5.1 to T5.4)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T5.1 to T5.4)
 
 **Context.** The iPhone Inbox model belongs to the app environment: it feeds the tab badge and owns the refresh session, so the Inbox screen only renders it. The Decision endpoint has neither the agent name nor the decide-by (ADR-018), and Snooze is offered only when the screen was opened from an Inbox card (ADR-025); the iPhone app keeps those hints in an in-memory table. A budget incident is a sheet, not a back stack entry, so a `HolderViewModel` created inside it would be scoped to the screen under it and outlive the sheet.
 
@@ -1015,7 +1015,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-129: Swipes only send intents and TalkBack has the same actions; the Undo offer, the payloads and the money are plain renderings of shared state
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T5.1 to T5.4)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T5.1 to T5.4)
 
 **Context.** An Inbox card can be snoozed or dismissed with a five-second Undo. On Android a `SwipeToDismissBox` can leave a row displaced after the gesture, a swipe is not available to TalkBack, and a Material `Snackbar` has its own timer that would disagree with the shared one.
 
@@ -1025,7 +1025,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-130: The operations screens are tab roots and pushed routes over stateless contents; the log follows its end by scroll position; the 5 second refresh is the holder's and is proven in virtual time
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T6.1 to T6.3)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T6.1 to T6.3)
 
 **Context.** Factory home and Agents are tab roots that can be drawn before the app holder has a selected factory and company, so the throwing `selection()` used by pushed screens does not fit. A Factory home tile must show another tab, but a screen only has its tab's navigator. The Run viewer's log is long and grows while the run is live: it has to follow its end without a programmatic scroll being mistaken for the person scrolling away. The shared holders decide the refresh interval (5 seconds while a run is live, none once it has finished) and run on `Dispatchers.Default`, so a test cannot inject a dispatcher into them. The iPhone app replaces Run now with View run on a row whose agent has a live run; the holders still offer Run now there.
 
@@ -1041,7 +1041,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-131: Work and Issue are a tab root and a pushed route over stateless contents; typed text stays in the screen; the Files tab lists but cannot open; the web app opens https only
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T7.1 to T7.3)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T7.1 to T7.3)
 
 **Context.** The shared holders for the Work list and Issue (filters, search, paging, create, comment, status, assignee, subtasks, the five interaction forms with live validation) already exist and the iPhone renders them (ADR-108). The Android screens must hold no rule of their own. The holders render on `Dispatchers.Default`, so a text field bound to their state drops characters. The brief asks for attachments to open through the system viewer using the shared ranged read and for unsupported request kinds to open the instance in the web app on `https` only.
 
@@ -1058,7 +1058,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-132: The release build is R8-minified and signed from the environment; the demo entry exists only in a separate `releaseDemo` type
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T8.5)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T8.5)
 
 **Context.** Release was unminified and unsigned, so it could not be installed. The PRD asks for R8, `Log` stripped, keep rules in `androidApp/proguard-rules.pro`, `versionCode` from the commit count, `versionName` from the catalog, and a release key that is a CI secret. It also asks for the release APK to be launched in demo mode, while a shipping release deliberately ignores demo launch extras and hides "Try the demo factory" (a shipped app must not be steerable onto fakes).
 
@@ -1073,7 +1073,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-133: Polish: dynamic colour reaches the neutral roles only, motion follows the system animation setting, two haptic feelings, a splash through AndroidX, and the worst-case layouts are baselined
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T8.3)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T8.3)
 
 **Context.** AND-070 asks for dark theme, dynamic colour for neutrals only, 360 x 640 dp and large phones, reduced motion, haptics, an adaptive icon and a splash screen. Composables read `AppTheme.colors` directly, so putting dynamic colour only into the Material `ColorScheme` would leave half the UI unchanged.
 
@@ -1090,7 +1090,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-134: Accessibility is audited from the semantics tree on every screen family; the framework's own checks do not run under Robolectric and TalkBack was not run
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T8.2)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T8.2)
 
 **Context.** T8.2 asks for TalkBack names and order and Compose accessibility checks per screen family, with an honest record of what fails. The environment has Robolectric and one emulator without TalkBack.
 
@@ -1105,7 +1105,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-135: Performance is guarded by an on-demand Macrobenchmark module with two extra build types, a committed baseline profile and an emulator suppression confined to that module
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T8.6)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T8.6)
 
 **Context.** The Android PRD sets a cold start budget (to the cached Inbox, median of 10 `COLD` runs) and at most 5% janky frames over 200 Inbox cards. Macrobenchmark needs a non-debuggable, profileable app that was built like the release, a test module that instruments it, and a baseline profile whose rules name real classes (R8 renames the others). The shipping `release` ignores the demo extras, so it opens the lock screen or first run, not an Inbox. The demo Inbox holds nine cards, not 200. The profile installer's receiver, which Macrobenchmark broadcasts to, is removed from every shipping manifest (T8.7).
 
@@ -1120,7 +1120,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-136: The demo flows are walked on a device by one test per step, each in its own process through the Android Test Orchestrator
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T8.8)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T8.8)
 
 **Context.** Main PRD acceptance criterion 2 lists a dozen flows on the demo graph. Robolectric tests already cover each screen, but none drives the real activity and tab shell on a device. `PaperclipApplication` creates its `AppEnvironment` once per process from the first launch intent, and the first-run flow and the seeded demo are different graphs; a test that resolved a decision also changes what the next test sees. `androidApp` had no `androidTest` source set (ADR-134 names that gap).
 
@@ -1130,7 +1130,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-137: The live proof on Android is split into what runs without a server and a pairing script that needs Docker; unverified steps are recorded as not proven
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T8.9)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T8.9)
 
 **Context.** Acceptance criteria 4 to 6 ask for a live-graph proof on an emulator: the real graph at first run, a pairing against the pinned server, the board key only in the Keystore-wrapped record, no token in any file, log or backup, and a release build refusing a stored `http` address. The pinned server needs Docker, whose daemon was not available where this was built. Some steps also need a device state the emulator does not have (an enrolled fingerprint). The app's own data directory is reachable from outside only on a debuggable build, and the connected-test task uninstalls the app when it ends.
 
@@ -1141,7 +1141,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-138: Android documentation images are copies of the Roborazzi baselines, demo graph only
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T9.2)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui, T9.2)
 
 **Context.** AGENTS.md asks for real screenshots from the Roborazzi (Android) runs once the app exists, captured from demo mode, never showing real data or the pairing screen. The baselines in `androidApp/src/test/screenshots` already are such captures, each checked by `verifyRoborazziDebug`, and they are 720 px wide with the full screen height, so they show a whole screen without a device.
 

@@ -4,7 +4,7 @@ Native iPhone and Android apps for deciding, monitoring and intervening in one o
 
 **Status:** the shared Kotlin core (Phase 1a), the real adapters (Phase 1b), the iPhone app (Phase 2i) and the Android app (Phase 2a, branch `worktree-android-prd`) are built. Both apps run on the **real Paperclip adapters** (Ktor HTTP, SQLDelight, Keychain or Android Keystore, device-owner prompts) and, in debug builds, on fakes in **demo mode**. Each has every main screen: first run, Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Manage factories, Edit factory and Settings (screen 14, notifications, is Phase 3). A launch without the demo switch opens the real graph (empty database: first run, behind the app lock); if it cannot be opened the app says so and offers Try again, and never falls back to fakes.
 
-**Not yet verified against a live Paperclip server from either app** (the contract tests cover the adapters). On Android also not proven: pairing against the pinned server, the system prompt with an enrolled fingerprint, new-fingerprint key invalidation, scroll smoothness on a real phone (the emulator run missed the 5% jank budget), TalkBack, and the GitHub-hosted `android.yml` run. The list and the reasons are in [docs/technical-details.md](./docs/technical-details.md#known-limitations-and-gaps) and [specs/261104-phase-2a-android-ui/status.md](./specs/261104-phase-2a-android-ui/status.md). iPhone details: [specs/261102-phase-2i-iphone-ui/status.md](./specs/261102-phase-2i-iphone-ui/status.md).
+**Not yet verified against a live Paperclip server from either app** (the contract tests cover the adapters). On Android also not proven: pairing against the pinned server, the system prompt with an enrolled fingerprint, new-fingerprint key invalidation, scroll smoothness on a real phone (the emulator run missed the 5% jank budget), TalkBack, and the GitHub-hosted `android.yml` run. The list and the reasons are in [docs/technical-details.md](./docs/technical-details.md#known-limitations-and-gaps) and [specs/archive/261104-phase-2a-android-ui/status.md](./specs/archive/261104-phase-2a-android-ui/status.md). iPhone details: [specs/261102-phase-2i-iphone-ui/status.md](./specs/261102-phase-2i-iphone-ui/status.md).
 
 | Inbox | Decision | Factory | Work |
 |---|---|---|---|
@@ -24,7 +24,7 @@ All screenshots are taken in demo mode (fake data, never a real factory); the pa
 |---|---|
 | [INTENT.md](./INTENT.md) | Why the product exists and how to make trade-offs |
 | [PRD](./paperclip-agent-factory-mobile-PRD.md) | Requirements, screens, release plan |
-| [Android PRD](./specs/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md) | Phase 2a: the Android app on the shared core, device services, milestones |
+| [Android PRD](./specs/archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md) | Phase 2a: the Android app on the shared core, device services, milestones |
 | [AGENTS.md](./AGENTS.md) | How we build: toolchain, TDD, Clean Architecture, security rules |
 | [docs/product-summary.md](./docs/product-summary.md) | What the app does, in plain words, and where it stands |
 | [docs/product-details.md](./docs/product-details.md) | The 16 screens: state holder, behaviour by role, device authentication, offline; mocks versus built |
@@ -39,7 +39,7 @@ All screenshots are taken in demo mode (fake data, never a real factory); the pa
 | [user-docs/pairing.md](./user-docs/pairing.md), [tailscale-and-hostnames.md](./user-docs/tailscale-and-hostnames.md), [managing-factories.md](./user-docs/managing-factories.md), [app-lock.md](./user-docs/app-lock.md), [key-expiry-and-repairing.md](./user-docs/key-expiry-and-repairing.md), [troubleshooting.md](./user-docs/troubleshooting.md) | End-user guides |
 | [specs/archive/261101-phase-1a-shared-contracts/](./specs/archive/261101-phase-1a-shared-contracts/status.md) | The Phase 1a specification, research, notes and status |
 | [specs/261101-iphone-app/plan.md](./specs/261101-iphone-app/plan.md) | The iPhone implementation plan |
-| [specs/261104-phase-2a-android-ui/status.md](./specs/261104-phase-2a-android-ui/status.md) | The Phase 2a (Android) specification, plan, tasks, implementation notes, acceptance mapping, performance record and live-proof record |
+| [specs/archive/261104-phase-2a-android-ui/status.md](./specs/archive/261104-phase-2a-android-ui/status.md) | The Phase 2a (Android) specification, plan, tasks, implementation notes, acceptance mapping, performance record and live-proof record |
 
 ## Build and run (macOS)
 

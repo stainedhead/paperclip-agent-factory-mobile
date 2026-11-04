@@ -3,8 +3,8 @@
 **Created:** 2026-11-04
 **Status:** Reviewed (dev-flow Step 6), ready to implement. Both owner decisions are recorded below as run assumptions that the owner may overturn.
 **Owner:** J
-**Source spec:** [specs/261104-phase-2a-android-ui](./specs/261104-phase-2a-android-ui/spec.md) and [the Android PRD](./specs/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md)
-**Related:** [AGENTS.md](./AGENTS.md), [INTENT.md](./INTENT.md), [status.md](./specs/261104-phase-2a-android-ui/status.md), the prior pattern [phase-1a auto-review PRD](./specs/archive/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md)
+**Source spec:** [specs/archive/261104-phase-2a-android-ui](./specs/archive/261104-phase-2a-android-ui/spec.md) and [the Android PRD](./specs/archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md)
+**Related:** [AGENTS.md](./AGENTS.md), [INTENT.md](./INTENT.md), [status.md](./specs/archive/261104-phase-2a-android-ui/status.md), the prior pattern [phase-1a auto-review PRD](./specs/archive/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md)
 
 ---
 
@@ -60,7 +60,7 @@ Counter-test applied to every P1: "if this merged tomorrow with the fix schedule
 ## Guidance for implementing this PRD
 
 - **TDD is mandatory for every fix (red, green, refactor).** Write the failing test named in each requirement, run it, see it fail for the stated reason, write the minimum fix, then refactor with everything green. Bug fixes start with a failing regression test (AGENTS.md). Where a finding says "verify first", the failing test is also the verification; if it cannot be made to fail, demote the finding to a note in `implementation-notes.md` and close it with that evidence instead of changing code.
-- **One commit per finding** (merged findings are one commit per merged requirement). Conventional Commits, mention `specs/261104-phase-2a-android-ui`. Every finding has its own commit before the step is marked complete; P0 would block the PR (none).
+- **One commit per finding** (merged findings are one commit per merged requirement). Conventional Commits, mention `specs/archive/261104-phase-2a-android-ui`. Every finding has its own commit before the step is marked complete; P0 would block the PR (none).
 - **Brief code and design review per fix before moving on.** After green, re-read your own diff against AGENTS.md (layering, Security Rules, Swift-facing rules, no business rules in a `@Composable`), run the relevant gate, and note any follow-up in `implementation-notes.md`. A second teammate reviews security-sensitive fixes (R-001, R-002, R-004).
 - **Agent teammates (worker model `claude-sonnet-4-6`)** run the parallel fix workstreams below, each in its own git worktree. The lead (this session's model) reviews each diff, merges in the order given, and owns the two owner-decision items. Teammates get the requirement text, the evidence lines and the gate list, not the whole review.
 - **Git worktrees.** One worktree and one branch per workstream (`git worktree add ../pafm-<group> -b fix/<group> worktree-android-prd`); a teammate works only in its own worktree and never edits files owned by another group. Partition by file ownership so merges are conflict-free (see the groups below). Worktrees are for editing and reviewing in parallel; they are not a licence to build in parallel.
@@ -248,7 +248,7 @@ Reviewer ids are in brackets. P1 first, then P2.
 
 - **Evidence:** `docs/technical-details.md:13` says "Not proven: a pairing against the pinned server, the system prompt with an enrolled fingerprint, new-fingerprint key invalidation, StrongBox, TalkBack, a Pixel 6 or Samsung run, and the frame budget". `scripts/android-live-pairing.sh` header: "NOT RUN in the session that wrote it ... Treat the first run as the check of the script itself." `android.yml` has never run on a hosted runner.
 - **Why P1:** each item is an acceptance criterion in the Android PRD (criteria 4 to 6 and the device matrix); shipping without them leaves the phase unproven. It is not P0 because nothing here is a known defect, only an unproven claim. A teammate cannot produce this evidence: it needs a device, Docker, an enrolled fingerprint or hosted CI.
-- **Required evidence (record each result, with date, device and command output summary, in `specs/261104-phase-2a-android-ui/status.md`; no secrets, no real addresses, per AGENTS.md):**
+- **Required evidence (record each result, with date, device and command output summary, in `specs/archive/261104-phase-2a-android-ui/status.md`; no secrets, no real addresses, per AGENTS.md):**
   1. **Live pairing against the pinned server.** `ANDROID_SERIAL=<serial> ./scripts/android-live-pairing.sh` (needs Docker, `adb`, `python3`, an unlocked device). The first run also validates the script. Pass criteria: the factory shows Signed in; the script's final check says the key is in the Keystore-wrapped record only; no key in logs, SQLDelight or backups. Then `./scripts/android-live-smoke.sh`.
   2. **Real key invalidation after fingerprint enrolment.** On a device or emulator with a protected secret stored (R-001 applied), add a fingerprint (Settings, or `adb -e emu finger touch <id>` after enrolling on an emulator), open the app, read the protected secret: expect `Invalidated` and the re-pair path, not a crash.
   3. **System BiometricPrompt on a destructive action.** On a device with an enrolled fingerprint: Pause agent, Cancel run, Reject approval, a budget raise (R-004): the system prompt appears each time; cancelling the prompt performs nothing (check the server state).
@@ -518,7 +518,7 @@ This requirement is the **documentation inaccuracy list**. Each false or stale c
 
 ### R-040 (P2): `status.md` is stale and the acceptance mapping is `[TBD]`  [D status, T9.3]
 
-- **Evidence:** `specs/261104-phase-2a-android-ui/status.md` "Overall progress" table shows Phases 1 to 5 "Not Started" and the 2a-9 box open while the activity log says milestones are done (Phase 0 is the only Complete row); the acceptance mapping has `[TBD]` for criteria 1 to 4, 8, 9, 11 to 13 (line 108; T9.3 at `specs/261104-phase-2a-android-ui/tasks.md:173` is open); criterion 7 is honestly "Android half"; criterion 8's proof is the weak test of R-020.
+- **Evidence:** `specs/archive/261104-phase-2a-android-ui/status.md` "Overall progress" table shows Phases 1 to 5 "Not Started" and the 2a-9 box open while the activity log says milestones are done (Phase 0 is the only Complete row); the acceptance mapping has `[TBD]` for criteria 1 to 4, 8, 9, 11 to 13 (line 108; T9.3 at `specs/archive/261104-phase-2a-android-ui/tasks.md:173` is open); criterion 7 is honestly "Android half"; criterion 8's proof is the weak test of R-020.
 - **Failure scenario:** the single source of truth for progress is wrong; the archive step would copy false state.
 - **Fix:** update the progress table; do T9.3: map criteria 1 to 9 and 11 to 13 to named Android tests, with an honest "not proven" where R-009 is open.
 - **Failing test first:** n/a (docs); a small script or Konsist check that every test class named in `status.md` exists.

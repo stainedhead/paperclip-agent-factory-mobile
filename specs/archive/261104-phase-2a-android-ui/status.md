@@ -1,6 +1,6 @@
 # Status: Phase 2a Android UI
 
-**Created:** 2026-11-04 · **Spec dir:** `specs/261104-phase-2a-android-ui/`
+**Created:** 2026-11-04 · **Spec dir:** `specs/archive/261104-phase-2a-android-ui/`
 
 Update this file after every task and phase. It is the single source of progress.
 

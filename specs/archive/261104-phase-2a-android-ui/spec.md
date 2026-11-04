@@ -1,7 +1,7 @@
 # Specification: Phase 2a Android UI
 
-**Created:** 2026-11-04 · **Status:** Draft · **Spec dir:** `specs/261104-phase-2a-android-ui/`
-**Source PRD:** [paperclip-agent-factory-android-PRD.md](./paperclip-agent-factory-android-PRD.md) · **Pattern:** [../261102-phase-2i-iphone-ui/spec.md](../261102-phase-2i-iphone-ui/spec.md) · **Main PRD:** [../../paperclip-agent-factory-mobile-PRD.md](../../paperclip-agent-factory-mobile-PRD.md)
+**Created:** 2026-11-04 · **Status:** Draft · **Spec dir:** `specs/archive/261104-phase-2a-android-ui/`
+**Source PRD:** [paperclip-agent-factory-android-PRD.md](./paperclip-agent-factory-android-PRD.md) · **Pattern:** [../261102-phase-2i-iphone-ui/spec.md](../../261102-phase-2i-iphone-ui/spec.md) · **Main PRD:** [../../paperclip-agent-factory-mobile-PRD.md](../../../paperclip-agent-factory-mobile-PRD.md)
 
 Owner decisions for this run (2026-11-04): the PRD defaults are accepted for its six open questions (application id `com.stainedhead.paperclipmobile`; dynamic color for neutrals only; `DEVICE_CREDENTIAL` fallback allowed; emulator job per PR for the small instrumented set; resizeable activity allowed, no tablet layouts; QR and deep links as one follow-up PRD for both platforms).
 
@@ -139,6 +139,6 @@ Open questions that remain, each with a resolution path (none blocks starting 2a
 
 ## 14. References
 
-- Source PRD: `specs/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md`
-- [../../AGENTS.md](../../AGENTS.md), [../../INTENT.md](../../INTENT.md)
-- [../261102-phase-2i-iphone-ui/](../261102-phase-2i-iphone-ui/) (iPhone template), [../../docs/technical-details.md](../../docs/technical-details.md), [../../docs/product-details.md](../../docs/product-details.md)
+- Source PRD: `specs/archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md`
+- [../../AGENTS.md](../../../AGENTS.md), [../../INTENT.md](../../../INTENT.md)
+- [../261102-phase-2i-iphone-ui/](../../261102-phase-2i-iphone-ui/) (iPhone template), [../../docs/technical-details.md](../../../docs/technical-details.md), [../../docs/product-details.md](../../../docs/product-details.md)

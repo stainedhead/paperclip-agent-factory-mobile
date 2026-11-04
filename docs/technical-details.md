@@ -367,7 +367,7 @@ Behaviour:
 4. **Decision details.** `GET /decisions/{id}` has neither `decideBy` nor the agent name; the Decision screen receives them as hints from the Inbox card (ADR-018). Opened from anywhere else it shows neither, and no Snooze (ADR-025).
 5. **Priority filter.** "Critical and high" is filtered on the device, so a page can hold fewer rows than the page size (ADR-022).
 
-Android (Phase 2a; each item is also in `specs/261104-phase-2a-android-ui/status.md`):
+Android (Phase 2a; each item is also in `specs/archive/261104-phase-2a-android-ui/status.md`):
 
 6. **Frame budget not met on the emulator.** The 200-card Inbox fling on the Pixel_9_Pro emulator (API 37, arm64, host GPU) had 67% of frames over their deadline against a budget of 5% (2502 frames; CPU P50 17.0 ms, P90 34.0 ms). An emulator says little about a phone, but this is a regression baseline and an open item for a Pixel 6 run; it was not investigated further. Cold start to the Inbox with content was 307 ms median of 10 (budget 1.5 s), emulator only. The nightly `benchmark` job has not run on GitHub.
 7. **Unproven on a device.** A pairing against the pinned server (`scripts/android-live-pairing.sh` was never run: no Docker daemon); new-fingerprint invalidation of the Keystore key (the two phase tests skip without an orchestrated lock-screen change); the system `BiometricPrompt` on a destructive action with enrolled credentials; StrongBox; a manual Pixel and Samsung pass; TalkBack (accessibility is audited from the semantics tree only, ADR-134); `FLAG_SECURE` and Recents on API 28 and 33 (Robolectric only; the emulator check was API 37).
