@@ -63,7 +63,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T4.4 Settings and Paired devices
   - [x] T4.5 Diagnostics screen, redacted copy report, logging wrapper
 - [ ] 2a-5 Inbox, Decision, Approval, Budget incident
-  - [ ] T5.1 Inbox
+  - [x] T5.1 Inbox
   - [ ] T5.2 Decision
   - [ ] T5.3 Approval
   - [ ] T5.4 Budget incident sheet

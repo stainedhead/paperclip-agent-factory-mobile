@@ -41,6 +41,7 @@ class AppRouteTest {
         val routes: List<AppRoute> =
             listOf(
                 AppRoute.Decision("dec-1"),
+                AppRoute.Decision("dec-2", "CTO", "this_week", "attention:decision:dec-2", "PAP-1182"),
                 AppRoute.Approval("ap-1"),
                 AppRoute.Issue("PAP-1"),
                 AppRoute.Agent("ag-1"),

@@ -17,6 +17,10 @@ import com.stainedhead.paperclipmobile.presentation.AddressIssue
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
 import com.stainedhead.paperclipmobile.presentation.ErrorKey
 import com.stainedhead.paperclipmobile.presentation.FactoryStatusUi
+import com.stainedhead.paperclipmobile.presentation.FeedbackKind
+import com.stainedhead.paperclipmobile.presentation.InboxGroupUi
+import com.stainedhead.paperclipmobile.presentation.InlineActionUi
+import com.stainedhead.paperclipmobile.presentation.InvalidKey
 import com.stainedhead.paperclipmobile.presentation.PairedDevicesStatus
 import com.stainedhead.paperclipmobile.presentation.PairingStatus
 import com.stainedhead.paperclipmobile.presentation.ProbeStatus
@@ -24,6 +28,8 @@ import com.stainedhead.paperclipmobile.presentation.RemovalEffect
 import com.stainedhead.paperclipmobile.presentation.RoleUi
 import com.stainedhead.paperclipmobile.presentation.ServerKeyOutcome
 import com.stainedhead.paperclipmobile.presentation.SeverityUi
+import com.stainedhead.paperclipmobile.presentation.SnoozePresetUi
+import com.stainedhead.paperclipmobile.presentation.SourceKindUi
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
@@ -112,5 +118,20 @@ class KeyLabelsTest {
         check("key_error", KeyErrorClass.entries, KeyErrorClass::stringRes)
         check("pairing_outcome", PairingOutcome.entries, PairingOutcome::stringRes)
         check("server_compat", ServerCompatibility.entries, ServerCompatibility::stringRes)
+    }
+
+    @Test
+    fun everyInboxKeyHasText() {
+        check("kind", SourceKindUi.entries, SourceKindUi::stringRes)
+        check("kind_plural", SourceKindUi.entries, SourceKindUi::pluralStringRes)
+        check("group", InboxGroupUi.entries, InboxGroupUi::stringRes)
+        check("inline_action", InlineActionUi.entries, InlineActionUi::stringRes)
+        check("snooze", SnoozePresetUi.entries, SnoozePresetUi::stringRes)
+    }
+
+    @Test
+    fun everyFeedbackKeyHasText() {
+        check("feedback", FeedbackKind.entries, FeedbackKind::stringRes)
+        check("invalid", InvalidKey.entries, InvalidKey::stringRes)
     }
 }

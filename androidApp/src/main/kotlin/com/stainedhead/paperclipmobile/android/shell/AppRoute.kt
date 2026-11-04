@@ -27,9 +27,18 @@ enum class AppTab(
  */
 @Serializable
 sealed interface AppRoute {
+    /**
+     * What the Inbox card knew travels with the route (the decision endpoint has neither the agent name nor the
+     * decide-by, ADR-018), so it survives process death. [dismissalKey] is null unless the screen was opened from a
+     * card: only then is Snooze offered (ADR-025). [decideBy] is written in the shared parser's words.
+     */
     @Serializable
     data class Decision(
         val id: String,
+        val originAgentName: String? = null,
+        val decideBy: String? = null,
+        val dismissalKey: String? = null,
+        val identifier: String? = null,
     ) : AppRoute
 
     @Serializable

@@ -11,6 +11,7 @@ import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.screens.DiagnosticsScreen
 import com.stainedhead.paperclipmobile.android.screens.EditFactoryScreen
 import com.stainedhead.paperclipmobile.android.screens.FactoriesScreen
+import com.stainedhead.paperclipmobile.android.screens.InboxScreen
 import com.stainedhead.paperclipmobile.android.screens.ManageFactoriesScreen
 import com.stainedhead.paperclipmobile.android.screens.PairedDevicesScreen
 import com.stainedhead.paperclipmobile.android.screens.SettingsScreen
@@ -29,6 +30,7 @@ fun AppTabs(
         inboxBadge = inboxBadge,
         tabRoot = { tab, navigator ->
             when (tab) {
+                AppTab.Inbox -> InboxScreen(session, navigator)
                 AppTab.Factories -> FactoriesScreen(session, navigator)
                 else -> Placeholder(tab.title, "tab-root-${tab.name}", tab.icon)
             }

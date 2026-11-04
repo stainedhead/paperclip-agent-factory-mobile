@@ -327,4 +327,109 @@
     <string name="pairing_outcome_failed">Failed</string>
     <string name="server_compat_compatible">Compatible</string>
     <string name="server_compat_incompatible">Not compatible</string>
+
+    <!-- Inbox (screen 1). -->
+    <string name="inbox_all_count">All %1$d</string>
+    <string name="inbox_chip">%1$s %2$d</string>
+    <plurals name="inbox_due_today">
+        <item quantity="one">%1$d new or due today</item>
+        <item quantity="other">%1$d new or due today</item>
+    </plurals>
+    <string name="inbox_due_today_none">Nothing new or due today</string>
+    <string name="inbox_empty_title">Nothing needs you</string>
+    <string name="inbox_empty_message">New approvals, decisions and questions show up here.</string>
+    <string name="inbox_offline_empty_title">You\'re offline</string>
+    <string name="inbox_offline_empty_message">Connect to load your Inbox.</string>
+    <string name="inbox_snooze_title">Snooze until</string>
+    <string name="inbox_swipe_snooze">Snooze</string>
+    <string name="inbox_swipe_dismiss">Dismiss</string>
+    <string name="inbox_undo_message">Removed from your Inbox</string>
+    <string name="inbox_undo_action">Undo</string>
+    <string name="inbox_details">Details</string>
+    <string name="inbox_review_options">Review options</string>
+    <string name="inbox_open_in_web">Open in the web app</string>
+    <string name="inbox_reject_title">Reject this request?</string>
+    <string name="inbox_reject_message">The requester sees your note.</string>
+    <string name="inbox_note_label">Note</string>
+    <string name="inbox_note_placeholder">Why are you rejecting it?</string>
+    <string name="inbox_reject_confirm">Reject</string>
+    <string name="inbox_load_more">Load more</string>
+    <string name="inbox_age_ago">%1$s ago</string>
+    <string name="inbox_filters_label">Filter by kind</string>
+
+    <!-- Shared by Decision, Approval and the Budget incident sheet. -->
+    <string name="detail_offline_title">Not loaded yet</string>
+    <string name="detail_offline_message">You\'re offline and this screen has not been read yet. It loads when you\'re back online.</string>
+    <string name="detail_failed_title">Couldn\'t load this screen</string>
+
+    <!-- The kind of a card (SourceKindUi), singular on the card and plural on a filter chip. -->
+    <string name="kind_agent_error_alert">Agent error</string>
+    <string name="kind_approval">Approval</string>
+    <string name="kind_blocker_attention">Blocked work</string>
+    <string name="kind_budget_alert">Budget alert</string>
+    <string name="kind_decision">Decision</string>
+    <string name="kind_failed_run">Failed run</string>
+    <string name="kind_issue_thread_interaction">Agent question</string>
+    <string name="kind_join_request">Join request</string>
+    <string name="kind_productivity_review">Productivity review</string>
+    <string name="kind_recovery_action">Recovery action</string>
+    <string name="kind_review">Review</string>
+    <string name="kind_unsupported">Other</string>
+    <string name="kind_plural_agent_error_alert">Agent errors</string>
+    <string name="kind_plural_approval">Approvals</string>
+    <string name="kind_plural_blocker_attention">Blocked work</string>
+    <string name="kind_plural_budget_alert">Budget alerts</string>
+    <string name="kind_plural_decision">Decisions</string>
+    <string name="kind_plural_failed_run">Failed runs</string>
+    <string name="kind_plural_issue_thread_interaction">Questions</string>
+    <string name="kind_plural_join_request">Join requests</string>
+    <string name="kind_plural_productivity_review">Productivity reviews</string>
+    <string name="kind_plural_recovery_action">Recovery actions</string>
+    <string name="kind_plural_review">Reviews</string>
+    <string name="kind_plural_unsupported">Other</string>
+    <string name="group_decide_now">Decide now</string>
+    <string name="group_this_week">This week</string>
+    <string name="group_whenever">Whenever</string>
+    <string name="inline_action_approve">Approve</string>
+    <string name="inline_action_reject">Reject</string>
+    <string name="inline_action_keep_paused">Keep paused</string>
+    <string name="inline_action_raise_and_resume">Raise and resume</string>
+    <string name="snooze_one_hour">1 hour</string>
+    <string name="snooze_tonight">Tonight</string>
+    <string name="snooze_tomorrow">Tomorrow</string>
+    <string name="snooze_next_week">Next week</string>
+
+    <!-- What the last action said (FeedbackKind and InvalidKey). -->
+    <string name="feedback_not_allowed">Your role doesn\'t allow this.</string>
+    <string name="feedback_invalid">Check the highlighted field and try again.</string>
+    <string name="feedback_device_auth">Confirm with your fingerprint, face or screen lock to continue.</string>
+    <string name="feedback_failed">That didn\'t go through. It was sent once and not retried.</string>
+    <string name="feedback_reconciled">That didn\'t go through. Showing the current state.</string>
+    <string name="feedback_unknown">No answer arrived, so it\'s unclear whether that took effect. Refresh before trying again.</string>
+    <string name="invalid_note_required">Add a note first.</string>
+    <string name="invalid_body_required">Write a comment first.</string>
+    <string name="invalid_wrong_status">That isn\'t allowed in the current status.</string>
+    <string name="invalid_unknown_option">That option no longer exists.</string>
+    <string name="invalid_snooze_not_in_future">Pick a time in the future.</string>
+    <string name="invalid_undo_window_closed">The undo window has closed.</string>
+    <string name="invalid_input_required">This answer is required.</string>
+    <string name="invalid_input_too_long">That answer is too long.</string>
+    <string name="invalid_amount_must_exceed_observed">The new budget must be higher than what has been spent.</string>
+    <string name="invalid_wrong_currency">Use the budget\'s currency.</string>
+    <string name="invalid_amount_not_numeric">That is not an amount. Use digits and one decimal mark, for example 250.50.</string>
+    <string name="invalid_amount_not_positive">The amount must be more than zero.</string>
+    <string name="invalid_amount_too_large">That amount is too large.</string>
+    <string name="invalid_amount_too_many_decimals">Too many decimal places for this currency.</string>
+    <string name="invalid_title_required">Add a title first.</string>
+    <string name="invalid_not_addressed_to_you">This question is for someone else.</string>
+    <string name="invalid_answer_unsupported">This kind of question can\'t be answered here. Open it in the web app.</string>
+    <string name="invalid_answer_blocked">This question is blocked right now.</string>
+    <string name="invalid_answer_wrong_kind">That answer doesn\'t fit this question.</string>
+    <string name="invalid_answer_nothing_selected">Choose an answer.</string>
+    <string name="invalid_answer_unknown_choice">That choice no longer exists.</string>
+    <string name="invalid_answer_too_few_selected">Choose more answers.</string>
+    <string name="invalid_answer_too_many_selected">Choose fewer answers.</string>
+    <string name="invalid_answer_question_required">Answer every required question.</string>
+    <string name="invalid_answer_verdict_not_enabled">A verdict isn\'t enabled for this question.</string>
+    <string name="invalid_answer_reason_required">Add a reason.</string>
 </resources>

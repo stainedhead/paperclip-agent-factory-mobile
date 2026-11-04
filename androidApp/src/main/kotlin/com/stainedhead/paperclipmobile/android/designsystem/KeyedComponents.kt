@@ -23,8 +23,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -202,7 +204,8 @@ fun OfflineBanner(
  * actions. It renders what it is given; it knows no rules.
  *
  * With [onOpen] the text block is one button that opens the card: TalkBack reads it as [combinedLabel] (one sentence),
- * and the action buttons below it stay separate elements, so each can be found and tapped on its own.
+ * and the action buttons below it stay separate elements, so each can be found and tapped on its own. [customActions]
+ * are the TalkBack actions of the card (snooze, dismiss), so a swipe is never the only way.
  */
 @Composable
 fun AttentionCard(
@@ -214,6 +217,7 @@ fun AttentionCard(
     subtitle: String? = null,
     combinedLabel: String? = null,
     onOpen: (() -> Unit)? = null,
+    customActions: List<CustomAccessibilityAction> = emptyList(),
     actions: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = AppTheme.colors
@@ -235,7 +239,10 @@ fun AttentionCard(
                     .heightIn(min = Spacing.minimumTarget)
                     .clickable(role = Role.Button, onClick = onOpen)
                     .testTag("attention-card-open")
-                    .semantics { if (combinedLabel != null) contentDescription = combinedLabel },
+                    .semantics {
+                        if (combinedLabel != null) contentDescription = combinedLabel
+                        this.customActions = customActions
+                    },
                 verticalArrangement = Arrangement.spacedBy(Spacing.medium),
             ) { CardText(severity, kind, age, title, subtitle, isHeading = false) }
         } else {

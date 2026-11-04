@@ -58,7 +58,9 @@ class GraphSession internal constructor(
     private val lock = Any()
     private var refreshSession: RefreshSession? = null
     private var closed = false
-    private val autoRefresh = options.autoRefresh
+
+    /** Whether this session refreshes screens by itself; a screen that starts a refresh honours it too. */
+    val autoRefresh = options.autoRefresh
     private val pairingCancels = CopyOnWriteArrayList<() -> Unit>()
 
     val app: ScreenHolder<AppState, AppIntent>? = graph?.createAppStateHolder()?.screenHolder()

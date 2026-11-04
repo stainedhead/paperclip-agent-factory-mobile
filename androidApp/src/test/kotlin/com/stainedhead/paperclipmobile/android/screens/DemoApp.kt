@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.unit.Density
 import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.LocalReferenceMillis
 import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
@@ -38,6 +40,11 @@ object DemoId {
     const val TEST = "demo-test"
     const val ACME = "company-acme"
     const val SIDE_PROJECT = "company-side"
+    const val DECISION_BILLING = "dec-1182"
+    const val DECISION_KEYS = "dec-1183"
+    const val APPROVAL_HIRE = "ap-hire-qa"
+    const val APPROVAL_STRATEGY = "ap-q1-strategy"
+    const val INCIDENT = "inc-eng-2"
 }
 
 /** One demo graph and its session for a screen test; [close] releases everything the screen test owned. */
@@ -62,12 +69,24 @@ class DemoApp(
     fun Themed(
         darkTheme: Boolean = false,
         content: @Composable () -> Unit,
+    ) = ThemedAt(darkTheme, null, content)
+
+    /** [Themed] at a font scale (2.0 is the largest the system offers); null keeps the host's own. */
+    @Composable
+    fun ThemedAt(
+        darkTheme: Boolean,
+        fontScale: Float?,
+        content: @Composable () -> Unit,
     ) {
         val now = checkNotNull(session.graph).nowEpochMillis
+        val density = LocalDensity.current
         PaperclipTheme(darkTheme) {
             // The root screen paints the page; a screen shown on its own gets the same background here.
             Box(Modifier.fillMaxSize().background(AppTheme.colors.background)) {
-                CompositionLocalProvider(LocalReferenceMillis provides now, content)
+                CompositionLocalProvider(
+                    LocalReferenceMillis provides now,
+                    LocalDensity provides Density(density.density, fontScale ?: density.fontScale),
+                ) { content() }
             }
         }
     }

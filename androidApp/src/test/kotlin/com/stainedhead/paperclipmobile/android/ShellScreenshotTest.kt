@@ -1,10 +1,12 @@
 package com.stainedhead.paperclipmobile.android
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.stainedhead.paperclipmobile.android.designsystem.LocalReferenceMillis
 import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
 import com.stainedhead.paperclipmobile.android.env.GraphMode
@@ -12,6 +14,8 @@ import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
 import com.stainedhead.paperclipmobile.android.env.demoOpen
 import com.stainedhead.paperclipmobile.android.env.firstRunOpen
 import com.stainedhead.paperclipmobile.android.screens.FirstRunScreen
+import com.stainedhead.paperclipmobile.android.screens.WAIT_MILLIS
+import com.stainedhead.paperclipmobile.android.screens.cardCount
 import com.stainedhead.paperclipmobile.android.shell.AppTabs
 import com.stainedhead.paperclipmobile.android.shell.LockActions
 import com.stainedhead.paperclipmobile.android.shell.LockScreen
@@ -52,9 +56,11 @@ class ShellScreenshotTest {
     private fun capture(
         name: String,
         darkTheme: Boolean,
+        ready: () -> Boolean = { true },
         content: @Composable () -> Unit,
     ) {
         rule.setContent { PaperclipTheme(darkTheme = darkTheme, content = content) }
+        rule.waitUntil(WAIT_MILLIS, ready)
         rule.waitForIdle()
         rule.onRoot().captureRoboImage("src/test/screenshots/$name-${if (darkTheme) "dark" else "light"}.png")
     }
@@ -63,7 +69,12 @@ class ShellScreenshotTest {
         val env = AppEnvironment(ScriptedProvider(GraphMode.Demo, listOf(::demoOpen)), scope, demoEntryAvailable = true)
         environment = env
         val session = env.session.value
-        capture("shell", darkTheme) { AppTabs(session, inboxBadge = BADGE) }
+        // The Inbox tab shows the demo cards once its holder has read them; nothing is captured before.
+        // The demo clock is frozen; ages and "Updated" are read against it, so the baseline does not move with the day.
+        val now = checkNotNull(session.graph).nowEpochMillis
+        capture("shell", darkTheme, { rule.cardCount() > 0 }) {
+            CompositionLocalProvider(LocalReferenceMillis provides now) { AppTabs(session, inboxBadge = BADGE) }
+        }
     }
 
     @Test
