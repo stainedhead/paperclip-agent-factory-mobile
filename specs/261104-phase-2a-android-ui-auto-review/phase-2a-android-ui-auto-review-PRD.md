@@ -3,8 +3,8 @@
 **Created:** 2026-11-04
 **Status:** Reviewed (dev-flow Step 6), ready to implement. Both owner decisions are recorded below as run assumptions that the owner may overturn.
 **Owner:** J
-**Source spec:** [specs/archive/261104-phase-2a-android-ui](./specs/archive/261104-phase-2a-android-ui/spec.md) and [the Android PRD](./specs/archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md)
-**Related:** [AGENTS.md](./AGENTS.md), [INTENT.md](./INTENT.md), [status.md](./specs/archive/261104-phase-2a-android-ui/status.md), the prior pattern [phase-1a auto-review PRD](./specs/archive/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md)
+**Source spec:** [specs/archive/261104-phase-2a-android-ui](../archive/261104-phase-2a-android-ui/spec.md) and [the Android PRD](../archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md)
+**Related:** [AGENTS.md](../../AGENTS.md), [INTENT.md](../../INTENT.md), [status.md](../archive/261104-phase-2a-android-ui/status.md), the prior pattern [phase-1a auto-review PRD](../archive/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md)
 
 ---
 
