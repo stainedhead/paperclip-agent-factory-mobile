@@ -68,7 +68,8 @@ class ShellScreenshotTest {
         val env =
             AppEnvironment(ScriptedProvider(GraphMode.Demo, listOf(::firstRunOpen)), scope, demoEntryAvailable = true)
         environment = env
-        capture("first-run", darkTheme) { FirstRunScreen(env.session.value, onTryDemo = {}) }
+        val session = env.session.value
+        capture("first-run", darkTheme) { FirstRunScreen(session, onTryDemo = {}) }
     }
 
     @Test
