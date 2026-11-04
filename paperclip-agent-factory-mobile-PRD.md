@@ -146,7 +146,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 **FR-013:** Secrets stored per instance: `boardToken` (required). Reserved for later: `clientCertificate` (mTLS, PKCS#12) and `clientCertificatePassword`.
 
-**FR-014:** The app requires device authentication (Face ID / Touch ID / fingerprint / device PIN) to open the app after more than a configurable idle period (default 5 minutes; the user can turn app lock off in Settings, FR-017) and, always and with no setting to disable it, before any destructive action: pausing an agent (FR-071), cancelling a run (FR-075), destructive decision options (FR-041), rejecting an approval (FR-051) and raising a budget (FR-052).
+**FR-014:** The app requires device authentication (Face ID / Touch ID / fingerprint / device PIN) to open the app after more than a configurable idle period (default 5 minutes; the user can turn app lock off in Settings, FR-017) and, always and with no setting to disable it, before any destructive action: pausing an agent (FR-071), cancelling a run (FR-075), destructive decision options (FR-041), rejecting an approval (FR-051), raising a budget (FR-052) and setting an agent's monthly budget above its current amount or to zero (FR-071; run assumption DEC-1 of the Android review, owner may overturn, ADR-141).
 
 **FR-015:** If biometrics change (new fingerprint enrolled) and the key is invalidated, the app reports "Credentials for <instance> need re-pairing" and offers one-tap re-pair. It never silently falls back to unprotected storage.
 

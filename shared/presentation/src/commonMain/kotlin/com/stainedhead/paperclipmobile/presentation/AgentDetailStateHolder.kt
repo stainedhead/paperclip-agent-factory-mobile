@@ -5,6 +5,7 @@ import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentId
+import com.stainedhead.paperclipmobile.domain.DeviceAuthPolicy
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.Invalidation
 import com.stainedhead.paperclipmobile.domain.Money
@@ -254,6 +255,7 @@ private fun renderDetail(
         budgetAmountIssue = model.budgetIssue,
         canSaveBudget =
             model.budgetAmount != null && !model.busy && mayAct(online, role, Action.SetAgentBudget),
+        saveBudgetNeedsDeviceAuth = saveNeedsDeviceAuth(view?.agent?.monthlyBudget, model.budgetAmount),
         budgetSavedCount = model.budgetSaved,
         confirmPause = model.confirmPause,
         isBusy = model.busy,
@@ -267,3 +269,12 @@ private fun renderDetail(
         feedback = model.feedback,
     )
 }
+
+/** Whether saving the typed budget asks the device owner (DEC-1): shared policy, so both apps show the same glyph. */
+private fun saveNeedsDeviceAuth(
+    current: Money?,
+    typedMinorUnits: Long?,
+): Boolean =
+    current != null &&
+        typedMinorUnits != null &&
+        DeviceAuthPolicy.requires(DeviceAuthPolicy.budgetSetAction(current, Money(typedMinorUnits, current.currency)))

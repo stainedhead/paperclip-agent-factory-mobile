@@ -78,7 +78,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Context.** FR-014 lists the actions that need device authentication and says it cannot be turned off.
 **Decision.** `DeviceAuthPolicy.requires(action)` is a pure domain function with no settings input. Use cases call `DeviceAuthGuard` (application) before any gateway or repository call; if the `Biometrics` port does not approve, nothing else runs. `RemoveFactory` joins the list in the PRD's design rules.
-**Consequences.** The UI cannot skip or weaken the check. Setting a monthly agent budget is not on the PRD's list and does not require authentication; only the budget raise does.
+**Consequences.** The UI cannot skip or weaken the check. *Amended (R-004, DEC-1, run assumption, owner may overturn; ADR-141):* setting a monthly agent budget above the current amount, or to zero, also requires authentication (`Action.RaiseAgentBudget`); a decrease does not. The first version of this ADR said only the budget incident raise did, which contradicted AGENTS.md ("budget raise" is a destructive action).
 
 ## ADR-014: Contract suites are plain classes in `shared/testing`, run by thin test subclasses
 
@@ -125,7 +125,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 ## ADR-021: A request that the server refuses to a viewer is still blocked in the app, and owner-only budget stays client-side
 
 **Context.** Research A2/W4: the server rejects every non-GET for a `viewer` membership, but it lets an operator set an agent budget (no permission key) and never asks for device authentication.
-**Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD) and has no device authentication (FR-014 lists "raising a budget" for incidents only; see ADR-013).
+**Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD). *Amended (R-004, DEC-1, run assumption, owner may overturn; ADR-141):* it takes the `DeviceAuthGuard` and asks the device owner when the new amount is above the current one or zero, before its one gateway call; a decrease asks nothing.
 **Consequences.** A viewer or an operator never reaches the gateway for a budget; a role change mid-session is handled by the server's 403 (`Forbidden`).
 
 ## ADR-022: Saved filters (`IssueFilter`) map to server params, except priority which is filtered on the client
@@ -1168,3 +1168,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Decision.** (1) The launcher works through a `PromptScreen` seam. In the posted block it checks the caller is still active and that the activity is started with its state not saved (`canShowNow`), otherwise it answers `Unavailable`; it catches `IllegalStateException` and `IllegalArgumentException` from `show` and answers `Unavailable`; a caller cancelled before the post never shows the prompt; cancelling the caller later cancels the system prompt. (2) The store's lock covers only the file and key steps. A protected read or write takes a first step under the lock (open or seal, which yields the unused cipher), asks the person with the lock free (one prompt at a time through a separate `promptLock`), and finishes under the lock again. The finishing step re-validates: a read compares the record bytes with those the cipher was made for and answers `Denied` (ask again) when the secret was replaced, `Missing` when it was deleted; a write that overlapped a `delete` or `deleteNamespace` (a deletion counter) is `Failed` and does not bring the secret back.
 
 **Consequences.** The prompt can stay open for as long as the person likes without blocking other secret operations. The dropped check `host.current() === activity` of the PRD text is replaced by `canShowNow` because `AuthHost.current()` is suspending and cannot run on the main thread; the test seam covers the same case. Not proven here: a real activity stopped between `current()` and the post (device tests need a person at the screen).
+
+## ADR-141: A budget raise on an agent asks the device owner (DEC-1, run assumption, owner may overturn)
+
+**Status:** Accepted as a run assumption (2026-11-04, specs/261104-phase-2a-android-ui-auto-review, T-004 / R-004). Amends ADR-013, the `SetAgentBudget` entry of ADR-021 and FR-014.
+
+**Context.** AGENTS.md Security Rules list "budget raise" among the destructive actions that go through `Biometrics` before the use case runs, and INTENT principle 1 puts security over convenience. `SetAgentBudget` raised any agent's spend ceiling with no prompt, on an unlocked phone, on both platforms; ADR-013 and FR-014 limited the prompt to the budget incident. No owner was available during the run to decide.
+
+**Decision.** (1) `Action.RaiseAgentBudget` joins `DeviceAuthPolicy`; `DeviceAuthPolicy.budgetSetAction(current, new)` maps a monthly budget change to it when `new` is above `current` or zero (zero stops the agent in practice), otherwise to `Action.SetAgentBudget`, which needs nothing. (2) `SetAgentBudget` takes the `DeviceAuthGuard`; order: permission, currency, device authentication, one gateway call, one re-read. Without an approved prompt the result is `NotAuthorized` and the gateway is never called. (3) `AgentDetailState.saveBudgetNeedsDeviceAuth` is computed in shared presentation from the typed amount, so Android and iPhone show the same lock glyph on the save button. (4) If the owner overturns this, AGENTS.md is amended to say "budget incident raise" only and this ADR, the policy entry and the tests named here are reverted; nothing else depends on it.
+
+**Consequences.** Behaviour change on the iPhone: raising a budget shows Face ID or the passcode (the prompt comes from the shared `Biometrics` port) and the Save button carries a lock glyph. `DeviceAuthRulesTest` lists `SetAgentBudget` as a use case that depends on the guard.
