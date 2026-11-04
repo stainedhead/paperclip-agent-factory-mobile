@@ -258,4 +258,46 @@
     <string name="manage_move_down">Move down</string>
     <string name="manage_reorder_rejected">The order could not be saved. Try again.</string>
     <string name="remove_footer">Your work in Paperclip is not affected.</string>
+
+    <!-- Settings and profile (screen 13) and Paired devices. -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_this_phone">This phone</string>
+    <string name="settings_device_name">Device name</string>
+    <string name="settings_device_name_help">Names the key on new pairings</string>
+    <string name="settings_device_name_invalid">Use 1–60 characters.</string>
+    <string name="settings_app_lock">Lock app with fingerprint, face or screen lock</string>
+    <string name="settings_idle_period">Lock after</string>
+    <string name="settings_destructive">Destructive actions</string>
+    <string name="settings_destructive_help">Pause, cancel, reject and budget always ask for your fingerprint, face or screen lock</string>
+    <string name="settings_each_factory">Each factory</string>
+    <string name="settings_keys_and_devices">Keys and devices</string>
+    <string name="settings_paired_devices">Paired devices and keys</string>
+    <string name="settings_diagnostics">Diagnostics</string>
+    <string name="settings_diagnostics_help">What this app knows about itself. Nothing is sent anywhere.</string>
+    <string name="settings_account_help">Your name, email and role come from each factory and are changed in its web app.</string>
+    <string name="settings_sign_out_everywhere">Sign out everywhere</string>
+    <string name="settings_sign_out_everywhere_title">Sign out of every factory?</string>
+    <string name="settings_sign_out_everywhere_message">This phone’s keys are deleted, and revoked on each server that can be reached. You will pair again to use a factory.</string>
+    <string name="settings_sign_out_everywhere_confirm">Sign out everywhere</string>
+    <plurals name="settings_unconfirmed_revokes">
+        <item quantity="one">%1$d key could not be confirmed as revoked on its server.</item>
+        <item quantity="other">%1$d keys could not be confirmed as revoked on their servers.</item>
+    </plurals>
+    <plurals name="settings_sign_out_failures">
+        <item quantity="one">%1$d factory could not be signed out on this phone.</item>
+        <item quantity="other">%1$d factories could not be signed out on this phone.</item>
+    </plurals>
+    <string name="settings_signed_in_as">Signed in as %1$s</string>
+    <string name="devices_title">Paired devices</string>
+    <string name="devices_choose_factory">Factory</string>
+    <string name="devices_this_phone">This phone</string>
+    <string name="devices_last_used">Last used %1$s ago</string>
+    <string name="devices_never_used">Never used</string>
+    <string name="devices_revoke">Revoke</string>
+    <string name="devices_revoke_named">Revoke %1$s</string>
+    <string name="devices_empty">No keys.</string>
+    <string name="revoke_title">Revoke “%1$s”?</string>
+    <string name="revoke_message">Anything using this key loses access to the factory.</string>
+    <string name="revoke_this_phone_message">This is this phone’s key. Revoking it signs this phone out of the factory.</string>
+    <string name="revoke_confirm">Revoke key</string>
 </resources>

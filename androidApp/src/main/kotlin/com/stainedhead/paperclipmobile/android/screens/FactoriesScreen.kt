@@ -45,6 +45,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.AppType
 import com.stainedhead.paperclipmobile.android.designsystem.BarIconButton
 import com.stainedhead.paperclipmobile.android.designsystem.ButtonKind
 import com.stainedhead.paperclipmobile.android.designsystem.CardSurface
+import com.stainedhead.paperclipmobile.android.designsystem.ChoiceChip
 import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
 import com.stainedhead.paperclipmobile.android.designsystem.ErrorBanner
 import com.stainedhead.paperclipmobile.android.designsystem.OfflineBanner
@@ -57,13 +58,11 @@ import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.rememberFactoriesHolder
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.android.shell.TabNavigator
-import com.stainedhead.paperclipmobile.presentation.CompanyUi
 import com.stainedhead.paperclipmobile.presentation.FactoriesIntent
 import com.stainedhead.paperclipmobile.presentation.FactoriesState
 import com.stainedhead.paperclipmobile.presentation.FactoryRowUi
 
 private val StatusDot = 10.dp
-private val ChipGlyph = 16.dp
 private val SelectedBorder = 2.dp
 
 /**
@@ -265,36 +264,9 @@ private fun Companies(
         verticalArrangement = Arrangement.spacedBy(Spacing.medium),
     ) {
         for (company in row.companies) {
-            CompanyChip(company, row.selectedCompanyId == company.id, "company-chip-${row.id}-${company.id}") {
+            ChoiceChip(company.name, row.selectedCompanyId == company.id, "company-chip-${row.id}-${company.id}") {
                 onChoose(company.id)
             }
         }
-    }
-}
-
-/** A company pill. Selection is shown by fill and by a check, and announced as selected. */
-@Composable
-private fun CompanyChip(
-    company: CompanyUi,
-    isSelected: Boolean,
-    tag: String,
-    onClick: () -> Unit,
-) {
-    val colors = AppTheme.colors
-    Row(
-        Modifier
-            .heightIn(min = Spacing.minimumTarget)
-            .clip(RoundedCornerShape(Radius.chip))
-            .background(if (isSelected) colors.accentSoft else colors.muted)
-            .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = Spacing.extraLarge)
-            .testTag(tag),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-    ) {
-        if (isSelected) {
-            Icon(painterResource(R.drawable.ic_check), null, Modifier.size(ChipGlyph), tint = colors.accent)
-        }
-        Text(company.name, style = AppType.body, color = if (isSelected) colors.accent else colors.textPrimary)
     }
 }

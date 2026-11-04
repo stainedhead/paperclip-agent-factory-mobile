@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
@@ -38,6 +40,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -368,6 +371,8 @@ fun FormField(
     keyboardType: KeyboardType = KeyboardType.Text,
     capitalization: KeyboardCapitalization = KeyboardCapitalization.Words,
     enabled: Boolean = true,
+    onDone: (() -> Unit)? = null,
+    onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {
     val colors = AppTheme.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
@@ -375,7 +380,12 @@ fun FormField(
         OutlinedTextField(
             value = value,
             onValueChange = { onValueChange(it.replace("\n", "")) },
-            modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.minimumTarget).testTag(tag),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = Spacing.minimumTarget)
+                    .onFocusChanged { onFocusChanged?.invoke(it.isFocused) }
+                    .testTag(tag),
             enabled = enabled,
             singleLine = true,
             isError = issue != null,
@@ -387,7 +397,9 @@ fun FormField(
                     keyboardType = keyboardType,
                     capitalization = capitalization,
                     autoCorrectEnabled = false,
+                    imeAction = if (onDone != null) ImeAction.Done else ImeAction.Default,
                 ),
+            keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
             colors =
                 OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = colors.surface,

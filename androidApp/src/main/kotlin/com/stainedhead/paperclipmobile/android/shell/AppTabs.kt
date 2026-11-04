@@ -11,6 +11,8 @@ import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.screens.EditFactoryScreen
 import com.stainedhead.paperclipmobile.android.screens.FactoriesScreen
 import com.stainedhead.paperclipmobile.android.screens.ManageFactoriesScreen
+import com.stainedhead.paperclipmobile.android.screens.PairedDevicesScreen
+import com.stainedhead.paperclipmobile.android.screens.SettingsScreen
 
 /**
  * The tab shell with its screens. The Factories family is here (2a-4); the other tab roots and pushed screens arrive
@@ -34,6 +36,8 @@ fun AppTabs(
             when (route) {
                 is AppRoute.EditFactory -> EditFactoryScreen(session, route.id, navigator)
                 AppRoute.ManageFactories -> ManageFactoriesScreen(session, navigator)
+                AppRoute.Settings -> SettingsScreen(session, navigator)
+                AppRoute.PairedDevices -> PairedDevicesScreen(session, navigator)
                 else -> Placeholder(R.string.tab_placeholder, "pushed-placeholder", R.drawable.ic_warning)
             }
         },
