@@ -120,6 +120,14 @@ class InfrastructureDeviceRulesTest {
             disallowedImports(source, ALLOWED_IMPORTS),
         )
         Assertions.assertEquals(
+            listOf("androidx.compose.runtime.Composable", "androidx.room.Room", "com.squareup.okhttp3.OkHttpClient"),
+            disallowedImports(
+                "import androidx.biometric.BiometricPrompt\nimport androidx.compose.runtime.Composable\n" +
+                    "import androidx.room.Room\nimport com.squareup.okhttp3.OkHttpClient",
+                ALLOWED_IMPORTS,
+            ),
+        )
+        Assertions.assertEquals(
             listOf("java.io.File", "app.cash.sqldelight.db.SqlDriver"),
             forbiddenImports(source, PERSISTENCE_IMPORTS),
         )
@@ -165,6 +173,9 @@ class InfrastructureDeviceRulesTest {
                 "java.",
                 "javax.",
                 "android.",
+                "androidx.biometric.",
+                "androidx.core.content.ContextCompat",
+                "androidx.fragment.app.FragmentActivity",
                 "$APP_PACKAGE.domain",
                 "$APP_PACKAGE.infrastructure.securestore",
                 "$APP_PACKAGE.infrastructure.platform",
@@ -199,6 +210,8 @@ class InfrastructureDeviceRulesTest {
                 "LocalAuthenticationBiometrics",
                 "ReasonTexts",
                 "NwConnectivity",
+                "AuthHost",
+                "BiometricPromptBiometrics",
             )
     }
 }
