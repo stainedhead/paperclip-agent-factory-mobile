@@ -12,6 +12,9 @@ import com.stainedhead.paperclipmobile.domain.port.BiometricResult
  * - `demo_biometrics` (string extra, `cancelled,failed,approved`): the device-owner prompt's answers on the demo
  *   graph, in order, before the default (approved) applies again.
  *
+ * - `demo_inbox_cards` (int extra): how many generated cards the demo Inbox holds besides the mock's nine, for the
+ *   on-demand frame-timing benchmark (T8.6). Only with `demo`.
+ *
  * Start it with `adb shell am start -n com.stainedhead.paperclipmobile/.android.MainActivity --ez demo true`. A release
  * build ignores every extra, so a shipped app cannot be steered onto fakes (the iPhone app has the same rule).
  */
@@ -19,11 +22,13 @@ data class LaunchConfiguration(
     val useDemo: Boolean = false,
     val useFirstRunDemo: Boolean = false,
     val scriptedBiometrics: List<BiometricResult> = emptyList(),
+    val inboxCards: Int = 0,
 ) {
     companion object {
         const val EXTRA_DEMO = "demo"
         const val EXTRA_DEMO_FIRST_RUN = "demo_first_run"
         const val EXTRA_DEMO_BIOMETRICS = "demo_biometrics"
+        const val EXTRA_DEMO_INBOX_CARDS = "demo_inbox_cards"
 
         /**
          * The configuration for the boolean extras that are set to true and the [biometrics] extra; [allowsDemoControls]
@@ -33,12 +38,14 @@ data class LaunchConfiguration(
             trueExtras: Set<String>,
             allowsDemoControls: Boolean,
             biometrics: String? = null,
+            inboxCards: Int = 0,
         ): LaunchConfiguration =
             if (allowsDemoControls) {
                 LaunchConfiguration(
                     useDemo = EXTRA_DEMO in trueExtras,
                     useFirstRunDemo = EXTRA_DEMO_FIRST_RUN in trueExtras,
                     scriptedBiometrics = biometrics.orEmpty().split(',').mapNotNull(::biometricResult),
+                    inboxCards = inboxCards.coerceAtLeast(0),
                 )
             } else {
                 LaunchConfiguration()
@@ -54,6 +61,7 @@ data class LaunchConfiguration(
                 },
                 allowsDemoControls,
                 intent?.getStringExtra(EXTRA_DEMO_BIOMETRICS),
+                intent?.getIntExtra(EXTRA_DEMO_INBOX_CARDS, 0) ?: 0,
             )
 
         private fun biometricResult(word: String): BiometricResult? =

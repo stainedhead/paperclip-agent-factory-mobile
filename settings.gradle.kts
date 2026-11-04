@@ -23,6 +23,7 @@ rootProject.name = "paperclip-agent-factory-mobile"
 
 include(
     ":androidApp",
+    ":androidApp:benchmark",
     ":shared:domain",
     ":shared:application",
     ":shared:presentation",

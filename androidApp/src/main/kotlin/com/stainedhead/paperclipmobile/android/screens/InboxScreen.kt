@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -131,6 +132,8 @@ fun InboxContent(
     modifier: Modifier = Modifier,
 ) {
     var snoozeTarget by rememberSaveable { mutableStateOf<String?>(null) }
+    // The activity is fully drawn once the Inbox shows its content: the time to full display a startup benchmark reads.
+    ReportDrawnWhen { state.phase == InboxPhase.Content }
     Box(modifier.fillMaxSize().testTag("inbox-root")) {
         Column(Modifier.fillMaxSize()) {
             ScreenTitleBar(

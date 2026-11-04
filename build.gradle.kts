@@ -51,7 +51,7 @@ detekt {
     // One root task scans every module's Kotlin sources (common, platform and test source sets) and the Android app.
     source.setFrom(
         fileTree(rootDir) {
-            include("shared/**/src/**/*.kt", "androidApp/src/**/*.kt")
+            include("shared/**/src/**/*.kt", "androidApp/src/**/*.kt", "androidApp/benchmark/src/**/*.kt")
             exclude("**/build/**")
         },
     )

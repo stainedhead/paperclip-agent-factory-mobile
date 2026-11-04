@@ -21,6 +21,14 @@ private val ALLOWED_PERMISSIONS =
  * 261104-phase-2a-android-ui.)
  */
 internal const val DEBUG_TEST_HOST = "androidx.activity.ComponentActivity"
+
+/**
+ * The profile installer's broadcast receiver. Macrobenchmark triggers profile installation through it, so the two
+ * on-demand benchmark variants (never release, never distributed) keep it; it is guarded by [DUMP_PERMISSION], which
+ * only the shell holds, so no other app can send it a broadcast. Reviewed in T8.6 (ADR-135).
+ */
+internal const val PROFILE_RECEIVER = "androidx.profileinstaller.ProfileInstallReceiver"
+internal const val DUMP_PERMISSION = "android.permission.DUMP"
 private val COMPONENT_TAGS = listOf("activity", "activity-alias", "service", "receiver", "provider")
 
 internal fun parseXml(xml: String): Element {
@@ -72,13 +80,18 @@ private fun permissionFindings(manifest: Element): List<String> {
 private fun exportedFindings(
     application: Element,
     debug: Boolean,
+    profiling: Boolean,
 ): List<String> {
     val exported =
         COMPONENT_TAGS.flatMap { application.children(it) }.filter {
             it.attr("exported") == "true" ||
                 (it.attr("exported").isEmpty() && it.children("intent-filter").isNotEmpty())
         }
-    val names = exported.map { it.attr("name") }.filterNot { debug && it == DEBUG_TEST_HOST }
+    val names =
+        exported
+            .filterNot { debug && it.attr("name") == DEBUG_TEST_HOST }
+            .filterNot { profiling && it.attr("name") == PROFILE_RECEIVER && it.attr("permission") == DUMP_PERMISSION }
+            .map { it.attr("name") }
     return when {
         names != listOf(LAUNCHER_ACTIVITY) -> {
             listOf("exported components $names (only the launcher Activity may be exported)")
@@ -98,10 +111,12 @@ private fun exportedFindings(
 internal fun manifestFindings(
     xml: String,
     debug: Boolean,
+    profiling: Boolean = false,
 ): List<String> {
     val manifest = parseXml(xml)
     val application = manifest.children("application").singleOrNull() ?: return listOf("no <application>")
-    return applicationFindings(application, debug) + permissionFindings(manifest) + exportedFindings(application, debug)
+    return applicationFindings(application, debug) + permissionFindings(manifest) +
+        exportedFindings(application, debug, profiling)
 }
 
 /** Hosts that may use cleartext in a network security config; `*` stands for a base config that allows it. */

@@ -39,4 +39,13 @@ class LaunchConfigurationTest {
                 biometrics = "Cancelled,bogus,approved",
             ).scriptedBiometrics shouldBe listOf(BiometricResult.Cancelled, BiometricResult.Approved)
     }
+
+    @Test
+    fun `the generated Inbox card count applies to the demo graph only in a build that allows demo controls`() {
+        val demo = setOf(LaunchConfiguration.EXTRA_DEMO)
+
+        LaunchConfiguration.from(demo, allowsDemoControls = true, inboxCards = 200).inboxCards shouldBe 200
+        LaunchConfiguration.from(demo, allowsDemoControls = false, inboxCards = 200).inboxCards shouldBe 0
+        LaunchConfiguration.from(demo, allowsDemoControls = true, inboxCards = -5).inboxCards shouldBe 0
+    }
 }

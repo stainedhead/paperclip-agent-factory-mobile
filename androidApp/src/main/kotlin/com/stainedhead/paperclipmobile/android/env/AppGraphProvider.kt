@@ -29,10 +29,19 @@ interface AppGraphProvider {
 }
 
 /** The demo graph: the design mocks' data on shared fakes, no server. */
-class DemoGraphProvider : AppGraphProvider {
+class DemoGraphProvider(
+    private val generatedInboxCards: Int = 0,
+) : AppGraphProvider {
     override val mode = GraphMode.Demo
 
-    override fun makeGraph(): AndroidGraphOpen = AndroidGraphOpen.Opened(PaperclipCore.createDemoGraph())
+    override fun makeGraph(): AndroidGraphOpen =
+        AndroidGraphOpen.Opened(
+            if (generatedInboxCards > 0) {
+                PaperclipCore.createLargeInboxDemoGraph(generatedInboxCards)
+            } else {
+                PaperclipCore.createDemoGraph()
+            },
+        )
 }
 
 /** Demo ports with no factory yet and a person who approves every pairing at once: the first-run flow on fakes. */

@@ -71,7 +71,7 @@ class PaperclipApplication : Application() {
     private fun providerFor(launch: LaunchConfiguration): AppGraphProvider =
         when {
             launch.useFirstRunDemo -> FirstRunDemoGraphProvider()
-            launch.useDemo -> DemoGraphProvider()
+            launch.useDemo -> DemoGraphProvider(launch.inboxCards)
             else -> LiveGraphProvider(this, pairingPage.port)
         }
 

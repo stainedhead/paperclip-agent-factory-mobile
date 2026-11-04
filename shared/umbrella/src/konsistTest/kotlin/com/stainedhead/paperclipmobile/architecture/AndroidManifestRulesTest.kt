@@ -34,7 +34,7 @@ class AndroidManifestRulesTest {
                 "android.permission.ACCESS_NETWORK_STATE",
                 "android.permission.USE_BIOMETRIC",
             )
-        listOf("debug", "release", "releaseDemo").forEach {
+        listOf("debug", "release", "releaseDemo", "benchmark", "nonMinified").forEach {
             Assertions.assertEquals(expected, platformPermissions(merged(it)), "permissions of $it")
         }
     }

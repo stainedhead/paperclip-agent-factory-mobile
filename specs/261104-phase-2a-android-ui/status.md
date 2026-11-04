@@ -82,7 +82,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T8.3 Dark theme, dynamic-color neutrals, 360x640 dp and large phones, reduced motion, haptics, adaptive icon (placeholder art), splash (ADR-133). Found and fixed two font-scale 2.0 defects: Approval header pill, tab label wrap
   - [x] T8.4 Recents and `FLAG_SECURE` behaviour on API 28, 33, latest (Robolectric on the real activity at 28, 33, 36; emulator check API 37 only: demo Inbox in Recents is a black thumbnail; no API 28 or 33 image is installed)
   - [x] T8.5 R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and live mode (demo through the `releaseDemo` type, ADR-132)
-  - [ ] T8.6 `:androidApp:benchmark` module, baseline profile, Macrobenchmark cold start
+  - [x] T8.6 `:androidApp:benchmark` module, baseline profile, Macrobenchmark cold start (ADR-135; emulator numbers only, see the Performance record)
   - [x] T8.7 Merged-manifest permission / exported-component test (exact permission set, three build types, APK check with aapt2); the manual Pixel and Samsung BiometricPrompt and StrongBox pass is NOT done (no such devices here)
   - [ ] T8.8 End-to-end demo-flow test (criterion 2)
   - [ ] T8.9 Emulator live-graph smoke (criteria 4, 5, 6)
@@ -107,7 +107,18 @@ Wording check (2a-7): the main PRD's criterion 7 is the `ask_user_questions` one
 
 ## Performance record (T8.6)
 
-[TBD] cold start median of 10 runs: Pixel 6 and CI emulator.
+Measured 2026-11-04 on the Pixel_9_Pro AVD (`sdk_gphone64_arm64`, API 37, arm64, the Mac's host GPU), with `scripts/run-benchmarks.sh`, on the R8-minified `benchmark` build type (demo graph) with the committed baseline profile (`CompilationMode.Partial`). This is the **emulator regression guard, not the Pixel 6 target**: Macrobenchmark refuses emulators and was run with `androidx.benchmark.suppressErrors=EMULATOR` for this module only (ADR-135). No Pixel 6 and no x86_64 API 34 CI emulator was available here, so neither PRD environment has a number yet; the nightly `benchmark` job in `android.yml` has not run on GitHub.
+
+| Metric | Result | PRD budget | Read |
+|---|---|---|---|
+| Cold start, time to initial display, median of 10, with baseline profile | 238.9 ms (min 168.6, max 246.2) | none stated for TTID | |
+| Cold start to the Inbox with content (`timeToFullDisplayMs`), median of 10, with baseline profile | 307.4 ms (min 245.7, max 339.1) | under 1.5 s | Within budget on this emulator. The demo Inbox is in memory, so no network or database read is included. |
+| Same, no profile (`CompilationMode.None`) | TTID 228.6 ms, full display 356.3 ms | | The profile saves about 49 ms (14%) at full display; TTID is within noise. |
+| Fling over 209 Inbox cards, 5 runs of 10 flings, `FrameTimingMetric` | 2502 frames; 67% overran their deadline, 55% took over 16.7 ms of CPU, 11% over 33.3 ms; CPU P50 17.0 ms, P90 34.0, P99 42.6 | at most 5% janky | **Not met on this emulator.** An emulator renders through the host GPU stack and says little about a phone, but the figure is a regression baseline and an open item for the Pixel 6 run and the release gate. Not investigated further. |
+
+## End-to-end and live proofs
+
+See the T8.8 and T8.9 sections below.
 
 ## Blockers
 

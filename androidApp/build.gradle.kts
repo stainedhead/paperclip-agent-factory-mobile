@@ -128,5 +128,20 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             buildConfigField("boolean", "DEMO_ENTRY", "true")
         }
+        // The two on-demand benchmark builds (T8.6, ADR-135), driven by :androidApp:benchmark and never distributed.
+        // `benchmark` is releaseDemo (R8 on, demo entry so there is an Inbox without a server) with its own application
+        // id and a profileable, profile-installable manifest (src/benchmark). `nonMinified` is the same without R8, so
+        // the baseline profile generator records real class names. Neither is debuggable.
+        create("benchmark") {
+            initWith(getByName("releaseDemo"))
+            matchingFallbacks += "release"
+            applicationIdSuffix = ".benchmark"
+        }
+        create("nonMinified") {
+            initWith(getByName("benchmark"))
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
     }
+    sourceSets.getByName("nonMinified").manifest.srcFile("src/benchmark/AndroidManifest.xml")
 }
