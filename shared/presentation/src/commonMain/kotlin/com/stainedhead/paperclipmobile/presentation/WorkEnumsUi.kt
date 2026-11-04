@@ -15,6 +15,10 @@ enum class RunStatusUi {
     Cancelled,
     TimedOut,
     Unknown,
+    ;
+
+    /** A run that has not ended: it can still change, so it is timed to the second and refreshed (PRD FR-090). */
+    val isLive: Boolean get() = this == Running || this == Queued || this == ScheduledRetry
 }
 
 internal fun RunStatus.toUi(): RunStatusUi =

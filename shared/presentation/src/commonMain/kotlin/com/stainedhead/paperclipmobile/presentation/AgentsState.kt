@@ -47,7 +47,13 @@ data class AgentRowUi(
     val actions: List<AgentActionUi>,
     /** The run the agent has in progress, with its issue; null when it is not running. */
     val currentRun: RunRowUi?,
-)
+) {
+    /** True while the agent has a run in progress: the row offers View run where Run now would be (R-019). */
+    val offersViewRun: Boolean get() = currentRun?.status?.isLive == true
+
+    /** The buttons the row shows: no second run is started by a tap meant for the first. */
+    val visibleActions: List<AgentActionUi> get() = actions.filter { !(it == AgentActionUi.RunNow && offersViewRun) }
+}
 
 data class AgentSectionUi(
     val group: AgentGroupUi,
