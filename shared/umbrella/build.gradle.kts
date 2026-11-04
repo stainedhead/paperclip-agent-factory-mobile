@@ -49,6 +49,18 @@ kotlin {
             testClassesDirs = konsist.output.classesDirs
             classpath = konsist.runtimeDependencyFiles + konsist.output.allOutputs
             systemProperty("pafm.rootDir", rootProject.projectDir.absolutePath)
+            // The manifest rules read the app's merged manifests, so the manifest merge runs first (device-free).
+            listOf("debug", "release").forEach { variant ->
+                val name = variant.replaceFirstChar { it.uppercase() }
+                dependsOn(":androidApp:process${name}Manifest")
+                systemProperty(
+                    "pafm.mergedManifest.$variant",
+                    rootProject.layout.projectDirectory
+                        .file(
+                            "androidApp/build/intermediates/merged_manifests/$variant/process${name}Manifest/AndroidManifest.xml",
+                        ).asFile.absolutePath,
+                )
+            }
             // The rules read the shared modules' sources, so those sources are inputs: editing them re-runs the rules.
             inputs
                 .files(
