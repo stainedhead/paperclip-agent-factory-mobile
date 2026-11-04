@@ -46,7 +46,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T2.2 `AndroidLiveGraph.openLiveGraph(context, allowInsecureLocal, pairingBrowser, settings): AndroidGraph
   - [x] T2.3 Extend `LiveWiringRulesTest` / `LiveGraphTest` to Android wiring
   - [x] T2.4 `AndroidLiveSettings`
-- [ ] 2a-3 Shell, design system, first run
+- [x] 2a-3 Shell, design system, first run
   - [x] T3.1 `PaperclipApplication`, `AppEnvironment`, `AppGraphProvider`
   - [x] T3.2 `HolderViewModel<S,I>` and lifecycle tests: clear closes the holder, rotation does not
   - [x] T3.3 Design system: theme, tokens, `AttentionCard`, `StatusPill`, `SeverityLabel`, `UpdatedLabel`, `Disab
@@ -112,3 +112,4 @@ None.
 - 2026-11-04: milestone 2a-0 implemented (T0.1 to T0.8, T0.5 last). Gates observed: spotlessCheck, detekt, lint, allTests, konsistTest, check, assembleDebug/Release, testDebugUnitTest, verifyRoborazziDebug green; the 4 smoke device tests passed on the Pixel_9_Pro AVD (API 37 arm64). android.yml has not run on GitHub yet. Decisions in implementation-notes.md, ADR-121 and ADR-122.
 - 2026-11-04: `/dev-flow:review-spec`. Added T0.8 (test runner), T8.8, T8.9; reordered 2a-0; benchmark module added to the module tables; Keystore Missing-on-undecryptable and `namespaces()` tests added to T1.1/T1.2; edge-case, decisions and open-question sections added to spec.md; traceability tables added to tasks.md; PRD "28 Swift files" corrected to 24. Task count 57.
 - 2026-11-04: milestone 2a-1 implemented (T1.1 to T1.7). Gates observed: spotlessCheck, detekt, lint, allTests, konsistTest (85 tests), koverVerifyCore, koverVerifyPresentation, :androidApp:assembleDebug, connectedAndroidDeviceTest on the Pixel_9_Pro emulator (securestore 15 with 2 phase tests skipped, platform 6, persistence 5, umbrella 2, 0 failures). Found and fixed: the Android SQLite framework silently replaced a corrupt database (T1.5); the merged-manifest rule was already red on profileinstaller. Not proven on the emulator: a real KeyPermanentlyInvalidatedException after a new fingerprint, the system BiometricPrompt UI, and StrongBox hardware (see ADR-123, T8.9).
+- 2026-11-04: milestone 2a-3 implemented (T3.1 to T3.9). Gates observed: spotlessCheck, detekt, lint, konsistTest (90), allTests, :androidApp:testDebugUnitTest (125), verifyRoborazziDebug (7 baselines), assembleDebug, assembleRelease. Emulator smoke on Pixel_9_Pro: demo Inbox shell with badge 3, demo first run, live launch lock screen (FLAG_SECURE). ADR-125.

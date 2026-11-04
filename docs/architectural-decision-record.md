@@ -963,3 +963,20 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 5. `PaperclipCore.createLiveGraph(allowInsecureLocal, pairingBrowser)` keeps refusing on Android and its message names `AndroidLiveGraph.openLiveGraph`.
 
 **Consequences.** A locked database or an unusable Keystore is a screen with Try again, not a crash loop. The success path of the platform needs the Android SQLite classes, so it is proven on the emulator (`AndroidLiveGraphDeviceTest`), the failure paths on the host. The registry is process-global state; with one `MainActivity` that is the right scope, and a second prompt host would need a different design.
+
+## ADR-125: The Android shell: one process-wide environment owns the graph and the long-lived holders; screens own theirs through `HolderViewModel`
+
+**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui, T3.1 to T3.9)
+
+**Context.** The iPhone `AppEnvironment` owns the graph and the app, first-run and Inbox models; screen models live in a store keyed by route. Android needs the same split, survive rotation, and never fall back to fakes when the live graph cannot open.
+
+**Decision.**
+1. `PaperclipApplication` owns one `AppEnvironment`, created lazily by the first activity (the launch intent is visible there; nothing is opened in `Application.onCreate`). Its `GraphSession` owns the graph and the app, first-run and Inbox holders (the Inbox follows the selected factory and company and feeds the tab badge with the server count). An unavailable live graph is a session with no graph and no holders and `StartupNotice.LiveGraphUnavailable`; Try again re-opens once per tap. This deviates from the iPhone stand-in graph: a null graph cannot run anything, so there is nothing to close and nothing that could be faked.
+2. Screen holders are wrapped in `ScreenHolder` and owned by `HolderViewModel`, which closes the holder in `onCleared` (after the outcome when a mutation is in flight, ADR-117); rotation keeps the view model.
+3. Demo launch extras (`demo`, `demo_first_run`, `demo_biometrics`) are honoured only when `BuildConfig.DEBUG`; "Try the demo factory" is offered only then.
+4. Compose renders shared state and sends intents. The device-owner prompt is never shown from a screen; `LockScreen` sends `UnlockRequested` once per engagement and only while the activity is resumed, after `AuthHostRegistration` has registered it. `FLAG_SECURE` is set while the lock or the pairing step shows; the recents thumbnail is hidden always (API 33 setting, secure while paused below).
+5. The pairing page opens in a Custom Tab (plain browser fallback, none ends the attempt and cancels the pairing); the shared wait ends when the person comes back, because a process left behind a browser may be frozen.
+6. Saved state: `rememberSaveable` and the navigation controllers' saved state (the same registry as `SavedStateHandle`), never anything secret (Konsist rule).
+
+**Consequences.** One graph per process; rotation and recreation reuse it. A Custom Tab cannot be closed from the app. Spotless needs the Composable naming exception repeated in the Spotless block, and detekt ignores composables for naming and parameter and function counts.
+

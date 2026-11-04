@@ -18,6 +18,14 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 - **Emulator facts (T1.2, T1.4).** `svc`/`cmd connectivity airplane-mode enable|disable` from `UiAutomation.executeShellCommand` flips the default network and the callback reports it within a second or two; the library test APK needs its own `src/androidDeviceTest/AndroidManifest.xml` for `ACCESS_NETWORK_STATE`. Removing the lock screen (`adb shell locksettings clear --old 1234`) deletes user-authentication keys on this emulator (API 37) rather than invalidating them. The two-phase run is `KeystoreInvalidationDeviceTest` with `-e invalidationPhase 1|2` through `adb shell am instrument` (set PIN, phase 1, clear PIN, phase 2).
 - **Manifest rule (T1.3).** `androidx.biometric` 1.1.0 adds `USE_FINGERPRINT`: removed with `tools:node="remove"` (minSdk 28). `androidx.profileinstaller`'s exported `ProfileInstallReceiver` (from Compose; the rule was already red at the start of 2a-1) removed; `androidx.activity.ComponentActivity` from `ui-test-manifest` allowed in the debug manifest only. T8.6 re-adds the receiver for the benchmark build type in review.
 
+## 2a-3 notes
+
+- Tasks.md lists T3.1 to T3.9 (no T3.10). Deviations: unavailable live graph is a session with a null graph (no stand-in graph); T3.8 uses rememberSaveable and NavController saved state instead of an explicit SavedStateHandle; SeverityLabel, DisabledReason, ErrorBanner and AttentionCard are in T3.4 with the label mappings they need; tab roots and pushed screens are placeholders until 2a-4 to 2a-7; extra debug extra `demo_biometrics`.
+- konsistTest did not re-run on androidApp changes (inputs were shared sources only); fixed, which exposed a literal `Text` and an exported debug `PreviewActivity` (removed in the debug manifest).
+- JUnit 5 methods with an expression body returning a value are silently skipped: use `runBlocking<Unit>`.
+- Robolectric: size the window (`@Config(qualifiers)`) and `performScrollTo()` before clicking; holders run on Dispatchers.Default so tests use `waitUntil`.
+- Emulator smoke (Pixel_9_Pro): demo launch shows Inbox shell with badge 3; `demo_first_run` shows first run; live launch shows the lock (black screencap: FLAG_SECURE) with the no-screen-lock message.
+
 ## Edge cases and solutions
 
 - T0.4: with `warningsAsErrors` Android Lint flagged `NewerVersionAvailable` (it reads the root catalog), `DataExtractionRules` (needs `fullBackupContent` for API 28 to 30), `MissingApplicationIcon` and `UnusedResources`. Fixed with `androidApp/lint.xml` (version-currency checks ignored: Dependabot owns them), `backup_rules.xml` and a placeholder adaptive icon (final artwork in T8.3). The planted `Planted.kt` (unformatted, unused private member) and `layout/planted.xml` (`android:text="Hello"`) failed spotless, detekt (once `androidApp/src` joined its source set) and lint `HardcodedText` before being removed.
