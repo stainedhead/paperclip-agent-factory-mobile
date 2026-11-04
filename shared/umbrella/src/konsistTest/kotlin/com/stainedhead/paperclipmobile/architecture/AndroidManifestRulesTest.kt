@@ -23,6 +23,53 @@ class AndroidManifestRulesTest {
     @Test
     fun `the release merged manifest follows the rules`() {
         Assertions.assertEquals(emptyList<String>(), manifestFindings(merged("release"), debug = false))
+        Assertions.assertEquals(emptyList<String>(), manifestFindings(merged("releaseDemo"), debug = false))
+    }
+
+    @Test
+    fun `every variant declares exactly the three permissions and nothing else from the platform`() {
+        val expected =
+            setOf(
+                "android.permission.INTERNET",
+                "android.permission.ACCESS_NETWORK_STATE",
+                "android.permission.USE_BIOMETRIC",
+            )
+        listOf("debug", "release", "releaseDemo").forEach {
+            Assertions.assertEquals(expected, platformPermissions(merged(it)), "permissions of $it")
+        }
+    }
+
+    @Test
+    fun `the release manifests have no backup, no cleartext, no service, receiver or provider and one activity`() {
+        listOf("release", "releaseDemo").forEach { variant ->
+            val xml = merged(variant)
+            Assertions.assertEquals("false", applicationAttribute(xml, "allowBackup"), variant)
+            Assertions.assertEquals("false", applicationAttribute(xml, "usesCleartextTraffic"), variant)
+            Assertions.assertEquals("", applicationAttribute(xml, "networkSecurityConfig"), variant)
+            Assertions.assertEquals(listOf(LAUNCHER_ACTIVITY), componentNames(xml, "activity"), variant)
+            listOf("service", "receiver", "activity-alias").forEach {
+                Assertions.assertEquals(emptyList<String>(), componentNames(xml, it), "$it in $variant")
+            }
+            // androidx.startup (lifecycle's process observer and the profile installer start through it). Reviewed in
+            // T8.7: it is not exported (exportedFindings fails the build otherwise) and carries no data of ours.
+            Assertions.assertEquals(
+                listOf("androidx.startup.InitializationProvider"),
+                componentNames(xml, "provider"),
+                variant,
+            )
+        }
+    }
+
+    @Test
+    fun `the permission set is read exactly and an own permission is not counted`() {
+        val xml =
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
+                <uses-permission android:name="android.permission.INTERNET" />
+                <uses-permission android:name="com.example.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+            </manifest>
+            """.trimIndent()
+        Assertions.assertEquals(setOf("android.permission.INTERNET"), platformPermissions(xml))
     }
 
     @Test

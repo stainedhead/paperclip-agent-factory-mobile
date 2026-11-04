@@ -19,6 +19,16 @@ esac
 
 ./gradlew "$task" --console=plain -q
 apk=$(ls androidApp/build/outputs/apk/"$dir"/*.apk | head -n 1)
+# The manifest that ships is the one inside the APK (after the merge, R8 and resource shrinking), so it is checked
+# here too: the same three permissions and no debuggable flag (AndroidManifestRulesTest checks the merged manifest).
+sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}"
+aapt2=$(ls "$sdk"/build-tools/*/aapt2 | sort | tail -n 1)
+perms=$("$aapt2" dump permissions "$apk" | sed -n "s/^uses-permission: name='\(.*\)'.*/\1/p" | grep -v "^$package\." | sort | tr '\n' ' ')
+want="android.permission.ACCESS_NETWORK_STATE android.permission.INTERNET android.permission.USE_BIOMETRIC "
+if [ "$perms" != "$want" ]; then echo "FAIL: APK permissions are: $perms" >&2; exit 1; fi
+if "$aapt2" dump xmltree --file AndroidManifest.xml "$apk" | grep -q "debuggable.*=true"; then
+  echo "FAIL: the APK is debuggable" >&2; exit 1
+fi
 echo "Installing $apk"
 adb install -r "$apk" >/dev/null
 

@@ -50,7 +50,7 @@ kotlin {
             classpath = konsist.runtimeDependencyFiles + konsist.output.allOutputs
             systemProperty("pafm.rootDir", rootProject.projectDir.absolutePath)
             // The manifest rules read the app's merged manifests, so the manifest merge runs first (device-free).
-            listOf("debug", "release").forEach { variant ->
+            listOf("debug", "release", "releaseDemo").forEach { variant ->
                 val name = variant.replaceFirstChar { it.uppercase() }
                 dependsOn(":androidApp:process${name}Manifest")
                 systemProperty(

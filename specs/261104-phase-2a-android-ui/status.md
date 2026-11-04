@@ -83,7 +83,7 @@ Update this file after every task and phase. It is the single source of progress
   - [ ] T8.4 Recents and `FLAG_SECURE` behaviour on API 28, 33, latest
   - [x] T8.5 R8 release build, keep rules, signing, versionCode / versionName, release APK launches in demo and live mode (demo through the `releaseDemo` type, ADR-132)
   - [ ] T8.6 `:androidApp:benchmark` module, baseline profile, Macrobenchmark cold start
-  - [ ] T8.7 Merged-manifest permission / exported-component test
+  - [x] T8.7 Merged-manifest permission / exported-component test (exact permission set, three build types, APK check with aapt2); the manual Pixel and Samsung BiometricPrompt and StrongBox pass is NOT done (no such devices here)
   - [ ] T8.8 End-to-end demo-flow test (criterion 2)
   - [ ] T8.9 Emulator live-graph smoke (criteria 4, 5, 6)
 - [ ] 2a-9 Documentation, screenshots, release gate

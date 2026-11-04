@@ -96,7 +96,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 97 tests in 22 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 100 tests in 22 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -114,7 +114,7 @@ Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsi
 | `LiveWiringRulesTest` | Every umbrella main-source file that is a `Live*` file or names the live seam (`createLiveGraph(`, `LivePlatform`, `livePortsModule(`, `AndroidLive`) imports nothing from `testing` and binds no fake module; in a file with a demo graph next to it only the live entry point is scanned. Planted-violation test included. |
 | `SourceScanningRulesTest` | The scanners behind the infrastructure rules flag every declaration form they claim to (F-C-6). |
 | `CatalogRulesTest` | No `*.gradle.kts` hard-codes a dependency or plugin version; every version comes from `gradle/libs.versions.toml` (the settings foojay plugin is the one exception). |
-| `AndroidManifestRulesTest` | The merged debug and release manifests of `androidApp` (task dependency: `processDebugManifest`, `processReleaseManifest`) set `allowBackup=false`, `dataExtractionRules` and `usesCleartextTraffic=false`, request only `INTERNET`, `ACCESS_NETWORK_STATE` and `USE_BIOMETRIC`, export only the launcher Activity, and (release) name no network security config and are not debuggable; the debug config allows cleartext for `localhost` and `10.0.2.2` only. |
+| `AndroidManifestRulesTest` | The merged debug, release and releaseDemo manifests of `androidApp` (task dependency: `processDebugManifest`, `processReleaseManifest`, `processReleaseDemoManifest`; T8.7 added the exact permission set, "one activity, no service, receiver or alias, only androidx.startup's non-exported provider", and `scripts/android-release-smoke.sh` repeats the permission and debuggable check on the built APK with `aapt2`) set `allowBackup=false`, `dataExtractionRules` and `usesCleartextTraffic=false`, request only `INTERNET`, `ACCESS_NETWORK_STATE` and `USE_BIOMETRIC`, export only the launcher Activity, and (release) name no network security config and are not debuggable; the debug config allows cleartext for `localhost` and `10.0.2.2` only. |
 | `AndroidAppRulesTest` | `androidApp` imports no `infrastructure.*` package except `infrastructure.platform`, never calls `Secret.reveal`, has no `Text("literal")` and no `BiometricPrompt` in a file that declares composables. Each scan has a planted-violation test. |
 | `AndroidAppLoggingRulesTest` | `androidApp` uses `android.util.Log` only inside `AppLog` (debug-only, rejects secrets, addresses and ids); everything else logs through it. Planted-violation test. |
 | `AndroidAppHygieneRulesTest` | `androidApp` has no inline `@Suppress`, `@SuppressLint` or `@SuppressWarnings`, and puts nothing secret-looking (secret, token, key, approval link) into `rememberSaveable`, `SavedStateHandle` or `outState`. Planted-violation tests. The task re-runs when `androidApp/src` changes. |
@@ -203,7 +203,7 @@ Numbers from the last local run (2026-11-03, after merging Phase 1b into the iPh
 | `shared/infrastructure/securestore`, `platform` | 3 and 6 |
 | Android host (`testAndroidHostTest`, includes `commonTest`) | securestore 23, platform 19, umbrella 72 |
 | Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`) | securestore 15 (2 are skipped phase tests of a manual lock-screen run), platform 6, persistence 5, umbrella 8 |
-| Konsist (`konsistTest`) | 97 |
+| Konsist (`konsistTest`) | 100 |
 | Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard) |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
