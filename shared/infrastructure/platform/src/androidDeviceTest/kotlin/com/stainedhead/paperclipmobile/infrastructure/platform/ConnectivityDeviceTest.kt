@@ -42,14 +42,13 @@ class ConnectivityDeviceTest {
     }
 
     @Test
-    fun theFirstValueIsTheValidatedStateOfTheDefaultNetwork() {
+    fun theFirstValueIsWhetherTheDefaultNetworkDeclaresInternet() {
         val manager = context.getSystemService(ConnectivityManager::class.java)
         val capabilities = manager.getNetworkCapabilities(manager.activeNetwork)
-        val validated =
+        val declaresInternet =
             capabilities != null &&
-                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        assertEquals(validated, open().isOnline.value)
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        assertEquals(declaresInternet, open().isOnline.value)
     }
 
     @Test

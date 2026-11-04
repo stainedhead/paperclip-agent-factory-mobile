@@ -11,14 +11,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Where network changes come from. A fake drives it in tests; [SystemNetworkMonitor] is `ConnectivityManager`. */
 internal interface NetworkMonitor {
-    /** Whether the default network is usable right now: connected and validated by the system. */
+    /** Whether the default network is usable right now: it declares internet access, validated or not (DEC-2). */
     fun currentlyOnline(): Boolean
 
     /** Reports every change of the default network from now on; closing the result stops it. Throws if refused. */
     fun register(onChange: (Boolean) -> Unit): AutoCloseable
 }
 
-/** `ConnectivityManager.registerDefaultNetworkCallback`; "usable" means the network has validated internet access. */
+/** `ConnectivityManager.registerDefaultNetworkCallback`; "usable" means it declares internet access (DEC-2). */
 internal class SystemNetworkMonitor(
     context: Context,
 ) : NetworkMonitor {
@@ -46,14 +46,17 @@ internal class SystemNetworkMonitor(
 private fun NetworkCapabilities?.isUsable(): Boolean =
     this?.let { capabilities -> isUsable(capabilities::hasCapability) } ?: false
 
-/** Whether a default network with the capabilities [has] answers for counts as online. [has] is `hasCapability`. */
-internal fun isUsable(has: (Int) -> Boolean): Boolean =
-    has(NetworkCapabilities.NET_CAPABILITY_INTERNET) && has(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+/**
+ * Whether a default network with the capabilities [has] answers for counts as online: it declares internet access,
+ * validated or not (DEC-2, R-012). A home LAN, split DNS, a captive portal or a VPN whose probe fails is "online,
+ * unknown": the request is attempted and the real success or typed failure shows. [has] is `hasCapability`.
+ */
+internal fun isUsable(has: (Int) -> Boolean): Boolean = has(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 
 /**
  * [Connectivity] from the system's default network (AND-003). The first value is read from the current default network
- * before the callback fires; after that the value follows the callback, and a network counts as online only when the
- * system has validated that it reaches the internet. A callback the system refuses to register leaves the value at
+ * before the callback fires; after that the value follows the callback, and a network counts as online when it declares
+ * internet access, validated or not (DEC-2). A callback the system refuses to register leaves the value at
  * offline (fail closed for mutations; reads use the cache). Call [close] when the graph is discarded.
  */
 class ConnectivityManagerConnectivity internal constructor(
