@@ -512,6 +512,30 @@
     <string name="note_prompt_reject">Reject</string>
     <string name="note_prompt_request_revision">Request revision</string>
 
+    <!-- Budget incident sheet (screen 12). -->
+    <string name="budget_nav_title">Budget incident</string>
+    <string name="budget_close">Close</string>
+    <string name="budget_usage">%1$s of %2$s monthly budget · %3$s used</string>
+    <string name="budget_percent">%1$d%%</string>
+    <string name="budget_choice_header">What now?</string>
+    <string name="budget_keep_paused_help">The agent stays paused. Nothing is spent until someone resumes it.</string>
+    <string name="budget_raise_help">Raises the monthly budget and resumes the agent. Asks you to confirm with your screen lock.</string>
+    <string name="budget_amount_label">New monthly budget</string>
+    <string name="budget_amount_placeholder">For example 250</string>
+    <string name="budget_amount_help">Must be more than %1$s, what has been spent.</string>
+    <string name="budget_working">Working</string>
+    <string name="budget_submit_raise">Raise and resume</string>
+    <string name="budget_submit_raise_amount">Raise to %1$s and resume</string>
+    <string name="budget_submit_choose">Choose an option</string>
+    <string name="budget_submit_keep">Keep paused</string>
+    <string name="budget_threshold_hard">Hard stop reached</string>
+    <string name="budget_threshold_soft">Soft limit reached</string>
+    <string name="budget_choice_keep_paused">Keep paused</string>
+    <string name="budget_choice_raise_and_resume">Raise and resume</string>
+    <string name="budget_outcome_kept_paused">Kept paused. The agent stays paused.</string>
+    <string name="budget_outcome_raised">Budget raised. The agent resumes.</string>
+    <string name="budget_outcome_no_longer_active">No longer active. It was resolved elsewhere or has ended.</string>
+
     <!-- What the last action said (FeedbackKind and InvalidKey). -->
     <string name="feedback_not_allowed">Your role doesn\'t allow this.</string>
     <string name="feedback_invalid">Check the highlighted field and try again.</string>

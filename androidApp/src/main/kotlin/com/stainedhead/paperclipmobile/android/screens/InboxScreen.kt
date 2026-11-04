@@ -69,13 +69,12 @@ private val EmptyHeight = 320.dp
  * holder belongs to the session: it feeds the tab badge and owns the refresh session, so this screen never closes it
  * and never starts a second one. It asks for one more refresh when it comes back into view, not when it first appears.
  *
- * [onOpenBudget] shows the budget incident sheet over the tabs (AND-042).
+ * A budget alert opens the budget incident sheet over the screen (AND-042); which incident is open survives rotation.
  */
 @Composable
 fun InboxScreen(
     session: GraphSession,
     navigator: TabNavigator,
-    onOpenBudget: (String) -> Unit = {},
 ) {
     val holder by session.inbox.collectAsStateWithLifecycle()
     val current = holder
@@ -85,6 +84,7 @@ fun InboxScreen(
     }
     val state by current.state.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
+    var budgetIncident by rememberSaveable { mutableStateOf<String?>(null) }
     var appeared by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (appeared) current.send(InboxIntent.Refresh)
@@ -98,7 +98,7 @@ fun InboxScreen(
 
             is InboxDestination.Sheet -> {
                 when (val sheet = destination.sheet) {
-                    is AppSheet.BudgetIncident -> onOpenBudget(sheet.id)
+                    is AppSheet.BudgetIncident -> budgetIncident = sheet.id
                     AppSheet.Settings -> Unit
                 }
             }
@@ -112,6 +112,13 @@ fun InboxScreen(
             }
         }
     })
+    budgetIncident?.let { id ->
+        // The incident may have been resolved in the sheet, so the Inbox reads again when it closes.
+        BudgetIncidentSheet(session, id, onClose = {
+            budgetIncident = null
+            current.send(InboxIntent.Refresh)
+        })
+    }
 }
 
 /** What the Inbox shows for a state. Stateless: tests and screenshots give it any state, including a viewer's. */

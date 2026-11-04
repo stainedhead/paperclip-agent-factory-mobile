@@ -6,6 +6,8 @@ import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
+import com.stainedhead.paperclipmobile.presentation.BudgetChoice
+import com.stainedhead.paperclipmobile.presentation.RoleUi
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -116,6 +118,22 @@ class AttentionScreenshotTest {
 
     @Test
     fun approvalLargeText() = approval(darkTheme = false, fontScale = LARGE_TEXT)
+
+    private fun budget(
+        darkTheme: Boolean,
+        fontScale: Float? = null,
+    ) = capture("budget", darkTheme, fontScale, { true }) {
+        BudgetContent(budgetState(RoleUi.Owner, BudgetChoice.RaiseAndResume), {}, onClose = {})
+    }
+
+    @Test
+    fun budgetLight() = budget(darkTheme = false)
+
+    @Test
+    fun budgetDark() = budget(darkTheme = true)
+
+    @Test
+    fun budgetLargeText() = budget(darkTheme = false, fontScale = LARGE_TEXT)
 
     @Test
     fun inboxLight() = inbox(darkTheme = false)

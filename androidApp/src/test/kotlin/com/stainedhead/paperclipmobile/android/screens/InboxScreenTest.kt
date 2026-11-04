@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -62,7 +63,6 @@ class InboxScreenTest {
     val rule = createComposeRule()
 
     private val app = DemoApp()
-    private val openedBudget = mutableListOf<String>()
 
     @After
     fun tearDown() = app.close()
@@ -72,7 +72,7 @@ class InboxScreenTest {
     private fun item(title: String): InboxItemUi = state.sections.flatMap { it.items }.first { it.title == title }
 
     private fun show() {
-        rule.setContent { app.Themed { InboxScreen(app.session, app.navigator) { openedBudget += it } } }
+        rule.setContent { app.Themed { InboxScreen(app.session, app.navigator) } }
         rule.waitUntil(WAIT_MILLIS) { rule.cardCount() == DEMO_CARDS }
     }
 
@@ -178,7 +178,10 @@ class InboxScreenTest {
 
         rule.onNodeWithTag("inbox-raise-${budget.id}").performClick()
 
-        openedBudget shouldBe listOf(DemoId.INCIDENT)
+        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("budget-sheet") }
+        rule.onNodeWithTag("budget-scope").assertTextEquals("Engineer 2")
+        rule.onNodeWithTag("budget-close").performClick()
+        rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("budget-sheet") }
         rule.onNodeWithTag("inbox-keep-paused-${budget.id}").performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.cardCount() == DEMO_CARDS - 1 }
     }

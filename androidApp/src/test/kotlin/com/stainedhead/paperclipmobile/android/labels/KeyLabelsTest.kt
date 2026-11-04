@@ -17,6 +17,9 @@ import com.stainedhead.paperclipmobile.presentation.AddressIssue
 import com.stainedhead.paperclipmobile.presentation.ApprovalActionUi
 import com.stainedhead.paperclipmobile.presentation.ApprovalStatusUi
 import com.stainedhead.paperclipmobile.presentation.ApprovalTypeUi
+import com.stainedhead.paperclipmobile.presentation.BudgetChoice
+import com.stainedhead.paperclipmobile.presentation.BudgetOutcomeUi
+import com.stainedhead.paperclipmobile.presentation.BudgetThresholdUi
 import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
 import com.stainedhead.paperclipmobile.presentation.DecisionFinalKind
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
@@ -160,5 +163,12 @@ class KeyLabelsTest {
         check("approval_done", ApprovalStatusUi.entries, ApprovalStatusUi::doneStringRes)
         check("approval_action", ApprovalActionUi.entries, ApprovalActionUi::stringRes)
         check("note_prompt", NotePromptKind.entries, NotePromptKind::stringRes)
+    }
+
+    @Test
+    fun everyBudgetKeyHasText() {
+        check("budget_threshold", BudgetThresholdUi.entries, BudgetThresholdUi::stringRes)
+        check("budget_choice", BudgetChoice.entries, BudgetChoice::stringRes)
+        check("budget_outcome", BudgetOutcomeUi.entries, BudgetOutcomeUi::stringRes)
     }
 }

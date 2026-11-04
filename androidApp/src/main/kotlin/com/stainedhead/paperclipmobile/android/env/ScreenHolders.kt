@@ -20,10 +20,10 @@ import com.stainedhead.paperclipmobile.umbrella.DecisionHints
  * session, so a replaced graph never reuses a holder (AND-011); the holder is closed with the back stack entry.
  */
 
-private fun GraphSession.openGraph() = checkNotNull(graph) { "A screen needs an open graph" }
+internal fun GraphSession.openGraph() = checkNotNull(graph) { "A screen needs an open graph" }
 
 /** The factory and company the person has selected: what a detail screen reads from. */
-private fun GraphSession.selection(): Pair<String, String> {
+internal fun GraphSession.selection(): Pair<String, String> {
     val state = checkNotNull(app) { "A detail screen needs the app holder" }.state.value
     return checkNotNull(state.selectedInstanceId) { "A detail screen needs a factory" } to
         checkNotNull(state.selectedCompanyId) { "A detail screen needs a company" }
