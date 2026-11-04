@@ -6,8 +6,10 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
 
 private const val RECORD_SUFFIX = ".rec"
 private const val TEMP_SUFFIX = ".tmp"
@@ -48,6 +50,7 @@ internal class RecordFiles(
                 it.fd.sync()
             }
             Files.move(temp.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE)
+            syncDirectory()
         } catch (e: IOException) {
             throw RecordFileException("a secret record could not be written", e)
         } finally {
@@ -64,9 +67,15 @@ internal class RecordFiles(
     fun paths(): List<String> {
         val names = directory.list().orEmpty()
         names.filter { it.endsWith(TEMP_SUFFIX) }.forEach { File(directory, it).delete() }
+        // A name this store did not write (a bad percent sequence) is skipped, never an exception, and left alone.
         return names
             .filter { it.endsWith(RECORD_SUFFIX) }
-            .map { URLDecoder.decode(it.removeSuffix(RECORD_SUFFIX), "UTF-8") }
+            .mapNotNull { runCatching { URLDecoder.decode(it.removeSuffix(RECORD_SUFFIX), "UTF-8") }.getOrNull() }
+    }
+
+    /** Makes the rename durable where the platform allows it, so a power loss cannot bring back the old record. */
+    private fun syncDirectory() {
+        runCatching { FileChannel.open(directory.toPath(), StandardOpenOption.READ).use { it.force(true) } }
     }
 
     private fun file(path: String) = File(directory, URLEncoder.encode(path, "UTF-8") + RECORD_SUFFIX)
