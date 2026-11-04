@@ -27,6 +27,10 @@ private fun <T> DomainResult<T>.value(): T = (this as DomainResult.Success).valu
 
 private fun Env.agent(id: String): Agent = agents.store.getValue(AgentId(id))
 
+private const val RAISE_CENTS = 50_000L
+
+private fun Money.raisedBy(cents: Long): Money = copy(minorUnits = minorUnits + cents)
+
 class ListAgentsTest {
     @Test
     fun `FR-070 agents are grouped with needs attention first and names sorted`() =
@@ -364,6 +368,88 @@ class SetAgentBudgetTest {
                 )(env.context(Role.Owner), env.agent("agent-eng-1"), fiveHundred)
 
             (result as MutationResult.Done).value.monthlyBudget shouldBe fiveHundred
+            env.biometrics.calls shouldBe 0
+        }
+
+    @Test
+    fun `R-004 a raise asks the device owner once and then calls the gateway once`() =
+        runTest {
+            val env = Env()
+            val agent = env.agent("agent-eng-1")
+
+            val result =
+                SetAgentBudget(env.agents, env.deviceAuth)(env.context(), agent, agent.monthlyBudget.raisedBy(1))
+
+            (result as MutationResult.Done).value.monthlyBudget shouldBe agent.monthlyBudget.raisedBy(1)
+            env.biometrics.calls shouldBe 1
+            env.agents.count("setBudget") shouldBe 1
+        }
+
+    @Test
+    fun `R-004 a raise the device owner does not approve makes no gateway call and changes nothing`() =
+        runTest {
+            for (outcome in BiometricResult.entries.filter { it != BiometricResult.Approved }) {
+                val env = Env()
+                env.biometrics.result = outcome
+                val agent = env.agent("agent-eng-1")
+
+                val result =
+                    SetAgentBudget(
+                        env.agents,
+                        env.deviceAuth,
+                    )(env.context(), agent, agent.monthlyBudget.raisedBy(RAISE_CENTS))
+
+                result shouldBe MutationResult.NotAuthorized(outcome)
+                env.biometrics.calls shouldBe 1
+                env.agents.count("setBudget") shouldBe 0
+                env.agent("agent-eng-1").monthlyBudget shouldBe agent.monthlyBudget
+            }
+        }
+
+    @Test
+    fun `R-004 a decrease and the same amount make no prompt and one gateway call`() =
+        runTest {
+            val env = Env()
+            val agent = env.agent("agent-eng-1")
+
+            SetAgentBudget(env.agents, env.deviceAuth)(env.context(), agent, Money.usdCents(1)) shouldBe
+                MutationResult.Done(agent.copy(monthlyBudget = Money.usdCents(1)))
+            SetAgentBudget(env.agents, env.deviceAuth)(env.context(), agent, agent.monthlyBudget)
+
+            env.biometrics.calls shouldBe 0
+            env.agents.count("setBudget") shouldBe 2
+        }
+
+    @Test
+    fun `R-004 setting the budget to zero stops the agent in practice and asks the device owner`() =
+        runTest {
+            val env = Env()
+            env.biometrics.result = BiometricResult.Cancelled
+
+            SetAgentBudget(
+                env.agents,
+                env.deviceAuth,
+            )(env.context(), env.agent("agent-eng-1"), Money.usdCents(0)) shouldBe
+                MutationResult.NotAuthorized(BiometricResult.Cancelled)
+
+            env.biometrics.calls shouldBe 1
+            env.agents.count("setBudget") shouldBe 0
+        }
+
+    @Test
+    fun `R-004 a denied role or a wrong currency is refused before any prompt`() =
+        runTest {
+            val env = Env()
+            val agent = env.agent("agent-eng-1")
+
+            SetAgentBudget(
+                env.agents,
+                env.deviceAuth,
+            )(env.context(Role.Operator), agent, agent.monthlyBudget.raisedBy(RAISE_CENTS)) shouldBe
+                MutationResult.Denied
+            SetAgentBudget(env.agents, env.deviceAuth)(env.context(), agent, Money(1_000_000, "EUR")) shouldBe
+                MutationResult.Invalid(InvalidInput.Amount(ResolutionIssue.WrongCurrency))
+
             env.biometrics.calls shouldBe 0
         }
 

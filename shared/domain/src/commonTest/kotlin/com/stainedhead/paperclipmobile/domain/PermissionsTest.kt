@@ -59,6 +59,7 @@ class PermissionsTest {
                 Action.RejectApproval,
                 Action.DecideDestructiveOption,
                 Action.RaiseBudgetAndResume,
+                Action.RaiseAgentBudget,
                 Action.RemoveFactory,
             )
 
