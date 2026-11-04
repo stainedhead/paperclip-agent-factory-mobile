@@ -1,0 +1,35 @@
+package com.stainedhead.paperclipmobile.architecture
+
+import java.io.File
+
+/** Kotlin sources the app ships (`main`, `debug`, `release`); unit and instrumented tests are not product code. */
+internal fun androidAppSources(root: File): List<File> =
+    listOf("main", "debug", "release")
+        .map { File(root, "androidApp/src/$it") }
+        .filter { it.isDirectory }
+        .flatMap { dir -> dir.walkTopDown().filter { it.extension == "kt" }.toList() }
+
+/** Infrastructure packages the app may import: platform types the umbrella exposes through `api`. */
+private val ALLOWED_INFRASTRUCTURE = "$APP_PACKAGE.infrastructure.platform"
+private val INFRASTRUCTURE = "$APP_PACKAGE.infrastructure."
+
+private fun codeLines(source: String): List<String> =
+    source
+        .lines()
+        .map { it.trim() }
+        .filterNot { it.startsWith("*") || it.startsWith("//") || it.startsWith("/*") }
+
+internal fun appInfrastructureImports(source: String): List<String> =
+    importsOf(source).filter { it.startsWith(INFRASTRUCTURE) && !it.startsWith(ALLOWED_INFRASTRUCTURE) }
+
+private val REVEAL_CALL = Regex("""\.\s*reveal\s*\(""")
+
+internal fun secretReveals(source: String): List<String> = codeLines(source).filter { REVEAL_CALL.containsMatchIn(it) }
+
+private val LITERAL_TEXT = Regex("""\bText\(\s*(?:text\s*=\s*)?"""")
+
+internal fun literalTexts(source: String): List<String> = codeLines(source).filter { LITERAL_TEXT.containsMatchIn(it) }
+
+/** Lines naming `BiometricPrompt` in a file that declares composables; only `AuthHost` may touch the prompt. */
+internal fun composableBiometricCalls(source: String): List<String> =
+    if ("@Composable" in source) codeLines(source).filter { "BiometricPrompt" in it } else emptyList()

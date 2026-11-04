@@ -96,7 +96,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 74 tests in 18 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 82 tests in 19 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -115,6 +115,7 @@ Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsi
 | `SourceScanningRulesTest` | The scanners behind the infrastructure rules flag every declaration form they claim to (F-C-6). |
 | `CatalogRulesTest` | No `*.gradle.kts` hard-codes a dependency or plugin version; every version comes from `gradle/libs.versions.toml` (the settings foojay plugin is the one exception). |
 | `AndroidManifestRulesTest` | The merged debug and release manifests of `androidApp` (task dependency: `processDebugManifest`, `processReleaseManifest`) set `allowBackup=false`, `dataExtractionRules` and `usesCleartextTraffic=false`, request only `INTERNET`, `ACCESS_NETWORK_STATE` and `USE_BIOMETRIC`, export only the launcher Activity, and (release) name no network security config and are not debuggable; the debug config allows cleartext for `localhost` and `10.0.2.2` only. |
+| `AndroidAppRulesTest` | `androidApp` imports no `infrastructure.*` package except `infrastructure.platform`, never calls `Secret.reveal`, has no `Text("literal")` and no `BiometricPrompt` in a file that declares composables. Each scan has a planted-violation test. |
 | `DocumentedCountsRulesTest` | The Konsist count written in this file is the real number of `@Test` methods. |
 
 Each rule also asserts it can see the code it guards (the infrastructure rule via its fixture), so an empty scan cannot pass vacuously, and the infrastructure rule scans every `src/<set>Main` source set (commonMain, iosMain, androidMain, jvmMain) of every module and fails when a Kotlin file sits outside them. Today the five infrastructure modules are stubs, so on the real tree it checks nothing yet; a fixture test with a module that has only `iosMain` and `androidMain` files proves it reports a violation there (F-D-7).
