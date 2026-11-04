@@ -31,8 +31,15 @@ fun rootDestination(
         else -> RootDestination.Tabs
     }
 
-/** The lock screen and the pairing step keep the window out of screenshots and the recents thumbnail (AND-014). */
+/**
+ * The lock screen and the pairing steps keep the window out of screenshots and the recents thumbnail (AND-014): the
+ * first-run pairing step ([pairing]) and a re-pair waiting on a factory's edit screen ([pairingOnTabs]).
+ */
 fun screenIsSecure(
     destination: RootDestination,
     pairing: Boolean,
-): Boolean = destination == RootDestination.Lock || (destination == RootDestination.FirstRun && pairing)
+    pairingOnTabs: Boolean = false,
+): Boolean =
+    destination == RootDestination.Lock ||
+        (destination == RootDestination.FirstRun && pairing) ||
+        (destination == RootDestination.Tabs && pairingOnTabs)

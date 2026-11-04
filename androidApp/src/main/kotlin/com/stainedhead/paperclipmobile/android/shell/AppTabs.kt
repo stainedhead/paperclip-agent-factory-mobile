@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
 import com.stainedhead.paperclipmobile.android.env.GraphSession
+import com.stainedhead.paperclipmobile.android.screens.EditFactoryScreen
 import com.stainedhead.paperclipmobile.android.screens.FactoriesScreen
 
 /**
@@ -28,7 +29,12 @@ fun AppTabs(
                 else -> Placeholder(tab.title, "tab-root-${tab.name}", tab.icon)
             }
         },
-        destination = { _, _ -> Placeholder(R.string.tab_placeholder, "pushed-placeholder", R.drawable.ic_warning) },
+        destination = { route, navigator ->
+            when (route) {
+                is AppRoute.EditFactory -> EditFactoryScreen(session, route.id, navigator)
+                else -> Placeholder(R.string.tab_placeholder, "pushed-placeholder", R.drawable.ic_warning)
+            }
+        },
     )
 }
 

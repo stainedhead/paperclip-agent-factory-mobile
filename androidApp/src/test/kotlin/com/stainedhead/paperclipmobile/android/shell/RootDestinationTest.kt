@@ -50,4 +50,11 @@ class RootDestinationTest {
         screenIsSecure(RootDestination.FirstRun, pairing = false) shouldBe false
         screenIsSecure(RootDestination.Tabs, pairing = false) shouldBe false
     }
+
+    @Test
+    fun `a re-pair from a factory's edit screen hides the window too, and only while it waits`() {
+        screenIsSecure(RootDestination.Tabs, pairing = false, pairingOnTabs = true) shouldBe true
+        screenIsSecure(RootDestination.Tabs, pairing = false, pairingOnTabs = false) shouldBe false
+        screenIsSecure(RootDestination.Loading, pairing = false, pairingOnTabs = true) shouldBe false
+    }
 }

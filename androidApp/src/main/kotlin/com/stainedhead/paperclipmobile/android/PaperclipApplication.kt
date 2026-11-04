@@ -14,7 +14,6 @@ import com.stainedhead.paperclipmobile.android.env.LiveGraphProvider
 import com.stainedhead.paperclipmobile.android.pairing.ActivityPageLauncher
 import com.stainedhead.paperclipmobile.android.pairing.CustomTabsPairingBrowser
 import com.stainedhead.paperclipmobile.android.pairing.PairingBrowserEvent
-import com.stainedhead.paperclipmobile.presentation.FirstRunIntent
 import kotlinx.coroutines.MainScope
 import java.lang.ref.WeakReference
 
@@ -73,8 +72,7 @@ class PaperclipApplication : Application() {
             environment
                 ?.session
                 ?.value
-                ?.firstRun
-                ?.send(FirstRunIntent.PairCancelled)
+                ?.cancelPairingAttempts()
         }
     }
 }

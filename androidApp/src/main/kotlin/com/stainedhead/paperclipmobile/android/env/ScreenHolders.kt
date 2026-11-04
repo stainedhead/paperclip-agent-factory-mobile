@@ -1,6 +1,8 @@
 package com.stainedhead.paperclipmobile.android.env
 
 import androidx.compose.runtime.Composable
+import com.stainedhead.paperclipmobile.presentation.EditInstanceIntent
+import com.stainedhead.paperclipmobile.presentation.EditInstanceState
 import com.stainedhead.paperclipmobile.presentation.FactoriesIntent
 import com.stainedhead.paperclipmobile.presentation.FactoriesState
 
@@ -16,3 +18,13 @@ fun rememberFactoriesHolder(session: GraphSession): HolderViewModel<FactoriesSta
     rememberHolderViewModel(
         "factories-${session.id}",
     ) { session.openGraph().createFactoriesStateHolder().screenHolder() }
+
+/** The holder of the add (null) or edit screen of one factory. */
+@Composable
+fun rememberEditHolder(
+    session: GraphSession,
+    instanceId: String?,
+): HolderViewModel<EditInstanceState, EditInstanceIntent> =
+    rememberHolderViewModel("edit-${session.id}-${instanceId ?: "new"}") {
+        session.openGraph().createEditInstanceStateHolder(instanceId).screenHolder()
+    }

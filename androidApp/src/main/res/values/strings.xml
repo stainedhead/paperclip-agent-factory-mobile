@@ -207,4 +207,40 @@
     <string name="paired_devices_loading">Loading keys…</string>
     <string name="paired_devices_loaded">Keys</string>
     <string name="paired_devices_failed">The keys could not be loaded.</string>
+
+    <!-- Add and edit factory (screen 9). -->
+    <string name="common_save">Save</string>
+    <string name="edit_title_add">Add factory</string>
+    <string name="edit_title_edit">Edit factory</string>
+    <string name="edit_section_factory">Factory</string>
+    <string name="edit_section_access">Your access · %1$s</string>
+    <string name="edit_section_access_anonymous">Your access</string>
+    <string name="edit_open_on_launch">Open on launch</string>
+    <string name="edit_board_key">Board key</string>
+    <string name="edit_section_security">Security</string>
+    <string name="edit_pin_title">Pin server certificate</string>
+    <string name="edit_pin_help">Recommended for public cloud factories</string>
+    <string name="edit_pin_placeholder">Base64 SHA-256 digest</string>
+    <string name="edit_pin_add">Add pin</string>
+    <string name="edit_pin_invalid">That is not a valid pin.</string>
+    <string name="edit_pin_remove">Remove pin %1$s</string>
+    <string name="edit_pair_again">Pair again</string>
+    <string name="edit_sign_out">Sign out</string>
+    <string name="edit_remove">Remove factory</string>
+    <string name="edit_address_change_warning">Changing the address removes this phone’s key for this factory. Check the new address, save, then pair again.</string>
+    <string name="edit_offline_note">You are offline. Checking and pairing need a connection.</string>
+    <string name="edit_discard_title">Discard your changes?</string>
+    <string name="edit_discard_confirm">Discard changes</string>
+    <string name="edit_discard_keep">Keep editing</string>
+    <string name="edit_sign_out_title">Sign out of “%1$s”?</string>
+    <string name="edit_sign_out_message">This phone’s key for this factory is deleted, and revoked on the server if it can be reached.</string>
+    <string name="edit_sign_out_confirm">Sign out</string>
+    <string name="edit_sign_out_here_only_title">Sign out of %1$s on this phone only?</string>
+    <string name="edit_sign_out_here_only_message">This phone\'s key could not be read, so it cannot be revoked on the server. Signing out removes it from this phone only; the key stays live on the server until you revoke it in the web app.</string>
+    <string name="edit_sign_out_here_only_confirm">Sign out here only</string>
+    <string name="edit_remove_message">This deletes its saved data and access key from this phone, and revokes the key on the server if it can be reached. Your work in Paperclip is not affected.</string>
+    <string name="remove_title">Remove “%1$s”?</string>
+    <string name="remove_confirm">Remove</string>
+    <string name="remove_here_only_message">This phone\'s key could not be read, so it cannot be revoked on the server. Removing deletes the factory from this phone only; the key stays live on the server until you revoke it in the web app.</string>
+    <string name="remove_here_only_confirm">Remove here only</string>
 </resources>

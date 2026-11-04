@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Everything one open graph owns for the life of the app shell: the app holder (lock, selected factory and company),
@@ -44,6 +45,7 @@ class GraphSession internal constructor(
     private var refreshSession: RefreshSession? = null
     private var closed = false
     private val autoRefresh = autoRefresh
+    private val pairingCancels = CopyOnWriteArrayList<() -> Unit>()
 
     val app: ScreenHolder<AppState, AppIntent>? = graph?.createAppStateHolder()?.screenHolder()
     val firstRun: ScreenHolder<FirstRunState, FirstRunIntent>? = graph?.createFirstRunStateHolder()?.screenHolder()
@@ -109,6 +111,21 @@ class GraphSession internal constructor(
         refreshSession = null
         mutableInbox.value?.close()
         mutableInbox.value = null
+    }
+
+    /**
+     * A screen that can wait for the approval page (the edit screen's re-pair) registers how to cancel its wait; the
+     * returned function removes it again. The first-run flow is cancelled by [cancelPairingAttempts] too.
+     */
+    fun onPairingCancelled(cancel: () -> Unit): () -> Unit {
+        pairingCancels += cancel
+        return { pairingCancels -= cancel }
+    }
+
+    /** The approval page could not be shown: every pairing that waits for it ends as cancelled, none keeps waiting. */
+    fun cancelPairingAttempts() {
+        firstRun?.send(FirstRunIntent.PairCancelled)
+        pairingCancels.forEach { it() }
     }
 
     /** Stops refreshing and closes every holder this session owns, once. The graph itself is closed by the owner. */

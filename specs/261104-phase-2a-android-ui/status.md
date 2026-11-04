@@ -58,7 +58,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T3.9 Roborazzi wiring and light/dark shell baselines
 - [ ] 2a-4 Factories family (8, 9, 13, 16, Paired devices)
   - [x] T4.1 Factories screen
-  - [ ] T4.2 Add / Edit factory
+  - [x] T4.2 Add / Edit factory
   - [ ] T4.3 Manage factories: reorder and remove
   - [ ] T4.4 Settings and Paired devices
   - [ ] T4.5 Diagnostics screen, redacted copy report, logging wrapper

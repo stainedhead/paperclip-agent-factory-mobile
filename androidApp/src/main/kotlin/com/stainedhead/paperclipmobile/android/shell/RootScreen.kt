@@ -7,6 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -41,9 +44,14 @@ fun RootScreen(
     onSecureChanged: (Boolean) -> Unit = {},
 ) {
     val session by environment.session.collectAsStateWithLifecycle()
+    var pairingOnTabs by remember { mutableStateOf(false) }
+    val reportPairing = remember { { waiting: Boolean -> pairingOnTabs = waiting } }
     val pinnedClock = if (session.mode == GraphMode.Demo) session.graph?.nowEpochMillis else null
     Box(Modifier.fillMaxSize().background(AppTheme.colors.background).testTag("root")) {
-        CompositionLocalProvider(LocalReferenceMillis provides pinnedClock) {
+        CompositionLocalProvider(
+            LocalReferenceMillis provides pinnedClock,
+            LocalPairingSecurity provides reportPairing,
+        ) {
             val app = session.app
             val owned = session.firstRun
             if (session.notice != null || app == null || owned == null) {
@@ -63,6 +71,7 @@ fun RootScreen(
                     badge,
                     LockActions(appState.unlockIssue) { app.send(AppIntent.UnlockRequested) },
                     Slots(lock, firstRun, tabs),
+                    pairingOnTabs,
                     onSecureChanged,
                 )
             }
@@ -86,10 +95,12 @@ private fun Destination(
     badge: Int,
     lockActions: LockActions,
     slots: Slots,
+    pairingOnTabs: Boolean,
     onSecureChanged: (Boolean) -> Unit,
 ) {
     val destination = rootDestination(null, appState, firstRunInProgress)
-    val secure = screenIsSecure(destination, pairing = firstRunState.step == FirstRunStep.Pair)
+    val secure =
+        screenIsSecure(destination, pairing = firstRunState.step == FirstRunStep.Pair, pairingOnTabs = pairingOnTabs)
     SideEffect { onSecureChanged(secure) }
     when (destination) {
         RootDestination.StartupNotice, RootDestination.Loading -> {

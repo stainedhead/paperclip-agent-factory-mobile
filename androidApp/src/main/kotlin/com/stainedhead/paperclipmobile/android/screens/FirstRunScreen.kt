@@ -67,7 +67,6 @@ import com.stainedhead.paperclipmobile.presentation.ProbeStatus
 
 private val HeaderBox = 48.dp
 private val HeaderGlyph = 24.dp
-private val ChoiceGlyph = 24.dp
 
 private typealias FirstRunHolder = ScreenHolder<FirstRunState, FirstRunIntent>
 
@@ -179,38 +178,8 @@ private fun AddressStep(
 }
 
 @Composable
-private fun ProbeResult(state: FirstRunState) {
-    when (state.probe) {
-        ProbeStatus.Accepted -> {
-            ResultCard(
-                stringResource(ProbeStatus.Accepted.stringRes()),
-                StatusTone.Success,
-                Modifier.testTag("probe-result"),
-            ) {
-                val details =
-                    listOfNotNull(
-                        state.exposure?.let { stringResource(it.stringRes()) },
-                        state.serverVersion?.let { stringResource(R.string.probe_version, it) },
-                    )
-                Text(details.joinToString(" · "), style = AppType.body, color = AppTheme.colors.textPrimary)
-            }
-        }
-
-        ProbeStatus.Refused -> {
-            ResultCard(
-                stringResource(ProbeStatus.Refused.stringRes()),
-                StatusTone.Critical,
-                Modifier.testTag("probe-result"),
-            ) {
-                state.probeRefusal?.let {
-                    Text(stringResource(it.stringRes()), style = AppType.body, color = AppTheme.colors.textPrimary)
-                }
-            }
-        }
-
-        ProbeStatus.Idle, ProbeStatus.Probing, ProbeStatus.Failed -> {}
-    }
-}
+private fun ProbeResult(state: FirstRunState) =
+    ProbeResultCard(state.probe, state.probeRefusal, state.exposure, state.serverVersion, "probe-result")
 
 /** Step 2: approve this phone in the browser tab; the shared use case polls until the person decides. */
 @Composable
@@ -326,37 +295,6 @@ private fun SecureStep(
         enabled = !state.isBusy,
         icon = painterResource(R.drawable.ic_lock),
     )
-}
-
-/** One company in a single-choice list; the role is shown in words. */
-@Composable
-private fun CompanyChoiceRow(
-    company: CompanyUi,
-    isChosen: Boolean,
-    onChoose: () -> Unit,
-) {
-    val colors = AppTheme.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = Spacing.minimumTarget)
-            .selectable(selected = isChosen, role = Role.RadioButton, onClick = onChoose)
-            .testTag("company-choice-${company.id}"),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CardRow(
-            title = company.name,
-            help = stringResource(company.role.stringRes()),
-            modifier = Modifier.weight(1f),
-        ) {
-            Icon(
-                painterResource(if (isChosen) R.drawable.ic_check_circle else R.drawable.ic_radio_unchecked),
-                contentDescription = null,
-                modifier = Modifier.size(ChoiceGlyph),
-                tint = if (isChosen) colors.accent else colors.textSecondary,
-            )
-        }
-    }
 }
 
 /** The address and the name. Typed text lives here; only change intents go to the holder (ADR-108). */
