@@ -22,6 +22,9 @@ abstract class ProtectedStoreHarness {
 
     /** Whether the person approves the next request. */
     abstract var approve: Boolean
+
+    /** The system invalidates the protected key (a new fingerprint was enrolled). */
+    abstract fun invalidate()
 }
 
 /** Behaviour every [SecretStore] must have (PRD FR-010). Real adapters subclass this in Phase 1b. */
@@ -41,22 +44,7 @@ abstract class SecretStoreContract {
         deleteRemovesOnlyThatKey()
         deleteNamespaceRemovesOnlyThatInstance()
         namespacesListsEveryInstanceThatHoldsASecret()
-        createProtected()?.let { twoConsecutiveProtectedReadsPromptTwice(it) }
-    }
-
-    private suspend fun twoConsecutiveProtectedReadsPromptTwice(harness: ProtectedStoreHarness) {
-        val key = SecretKey(a, SecretName.BoardToken)
-        harness.approve = true
-        val protected = SecretPolicy(requireUserPresence = true)
-        check(harness.store.put(key, Secret.of("one"), protected) == SecretWriteResult.Stored) {
-            "a protected put must store"
-        }
-        val before = harness.prompts
-        repeat(2) {
-            val read = harness.store.get(key, "contract test")
-            check(read is SecretReadResult.Found && read.secret == Secret.of("one")) { "protected get must return it" }
-        }
-        check(harness.prompts - before == 2) { "every protected read asks the person, an approval is never reused" }
+        ProtectedSecretStoreCases(::createProtected).runAll()
     }
 
     private suspend fun SecretStore.read(key: SecretKey): SecretReadResult = get(key, "contract test")

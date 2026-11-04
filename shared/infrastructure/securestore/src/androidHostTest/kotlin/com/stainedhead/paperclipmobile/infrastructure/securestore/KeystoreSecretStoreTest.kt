@@ -36,6 +36,11 @@ class KeystoreSecretStoreContractTest : SecretStoreContract() {
                 set(value) {
                     fixture.answer = if (value) BiometricResult.Approved else BiometricResult.Cancelled
                 }
+
+            override fun invalidate() {
+                fixture.backend.keys.values
+                    .forEach { it.invalidated = true }
+            }
         }
     }
 
