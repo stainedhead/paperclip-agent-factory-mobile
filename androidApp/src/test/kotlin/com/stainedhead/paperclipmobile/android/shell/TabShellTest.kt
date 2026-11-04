@@ -30,11 +30,11 @@ class TabShellTest {
         PaperclipTheme(darkTheme = false) {
             TabShell(
                 inboxBadge = badge,
-                tabRoot = { tab, push ->
+                tabRoot = { tab, nav ->
                     Column {
                         Text("root ${tab.name}")
-                        AppButton("push settings", { push(AppRoute.Settings) })
-                        AppButton("push decision", { push(AppRoute.Decision("dec-1")) })
+                        AppButton("push settings", { nav.push(AppRoute.Settings) })
+                        AppButton("push decision", { nav.push(AppRoute.Decision("dec-1")) })
                     }
                 },
                 destination = { route, _ -> Text("screen $route") },

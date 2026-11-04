@@ -5,15 +5,19 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.application.instance.InstanceNameIssue
 import com.stainedhead.paperclipmobile.domain.Exposure
+import com.stainedhead.paperclipmobile.domain.IdlePeriod
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.presentation.ActionsDisabledReason
 import com.stainedhead.paperclipmobile.presentation.AddressIssue
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
 import com.stainedhead.paperclipmobile.presentation.ErrorKey
 import com.stainedhead.paperclipmobile.presentation.FactoryStatusUi
+import com.stainedhead.paperclipmobile.presentation.PairedDevicesStatus
 import com.stainedhead.paperclipmobile.presentation.PairingStatus
 import com.stainedhead.paperclipmobile.presentation.ProbeStatus
+import com.stainedhead.paperclipmobile.presentation.RemovalEffect
 import com.stainedhead.paperclipmobile.presentation.RoleUi
+import com.stainedhead.paperclipmobile.presentation.ServerKeyOutcome
 import com.stainedhead.paperclipmobile.presentation.SeverityUi
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
 import io.kotest.matchers.shouldBe
@@ -83,4 +87,17 @@ class KeyLabelsTest {
 
     @Test
     fun everyFactoryStatusHasText() = check("status", FactoryStatusUi.entries, FactoryStatusUi::stringRes)
+
+    @Test
+    fun everyServerKeyOutcomeHasText() = check("key_outcome", ServerKeyOutcome.entries, ServerKeyOutcome::stringRes)
+
+    @Test
+    fun everyRemovalEffectHasText() = check("removal", RemovalEffect.entries, RemovalEffect::stringRes)
+
+    @Test
+    fun everyIdlePeriodHasText() = check("idle", IdlePeriod.entries, IdlePeriod::stringRes)
+
+    @Test
+    fun everyPairedDevicesStatusHasText() =
+        check("paired_devices", PairedDevicesStatus.entries, PairedDevicesStatus::stringRes)
 }

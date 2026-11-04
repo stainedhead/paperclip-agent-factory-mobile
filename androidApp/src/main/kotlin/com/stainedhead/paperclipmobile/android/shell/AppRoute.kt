@@ -66,6 +66,10 @@ sealed interface AppRoute {
 
     @Serializable
     data object PairedDevices : AppRoute
+
+    /** What the app knows about itself, as typed values (AND-018); reached from Settings. */
+    @Serializable
+    data object Diagnostics : AppRoute
 }
 
 /** What opens over the tabs instead of being pushed. */

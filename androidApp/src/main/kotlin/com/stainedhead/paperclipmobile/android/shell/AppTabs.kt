@@ -7,28 +7,41 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
+import com.stainedhead.paperclipmobile.android.env.GraphSession
+import com.stainedhead.paperclipmobile.android.screens.FactoriesScreen
 
 /**
- * The tab shell. The tab roots and the pushed screens arrive with their milestones (2a-4 to 2a-7); until then each
- * shows its title, so the shell, the badge and the navigation can be used and tested end to end.
+ * The tab shell with its screens. The Factories family is here (2a-4); the other tab roots and pushed screens arrive
+ * with their milestones (2a-5 to 2a-7) and show their title until then, so the shell, the badge and the navigation can
+ * be used and tested end to end.
  */
 @Composable
-fun AppTabs(inboxBadge: Int) {
+fun AppTabs(
+    session: GraphSession,
+    inboxBadge: Int,
+) {
     TabShell(
         inboxBadge = inboxBadge,
-        tabRoot = { tab, _ ->
-            EmptyState(
-                icon = painterResource(tab.icon),
-                title = stringResource(tab.title),
-                message = stringResource(R.string.tab_placeholder),
-                modifier = Modifier.testTag("tab-root-${tab.name}"),
-            )
+        tabRoot = { tab, navigator ->
+            when (tab) {
+                AppTab.Factories -> FactoriesScreen(session, navigator)
+                else -> Placeholder(tab.title, "tab-root-${tab.name}", tab.icon)
+            }
         },
-        destination = { _, _ ->
-            EmptyState(
-                icon = painterResource(R.drawable.ic_warning),
-                title = stringResource(R.string.tab_placeholder),
-            )
-        },
+        destination = { _, _ -> Placeholder(R.string.tab_placeholder, "pushed-placeholder", R.drawable.ic_warning) },
+    )
+}
+
+@Composable
+private fun Placeholder(
+    title: Int,
+    tag: String,
+    icon: Int,
+) {
+    EmptyState(
+        icon = painterResource(icon),
+        title = stringResource(title),
+        message = stringResource(R.string.tab_placeholder),
+        modifier = Modifier.testTag(tag),
     )
 }

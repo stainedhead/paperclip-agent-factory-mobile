@@ -57,7 +57,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T3.8 Process death and configuration change: `SavedStateHandle` for route stack and selection, `rememberS
   - [x] T3.9 Roborazzi wiring and light/dark shell baselines
 - [ ] 2a-4 Factories family (8, 9, 13, 16, Paired devices)
-  - [ ] T4.1 Factories screen
+  - [x] T4.1 Factories screen
   - [ ] T4.2 Add / Edit factory
   - [ ] T4.3 Manage factories: reorder and remove
   - [ ] T4.4 Settings and Paired devices

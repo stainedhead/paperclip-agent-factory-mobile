@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -38,13 +39,13 @@ import com.stainedhead.paperclipmobile.android.designsystem.AppType
  * selected tab again returns to its root, as the platform does. The Inbox badge is [inboxBadge], the server's count;
  * the shell never computes it.
  *
- * [tabRoot] draws a tab's first screen and may push a route; [destination] draws a pushed route and may pop it.
+ * [tabRoot] draws a tab's first screen and [destination] a pushed route; both get the tab's [TabNavigator].
  */
 @Composable
 fun TabShell(
     inboxBadge: Int,
-    tabRoot: @Composable (tab: AppTab, push: (AppRoute) -> Unit) -> Unit,
-    destination: @Composable (route: AppRoute, pop: () -> Unit) -> Unit,
+    tabRoot: @Composable (tab: AppTab, navigator: TabNavigator) -> Unit,
+    destination: @Composable (route: AppRoute, navigator: TabNavigator) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selected by rememberSaveable { mutableStateOf(AppTab.Inbox) }
@@ -75,28 +76,37 @@ fun TabShell(
 private fun TabHost(
     tab: AppTab,
     controller: NavHostController,
-    tabRoot: @Composable (AppTab, (AppRoute) -> Unit) -> Unit,
-    destination: @Composable (AppRoute, () -> Unit) -> Unit,
+    tabRoot: @Composable (AppTab, TabNavigator) -> Unit,
+    destination: @Composable (AppRoute, TabNavigator) -> Unit,
 ) {
+    val navigator =
+        remember(controller) {
+            TabNavigator(
+                push = { route -> controller.navigate(route) },
+                pop = { controller.popBackStack() },
+                popToRoot = { controller.popBackStack(TabRoot, inclusive = false) },
+            )
+        }
     NavHost(controller, startDestination = TabRoot) {
-        composable<TabRoot> { tabRoot(tab) { route -> controller.navigate(route) } }
-        screen<AppRoute.Decision>(controller, destination)
-        screen<AppRoute.Approval>(controller, destination)
-        screen<AppRoute.Issue>(controller, destination)
-        screen<AppRoute.Agent>(controller, destination)
-        screen<AppRoute.Run>(controller, destination)
-        screen<AppRoute.ManageFactories>(controller, destination)
-        screen<AppRoute.EditFactory>(controller, destination)
-        screen<AppRoute.Settings>(controller, destination)
-        screen<AppRoute.PairedDevices>(controller, destination)
+        composable<TabRoot> { tabRoot(tab, navigator) }
+        screen<AppRoute.Decision>(navigator, destination)
+        screen<AppRoute.Approval>(navigator, destination)
+        screen<AppRoute.Issue>(navigator, destination)
+        screen<AppRoute.Agent>(navigator, destination)
+        screen<AppRoute.Run>(navigator, destination)
+        screen<AppRoute.ManageFactories>(navigator, destination)
+        screen<AppRoute.EditFactory>(navigator, destination)
+        screen<AppRoute.Settings>(navigator, destination)
+        screen<AppRoute.PairedDevices>(navigator, destination)
+        screen<AppRoute.Diagnostics>(navigator, destination)
     }
 }
 
 private inline fun <reified R : AppRoute> NavGraphBuilder.screen(
-    controller: NavHostController,
-    noinline destination: @Composable (AppRoute, () -> Unit) -> Unit,
+    navigator: TabNavigator,
+    noinline destination: @Composable (AppRoute, TabNavigator) -> Unit,
 ) {
-    composable<R> { entry -> destination(entry.toRoute<R>()) { controller.popBackStack() } }
+    composable<R> { entry -> destination(entry.toRoute<R>(), navigator) }
 }
 
 @Composable

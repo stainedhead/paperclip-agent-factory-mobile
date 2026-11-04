@@ -32,6 +32,7 @@ class AppRouteTest {
                 "EditFactory",
                 "Settings",
                 "PairedDevices",
+                "Diagnostics",
             )
     }
 
@@ -49,6 +50,7 @@ class AppRouteTest {
                 AppRoute.EditFactory("inst-1"),
                 AppRoute.Settings,
                 AppRoute.PairedDevices,
+                AppRoute.Diagnostics,
             )
         val serializer = serializer<AppRoute>()
 

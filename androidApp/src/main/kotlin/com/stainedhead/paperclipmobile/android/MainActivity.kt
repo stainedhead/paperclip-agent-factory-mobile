@@ -45,7 +45,7 @@ class MainActivity : FragmentActivity() {
                     firstRun = { env, session ->
                         FirstRunScreen(session, onTryDemo = if (env.demoEntryAvailable) env::useDemo else null)
                     },
-                    tabs = { _, badge -> AppTabs(badge) },
+                    tabs = { session, badge -> AppTabs(session, badge) },
                     onSecureChanged = privacy::setScreenSecure,
                 )
             }

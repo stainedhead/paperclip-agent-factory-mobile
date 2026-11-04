@@ -163,4 +163,48 @@
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
+
+    <!-- Factories (screen 8). -->
+    <string name="status_key_expired">Key expired</string>
+    <plurals name="expiry_days">
+        <item quantity="one">Board key expires in %1$d day</item>
+        <item quantity="other">Board key expires in %1$d days</item>
+    </plurals>
+    <string name="expiry_expired">Board key expired</string>
+    <string name="factories_settings">Settings</string>
+    <string name="factories_manage">Edit</string>
+    <string name="factories_add">Add a factory</string>
+    <string name="factories_pair_again">Pair again</string>
+    <string name="factories_details">Edit factory</string>
+    <string name="factories_empty_title">No factories yet</string>
+    <string name="factories_empty_message">Add a factory to start deciding from your phone.</string>
+    <string name="factories_loading_companies">Loading companies…</string>
+    <string name="factories_switch_to">Switch to %1$s</string>
+
+    <!-- ServerKeyOutcome: what happened to the key on the server when a factory was signed out or removed. -->
+    <string name="key_outcome_revoked">The key was revoked on the server.</string>
+    <string name="key_outcome_already_invalid">The key was already invalid on the server.</string>
+    <string name="key_outcome_unconfirmed">The server could not be reached, so the key may still be valid. Revoke it in the web app.</string>
+    <string name="key_outcome_not_attempted">No key was stored, so none was revoked.</string>
+    <string name="key_outcome_declined">The fingerprint, face or screen lock was declined, so the key was not revoked on the server and nothing was deleted.</string>
+
+    <!-- RemovalEffect: what removing a factory deletes, said before the person confirms. -->
+    <string name="removal_configuration">Deletes its saved settings from this phone.</string>
+    <string name="removal_cached_data">Deletes its cached data from this phone.</string>
+    <string name="removal_stored_key">Deletes its access key from this phone.</string>
+    <string name="removal_server_key">Revokes the key on the server if it can be reached.</string>
+
+    <!-- IdlePeriod: how long the app may stay in the background before it locks. -->
+    <string name="idle_immediately">Immediately</string>
+    <string name="idle_one_minute">1 minute</string>
+    <string name="idle_five_minutes">5 minutes</string>
+    <string name="idle_fifteen_minutes">15 minutes</string>
+    <string name="idle_thirty_minutes">30 minutes</string>
+    <string name="idle_one_hour">1 hour</string>
+
+    <!-- PairedDevicesStatus. -->
+    <string name="paired_devices_idle">Not loaded</string>
+    <string name="paired_devices_loading">Loading keys…</string>
+    <string name="paired_devices_loaded">Keys</string>
+    <string name="paired_devices_failed">The keys could not be loaded.</string>
 </resources>

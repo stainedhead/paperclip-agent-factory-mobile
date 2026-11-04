@@ -70,7 +70,7 @@ class RootScreenTest {
                         if (autoUnlock) LaunchedEffect(Unit) { actions.onUnlock() }
                     },
                     firstRun = { _, _ -> Text("first run screen") },
-                    tabs = { _, badge -> AppTabs(badge) },
+                    tabs = { session, badge -> AppTabs(session, badge) },
                     onSecureChanged = { secure += it },
                 )
             }

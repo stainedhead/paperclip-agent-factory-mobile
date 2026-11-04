@@ -53,10 +53,10 @@ class RestorationTest {
             PaperclipTheme(darkTheme = false) {
                 TabShell(
                     inboxBadge = 0,
-                    tabRoot = { tab, push ->
+                    tabRoot = { tab, navigator ->
                         Column {
                             Text("root ${tab.name}")
-                            AppButton("push settings", { push(AppRoute.Settings) })
+                            AppButton("push settings", { navigator.push(AppRoute.Settings) })
                         }
                     },
                     destination = { route, _ -> Text("screen $route") },

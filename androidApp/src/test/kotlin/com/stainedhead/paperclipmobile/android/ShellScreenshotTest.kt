@@ -9,6 +9,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
 import com.stainedhead.paperclipmobile.android.env.GraphMode
 import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
+import com.stainedhead.paperclipmobile.android.env.demoOpen
 import com.stainedhead.paperclipmobile.android.env.firstRunOpen
 import com.stainedhead.paperclipmobile.android.screens.FirstRunScreen
 import com.stainedhead.paperclipmobile.android.shell.AppTabs
@@ -58,11 +59,18 @@ class ShellScreenshotTest {
         rule.onRoot().captureRoboImage("src/test/screenshots/$name-${if (darkTheme) "dark" else "light"}.png")
     }
 
-    @Test
-    fun shellLight() = capture("shell", darkTheme = false) { AppTabs(inboxBadge = BADGE) }
+    private fun shell(darkTheme: Boolean) {
+        val env = AppEnvironment(ScriptedProvider(GraphMode.Demo, listOf(::demoOpen)), scope, demoEntryAvailable = true)
+        environment = env
+        val session = env.session.value
+        capture("shell", darkTheme) { AppTabs(session, inboxBadge = BADGE) }
+    }
 
     @Test
-    fun shellDark() = capture("shell", darkTheme = true) { AppTabs(inboxBadge = BADGE) }
+    fun shellLight() = shell(darkTheme = false)
+
+    @Test
+    fun shellDark() = shell(darkTheme = true)
 
     private fun firstRun(darkTheme: Boolean) {
         val env =

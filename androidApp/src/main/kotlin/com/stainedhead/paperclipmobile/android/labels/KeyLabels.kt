@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.stainedhead.paperclipmobile.android.R
 import com.stainedhead.paperclipmobile.application.instance.InstanceNameIssue
 import com.stainedhead.paperclipmobile.domain.Exposure
+import com.stainedhead.paperclipmobile.domain.IdlePeriod
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.presentation.ActionsDisabledReason
 import com.stainedhead.paperclipmobile.presentation.AddressIssue
@@ -13,9 +14,12 @@ import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
 import com.stainedhead.paperclipmobile.presentation.ErrorKey
 import com.stainedhead.paperclipmobile.presentation.ErrorUi
 import com.stainedhead.paperclipmobile.presentation.FactoryStatusUi
+import com.stainedhead.paperclipmobile.presentation.PairedDevicesStatus
 import com.stainedhead.paperclipmobile.presentation.PairingStatus
 import com.stainedhead.paperclipmobile.presentation.ProbeStatus
+import com.stainedhead.paperclipmobile.presentation.RemovalEffect
 import com.stainedhead.paperclipmobile.presentation.RoleUi
+import com.stainedhead.paperclipmobile.presentation.ServerKeyOutcome
 import com.stainedhead.paperclipmobile.presentation.SeverityUi
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
 
@@ -153,6 +157,45 @@ fun FactoryStatusUi.stringRes(): Int =
         FactoryStatusUi.SignedIn -> R.string.status_signed_in
         FactoryStatusUi.SignedOut -> R.string.status_signed_out
         FactoryStatusUi.NeedsRePairing -> R.string.status_needs_re_pairing
+    }
+
+@StringRes
+fun ServerKeyOutcome.stringRes(): Int =
+    when (this) {
+        ServerKeyOutcome.Revoked -> R.string.key_outcome_revoked
+        ServerKeyOutcome.AlreadyInvalid -> R.string.key_outcome_already_invalid
+        ServerKeyOutcome.Unconfirmed -> R.string.key_outcome_unconfirmed
+        ServerKeyOutcome.NotAttempted -> R.string.key_outcome_not_attempted
+        ServerKeyOutcome.Declined -> R.string.key_outcome_declined
+    }
+
+@StringRes
+fun RemovalEffect.stringRes(): Int =
+    when (this) {
+        RemovalEffect.Configuration -> R.string.removal_configuration
+        RemovalEffect.CachedData -> R.string.removal_cached_data
+        RemovalEffect.StoredKey -> R.string.removal_stored_key
+        RemovalEffect.ServerKey -> R.string.removal_server_key
+    }
+
+@StringRes
+fun IdlePeriod.stringRes(): Int =
+    when (this) {
+        IdlePeriod.Immediately -> R.string.idle_immediately
+        IdlePeriod.OneMinute -> R.string.idle_one_minute
+        IdlePeriod.FiveMinutes -> R.string.idle_five_minutes
+        IdlePeriod.FifteenMinutes -> R.string.idle_fifteen_minutes
+        IdlePeriod.ThirtyMinutes -> R.string.idle_thirty_minutes
+        IdlePeriod.OneHour -> R.string.idle_one_hour
+    }
+
+@StringRes
+fun PairedDevicesStatus.stringRes(): Int =
+    when (this) {
+        PairedDevicesStatus.Idle -> R.string.paired_devices_idle
+        PairedDevicesStatus.Loading -> R.string.paired_devices_loading
+        PairedDevicesStatus.Loaded -> R.string.paired_devices_loaded
+        PairedDevicesStatus.Failed -> R.string.paired_devices_failed
     }
 
 /** The message for an error: its key's text, followed by the server's own reason for a rejection (never raw JSON). */
