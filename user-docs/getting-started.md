@@ -42,13 +42,33 @@ Individual gates:
 |---|---|
 | `./gradlew spotlessCheck` | ktlint formatting |
 | `./gradlew detekt` | static analysis, zero issues allowed |
-| `./gradlew :shared:umbrella:konsistTest` | the 37 architecture tests |
+| `./gradlew :shared:umbrella:konsistTest` | the architecture tests (count in docs/technical-details.md) |
 | `./gradlew allTests` | `commonTest` on JVM, Android host and iOS simulator |
 | `./gradlew :shared:<module>:jvmTest` | fast loop for one module (`domain`, `application`, `presentation`, `testing`, `umbrella`) |
 | `./gradlew koverVerifyCore koverVerifyPresentation` | the 90% coverage gates (domain + application; presentation). `koverVerify` alone checks nothing meaningful. |
 | `./gradlew lint` | Android Lint |
 
 Coverage numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q`, then read `build/reports/kover/reportCore.xml` and `reportPresentation.xml`. Numbers for this branch are in `docs/technical-details.md` (Tests and coverage).
+
+## Build the Android app and run the device tests
+
+```bash
+./gradlew :androidApp:assembleDebug :androidApp:assembleRelease   # builds the app (release is unsigned)
+./gradlew :androidApp:installDebug                               # installs on the running emulator or device
+```
+
+`check` never needs a device. The instrumented tests (Keystore, connectivity, persistence, live graph) run only on an emulator or a phone, one module at a time:
+
+```bash
+"$ANDROID_HOME/emulator/emulator" -avd Pixel_9_Pro -no-window -no-audio -no-snapshot &   # or start it from Android Studio
+"$ANDROID_HOME/platform-tools/adb" wait-for-device shell 'while [ "$(getprop sys.boot_completed)" != 1 ]; do sleep 2; done'
+./gradlew :shared:infrastructure:securestore:connectedAndroidDeviceTest
+./gradlew :shared:infrastructure:platform:connectedAndroidDeviceTest
+./gradlew :shared:infrastructure:persistence:connectedAndroidDeviceTest
+./gradlew :shared:umbrella:connectedAndroidDeviceTest
+```
+
+Device test method names are camelCase: DEX 039 (our minSdk 28) rejects spaces in method names, so the backticked sentence names used in `commonTest` do not compile into an instrumented test. A module opts in to device tests by having a `src/androidDeviceTest` directory.
 
 ## Build the XCFramework and run the iOS tests
 

@@ -30,6 +30,25 @@ extensions.configure<KotlinMultiplatformExtension> {
         compileSdk = PafmAndroid.COMPILE_SDK
         minSdk = PafmAndroid.MIN_SDK
         withHostTest { }
+        // Instrumented tests run only on an emulator or device (connectedAndroidDeviceTest); `check` never touches
+        // them. A module opts in by having an src/androidDeviceTest directory.
+        if (layout.projectDirectory
+                .dir("src/androidDeviceTest")
+                .asFile.isDirectory
+        ) {
+            withDeviceTest {
+                instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            }
+        }
+    }
+    sourceSets.matching { it.name == "androidDeviceTest" }.configureEach {
+        dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.findLibrary("androidx-test-runner").get())
+            implementation(libs.findLibrary("androidx-test-core").get())
+            implementation(libs.findLibrary("androidx-test-ext-junit").get())
+            implementation(libs.findLibrary("coroutines-test").get())
+        }
     }
 
     sourceSets.commonTest.dependencies {

@@ -30,7 +30,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T0.3 Manifest and resources: only the launcher Activity exported, `allowBackup=false`, `dataExtractionRul
   - [x] T0.4 Include `androidApp` in detekt, Spotless/ktlint, Android Lint
   - [x] T0.6 Konsist rules for `androidApp`
-  - [ ] T0.7 Enable `withDeviceTest {}`
+  - [x] T0.7 Enable `withDeviceTest {}`
   - [ ] T0.8 Test runner decision and wiring (JUnit 4 + Robolectric for Compose/Roborazzi; ADR)
   - [ ] T0.5 `.github/workflows/android.yml` (after T0.7 and T0.8)
 - [ ] 2a-1 Android device services (shared PR, merges before UI)
