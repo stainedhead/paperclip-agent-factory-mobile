@@ -18,6 +18,8 @@ data class AgentDetailState(
     val budgetAmountIssue: InvalidKey? = null,
     /** True when the typed budget can be saved now: valid, positive, allowed and nothing else in flight. */
     val canSaveBudget: Boolean = false,
+    /** True when saving the typed budget asks the device owner first: a raise or zero, never a decrease (DEC-1). */
+    val saveBudgetNeedsDeviceAuth: Boolean = false,
     /** Counts budgets saved; the form closes when it changes, and stays (with its text) when a save fails. */
     val budgetSavedCount: Int = 0,
     val confirmPause: Boolean = false,

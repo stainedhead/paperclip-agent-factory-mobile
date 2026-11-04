@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class PermissionsTest {
-    private val ownerOnly = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget)
+    private val ownerOnly = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget, Action.RaiseAgentBudget)
 
     @Test
     fun `ADR-011 every role and action pair follows the PRD table`() {

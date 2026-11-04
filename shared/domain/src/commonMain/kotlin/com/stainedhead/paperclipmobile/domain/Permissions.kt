@@ -5,7 +5,7 @@ package com.stainedhead.paperclipmobile.domain
  * offers.
  */
 object Permissions {
-    private val ownerOnly = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget)
+    private val ownerOnly = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget, Action.RaiseAgentBudget)
 
     fun allows(
         role: Role,
