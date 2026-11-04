@@ -1,7 +1,7 @@
 # PRD: Phase 2a Android UI code review fixes (auto-review)
 
 **Created:** 2026-11-04
-**Status:** Draft, from the dev-flow Step 5 (Code and Design Review) of `worktree-android-prd`
+**Status:** Reviewed (dev-flow Step 6), ready to implement. Both owner decisions are recorded below as run assumptions that the owner may overturn.
 **Owner:** J
 **Source spec:** [specs/261104-phase-2a-android-ui](./specs/261104-phase-2a-android-ui/spec.md) and [the Android PRD](./specs/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md)
 **Related:** [AGENTS.md](./AGENTS.md), [INTENT.md](./INTENT.md), [status.md](./specs/261104-phase-2a-android-ui/status.md), the prior pattern [phase-1a auto-review PRD](./specs/archive/261101-phase-1a-shared-contracts-auto-review/phase-1a-shared-contracts-auto-review-PRD.md)
@@ -17,7 +17,7 @@ Overall assessment: **Approve with required follow-ups.** The layering and the s
 - the Keystore "5 second window" is system-wide, so a protected read can succeed with no prompt, and ADR-123 claims the opposite (R-001);
 - a prompt can hang forever with the store mutex held (R-002);
 - typed text is destroyed in several places, including a comment draft on a failed post (R-003);
-- one shared use case (`SetAgentBudget`) raises money with no device-owner check, contradicting AGENTS.md (R-004, needs the owner);
+- one shared use case (`SetAgentBudget`) raises money with no device-owner check, contradicting AGENTS.md (R-004; fixed by adding the gate, run assumption DEC-1);
 - the Run viewer log may stop following (R-005, verify first), pushed detail routes survive a factory switch (R-006), an in-flight Inbox approve can be cancelled (R-007), and the Inbox fling misses the 5% jank budget (R-008);
 - a large part of the "proven" surface (live pairing, real key invalidation, system prompt, TalkBack, StrongBox, API 28/33, Pixel, hosted CI) has never run (R-009);
 - some tests, docs and `status.md` claim more than they prove.
@@ -28,7 +28,14 @@ Overall assessment: **Approve with required follow-ups.** The layering and the s
 | P1 | 9 | Security-policy gaps, user-visible defects and unproven acceptance evidence that should be fixed before this phase is archived |
 | P2 | 31 | Hardening, maintainability, accessibility, test honesty and doc accuracy; fix if cheap, otherwise schedule |
 
-**Why P0 is empty.** A P0 here would be a credential exposure, a destructive action with no device-owner check that anyone can trigger remotely, or data corruption on the default path. The Keystore key still enforces its window, so bypassing the prompt callback gains nothing without a recent system authentication (a weakening, not a break). `SetAgentBudget` is a documented decision (ADR-013), not an accident. Every other P1 is a bounded, recoverable defect or missing evidence.
+**Why P0 is empty (reviewed and confirmed in Step 6).** A P0 blocks the PR; it is reserved for a true blocker, not a preference or a hardening wish. A P0 here would be a credential exposure, a destructive action with no device-owner check that anyone can trigger remotely, or data corruption on the default path. The Keystore key still enforces its window, so bypassing the prompt callback gains nothing without a recent system authentication (a weakening, not a break). `SetAgentBudget` is a documented decision (ADR-013), not an accident. Every other P1 is a bounded, recoverable defect or missing evidence.
+
+Two items were tested against this bar on purpose:
+
+- **R-001 (Keystore window) stays P1.** The Keystore key itself enforces the 5 second authentication window, so no secret is readable without a recent system authentication. The weakness is that the window is system-wide: an unlock or another app's biometric check in the last 5 seconds satisfies a protected read without our prompt. That needs physical possession of an unlocked phone inside a 5 second window, exposes nothing at rest, and nothing ships from this branch (no release, no store listing). It is a real weakening of FR-011 that must be fixed before archive, but it is not an exposure that justifies blocking the PR. If the owner decides the phase will be installed on a shared or untrusted device before R-001 lands, promote it to P0.
+- **R-004 (no prompt on a budget raise) stays P1.** The behaviour is a documented, deliberate decision (ADR-013, FR-014), the attacker needs an unlocked phone and the owner role, and the result is a changed spend ceiling that the owner can see and reverse (the server enforces the budget, the app never spends). It conflicts with the AGENTS.md wording, which is why it is fixed here (DEC-1), but a documented policy that is arguably too lax is a policy defect, not a P0 data-loss or credential-exposure defect.
+
+Counter-test applied to every P1: "if this merged tomorrow with the fix scheduled, would a secret leak, money move without the owner, or data be destroyed on the default path?" R-003 loses typed drafts (recoverable), R-005 to R-008 are UX and reliability defects with a user workaround, and R-009 is missing evidence. The answer is no for all nine, so P0 stays empty.
 
 ## Goals
 
@@ -56,7 +63,8 @@ Overall assessment: **Approve with required follow-ups.** The layering and the s
 - **One commit per finding** (merged findings are one commit per merged requirement). Conventional Commits, mention `specs/261104-phase-2a-android-ui`. Every finding has its own commit before the step is marked complete; P0 would block the PR (none).
 - **Brief code and design review per fix before moving on.** After green, re-read your own diff against AGENTS.md (layering, Security Rules, Swift-facing rules, no business rules in a `@Composable`), run the relevant gate, and note any follow-up in `implementation-notes.md`. A second teammate reviews security-sensitive fixes (R-001, R-002, R-004).
 - **Agent teammates (worker model `claude-sonnet-4-6`)** run the parallel fix workstreams below, each in its own git worktree. The lead (this session's model) reviews each diff, merges in the order given, and owns the two owner-decision items. Teammates get the requirement text, the evidence lines and the gate list, not the whole review.
-- **Git worktrees and Gradle.** One worktree per workstream (`git worktree add ../pafm-<group> <branch>`). **Only one Gradle build runs at a time on a machine**, so teammates serialise builds (a lock file such as `flock /tmp/pafm-gradle.lock ./gradlew ...`) or push and let CI build. Partition by file ownership so merges are conflict-free: shared-core fixes first (Group 1: `shared/` modules), then `androidApp` fixes grouped by the files they own (Groups 2 and 3), then tests, CI and docs (Groups 4 and 5).
+- **Git worktrees.** One worktree and one branch per workstream (`git worktree add ../pafm-<group> -b fix/<group> worktree-android-prd`); a teammate works only in its own worktree and never edits files owned by another group. Partition by file ownership so merges are conflict-free (see the groups below). Worktrees are for editing and reviewing in parallel; they are not a licence to build in parallel.
+- **One Gradle build at a time per machine.** The Gradle daemon, the Kotlin build cache and `build/` outputs are shared by the whole machine, and the Android SDK and emulator are single instances. Rules: (1) every Gradle, `xcodebuild` and emulator command is wrapped in a machine-wide lock, `flock /tmp/pafm-build.lock <command>` (macOS without `flock`: `lockf /tmp/pafm-build.lock <command>`, or a `mkdir /tmp/pafm-build.lock` spin loop with a trap); (2) a teammate does the edit-and-think work (test, fix, self-review) without holding the lock and takes it only for a targeted run (`./gradlew :shared:presentation:allTests --tests ...`, `:androidApp:testDebugUnitTest --tests ...`); (3) the full gate list runs once per merged group, by the lead, not once per teammate commit; (4) Roborazzi record/verify and connected tests are never run concurrently; (5) the iOS gates (`build-kit.sh`, `ios-test.sh`) take the same lock because they call Gradle and the simulator.
 - Never lower a gate, never suppress a rule inline, never edit baselines to green a build without reading the diff. Regenerate coverage before quoting numbers (`rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation`).
 
 ## Non-functional requirements and quality gates
@@ -72,7 +80,7 @@ All of these stay green after every commit that can affect them, and before the 
 ./gradlew koverVerifyCore koverVerifyPresentation
 ./gradlew check
 ./gradlew :androidApp:lint :androidApp:testDebugUnitTest :androidApp:verifyRoborazziDebug :androidApp:assembleRelease   # android.yml
-# only when shared presentation or umbrella API changes (R-004, R-007, R-019 shared parts):
+# only when exported shared surface or behaviour changes (R-004, R-007, R-019, R-024; see the iPhone impact table), under the build lock:
 ./scripts/build-kit.sh debug && swiftlint --strict && xcrun swift-format lint --recursive --strict iosApp/Sources iosApp/Tests iosApp/Packages/PaperclipKit/Package.swift && ./scripts/ios-test.sh
 ```
 
@@ -85,19 +93,39 @@ All of these stay green after every commit that can affect them, and before the 
 
 ## Implementation order and parallel workstreams
 
-1. **Group 1, shared core (first, sequential within, serialised Gradle):** R-001 (Keystore per-use authorization), R-002 (prompt hang, mutex; same files, same commit sequence as R-001), R-004 (SetAgentBudget gate, after the owner decision), R-019 (B-5 shared parts: `RunStatusUi.isLive`, visible agent actions, tone enums, with commonTest), R-007 shared half (expose `isWorking` on `InboxState`), R-010 (`getKey` wrap), R-011 (protected-path contract and prompt tests), R-012 (connectivity), R-013 (`RecordFiles`). Merge before anything else because `androidApp` consumes these APIs.
-2. **Group 2, androidApp text and input fixes (parallel after Group 1, one teammate, files: `ApprovalSections.kt`, `BudgetSections.kt`, `NoteSheet.kt`, `Components.kt`, `IssueCommentBar.kt`, `InteractionControls.kt`, `FirstRunScreen.kt`, `ReorderableColumn.kt`):** R-003, R-023, R-024, R-025, R-026, R-027, R-028, R-029, R-033, R-034, R-036, R-037.
-3. **Group 3, androidApp navigation, lifecycle, Inbox and Run (parallel with Group 2, one teammate, files: `env/*`, `shell/*`, `InboxScreen.kt`, `InboxCard.kt`, `InboxSwipe.kt`, `RunViewerLog.kt`, `UpdatedLabel.kt`, list screens):** R-005, R-006, R-007 app half, R-008, R-018, R-021, R-022 (merged Inbox web door), R-032 (lazy lists).
-4. **Group 4, tests, build and CI (parallel with Groups 2 and 3, one teammate; test sources, `build.gradle.kts`, workflow, Konsist):** R-011 (tests), R-014, R-015, R-016, R-017, R-020, R-030, R-031, R-035.
-5. **Group 5, docs and status (last, describes the final code):** R-039, R-040, R-038 (design only; implementation is its own two PRs), ADR-123 correction (part of R-001), plus the evidence requirement R-009 recorded in `status.md`.
+The order is built so that the long single-lane work (shared code, with the iOS gates) goes first and alone, and only editing parallelises afterwards. With one Gradle build at a time, Groups 2 to 4 gain parallel authoring and review, not parallel builds; budget their build time as sequential, lock-ordered runs.
+
+1. **Group 1, shared core (first, one teammate or the lead, sequential, owns every file under `shared/`):** R-001 then R-002 (same files; R-002 as its own commit after R-001's test commit), R-004 (DEC-1 is decided, see below), R-007 shared half, R-024 shared half (holder clears the amount), R-019 shared parts, R-010, R-011 (contract and launcher tests), R-012, R-013. Merge before anything else because `androidApp` and `iosApp` consume these APIs. After each commit that touches exported surface, run the iOS gates (table below) before starting the next one.
+2. **Group 2, androidApp text and input fixes (starts after Group 1 is merged; one teammate; owns `ApprovalSections.kt`, `BudgetSections.kt`, `NoteSheet.kt`, `Components.kt`, `IssueCommentBar.kt`, `InteractionControls.kt`, `FirstRunScreen.kt`, `ReorderableColumn.kt`):** R-003, R-023, R-024 app half, R-025, R-026 (banners owned here), R-027, R-028, R-029, R-033, R-034, R-036, R-037.
+3. **Group 3, androidApp navigation, lifecycle, Inbox and Run (authoring parallel with Group 2, builds serialised; one teammate; owns `env/*`, `shell/*`, `InboxScreen.kt`, `InboxCard.kt`, `InboxSwipe.kt`, `InboxSheets.kt`, `RunViewerLog.kt`, `UpdatedLabel.kt`, list screens):** R-005, R-006, R-007 app half, R-008, R-018, R-021, R-022, R-032. R-026's Undo snackbar change in `InboxSheets.kt` belongs to Group 3; the other R-026 elements belong to Group 2 (the teammates agree the semantics wording first).
+4. **Group 4, tests, build and CI (authoring parallel; one teammate; owns test additions that no other group touches, `build.gradle.kts`, `.github/workflows/android.yml`, Konsist):** R-014, R-015, R-016, R-017, R-020, R-030, R-031, R-035. Roborazzi baseline re-records (R-031, and any visual change from Groups 2 and 3) happen once, last, by the lead, to avoid baseline merge conflicts on binary PNGs.
+5. **Group 5, docs and status (last, describes the final code):** R-039, R-040, R-038 (design only, see its note), the ADR-123 correction and the DEC-1 and DEC-2 ADR entries, plus the evidence requirement R-009 recorded in `status.md`.
 6. **Owner-hardware track (parallel, not a teammate task):** R-009 runs on the owner's devices and CI as the code lands.
 
-Merge order: Group 1, then 2 and 3 in either order (they own disjoint files), then 4, then 5. After each merge run the Android CI command above plus `./gradlew check`.
+Merge order: Group 1 (full gate list plus iOS gates), then Group 2, then Group 3 (disjoint files; full Android command after each), then Group 4 (re-record baselines once), then Group 5. After each merge run the Android CI command and `./gradlew check`.
 
-## Decisions needed from the owner
+### Shared changes: iPhone impact and iOS gates
 
-- **DEC-1 (R-004): raise-budget policy.** AGENTS.md Security Rules list "budget raise" among actions that go through `Biometrics`; ADR-013 and FR-014 deliberately limit the prompt to budget incidents and `docs/architectural-decision-record.md` records "no lock glyph" for `SetAgentBudget`. Choose: (a) **recommended:** gate every raise (new amount greater than old) with `Biometrics` in the use case, add the lock glyph to the Set budget button on both platforms, and amend ADR-013 and FR-014 with the owner's approval; or (b) amend AGENTS.md to say "budget incident raise" only. This is shared code: option (a) changes the iPhone too (`AgentDetail` Set budget). INTENT principle 1 (security over convenience) favours (a). Do not start R-004 until decided.
-- **DEC-2 (R-012): connectivity semantics.** Today "online" requires `NET_CAPABILITY_VALIDATED`, so a LAN-only or Tailscale-only network with no upstream internet reads as offline and blocks mutations. Choose: treat INTERNET alone as online, treat unvalidated as "unknown, attempt and let the real request fail", or keep VALIDATED and document it. Failing closed is the safe direction; INTENT principle 7 says home factories on a VPN are the target.
+Every shared change below names what it does to the iPhone. Whenever the exported surface (anything visible through `PaperclipKit`: public classes, enums, state data classes, factory functions in `shared/umbrella` or `shared/presentation`) or a user-visible behaviour of shared code changes, the same commit updates the iOS tests, and before the next commit this runs under the build lock: `./scripts/build-kit.sh debug && swiftlint --strict && xcrun swift-format lint --recursive --strict iosApp/Sources iosApp/Tests iosApp/Packages/PaperclipKit/Package.swift && ./scripts/ios-test.sh`. A change that only touches `infrastructure/*` androidMain or `androidApp` needs no iOS gate.
+
+| Req | Shared change | iPhone impact | iOS tests and gates |
+|---|---|---|---|
+| R-001, R-002, R-010, R-013 | `securestore` and `platform` androidMain only (`KeystoreBackend`, `KeystoreSecretStore`, `PromptLauncher`, `RecordFiles`); `FakeKeystoreBackend` in `shared/testing` | None at runtime (iOS uses the Keychain actual). `SecretStoreContract` additions in `shared/testing` also run on the iOS simulator | `./gradlew allTests` (includes `iosSimulatorArm64`); no Swift change; run `./scripts/build-kit.sh debug` once after the contract change to confirm the framework still links |
+| R-004 | New `Action.RaiseAgentBudget` in the domain, added to `DeviceAuthPolicy`; `SetAgentBudget` takes `DeviceAuthGuard` and returns `NotAuthorized` | **Behaviour change on iPhone**: raising a budget on Agent detail now shows the Face ID / passcode prompt; lock glyph on the Set budget button (`AgentDetailView.swift:206`) | Update the iPhone agent-detail and budget tests in `iosApp/Tests/iosAppTests` (a raise asks for the prompt, a cancel changes nothing); full iOS gates |
+| R-007 | `isWorking` field on `InboxState` | New public field visible to Swift (additive) | Swift tests that construct or compare `InboxState` updated; full iOS gates |
+| R-024 | `BudgetIncidentStateHolder` clears the amount when the choice leaves Raise | iPhone keeps `amountText` in the sheet (`BudgetIncidentSheet.swift:35,191-197`); it must stay consistent with the holder's cleared amount | `BudgetModelTests.swift` updated; full iOS gates |
+| R-019 | Move `RunStatusUi.isLive`, visible agent actions, factory status decisions, tone enums, `DecideByUi.hintText` into `shared/presentation` | iPhone has its own copies today; it switches to the shared result in the same PR or a recorded follow-up. New public types are Swift-facing: no generics, no default arguments, no `Result` | Swift tests for each consumed rule; full iOS gates; one commit per moved rule so a failing gate points at one rule |
+| R-012 | None to shared (the `Connectivity` port stays `StateFlow<Boolean>`); only `ConnectivityManagerConnectivity` (androidMain) | None | No iOS gate |
+| R-011, R-020, R-030 | Test-only | None | `allTests` |
+
+If an iOS gate fails because of a shared change, the commit is not done; fix forward in the same group before moving on.
+
+## Decisions (run assumptions, owner may overturn)
+
+No owner was available during the dev-flow run, so the two open owner questions are resolved by adopting this PRD's own recommendations. Each is marked **Run assumption, owner may overturn**. If the owner overturns one, only the named requirement, its ADR text and the listed tests change; nothing else in this PRD depends on the answer.
+
+- **DEC-1 (R-004): a raise of an agent's budget asks for the device owner. Run assumption, owner may overturn.** `SetAgentBudget` goes through the device-owner check (`DeviceAuthGuard`, hence `Biometrics`) when the new monthly amount is greater than the current one. Reasons: AGENTS.md Security Rules already list "budget raise" as a destructive action, and INTENT principle 1 puts security over convenience; the text in ADR-013 and FR-014 that limits the prompt to budget incidents is the outlier and is amended. A decrease needs no prompt (it cannot let an agent spend more), with the exception recorded in R-004. The Set budget button gets the lock glyph on both platforms. This is a shared change and changes the iPhone's behaviour (see the table above). If the owner overturns it, the alternative is to amend AGENTS.md to say "budget incident raise" only, and R-004 closes with that ADR text and no code.
+- **DEC-2 (R-012): connectivity counts as online whenever the system reports a default network that declares `NET_CAPABILITY_INTERNET`, validated or not. Run assumption, owner may overturn.** A network that has INTERNET but is not `VALIDATED` (home LAN, split-DNS, captive portal, Tailscale-only path, a VPN whose probe fails) is "online, unknown": the app attempts the request and lets the real success or typed failure surface (INTENT principle 7: home factories behind a VPN are the primary case; principle 2: show the server's truth). The app reads as offline only when there is no default network, or the network lacks INTERNET. Mutations are not blocked by an unvalidated network and are still never auto-retried. No shared API change: the `Connectivity` port stays a `StateFlow<Boolean>`.
 
 ## Out of scope / deferred
 
@@ -152,17 +180,19 @@ Reviewer ids are in brackets. P1 first, then P2.
   3. After `recreate()`, the comment, the reject or revision note and the budget amount equal what was typed.
   4. A successful post (count increments) clears the box exactly once, and not on first composition.
 
-### R-004 (P1, needs owner confirmation DEC-1): `SetAgentBudget` raises money with no device-owner prompt, contradicting AGENTS.md  [D-1]
+### R-004 (P1, DEC-1 run assumption, owner may overturn): `SetAgentBudget` raises money with no device-owner prompt, contradicting AGENTS.md  [D-1]
 
 - **Evidence:** `shared/application/src/commonMain/kotlin/com/stainedhead/paperclipmobile/application/agent/AgentMutations.kt:132-145` (`SetAgentBudget`: role and currency checks, then `agents.setBudget`, no `Biometrics`); `AGENTS.md` Security Rules ("budget raise" is a destructive action); `AgentDetailScreenTest.anOwnerSetsTheMonthlyBudget...` asserts `biometricPromptCount shouldBe 0`; `docs/architectural-decision-record.md` ADR-013 and the `SetAgentBudget` entry (line 128) record "no device authentication".
 - **Failure scenario:** an unlocked phone in someone else's hands raises any agent's spend ceiling with one tap (setting it very low also stops the agent). **This is shared code: the fix and the policy change affect the iPhone too.**
-- **Fix (recommended, subject to DEC-1):** `SetAgentBudget` takes `Biometrics` (as `PauseAgent` at the same file does) and requires `BiometricResult.Approved` before `agents.setBudget` when `monthly > agent.monthlyBudget`; lowering needs no prompt (decide with the owner; if lowering also stops the agent, gate it too). Add the lock glyph to the Set budget button on Android and iPhone and the effect line before the tap. Amend ADR-013 and FR-014 with the owner's approval; update `docs/product-details.md`. If the owner chooses to keep today's behaviour, instead amend AGENTS.md and close R-004 with the ADR text.
-- **Failing test first:** `SetAgentBudgetTest` with a fake `Biometrics` that cancels: a raise returns `NotAuthorized` (the existing device-auth result) and `setBudget` call count is 0; with approval it succeeds with exactly one prompt and one call; a decrease follows the chosen policy.
+- **Fix (DEC-1, run assumption, owner may overturn):** add `Action.RaiseAgentBudget` to the domain and to `DeviceAuthPolicy.destructive` (`shared/domain/.../Permissions.kt:23`); `SetAgentBudget` takes a `DeviceAuthGuard` (as `PauseAgent` at `AgentMutations.kt:36-48` does) and, when `monthly > agent.monthlyBudget`, requires `BiometricResult.Approved` before `agents.setBudget`, returning `MutationResult.NotAuthorized(result)` otherwise. The order stays: permission, currency check, device authentication, one gateway call, one re-read. A decrease needs no prompt, except that a new monthly amount of zero (which stops the agent in practice) is treated as a raise-class change and is gated too; this is a run assumption inside DEC-1. Add the lock glyph (with a content description that says it asks for the device owner) and the effect line to the Set budget button on Android and on the iPhone (`AgentDetailView.swift:206`). Amend ADR-013, the `SetAgentBudget` entry at ADR line 128, and FR-014 to say a raise asks for the device owner, labelled as a run assumption pending the owner; update `docs/product-details.md`. If the owner overturns DEC-1, amend AGENTS.md instead and close R-004 with the ADR text.
+- **iPhone impact and gates:** behaviour change on the iPhone (new prompt); update its tests and run the full iOS gate set (see "Shared changes: iPhone impact and iOS gates").
+- **Failing test first:** `SetAgentBudgetTest` with a fake `Biometrics` that cancels: a raise returns `NotAuthorized` (the existing device-auth result) and `setBudget` call count is 0; with approval it succeeds with exactly one prompt and one call; a decrease succeeds with zero prompts and one call; a set-to-zero asks for the prompt.
 - **Acceptance criteria:**
   1. Raise with a cancelled or unavailable prompt: zero gateway calls, a typed `DomainError`/result, no state change.
   2. `AgentDetailScreenTest` is updated: prompt count is 1 after confirming a raise; a cancelled prompt leaves the budget unchanged.
   3. The lock glyph appears on Set budget for raises on Android (Roborazzi) and iPhone (XCUITest or snapshot), with a content description that says it asks for the device owner.
-  4. ADR-013/FR-014 amended (or AGENTS.md amended) in the same PR; the Konsist rule list unchanged; coverage unchanged or higher; iOS tests pass.
+  4. A decrease (non-zero) makes zero prompts and one gateway call; a raise makes exactly one prompt.
+  5. ADR-013/FR-014 and the ADR line-128 entry amended in the same PR, marked as a run assumption; the Konsist rule list unchanged; coverage unchanged or higher; the iPhone test for the prompt passes and `./scripts/ios-test.sh` is green.
 
 ### R-005 (P1, verify first): The Run viewer log tail may silently stop following  [D-2]
 
@@ -224,7 +254,7 @@ Reviewer ids are in brackets. P1 first, then P2.
   3. **System BiometricPrompt on a destructive action.** On a device with an enrolled fingerprint: Pause agent, Cancel run, Reject approval, a budget raise (R-004): the system prompt appears each time; cancelling the prompt performs nothing (check the server state).
   4. **TalkBack.** Enable with `adb shell settings put secure enabled_accessibility_services com.google.android.marvin.talkback/com.google.android.marvin.talkback.TalkBackService`; walk Inbox, Decision, Approval, Budget, Add/Edit factory, Pairing, Lock. Specifically check that text fields (those using `FormField`, R-025) announce what was typed, that banners and the Undo are announced (R-026), and every destructive control announces the lock.
   5. **StrongBox** on a device that has it: confirm the key reports `KeyInfo.isInStrongBox` or record that the TEE fallback was used.
-  6. **API 28 and API 33** (emulator images): launch, add a factory, protected secret refused cleanly on 28 (documented fallback), predictive back (R-039), notification/permission behaviour. `./gradlew :androidApp:connectedDebugAndroidTest` on each (or the module's connected task; confirm names with `./gradlew tasks --all`).
+  6. **API 28 and API 33** (emulator images): launch, add a factory, protected secret refused cleanly on 28 (documented fallback), predictive back (R-039), notification/permission behaviour. `./gradlew :androidApp:connectedDebugAndroidTest` on each (the connected task name is confirmed first with `./gradlew :androidApp:tasks --all`; record the name in `status.md`).
   7. **Pixel and Samsung pass.** Run the connected tests and the demo-flow tests on a Pixel 6 and one Samsung device; the Pixel 6 is the benchmark target: `PAFM_BENCHMARK_ALLOW_EMULATOR=0 ./scripts/run-benchmarks.sh` for cold start (under 1.5 s median of 10) and the frame metric (R-008).
   8. **`android.yml` first hosted run.** Open the PR, let the workflow run on GitHub, confirm every job (verify, emulator, benchmark gating, release smoke) is green or fix and record. `gh run list --workflow android.yml` and `gh run view <id> --log-failed` for the evidence. The first run is also the check of the workflow file itself.
 - **Acceptance criteria:** each of items 1 to 8 has a dated line in `status.md` with pass, or a linked issue with a named blocker; items that fail create a new finding and block archive. `docs/technical-details.md:13` "Not proven" list is edited to match the recorded evidence in the same PR.
@@ -247,13 +277,13 @@ Reviewer ids are in brackets. P1 first, then P2.
 - **Failing test first:** the new contract cases themselves; run on the fake first (expected to fail until the fake's single-use behaviour from R-001 lands).
 - **Acceptance criteria:** the contract has at least four protected cases and passes on both implementations; `ActivityPromptLauncher` has tests for all outcomes; Konsist unchanged.
 
-### R-012 (P2): Connectivity counts "online" only when the network is VALIDATED  [A-6, needs DEC-2]
+### R-012 (P2): Connectivity counts "online" only when the network is VALIDATED  [A-6, DEC-2 run assumption, owner may overturn]
 
 - **Evidence:** `shared/infrastructure/platform/.../ConnectivityManagerConnectivity.kt:49` requires `NET_CAPABILITY_VALIDATED` (with INTERNET at `:46-48`).
 - **Failure scenario:** a LAN-only Wi-Fi, split-DNS or captive network is not validated, so the app reports offline and blocks mutations although the home factory is reachable; this is INTENT principle 7's primary scenario. The reviewer did not verify validation behaviour on a specific VPN.
-- **Fix:** per DEC-2: INTERNET alone as online, or unvalidated as "unknown, attempt the read" and let the real request surface the truth. Keep fail-closed for mutations only if the owner chooses so.
-- **Failing test first:** an INTERNET-but-not-VALIDATED network capability fake reads as the chosen state.
-- **Acceptance criteria:** tests for validated, unvalidated, no-network and callback-removed; `docs/product-details.md` states the rule; the Tailscale-only case is part of R-009 item 1 (run pairing over Tailscale when available).
+- **Fix (DEC-2):** remove the `NET_CAPABILITY_VALIDATED` requirement from `isUsable()` (`ConnectivityManagerConnectivity.kt:44-49`); a default network with `NET_CAPABILITY_INTERNET` is online, validated or not, so requests are attempted and the real failure surfaces. No default network, or no INTERNET capability, stays offline. Update the class KDoc (it says a network counts only when validated) and the "fail closed" wording; keep the fail-closed behaviour only for a callback the system refuses to register. No shared API change, no iOS impact.
+- **Failing test first:** an INTERNET-but-not-VALIDATED network capability fake reads as online (fails today).
+- **Acceptance criteria:** tests for validated (online), INTERNET-but-unvalidated (online), no-network (offline), a network without INTERNET (offline) and callback-removed; `docs/product-details.md` states the rule; the Tailscale-only case is part of R-009 item 1 (run pairing over Tailscale when available).
 
 ### R-013 (P2): `RecordFiles` robustness  [A-7, reviewer P3]
 
@@ -343,9 +373,9 @@ Reviewer ids are in brackets. P1 first, then P2.
 - **Failing test first:** type "a\nb" into `note-field` and assert the intent carries "a\nb".
 - **Acceptance criteria:** the multi-line cases keep their newlines and show up to four lines; address, name and amount still reject newlines; Roborazzi baselines for affected sheets re-recorded and reviewed.
 
-### R-024 (P2, close to P1 because it concerns money): The raise amount can be hidden from the field but still sent  [C-2]
+### R-024 (P2, decided: stays P2; it concerns money): The raise amount can be hidden from the field but still sent  [C-2]
 
-- **Evidence:** `androidApp/.../screens/BudgetSections.kt:90` (`AmountField` only when `choice == RaiseAndResume`) and `:243` (`var text by remember`); the holder keeps the amount (`choose()` copies only `choice`; `AmountTyped` stores `amount`). iPhone keeps `amountText` at sheet level (`BudgetIncidentSheet.swift:35,191-197`). Kept at P2 because the budget Submit goes through the device-owner prompt (a tap and a prompt are both needed) and the amount is visible in the button label ("Raise to $250"); the reviewer showed the amount can be sent while the field is blank.
+- **Evidence:** `androidApp/.../screens/BudgetSections.kt:90` (`AmountField` only when `choice == RaiseAndResume`) and `:243` (`var text by remember`); the holder keeps the amount (`choose()` copies only `choice`; `AmountTyped` stores `amount`). iPhone keeps `amountText` at sheet level (`BudgetIncidentSheet.swift:35,191-197`). Decided P2 (see "Decisions" note below) because the budget Submit goes through the device-owner prompt (a tap and a prompt are both needed) and the amount is visible in the button label ("Raise to $250"); the reviewer showed the amount can be sent while the field is blank.
 - **Failure scenario:** the user types 250, switches to "Keep paused", back to "Raise and resume": the field is blank, `amountMinorUnits` is still 25000, `canSubmit` is true, the button says "Raise to $250" and Submit sends it.
 - **Fix:** hoist the text into `BudgetBody` as `rememberSaveable`, or send `AmountTyped("")` when leaving Raise (prefer the shared fix: the holder clears the amount on `choose` away from Raise, with a `commonTest`).
 - **Failing test first:** `BudgetSheetTest`: type an amount, choose Keep paused, then Raise again; assert the field text equals the state's amount, or that Submit is disabled and not labelled with an amount. Add the shared `commonTest` for the holder.
@@ -460,7 +490,9 @@ Reviewer ids are in brackets. P1 first, then P2.
 - **Failing test first:** a Work test: type a search, tap a chip, assert the field and the applied search agree; assert Create is disabled for blank.
 - **Acceptance criteria:** both pass.
 
-### R-038 (P2): Attachments are not openable on either platform  [D attachments]
+### R-038 (P2, design only in this phase): Attachments are not openable on either platform  [D attachments]
+
+Scope for this PRD: write the ADR (decision on the port and the cache rules) and file the two follow-up PRs. The fix and criteria below describe those follow-up PRs, not work for this phase; this phase is complete for R-038 when the ADR exists, the follow-up issues are linked in `status.md`, and the "cannot open" limitation is stated in `docs/product-details.md` and `user-docs/`.
 
 - **Evidence:** `androidApp/.../screens/IssueTabs.kt` `FilesTab` lists name, type and size plus a note only; ADR-064 makes attachment content an adapter-only ranged call; there is no port for attachment bytes and the endpoint needs the board key, so a URL cannot be handed to a browser. The iPhone has the same limitation.
 - **Failure scenario:** the person sees a file they cannot open on the phone.
@@ -486,7 +518,7 @@ This requirement is the **documentation inaccuracy list**. Each false or stale c
 
 ### R-040 (P2): `status.md` is stale and the acceptance mapping is `[TBD]`  [D status, T9.3]
 
-- **Evidence:** `specs/261104-phase-2a-android-ui/status.md` "Overall progress" table shows Phases 1 to 5 "Not Started" and the 2a-9 box open while the activity log says milestones are done (Phase 0 is the only Complete row); the acceptance mapping has `[TBD]` for criteria 1 to 4, 8, 9, 11 to 13 (line 108; `tasks.md:92` T9.3 is open); criterion 7 is honestly "Android half"; criterion 8's proof is the weak test of R-020.
+- **Evidence:** `specs/261104-phase-2a-android-ui/status.md` "Overall progress" table shows Phases 1 to 5 "Not Started" and the 2a-9 box open while the activity log says milestones are done (Phase 0 is the only Complete row); the acceptance mapping has `[TBD]` for criteria 1 to 4, 8, 9, 11 to 13 (line 108; T9.3 at `specs/261104-phase-2a-android-ui/tasks.md:173` is open); criterion 7 is honestly "Android half"; criterion 8's proof is the weak test of R-020.
 - **Failure scenario:** the single source of truth for progress is wrong; the archive step would copy false state.
 - **Fix:** update the progress table; do T9.3: map criteria 1 to 9 and 11 to 13 to named Android tests, with an honest "not proven" where R-009 is open.
 - **Failing test first:** n/a (docs); a small script or Konsist check that every test class named in `status.md` exists.
@@ -508,6 +540,8 @@ This requirement is the **documentation inaccuracy list**. Each false or stale c
 - Not confirmable without running: the `MutatorMutex` cancellation behaviour (R-005), navigation `ViewModelStore` retention on lock (R-021), TalkBack output (R-025, R-026), jank cause ranking (R-008), network validation on a VPN (R-012), and the content of baseline images other than the two the reviewer viewed.
 - Dropped as non-findings: reviewer observations that parity gaps (`isReadOnly`, `audience`, `profileEmail`, `role`, `isFromCache`, `ManualKeySubmitted`) are unused on both platforms; and "reviewed and clean" areas (release steering onto fakes, manifest, logging, privacy shield, destructive-action gating, CI pinning, scripts). These are listed in the reviewer reports as clean and need no work.
 
-## Open question
+## Resolved questions
 
-- Whether R-024 should be promoted to P1 by the owner (it is money, but a device-owner prompt and the visible button label sit in front of a send).
+- **Should R-024 be promoted to P1? Decided: no, it stays P2 (run assumption, owner may overturn).** The amount that can be sent while the field looks blank is visible in the Submit button label ("Raise to $250") and the send goes through the device-owner prompt, so two deliberate actions stand in front of it. It is fixed in Groups 1 and 2 regardless of its label; the priority only affects ordering, not whether it ships.
+- **DEC-1 and DEC-2:** resolved above as run assumptions.
+- **Remaining unknowns are verifications, not decisions:** R-005, R-021 (verify first), R-008 (profile first), R-025/R-026 (TalkBack) and the R-009 hardware evidence. Each carries a demotion rule or a named owner-run check.
