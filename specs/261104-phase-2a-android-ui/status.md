@@ -35,7 +35,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T0.5 `.github/workflows/android.yml` (after T0.7 and T0.8)
 - [ ] 2a-1 Android device services (shared PR, merges before UI)
   - [x] T1.1 `KeystoreBackend` seam + `KeystoreSecretStore` over `FakeKeystoreBackend`
-  - [ ] T1.2 Real backend: AES-256-GCM key
+  - [x] T1.2 Real backend: AES-256-GCM key
   - [ ] T1.3 `BiometricPromptBiometrics` + `AuthHost`
   - [ ] T1.4 `ConnectivityManagerConnectivity`: default-network callback to `StateFlow<Boolean>`
   - [ ] T1.5 Persistence emulator test for `openAndroidPersistence`
