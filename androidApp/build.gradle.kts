@@ -15,6 +15,14 @@ android {
         versionCode = 1
         versionName = "0.1.0"
     }
+    lint {
+        // Zero new warnings is the gate (AGENTS.md); user-facing text lives in string resources.
+        warningsAsErrors = true
+        abortOnError = true
+        checkDependencies = true
+        error += "HardcodedText"
+        lintConfig = file("lint.xml")
+    }
     buildTypes {
         release {
             isMinifyEnabled = false

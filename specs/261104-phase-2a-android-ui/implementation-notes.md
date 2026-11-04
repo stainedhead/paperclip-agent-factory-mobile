@@ -13,7 +13,8 @@ Record decisions, edge cases, deviations and lessons as the work lands, with com
 
 ## Edge cases and solutions
 
-- [none yet]
+- T0.4: with `warningsAsErrors` Android Lint flagged `NewerVersionAvailable` (it reads the root catalog), `DataExtractionRules` (needs `fullBackupContent` for API 28 to 30), `MissingApplicationIcon` and `UnusedResources`. Fixed with `androidApp/lint.xml` (version-currency checks ignored: Dependabot owns them), `backup_rules.xml` and a placeholder adaptive icon (final artwork in T8.3). The planted `Planted.kt` (unformatted, unused private member) and `layout/planted.xml` (`android:text="Hello"`) failed spotless, detekt (once `androidApp/src` joined its source set) and lint `HardcodedText` before being removed.
+- T0.4 also found detekt issues in the T0.3 Konsist test (complexity, function count); the XML scanning moved to `ManifestScanning.kt`. T0.3 had only run konsistTest and assemble, not detekt: always run the whole gate set per task.
 
 ## Deviations from plan
 

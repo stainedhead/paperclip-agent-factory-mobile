@@ -28,7 +28,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T0.1 Add `:androidApp`
   - [x] T0.2 Version catalog entries
   - [x] T0.3 Manifest and resources: only the launcher Activity exported, `allowBackup=false`, `dataExtractionRul
-  - [ ] T0.4 Include `androidApp` in detekt, Spotless/ktlint, Android Lint
+  - [x] T0.4 Include `androidApp` in detekt, Spotless/ktlint, Android Lint
   - [ ] T0.6 Konsist rules for `androidApp`
   - [ ] T0.7 Enable `withDeviceTest {}`
   - [ ] T0.8 Test runner decision and wiring (JUnit 4 + Robolectric for Compose/Roborazzi; ADR)

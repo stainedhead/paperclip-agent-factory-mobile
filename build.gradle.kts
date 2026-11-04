@@ -44,10 +44,10 @@ detekt {
     buildUponDefaultConfig = true
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     parallel = true
-    // One root task scans every module's Kotlin sources (common, platform and test source sets).
+    // One root task scans every module's Kotlin sources (common, platform and test source sets) and the Android app.
     source.setFrom(
         fileTree(rootDir) {
-            include("shared/**/src/**/*.kt")
+            include("shared/**/src/**/*.kt", "androidApp/src/**/*.kt")
             exclude("**/build/**")
         },
     )
