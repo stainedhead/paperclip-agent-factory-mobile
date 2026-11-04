@@ -86,6 +86,7 @@ jobs:
             :shared:infrastructure:platform:connectedAndroidDeviceTest
             :shared:infrastructure:persistence:connectedAndroidDeviceTest
             :shared:umbrella:connectedAndroidDeviceTest
+            :androidApp:connectedDebugAndroidTest
       - name: Upload reports
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

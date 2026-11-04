@@ -50,6 +50,17 @@ dependencies {
     debugImplementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Connected tests (T8.8, ADR-136): the demo-flow walk on a device. `check` never runs them.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    // Compose's test rule idles through Espresso; the 3.5 it resolves to calls an InputManager method API 37 removed.
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    // One process per test: the app fixes its graph (demo, first-run demo, live) when the process starts.
+    androidTestUtil(libs.androidx.test.orchestrator)
 }
 
 android {
@@ -60,6 +71,8 @@ android {
     }
     defaultConfig {
         applicationId = "com.stainedhead.paperclipmobile"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
         // The commit count: monotonic on one branch and needs no file edit per build. CI must fetch full history.
         versionCode =
             providers
@@ -98,6 +111,7 @@ android {
         lintConfig = file("lint.xml")
     }
     testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
         unitTests {
             // Robolectric needs the merged resources and manifest.
             isIncludeAndroidResources = true
