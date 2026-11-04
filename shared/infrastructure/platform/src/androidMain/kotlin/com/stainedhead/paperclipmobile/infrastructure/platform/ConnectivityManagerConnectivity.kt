@@ -44,9 +44,11 @@ internal class SystemNetworkMonitor(
 }
 
 private fun NetworkCapabilities?.isUsable(): Boolean =
-    this != null &&
-        hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-        hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    this?.let { capabilities -> isUsable(capabilities::hasCapability) } ?: false
+
+/** Whether a default network with the capabilities [has] answers for counts as online. [has] is `hasCapability`. */
+internal fun isUsable(has: (Int) -> Boolean): Boolean =
+    has(NetworkCapabilities.NET_CAPABILITY_INTERNET) && has(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 
 /**
  * [Connectivity] from the system's default network (AND-003). The first value is read from the current default network
