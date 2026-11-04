@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#1F3A5F</color>
+    <!-- The window behind the first frame: the design tokens' background, so there is no flash before Compose draws. -->
+    <color name="window_background">#F4F4F1</color>
 </resources>
