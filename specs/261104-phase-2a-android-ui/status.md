@@ -25,7 +25,7 @@ Update this file after every task and phase. It is the single source of progress
 ## Milestones and tasks
 
 - [ ] 2a-0 Foundations (androidApp skeleton, catalog, device-test source set, test runner, CI; order T0.1 to T0.4, T0.6, T0.7, T0.8, T0.5)
-  - [ ] T0.1 Add `:androidApp`
+  - [x] T0.1 Add `:androidApp`
   - [ ] T0.2 Version catalog entries
   - [ ] T0.3 Manifest and resources: only the launcher Activity exported, `allowBackup=false`, `dataExtractionRul
   - [ ] T0.4 Include `androidApp` in detekt, Spotless/ktlint, Android Lint

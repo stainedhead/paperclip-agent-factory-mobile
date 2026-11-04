@@ -22,6 +22,7 @@ dependencyResolutionManagement {
 rootProject.name = "paperclip-agent-factory-mobile"
 
 include(
+    ":androidApp",
     ":shared:domain",
     ":shared:application",
     ":shared:presentation",

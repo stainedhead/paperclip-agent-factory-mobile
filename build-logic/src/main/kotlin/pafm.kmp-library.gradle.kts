@@ -27,8 +27,8 @@ extensions.configure<KotlinMultiplatformExtension> {
     iosSimulatorArm64()
     extensions.configure<KotlinMultiplatformAndroidLibraryTarget>("android") {
         namespace = moduleNamespace
-        compileSdk = 37
-        minSdk = 28
+        compileSdk = PafmAndroid.COMPILE_SDK
+        minSdk = PafmAndroid.MIN_SDK
         withHostTest { }
     }
 

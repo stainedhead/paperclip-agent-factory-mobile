@@ -14,6 +14,10 @@ dependencies {
         libs.plugins.android.kmp.library
             .asDependency(),
     )
+    implementation(
+        libs.plugins.android.application
+            .asDependency(),
+    )
     implementation(libs.plugins.kover.asDependency())
 }
 
