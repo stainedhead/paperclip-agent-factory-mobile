@@ -1,8 +1,8 @@
 # Getting started
 
-For a developer adopting the shared Kotlin core of Paperclip Agent Factory Mobile. There is no end-user app to install yet. The iPhone app has every screen (Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Edit and Manage factories, Settings, first run), on the real Paperclip adapters (a launch without `-demo`; it starts at first run behind the app lock) or, in a Debug build, on the built-in demo data (launch argument `-demo`). What you can do today is build the core, run its quality gates and tests, and run the app either way.
+For a developer adopting Paperclip Agent Factory Mobile: the shared Kotlin core and the two apps built on it. There is no store release to install yet; you build the apps yourself. The Android app (`:androidApp`) and the iPhone app have the same screens; below, the iPhone app is described first and the Android app in "Build and run the Android app". The iPhone app has every screen (Inbox, Decision, Approval, Budget incident, Factory home, Agents, Agent detail, Run viewer, Work, Issue, Factories, Edit and Manage factories, Settings, first run), on the real Paperclip adapters (a launch without `-demo`; it starts at first run behind the app lock) or, in a Debug build, on the built-in demo data (launch argument `-demo`). What you can do today is build the core, run its quality gates and tests, and run the app either way.
 
-Developed with Kotlin 2.4.21, Gradle 9.8.2 and Xcode 27.2 on macOS. This page was last revised in the Phase 2i review-fix round (branch `feat/phase-2i-iphone-ui`); the commands were run then, the older prose was not re-checked line by line.
+Developed with Kotlin 2.4.21, Gradle 9.8.2 and Xcode 27.2 on macOS. The Android commands were checked in Phase 2a (2026-11-04); the iPhone commands were last run in the Phase 2i review-fix round and the older prose was not re-checked line by line.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Gradle runs one build at a time on a machine; do not start two in parallel.
 ```bash
 git clone <repository-url> paperclip-agent-factory-mobile
 cd paperclip-agent-factory-mobile
-git checkout feat/phase-1a-shared-contracts
+git checkout worktree-android-prd                             # or main once it is merged
 echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties   # adjust the path
 ./gradlew :shared:umbrella:jvmTest                            # quick check: JVM tests of the umbrella and everything it depends on
 ```
@@ -50,25 +50,62 @@ Individual gates:
 
 Coverage numbers: `rm -rf build/reports/kover && ./gradlew koverXmlReportCore koverXmlReportPresentation -q`, then read `build/reports/kover/reportCore.xml` and `reportPresentation.xml`. Numbers for this branch are in `docs/technical-details.md` (Tests and coverage).
 
-## Build the Android app and run the device tests
+## Build and run the Android app
+
+The Android app is `:androidApp` (Jetpack Compose). It needs the Android SDK from `local.properties` (above) and the **full git history**: `versionCode` is the number of commits (`git rev-list --count HEAD`), so a shallow clone builds with version code 1.
 
 ```bash
-./gradlew :androidApp:assembleDebug :androidApp:assembleRelease   # builds the app (release is unsigned)
-./gradlew :androidApp:installDebug                               # installs on the running emulator or device
+./gradlew :androidApp:assembleDebug :androidApp:installDebug    # build and install on the running emulator or phone
+./gradlew :androidApp:assembleRelease                           # R8-minified; signed with the debug key unless the PAFM_UPLOAD_* variables are set
 ```
 
-`check` never needs a device. The instrumented tests (Keystore, connectivity, persistence, live graph) run only on an emulator or a phone, one module at a time:
+**An emulator.** Create one in Android Studio's Device Manager (the developers used a Pixel 9 Pro, API 37, arm64 on Apple silicon; CI uses API 34 x86_64) or start an existing one:
 
 ```bash
 "$ANDROID_HOME/emulator/emulator" -avd Pixel_9_Pro -no-window -no-audio -no-snapshot &   # or start it from Android Studio
 "$ANDROID_HOME/platform-tools/adb" wait-for-device shell 'while [ "$(getprop sys.boot_completed)" != 1 ]; do sleep 2; done'
-./gradlew :shared:infrastructure:securestore:connectedAndroidDeviceTest
-./gradlew :shared:infrastructure:platform:connectedAndroidDeviceTest
-./gradlew :shared:infrastructure:persistence:connectedAndroidDeviceTest
-./gradlew :shared:umbrella:connectedAndroidDeviceTest
 ```
 
-Device test method names are camelCase: DEX 039 (our minSdk 28) rejects spaces in method names, so the backticked sentence names used in `commonTest` do not compile into an instrumented test. A module opts in to device tests by having a `src/androidDeviceTest` directory.
+**Demo mode** (debug build): the app runs on fake data and contacts no server.
+
+```bash
+adb shell am start -n com.stainedhead.paperclipmobile/.android.MainActivity --ez demo true               # the Inbox with the demo factory
+adb shell am start -n com.stainedhead.paperclipmobile/.android.MainActivity --ez demo_first_run true     # the first-run flow on fakes
+```
+
+Other extras: `demo_biometrics cancelled,approved` (a string: the scripted answers of the device-owner prompt, in order) and `demo_inbox_cards 200` (generated Inbox cards). See [configuration-reference.md](./configuration-reference.md#android-app).
+
+**The real graph needs a screen lock.** Launched without `demo`, the app opens the live graph, whose Keystore key can only be protected on a device that has a PIN, pattern or password. A fresh emulator has none, and the app then says so on its lock screen. Set one for the emulator with `adb shell locksettings set-pin 1234` (remove it with `adb shell locksettings clear --old 1234`). With a lock set, the app shows its own lock screen, then first run on an empty database. This is also the state the live-graph proofs (below) run in.
+
+**The unit and screenshot tests** run on the JVM, no device:
+
+```bash
+./gradlew :androidApp:testDebugUnitTest         # JUnit 4 + Robolectric for the Compose tests, JUnit 5 for the pure ones; 538 tests
+./gradlew :androidApp:verifyRoborazziDebug      # compares every screen with its baseline in androidApp/src/test/screenshots
+./gradlew :androidApp:recordRoborazziDebug      # re-records the baselines after an intended visual change; look at the images before committing
+```
+
+**The device tests** need an emulator or a phone with a screen lock set; `check` never runs them, and each module is its own Gradle run:
+
+```bash
+./gradlew :androidApp:connectedDebugAndroidTest                         # the 14 demo-flow tests on the real activity, one process per test (Android Test Orchestrator)
+./gradlew :shared:infrastructure:securestore:connectedAndroidDeviceTest # the real Android Keystore
+./gradlew :shared:infrastructure:platform:connectedAndroidDeviceTest    # connectivity, prompt adapter
+./gradlew :shared:infrastructure:persistence:connectedAndroidDeviceTest # the SQLite file
+./gradlew :shared:umbrella:connectedAndroidDeviceTest                   # the real graph, no board key in any file or the log
+```
+
+Device test method names are camelCase: DEX 039 (our minSdk 28) rejects spaces in method names, so the backticked sentence names used in `commonTest` do not compile into an instrumented test. A module opts in to device tests by having a `src/androidDeviceTest` directory. Three securestore tests (including the two phase tests that need the lock screen changed between phases) are skipped on a plain run.
+
+**Scripts** (each needs `adb` and one running, unlocked device; set `ANDROID_SERIAL` when several are connected):
+
+| Script | What it proves or does |
+|---|---|
+| `./scripts/android-live-smoke.sh` | A launch without `demo` opens the real first-run or lock screen, no board key (`pcp_board_`) is in the app's files or the log, backup is refused, the release manifest allows no cleartext. Needs no server. |
+| `./scripts/android-release-smoke.sh live` and `demo` | Installs the R8 release APK (`demo`: the `releaseDemo` build, which has the demo entry), launches it, and fails on a crash, a class-loading error, a wrong permission set or a missing screen. |
+| `./scripts/run-benchmarks.sh` | The Macrobenchmarks on the `benchmark` build type: cold start to the Inbox (median of 10) and frame timing over a 200-card fling. On an emulator it is a regression guard, not the Pixel 6 target (`PAFM_BENCHMARK_ALLOW_EMULATOR=0` refuses emulators). About ten minutes. |
+| `./scripts/generate-baseline-profile.sh` | Re-records `androidApp/src/main/baseline-prof.txt` (about six minutes; API 33 or newer). |
+| `./scripts/android-live-pairing.sh` | Pairs the debug app with the pinned Paperclip server in Docker and checks where the key ended up. **Never run yet**: expect to fix it on first use. |
 
 ## Build the XCFramework and run the iOS tests
 

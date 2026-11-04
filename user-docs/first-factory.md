@@ -12,3 +12,14 @@ A **factory** is one Paperclip server. On first launch the app shows "Add your f
 **Try the demo factory** switches to a built-in demo factory with fake data (Acme Labs, PAP-1182, Engineer 1). Use it to look around; it never contacts a server.
 
 **Current state.** A launch without `-demo` runs this flow against the real server; `-demo-first-run` (Debug builds) runs it on fakes. Private servers: see [Tailscale and allowed hostnames](./tailscale-and-hostnames.md). Problems: [troubleshooting](./troubleshooting.md).
+
+## On Android
+
+<img src="images/android-first-run.png" alt="Android first run: Add your first factory, with address and name fields, Check address and Try the demo factory" width="260">
+
+The Android screen is the same flow with the same checks and messages (they come from the shared core): address, name, **Check address**, **Continue to pairing**, then the company and the app lock. Things that differ:
+
+- Pairing opens the approval page in a **Chrome Custom Tab**, not an in-app sheet; see [pairing](./pairing.md).
+- The app lock uses your **fingerprint, face or screen lock**. A phone with none of them set up cannot hold a protected board key, and the app says "A fingerprint, face or screen lock isn't set up on this phone." when it needs one ([app lock](./app-lock.md)).
+- **Try the demo factory** works the same: fake data, no server.
+- In a debug build, `adb shell am start -n com.stainedhead.paperclipmobile/.android.MainActivity --ez demo_first_run true` starts this flow on fakes ([getting started](./getting-started.md#build-and-run-the-android-app)).
