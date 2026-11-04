@@ -673,4 +673,24 @@
     <string name="agent_detail_budget_field">Monthly budget</string>
     <string name="agent_detail_budget_placeholder">Amount</string>
     <string name="agent_detail_budget_save">Save budget</string>
+
+    <!-- Run viewer (screen 7). -->
+    <string name="run_nav_title">Run</string>
+    <string name="run_heartbeat">%1$s heartbeat</string>
+    <string name="run_status_line">%1$s · %2$s</string>
+    <string name="run_open_issue">Open issue</string>
+    <string name="run_events">Events</string>
+    <string name="run_no_events">No events yet.</string>
+    <string name="run_log_tail">Log tail</string>
+    <string name="run_log_empty">No log output yet.</string>
+    <string name="run_log_unavailable">The log could not be read right now.</string>
+    <string name="run_log_dropped">Earlier output was dropped to keep the screen light.</string>
+    <string name="run_autoscroll_on">auto-scroll on</string>
+    <string name="run_autoscroll_off">auto-scroll off</string>
+    <string name="run_autoscroll_hint">Toggles following the end of the log</string>
+    <string name="run_jump_to_latest">Jump to latest</string>
+    <string name="run_cancel_run">Cancel run</string>
+    <string name="run_cancelling">Cancelling…</string>
+    <string name="run_cancel_title">Cancel this run?</string>
+    <string name="run_cancel_message">The agent stops what it is doing. Work already done stays.</string>
 </resources>

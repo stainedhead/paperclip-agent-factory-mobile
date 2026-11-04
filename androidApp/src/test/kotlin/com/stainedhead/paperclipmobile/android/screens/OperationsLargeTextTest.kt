@@ -78,4 +78,16 @@ class OperationsLargeTextTest {
         rule.assertTarget("agent-detail-run-now")
         rule.assertTarget("agent-set-budget")
     }
+
+    @Test
+    fun theRunViewerCancelAndTheLogToggleFitAndAreAtLeast48dpTall() {
+        showAtLargest({ rule.hasTag("run-cancel") }) {
+            RunViewerScreen(app.session, AppRoute.Run(DemoId.RUN_LIVE), app.navigator)
+        }
+
+        rule.onNodeWithTag("run-cancel").assertIsDisplayed()
+        rule.onNodeWithTag("run-cancel").assertHeightIsAtLeast(MINIMUM_TARGET)
+        rule.assertTarget("run-autoscroll")
+        rule.assertTarget("run-issue")
+    }
 }

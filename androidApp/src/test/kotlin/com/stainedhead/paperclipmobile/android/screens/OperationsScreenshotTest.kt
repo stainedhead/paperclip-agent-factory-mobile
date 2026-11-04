@@ -120,4 +120,23 @@ class OperationsScreenshotTest {
 
     @Test
     fun agentDetailLargeText() = agentDetail(darkTheme = false, fontScale = LARGE_TEXT)
+
+    private fun runViewer(
+        darkTheme: Boolean,
+        fontScale: Float? = null,
+    ) = capture(
+        "run-viewer",
+        darkTheme,
+        fontScale,
+        { rule.hasTag("run-log") && rule.hasTag("run-cancel") && rule.hasTag("run-event-4") },
+    ) { RunViewerScreen(app.session, AppRoute.Run(DemoId.RUN_LIVE), app.navigator) }
+
+    @Test
+    fun runViewerLight() = runViewer(darkTheme = false)
+
+    @Test
+    fun runViewerDark() = runViewer(darkTheme = true)
+
+    @Test
+    fun runViewerLargeText() = runViewer(darkTheme = false, fontScale = LARGE_TEXT)
 }

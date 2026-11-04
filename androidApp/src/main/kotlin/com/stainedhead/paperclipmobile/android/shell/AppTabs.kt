@@ -19,6 +19,7 @@ import com.stainedhead.paperclipmobile.android.screens.FactoryHomeScreen
 import com.stainedhead.paperclipmobile.android.screens.InboxScreen
 import com.stainedhead.paperclipmobile.android.screens.ManageFactoriesScreen
 import com.stainedhead.paperclipmobile.android.screens.PairedDevicesScreen
+import com.stainedhead.paperclipmobile.android.screens.RunViewerScreen
 import com.stainedhead.paperclipmobile.android.screens.SettingsScreen
 
 /**
@@ -46,6 +47,7 @@ fun AppTabs(
             when (route) {
                 is AppRoute.Agent -> AgentDetailScreen(session, route, navigator)
                 is AppRoute.Approval -> ApprovalScreen(session, route, navigator)
+                is AppRoute.Run -> RunViewerScreen(session, route, navigator)
                 is AppRoute.Decision -> DecisionScreen(session, route, navigator)
                 is AppRoute.EditFactory -> EditFactoryScreen(session, route.id, navigator)
                 AppRoute.ManageFactories -> ManageFactoriesScreen(session, navigator)

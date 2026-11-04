@@ -68,10 +68,10 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T5.3 Approval
   - [x] T5.4 Budget incident sheet
   - [x] T5.5 Offline and viewer variants across the family
-- [ ] 2a-6 Factory home, Agents, Agent detail, Run viewer
+- [x] 2a-6 Factory home, Agents, Agent detail, Run viewer
   - [x] T6.1 Factory home
   - [x] T6.2 Agents and Agent detail
-  - [ ] T6.3 Run viewer
+  - [x] T6.3 Run viewer
 - [ ] 2a-7 Work list and Issue
   - [ ] T7.1 Work list
   - [ ] T7.2 Issue: Thread / Plan / Runs / Files
@@ -117,3 +117,4 @@ None.
 - 2026-11-04: milestone 2a-3 implemented (T3.1 to T3.9). Gates observed: spotlessCheck, detekt, lint, konsistTest (90), allTests, :androidApp:testDebugUnitTest (125), verifyRoborazziDebug (7 baselines), assembleDebug, assembleRelease. Emulator smoke on Pixel_9_Pro: demo Inbox shell with badge 3, demo first run, live launch lock screen (FLAG_SECURE). ADR-125.
 - 2026-11-04: milestone 2a-4 implemented (T4.1 to T4.5). Gates: spotlessCheck, detekt, lint, konsistTest (92), :androidApp:testDebugUnitTest (222), verifyRoborazziDebug (22 baselines). Emulator smoke on Pixel_9_Pro (demo). ADR-126, ADR-127.
 - 2026-11-04: milestone 2a-5 implemented (T5.1 to T5.5): Inbox, Decision, Approval, Budget incident sheet, offline and viewer variants. Gates: spotlessCheck, detekt, lint, konsistTest, :androidApp:testDebugUnitTest, verifyRoborazziDebug (baselines for inbox, inbox offline, decision, approval and budget in light, dark and font scale 2.0). ADR-128, ADR-129.
+- 2026-11-04: milestone 2a-6 implemented (T6.1 to T6.3): Factory home, Agents, Agent detail and Run viewer, with the Factory and Agents tab roots and the Agent and Run routes wired, `TabNavigator.select`, refresh while visible, and main PRD acceptance criterion 8 in virtual time. Gates: spotlessCheck, detekt, lint, konsistTest, :androidApp:testDebugUnitTest (405), :androidApp:verifyRoborazziDebug (49 baselines: Factory home, Agents, Agent detail and Run viewer in light, dark and font scale 2.0). ADR-130.
