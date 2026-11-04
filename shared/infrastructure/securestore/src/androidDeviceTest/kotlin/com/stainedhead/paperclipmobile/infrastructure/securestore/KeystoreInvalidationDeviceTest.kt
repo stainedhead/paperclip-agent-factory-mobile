@@ -42,7 +42,7 @@ class KeystoreInvalidationDeviceTest {
         assertEquals(listOf("key"), backend.aliases(""))
         // Right after the PIN was set the authentication window may still be open; either way garbage never opens.
         val opened = backend.open("key", iv, ciphertext, byteArrayOf(2))
-        assertTrue(opened == OpenOutcome.NeedsAuthentication || opened == OpenOutcome.Undecryptable, "got $opened")
+        assertTrue(opened is OpenOutcome.NeedsAuthentication || opened == OpenOutcome.Undecryptable, "got $opened")
     }
 
     @Test
@@ -59,7 +59,8 @@ class KeystoreInvalidationDeviceTest {
     @Test
     fun everyKeystoreFailureMapsToTheOutcomeTheStoreExpects() {
         assertEquals(OpenOutcome.Invalidated, openFailure(KeyPermanentlyInvalidatedException()))
-        assertEquals(OpenOutcome.NeedsAuthentication, openFailure(UserNotAuthenticatedException()))
+        // Keys are authorised per use, so a refusal at the last step is a key that cannot be used right now.
+        assertEquals(OpenOutcome.Unreadable, openFailure(UserNotAuthenticatedException()))
         assertEquals(OpenOutcome.Undecryptable, openFailure(AEADBadTagException()))
         assertEquals(OpenOutcome.Undecryptable, openFailure(IllegalBlockSizeException()))
         assertEquals(OpenOutcome.Undecryptable, openFailure(InvalidAlgorithmParameterException()))

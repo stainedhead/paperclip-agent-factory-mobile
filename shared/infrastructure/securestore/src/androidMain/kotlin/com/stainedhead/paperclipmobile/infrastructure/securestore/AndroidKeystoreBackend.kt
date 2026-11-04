@@ -2,10 +2,10 @@ package com.stainedhead.paperclipmobile.infrastructure.securestore
 
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyInfo
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
-import android.security.keystore.UserNotAuthenticatedException
 import java.security.GeneralSecurityException
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyStore
@@ -15,6 +15,7 @@ import javax.crypto.Cipher
 import javax.crypto.IllegalBlockSizeException
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
+import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 
 private const val PROVIDER = "AndroidKeyStore"
@@ -22,15 +23,18 @@ private const val TRANSFORMATION = "AES/GCM/NoPadding"
 private const val KEY_BITS = 256
 private const val TAG_BITS = 128
 
-/** How long after the person authenticated a user-authentication key may be used, in seconds. */
-private const val AUTH_WINDOW_SECONDS = 5
+/** `setUserAuthenticationParameters` timeout 0: every use of the key needs its own authentication (crypto object). */
+private const val PER_USE_AUTHORIZATION = 0
 
 /**
  * [KeystoreBackend] on the Android Keystore: non-exportable AES-256-GCM keys generated inside the secure hardware, in
  * StrongBox when the device has it and in the TEE otherwise (a device without StrongBox reports it by throwing
  * [StrongBoxUnavailableException], which is the capability probe). A key that demands user authentication needs a
  * secure lock screen and API 30 or newer; where that is not so, sealing fails: there is no fallback to an unprotected
- * key. [aliasPrefix] keeps this app's keys apart from any other use of the Keystore (and tests apart from each other).
+ * key. Such a key is authorised for one use at a time (validity 0): the system prompt authorises one initialised
+ * [Cipher], which the store completes with [finishSeal] or [finishOpen]. No window of seconds exists, so an
+ * authentication made by another app or by unlocking the phone never opens a protected secret (R-001).
+ * [aliasPrefix] keeps this app's keys apart from any other use of the Keystore (and tests apart from each other).
  */
 internal class AndroidKeystoreBackend(
     private val aliasPrefix: String = KeystoreSecretStore.DEFAULT_KEY_ALIAS_PREFIX,
@@ -47,8 +51,6 @@ internal class AndroidKeystoreBackend(
         } catch (_: KeyPermanentlyInvalidatedException) {
             // The record this key sealed is useless now; the new value gets a new key.
             sealAfterReplacing(full, plaintext, aad, protection)
-        } catch (_: UserNotAuthenticatedException) {
-            SealOutcome.NeedsAuthentication
         } catch (_: GeneralSecurityException) {
             SealOutcome.Failed
         } catch (_: ProviderException) {
@@ -58,6 +60,20 @@ internal class AndroidKeystoreBackend(
         }
     }
 
+    override fun finishSeal(
+        cipher: Cipher,
+        plaintext: ByteArray,
+        aad: ByteArray,
+    ): SealOutcome =
+        try {
+            cipher.updateAAD(aad)
+            SealOutcome.Sealed(cipher.iv, cipher.doFinal(plaintext))
+        } catch (_: GeneralSecurityException) {
+            SealOutcome.Failed
+        } catch (_: ProviderException) {
+            SealOutcome.Failed
+        }
+
     override fun open(
         alias: String,
         iv: ByteArray,
@@ -66,8 +82,12 @@ internal class AndroidKeystoreBackend(
     ): OpenOutcome {
         val key = keyStore().getKey(aliasPrefix + alias, null) as? SecretKey ?: return OpenOutcome.KeyMissing
         return try {
+            val perUse = requiresAuthentication(key)
+            // A user-authentication key from before per-use authorisation can no longer be trusted: pair again.
+            if (perUse && authorisationWindowSeconds(key) != PER_USE_AUTHORIZATION) return OpenOutcome.Invalidated
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
+            if (perUse) return OpenOutcome.NeedsAuthentication(cipher)
             cipher.updateAAD(aad)
             OpenOutcome.Opened(cipher.doFinal(ciphertext))
         } catch (e: GeneralSecurityException) {
@@ -76,6 +96,20 @@ internal class AndroidKeystoreBackend(
             openFailure(e)
         }
     }
+
+    override fun finishOpen(
+        cipher: Cipher,
+        ciphertext: ByteArray,
+        aad: ByteArray,
+    ): OpenOutcome =
+        try {
+            cipher.updateAAD(aad)
+            OpenOutcome.Opened(cipher.doFinal(ciphertext))
+        } catch (e: GeneralSecurityException) {
+            openFailure(e)
+        } catch (e: ProviderException) {
+            openFailure(e)
+        }
 
     override fun deleteKey(alias: String) {
         val store = keyStore()
@@ -98,8 +132,6 @@ internal class AndroidKeystoreBackend(
         try {
             keyStore().deleteEntry(full)
             sealWith(full, plaintext, aad, protection)
-        } catch (_: UserNotAuthenticatedException) {
-            SealOutcome.NeedsAuthentication
         } catch (_: GeneralSecurityException) {
             SealOutcome.Failed
         } catch (_: ProviderException) {
@@ -114,9 +146,15 @@ internal class AndroidKeystoreBackend(
         aad: ByteArray,
         protection: Boolean,
     ): SealOutcome {
-        val key = keyStore().getKey(full, null) as? SecretKey ?: generate(full, protection)
+        var key = keyStore().getKey(full, null) as? SecretKey
+        if (protection && key != null && authorisationWindowSeconds(key) != PER_USE_AUTHORIZATION) {
+            // A user-authentication key from before per-use authorisation: the new value gets a new key.
+            keyStore().deleteEntry(full)
+            key = null
+        }
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, key)
+        cipher.init(Cipher.ENCRYPT_MODE, key ?: generate(full, protection))
+        if (protection) return SealOutcome.NeedsAuthentication(cipher)
         cipher.updateAAD(aad)
         val ciphertext = cipher.doFinal(plaintext)
         return SealOutcome.Sealed(cipher.iv, ciphertext)
@@ -153,7 +191,7 @@ internal class AndroidKeystoreBackend(
             spec
                 .setUserAuthenticationRequired(true)
                 .setUserAuthenticationParameters(
-                    AUTH_WINDOW_SECONDS,
+                    PER_USE_AUTHORIZATION,
                     KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL,
                 ).setInvalidatedByBiometricEnrollment(true)
         }
@@ -162,9 +200,17 @@ internal class AndroidKeystoreBackend(
             .apply { init(spec.build()) }
             .generateKey()
     }
-
-    private fun keyStore(): KeyStore = KeyStore.getInstance(PROVIDER).apply { load(null) }
 }
+
+private fun keyInfo(key: SecretKey): KeyInfo =
+    SecretKeyFactory.getInstance(key.algorithm, PROVIDER).getKeySpec(key, KeyInfo::class.java) as KeyInfo
+
+private fun requiresAuthentication(key: SecretKey): Boolean = keyInfo(key).isUserAuthenticationRequired
+
+/** The seconds a user-authentication key stays usable after an authentication; 0 is one use (`CryptoObject`). */
+private fun authorisationWindowSeconds(key: SecretKey): Int = keyInfo(key).userAuthenticationValidityDurationSeconds
+
+private fun keyStore(): KeyStore = KeyStore.getInstance(PROVIDER).apply { load(null) }
 
 /**
  * What a failed decryption means. Only a permanently invalidated key is [OpenOutcome.Invalidated]; a record that does
@@ -174,8 +220,6 @@ internal class AndroidKeystoreBackend(
 internal fun openFailure(failure: Exception): OpenOutcome =
     when (failure) {
         is KeyPermanentlyInvalidatedException -> OpenOutcome.Invalidated
-
-        is UserNotAuthenticatedException -> OpenOutcome.NeedsAuthentication
 
         is BadPaddingException,
         is IllegalBlockSizeException,

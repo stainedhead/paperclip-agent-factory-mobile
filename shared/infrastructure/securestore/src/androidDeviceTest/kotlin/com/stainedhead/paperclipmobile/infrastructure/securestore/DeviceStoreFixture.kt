@@ -11,7 +11,6 @@ import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.domain.SecretReadResult
 import com.stainedhead.paperclipmobile.domain.SecretWriteResult
-import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
 import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.contract.SecretStoreContract
@@ -46,7 +45,7 @@ internal class DeviceStoreFixture {
         val prefix = "pafm.test.${UUID.randomUUID()}/"
         prefixes += prefix
         val backend = AndroidKeystoreBackend(prefix)
-        val store = KeystoreSecretStore(backend, RecordFiles(directory), { BiometricResult.Unavailable }, "protect")
+        val store = KeystoreSecretStore(backend, RecordFiles(directory), { _, _ -> null }, "protect")
         return store to backend
     }
 

@@ -39,10 +39,10 @@ internal class StoreFixture {
         KeystoreSecretStore(
             backend,
             RecordFiles(dir),
-            { reason ->
+            { reason, cipher ->
                 prompts += reason
                 backend.authenticated = answer == BiometricResult.Approved
-                answer
+                cipher.takeIf { answer == BiometricResult.Approved }
             },
             "protect the key",
         )

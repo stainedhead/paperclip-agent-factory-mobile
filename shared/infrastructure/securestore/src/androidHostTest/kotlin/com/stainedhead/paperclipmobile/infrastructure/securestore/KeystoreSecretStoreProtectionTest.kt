@@ -69,26 +69,6 @@ class KeystoreSecretStoreProtectionTest {
         }
 
     @Test
-    fun `R-001 an authentication another app just made does not satisfy a protected read`() =
-        runTest {
-            store.put(key, Secret.of("one"), protected) shouldBe SecretWriteResult.Stored
-            prompts.clear()
-            backend.authenticated = true // the person unlocked the phone or another app a moment ago
-            f.answer = BiometricResult.Cancelled
-            store.read() shouldBe SecretReadResult.Denied
-            prompts.size shouldBe 1
-        }
-
-    @Test
-    fun `R-001 two consecutive protected reads prompt twice`() =
-        runTest {
-            store.put(key, Secret.of("one"), protected) shouldBe SecretWriteResult.Stored
-            prompts.clear()
-            repeat(2) { (store.read() as SecretReadResult.Found).secret shouldBe Secret.of("one") }
-            prompts.size shouldBe 2
-        }
-
-    @Test
     fun `AND-001 every refusal of the prompt is denied`() =
         runTest {
             store.put(key, Secret.of("one"), protected)

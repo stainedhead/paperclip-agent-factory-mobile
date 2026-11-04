@@ -60,7 +60,7 @@ internal fun androidLivePlatform(
     val secrets =
         KeystoreSecretStore(
             context,
-            authenticate = prompts::authenticateWithText,
+            authenticate = prompts::authenticateWithCipher,
             writeReason = settings.writeReason,
             keyAliasPrefix = settings.keyAliasPrefix,
         )

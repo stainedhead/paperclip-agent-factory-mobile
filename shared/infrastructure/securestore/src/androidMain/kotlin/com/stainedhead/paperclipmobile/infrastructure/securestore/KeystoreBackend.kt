@@ -1,13 +1,21 @@
 package com.stainedhead.paperclipmobile.infrastructure.securestore
 
+import javax.crypto.Cipher
+
 internal sealed interface SealOutcome {
     class Sealed(
         val iv: ByteArray,
         val ciphertext: ByteArray,
     ) : SealOutcome
 
-    /** The key demands that the person authenticates first. */
-    data object NeedsAuthentication : SealOutcome
+    /**
+     * The key demands that the person authenticates for this one use: [cipher] is initialised and unused, and goes to
+     * the system prompt as its crypto object. The operation completes with `finishSeal` on the cipher the prompt
+     * returns.
+     */
+    class NeedsAuthentication(
+        val cipher: Cipher,
+    ) : SealOutcome
 
     data object Failed : SealOutcome
 }
@@ -23,8 +31,10 @@ internal sealed interface OpenOutcome {
     /** The key was permanently invalidated, for example by a new fingerprint. */
     data object Invalidated : OpenOutcome
 
-    /** The key demands that the person authenticates first. */
-    data object NeedsAuthentication : OpenOutcome
+    /** Like [SealOutcome.NeedsAuthentication]: the operation completes with `finishOpen`. */
+    class NeedsAuthentication(
+        val cipher: Cipher,
+    ) : OpenOutcome
 
     /** The key is fine but the record does not decrypt under it: corrupt, truncated or tampered with. */
     data object Undecryptable : OpenOutcome
@@ -39,7 +49,8 @@ internal sealed interface OpenOutcome {
  * a key is made on first use, and an invalidated key is replaced by a new one when sealing.
  */
 internal interface KeystoreBackend {
-    /** Encrypts [plaintext] under the key [alias] (made as a user-authentication key when [protection]). */
+    /** Encrypts [plaintext] under the key [alias] (made as a per-use user-authentication key when [protection]; then
+     * the outcome is [SealOutcome.NeedsAuthentication] and nothing is encrypted until `finishSeal`). */
     fun seal(
         alias: String,
         plaintext: ByteArray,
@@ -50,6 +61,20 @@ internal interface KeystoreBackend {
     fun open(
         alias: String,
         iv: ByteArray,
+        ciphertext: ByteArray,
+        aad: ByteArray,
+    ): OpenOutcome
+
+    /** Completes a protected seal with the [cipher] the system prompt authorised (one use, then it is spent). */
+    fun finishSeal(
+        cipher: Cipher,
+        plaintext: ByteArray,
+        aad: ByteArray,
+    ): SealOutcome
+
+    /** Completes a protected open with the [cipher] the system prompt authorised. */
+    fun finishOpen(
+        cipher: Cipher,
         ciphertext: ByteArray,
         aad: ByteArray,
     ): OpenOutcome

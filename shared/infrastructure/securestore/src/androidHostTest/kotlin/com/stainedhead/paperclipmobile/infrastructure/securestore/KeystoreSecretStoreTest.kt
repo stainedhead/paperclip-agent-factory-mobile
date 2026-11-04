@@ -40,7 +40,7 @@ class KeystoreSecretStoreContractTest : SecretStoreContract() {
     }
 
     override fun create(): SecretStore =
-        KeystoreSecretStore(FakeKeystoreBackend(), RecordFiles(tempDir()), { BiometricResult.Unavailable }, "write")
+        KeystoreSecretStore(FakeKeystoreBackend(), RecordFiles(tempDir()), { _, _ -> null }, "write")
 
     @Test
     fun `AND-001 the keystore store obeys the secret store contract`() = runTest { runAll() }

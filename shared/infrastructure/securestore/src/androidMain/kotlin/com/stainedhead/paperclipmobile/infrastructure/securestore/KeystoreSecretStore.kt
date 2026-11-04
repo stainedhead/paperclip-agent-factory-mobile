@@ -7,12 +7,12 @@ import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.domain.SecretReadResult
 import com.stainedhead.paperclipmobile.domain.SecretWriteResult
-import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import javax.crypto.Cipher
 
 private const val NAMESPACE_ROOT = "instance/"
 
@@ -22,9 +22,10 @@ private const val NAMESPACE_ROOT = "instance/"
  * associated data, so a record copied under another name does not decrypt.
  *
  * A secret that must be protected (FR-011) is sealed under a key that demands the person's authentication; the store
- * asks `authenticate` (device owner authentication, supplied by the app) and then uses the key within the window the
- * Keystore grants. A refusal reads as [SecretReadResult.Denied] and writes as [SecretWriteResult.Failed]; there is no
- * fallback to an unprotected key.
+ * asks `authenticate` (device owner authentication, supplied by the app) with a cipher initialised for this one
+ * use, and completes the operation with the cipher the prompt authorised; the key allows nothing else (per-use
+ * authorisation, no window of seconds, R-001). A refusal reads as [SecretReadResult.Denied] and writes as
+ * [SecretWriteResult.Failed]; there is no fallback to an unprotected key.
  *
  * A read tells apart: a key the system invalidated ([SecretReadResult.Invalidated], the factory needs pairing again),
  * a record or key that is gone or does not decrypt ([SecretReadResult.Missing], never plaintext), and a key that cannot
@@ -34,17 +35,17 @@ private const val NAMESPACE_ROOT = "instance/"
 class KeystoreSecretStore internal constructor(
     private val backend: KeystoreBackend,
     private val files: RecordFiles,
-    private val authenticate: suspend (String) -> BiometricResult,
+    private val authenticate: suspend (String, Cipher) -> Cipher?,
     private val writeReason: String,
 ) : SecretStore {
     /**
-     * The Keystore of this app. [authenticate] shows the device owner prompt with the text it is given and reports what
-     * the person did; [writeReason] is that text when a protected secret is being stored. [keyAliasPrefix] names the
-     * app's keys in the Keystore.
+     * The Keystore of this app. [authenticate] shows the device owner prompt with the text it is given for the cipher
+     * it is given, and answers the cipher the person authorised or `null`; [writeReason] is that text when a
+     * protected secret is being stored. [keyAliasPrefix] names the app's keys in the Keystore.
      */
     constructor(
         context: Context,
-        authenticate: suspend (String) -> BiometricResult,
+        authenticate: suspend (String, Cipher) -> Cipher?,
         writeReason: String,
         keyAliasPrefix: String = DEFAULT_KEY_ALIAS_PREFIX,
     ) : this(
@@ -108,8 +109,10 @@ class KeystoreSecretStore internal constructor(
             val alias = aliasFor(path, protection)
             val aad = path.encodeToByteArray()
             var sealed = backend.seal(alias, bytes, aad, protection)
-            if (sealed is SealOutcome.NeedsAuthentication && authenticate(writeReason) == BiometricResult.Approved) {
-                sealed = backend.seal(alias, bytes, aad, protection)
+            if (sealed is SealOutcome.NeedsAuthentication) {
+                // The prompt authorises this one cipher; the answer is the cipher, or null when the person did not.
+                val authorised = authenticate(writeReason, sealed.cipher)
+                sealed = if (authorised == null) SealOutcome.Failed else backend.finishSeal(authorised, bytes, aad)
             }
             if (sealed !is SealOutcome.Sealed) return SecretWriteResult.Failed
             files.write(path, SecretRecord(protection, sealed.iv, sealed.ciphertext).encode())
@@ -137,14 +140,22 @@ class KeystoreSecretStore internal constructor(
         val alias = aliasFor(path, record.protection)
         val aad = path.encodeToByteArray()
         var outcome = backend.open(alias, record.iv, record.ciphertext, aad)
-        if (outcome is OpenOutcome.NeedsAuthentication && authenticate(reason) == BiometricResult.Approved) {
-            outcome = backend.open(alias, record.iv, record.ciphertext, aad)
+        if (outcome is OpenOutcome.NeedsAuthentication) {
+            val authorised = authenticate(reason, outcome.cipher)
+            outcome =
+                if (authorised ==
+                    null
+                ) {
+                    OpenOutcome.Unreadable
+                } else {
+                    backend.finishOpen(authorised, record.ciphertext, aad)
+                }
         }
         return when (outcome) {
             is OpenOutcome.Opened -> found(outcome.plaintext)
             OpenOutcome.KeyMissing, OpenOutcome.Undecryptable -> SecretReadResult.Missing
             OpenOutcome.Invalidated -> SecretReadResult.Invalidated
-            OpenOutcome.NeedsAuthentication, OpenOutcome.Unreadable -> SecretReadResult.Denied
+            is OpenOutcome.NeedsAuthentication, OpenOutcome.Unreadable -> SecretReadResult.Denied
         }
     }
 

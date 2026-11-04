@@ -2,9 +2,6 @@ package com.stainedhead.paperclipmobile.infrastructure.securestore
 
 import android.app.KeyguardManager
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyInfo
-import android.security.keystore.KeyProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.stainedhead.paperclipmobile.domain.InstanceId
@@ -21,14 +18,11 @@ import com.stainedhead.paperclipmobile.testing.contract.SecretStoreContract
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeFalse
-import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.security.KeyStore
 import java.util.UUID
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKeyFactory
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -132,54 +126,6 @@ class KeystoreRecordDeviceTest {
         }
 
     @Test
-    fun aProtectedKeyIsAuthorisedForOneUseAndNotForAWindowOfSeconds() {
-        val keyguard = context.getSystemService(KeyguardManager::class.java)
-        assumeTrue("needs a secure lock screen", keyguard.isDeviceSecure)
-        val prefix = "pafm.test.${UUID.randomUUID()}/".also { prefixes += it }
-        val backend = AndroidKeystoreBackend(prefix)
-        val sealed = backend.seal("k", byteArrayOf(1), byteArrayOf(2), protection = true)
-        assertTrue(sealed is SealOutcome.Sealed || sealed is SealOutcome.NeedsAuthentication, "got $sealed")
-        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val aesKey = keyStore.getKey(prefix + "k", null) as JceSecretKey
-        val info =
-            SecretKeyFactory
-                .getInstance(
-                    aesKey.algorithm,
-                    "AndroidKeyStore",
-                ).getKeySpec(aesKey, KeyInfo::class.java)
-        assertEquals(
-            0,
-            (info as KeyInfo).userAuthenticationValidityDurationSeconds,
-            "a validity window lets any recent unlock or other app's authentication satisfy a protected read",
-        )
-    }
-
-    @Test
-    fun aKeyMadeWithTheOldFiveSecondWindowReadsAsInvalidatedSoThePersonPairsAgain() {
-        val keyguard = context.getSystemService(KeyguardManager::class.java)
-        assumeTrue("needs a secure lock screen", keyguard.isDeviceSecure)
-        val prefix = "pafm.test.${UUID.randomUUID()}/".also { prefixes += it }
-        val spec =
-            KeyGenParameterSpec
-                .Builder(prefix + "legacy:p", KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                .setKeySize(KEY_BITS)
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setUserAuthenticationRequired(true)
-                .setUserAuthenticationParameters(
-                    OLD_WINDOW_SECONDS,
-                    KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL,
-                ).build()
-        KeyGenerator
-            .getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-            .apply { init(spec) }
-            .generateKey()
-        val backend = AndroidKeystoreBackend(prefix)
-        val opened = backend.open("legacy:p", ByteArray(IV_BYTES), ByteArray(TAG_BYTES), byteArrayOf(2))
-        assertEquals(OpenOutcome.Invalidated, opened, "an old window key is not trusted; the factory pairs again")
-    }
-
-    @Test
     fun theBackendSealsAndOpensAndRejectsAWrongAssociatedData() {
         val backend = AndroidKeystoreBackend("pafm.test.${UUID.randomUUID()}/".also { prefixes += it })
         val sealed = assertIs<SealOutcome.Sealed>(backend.seal("k", "hello".encodeToByteArray(), byteArrayOf(1), false))
@@ -193,9 +139,5 @@ class KeystoreRecordDeviceTest {
     private companion object {
         const val FLIP = 0x55
         const val HEADER_BYTE = 8
-        const val KEY_BITS = 256
-        const val OLD_WINDOW_SECONDS = 5
-        const val IV_BYTES = 12
-        const val TAG_BYTES = 16
     }
 }

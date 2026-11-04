@@ -5,6 +5,7 @@ import androidx.biometric.BiometricPrompt
 import com.stainedhead.paperclipmobile.domain.port.AuthReason
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.Biometrics
+import javax.crypto.Cipher
 
 /**
  * [Biometrics] on `androidx.biometric` (AND-002). The policy is device-owner authentication: strong biometrics with the
@@ -31,9 +32,24 @@ class BiometricPromptBiometrics internal constructor(
     suspend fun authenticateWithText(text: String): BiometricResult =
         when (val outcome = launcher.prompt(text)) {
             PromptOutcome.Succeeded -> BiometricResult.Approved
+
             PromptOutcome.Unavailable -> BiometricResult.Unavailable
+
+            is PromptOutcome.Authorized -> BiometricResult.Failed
+
+            // a plain prompt is never bound to a cipher
             is PromptOutcome.Error -> mapPromptError(outcome.code)
         }
+
+    /**
+     * The prompt for one use of a Keystore key (R-001). The authentication is bound to [cipher] by the system, so an
+     * approval made earlier, or for anything else, can not stand in for it. Answers the authorised cipher, or `null`
+     * when the person did not approve (cancelled, locked out, no prompt to show, or an error): fail closed.
+     */
+    suspend fun authenticateWithCipher(
+        text: String,
+        cipher: Cipher,
+    ): Cipher? = (launcher.promptWithCipher(text, cipher) as? PromptOutcome.Authorized)?.cipher
 }
 
 /** Maps a `BiometricPrompt.ERROR_*` code to the port's result. Unknown codes fail closed. */
@@ -64,7 +80,7 @@ internal fun mapPromptError(code: Int): BiometricResult =
         } // including unable to process, timeout, no space and vendor errors
     }
 
-private const val ANDROID_11 = 30
+internal const val ANDROID_11 = 30
 
 /**
  * The allowed authenticators. Strong biometrics combined with the device credential needs Android 11; on Android 9 and

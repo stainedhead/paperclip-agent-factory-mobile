@@ -19,6 +19,17 @@ internal class ScriptedPromptLauncher : PromptLauncher {
         texts += text
         return next
     }
+
+    var nextCipher: PromptOutcome? = null
+    val cipherTexts = mutableListOf<String>()
+
+    override suspend fun promptWithCipher(
+        text: String,
+        cipher: javax.crypto.Cipher,
+    ): PromptOutcome {
+        cipherTexts += text
+        return nextCipher ?: PromptOutcome.Authorized(cipher)
+    }
 }
 
 class BiometricPromptBiometricsContractTest : BiometricsContract() {
@@ -91,6 +102,28 @@ class BiometricPromptBiometricsTest {
             launcher.next = PromptOutcome.Unavailable
             biometrics.authenticateWithText("Unlock the board key") shouldBe BiometricResult.Unavailable
             launcher.texts shouldBe List(PROMPTS) { "Unlock the board key" }
+        }
+
+    @Test
+    fun `R-001 a cipher prompt answers the authorised cipher and nothing else`() =
+        runTest {
+            val cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+            biometrics.authenticateWithCipher("Unlock the board key", cipher) shouldBe cipher
+            launcher.cipherTexts shouldBe listOf("Unlock the board key")
+        }
+
+    @Test
+    fun `R-001 a cipher prompt that is not approved answers no cipher`() =
+        runTest {
+            val cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+            for (refusal in listOf(
+                PromptOutcome.Unavailable,
+                PromptOutcome.Error(BiometricPrompt.ERROR_USER_CANCELED),
+                PromptOutcome.Succeeded,
+            )) {
+                launcher.nextCipher = refusal
+                biometrics.authenticateWithCipher("Unlock", cipher) shouldBe null
+            }
         }
 
     @Test
