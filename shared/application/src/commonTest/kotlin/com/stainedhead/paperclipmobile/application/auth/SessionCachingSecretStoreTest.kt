@@ -43,8 +43,10 @@ class SessionCachingSecretStoreTest {
             reason: String,
         ): SecretReadResult {
             reads += 1
+            // The device decides the answer when the read starts; the prompt (the gate) only delays delivering it.
+            val answer = inner.get(key, reason)
             gate?.await()
-            return inner.get(key, reason)
+            return answer
         }
     }
 

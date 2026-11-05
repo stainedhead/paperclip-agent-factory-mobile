@@ -43,14 +43,29 @@ class SessionCachingSecretStore(
     private val device: SecretStore,
 ) : SecretStore,
     SessionTokens {
-    /** One per factory: the lock around its device read, how many reads finished, and the last refusal. */
+    /** The reads of one factory that have finished: how many, the last refusal and the token generation it began in. */
+    private class Finished(
+        val count: Long = 0L,
+        val refusal: SecretReadResult? = null,
+        val generation: Long = 0L,
+    )
+
+    /** One per factory: the lock around its device read and what its finished reads produced. */
     private class Flight {
         val lock = Mutex()
-        val finished = MutableStateFlow<Pair<Long, SecretReadResult?>>(0L to null)
+        val finished = MutableStateFlow(Finished())
 
-        /** The refusal of a read that finished after [seenFinished], for a caller that waited on it. */
-        fun refusalSince(seenFinished: Long): SecretReadResult? =
-            finished.value.takeIf { it.first > seenFinished }?.second
+        /**
+         * The refusal of a read that finished after [seenFinished], for a caller that waited on it, unless the
+         * factory's token changed since that read began ([generation] moved): that refusal names a key that is gone.
+         */
+        fun refusalSince(
+            seenFinished: Long,
+            generation: Long,
+        ): SecretReadResult? =
+            finished.value
+                .takeIf { it.count > seenFinished && it.generation == generation }
+                ?.refusal
     }
 
     private val memory = SessionTokenMemory()
@@ -64,10 +79,10 @@ class SessionCachingSecretStore(
         val id = key.instanceId
         memory.copyOf(id)?.let { return SecretReadResult.Found(it) }
         val flight = flightOf(id)
-        val seenFinished = flight.finished.value.first
+        val seenFinished = flight.finished.value.count
         return flight.lock.withLock {
             memory.copyOf(id)?.let { SecretReadResult.Found(it) }
-                ?: flight.refusalSince(seenFinished)
+                ?: flight.refusalSince(seenFinished, memory.generationOf(id))
                 ?: readThrough(key, reason, flight)
         }
     }
@@ -114,7 +129,7 @@ class SessionCachingSecretStore(
         val result = device.get(key, reason)
         val refusal = if (result is SecretReadResult.Found) null else result
         if (result is SecretReadResult.Found) memory.keepIfUnchanged(key.instanceId, generation, result.secret)
-        flight.finished.update { (it.first + 1L) to refusal }
+        flight.finished.update { Finished(it.count + 1L, refusal, generation) }
         return result
     }
 

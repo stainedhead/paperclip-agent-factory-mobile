@@ -80,6 +80,7 @@ With app lock **on** and a factory paired **after** it was turned on, the board 
 4. Switch to a second factory that also has a protected key: one prompt for that factory.
 5. Pause an agent (or any destructive action) with the cache warm: the confirmation sheet and the system prompt appear every time.
 6. Re-pair a factory, then refresh: the next call uses the new key and the factory stays Signed in.
+7. Unlock with the PIN or pattern instead of the fingerprint, then refresh twice: the second refresh must not prompt (a system sheet must not look like the app going to the background and empty the cache).
 
 A screen recording helps (`adb shell screenrecord /sdcard/prompts.mp4`, then `adb pull`; delete it afterwards, it may show real data).
 
