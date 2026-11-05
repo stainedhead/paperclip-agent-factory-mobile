@@ -26,6 +26,18 @@ class DemoControlsTest {
     }
 
     @Test
+    fun `a run can be cancelled elsewhere and the demo graph then reads it as cancelled`() =
+        runTest {
+            val graph = PaperclipCore.createDemoGraph()
+            val controls = checkNotNull(graph.demoControls)
+
+            controls.cancelRunElsewhere("run-1204-live") shouldBe true
+
+            controls.cancelRunElsewhere("run-1204-live") shouldBe false
+            graph.close()
+        }
+
+    @Test
     fun `scripted biometric results answer the next prompts in order and are counted`() =
         runTest {
             val graph = PaperclipCore.createDemoGraph()
