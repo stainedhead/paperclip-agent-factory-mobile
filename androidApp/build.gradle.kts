@@ -165,3 +165,36 @@ android {
     }
     sourceSets.getByName("nonMinified").manifest.srcFile("src/benchmark/AndroidManifest.xml")
 }
+
+// A release that falls back to the debug key must be asked for (R-015, ADR-132). Without the upload key the build is
+// refused when it runs in CI, unless PAFM_ALLOW_DEBUG_SIGNED_RELEASE=1 says a debug-signed smoke build is meant; a
+// half-set upload configuration is refused everywhere. Checked when the release APK is packaged, so lint and the
+// debug builds never need a key.
+val verifyReleaseSigning =
+    tasks.register("verifyReleaseSigning") {
+        group = "verification"
+        description = "Refuses a release that would silently be signed with the debug key."
+        val hasStoreFile = providers.environmentVariable("PAFM_UPLOAD_STORE_FILE").isPresent
+        val missing =
+            listOf("PAFM_UPLOAD_STORE_PASSWORD", "PAFM_UPLOAD_KEY_ALIAS", "PAFM_UPLOAD_KEY_PASSWORD")
+                .filterNot { providers.environmentVariable(it).isPresent }
+        val optedIn = providers.environmentVariable("PAFM_ALLOW_DEBUG_SIGNED_RELEASE").orNull == "1"
+        val inCi = providers.environmentVariable("CI").isPresent
+        doLast {
+            if (hasStoreFile && missing.isNotEmpty()) {
+                throw GradleException(
+                    "PAFM_UPLOAD_STORE_FILE is set but ${missing.joinToString()} is not: the upload key is half configured.",
+                )
+            }
+            if (!hasStoreFile && inCi && !optedIn) {
+                throw GradleException(
+                    "No upload key (PAFM_UPLOAD_STORE_FILE) in CI: this release would be signed with the debug key. " +
+                        "Set PAFM_ALLOW_DEBUG_SIGNED_RELEASE=1 if a debug-signed smoke build is what you want.",
+                )
+            }
+            if (!hasStoreFile) {
+                logger.warn("The release is signed with the DEBUG key: not a distribution artifact (ADR-132).")
+            }
+        }
+    }
+tasks.matching { it.name == "packageRelease" }.configureEach { dependsOn(verifyReleaseSigning) }

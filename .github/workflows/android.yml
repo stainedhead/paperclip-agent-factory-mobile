@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: android-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -38,6 +38,9 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.0.0"
       - name: Lint, unit tests, screenshot verification, release build
+        # No upload key in CI: the smoke build is debug-signed on purpose (ADR-132), so say so (R-015).
+        env:
+          PAFM_ALLOW_DEBUG_SIGNED_RELEASE: "1"
         run: ./gradlew :androidApp:lint :androidApp:testDebugUnitTest :androidApp:verifyRoborazziDebug :androidApp:assembleRelease
       - name: Upload reports
         if: failure()
