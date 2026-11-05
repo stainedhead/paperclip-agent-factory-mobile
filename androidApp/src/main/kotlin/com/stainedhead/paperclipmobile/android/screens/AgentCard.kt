@@ -35,6 +35,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.CardSurface
 import com.stainedhead.paperclipmobile.android.designsystem.RelativeAge
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
+import com.stainedhead.paperclipmobile.android.designsystem.asksDeviceOwner
 import com.stainedhead.paperclipmobile.android.designsystem.compactText
 import com.stainedhead.paperclipmobile.android.designsystem.foreground
 import com.stainedhead.paperclipmobile.android.designsystem.rememberNowMillis
@@ -99,6 +100,7 @@ fun RowButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     locked: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val colors = AppTheme.colors
     Row(
@@ -107,13 +109,14 @@ fun RowButton(
             .clip(CircleShape)
             .background(colors.surface)
             .border(HairlineWidth, colors.border, CircleShape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Spacing.roomy)
+            .asksDeviceOwner(text, locked)
             .testTag(tag),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.small),
     ) {
-        Text(text, style = AppType.button, color = colors.textPrimary)
+        Text(text, style = AppType.button, color = if (enabled) colors.textPrimary else colors.textSecondary)
         if (locked) {
             Icon(painterResource(R.drawable.ic_lock), null, Modifier.size(LockSize), tint = colors.textPrimary)
         }
@@ -141,7 +144,7 @@ fun AgentCard(
     CardSurface(Modifier.testTag("agent-card-${row.id}")) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.large)) {
             AgentRowHeader(row, isBusy, actions.onOpen)
-            AgentButtons(row, canSetBudget, actions)
+            AgentButtons(row, canSetBudget, isBusy, actions)
         }
     }
 }
@@ -188,6 +191,7 @@ private fun AgentRowHeader(
 private fun AgentButtons(
     row: AgentRowUi,
     canSetBudget: Boolean,
+    isBusy: Boolean,
     actions: AgentCardActions,
 ) {
     val live = row.currentRun?.takeIf { row.offersViewRun }
@@ -204,6 +208,7 @@ private fun AgentButtons(
                 stringResource(action.stringRes()),
                 "agent-${row.id}-${action.tag()}",
                 { actions.onAction(action) },
+                enabled = !isBusy,
             )
         }
         if (live != null) {
@@ -220,6 +225,7 @@ private fun AgentButtons(
                 "agent-${row.id}-pause",
                 { actions.onAction(AgentActionUi.Pause) },
                 locked = true,
+                enabled = !isBusy,
             )
         }
     }

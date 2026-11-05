@@ -24,6 +24,7 @@
     <string name="lock_title">Paperclip is locked</string>
     <string name="lock_message">Unlock with your fingerprint, face or screen lock to continue.</string>
     <string name="lock_unlock">Unlock</string>
+    <string name="asks_device_owner_spoken">%1$s. Asks for your fingerprint, face or screen lock</string>
     <string name="confirm_destructive_auth">Confirm with your fingerprint, face or screen lock</string>
     <string name="confirm_destructive_working">Waiting for you to confirm…</string>
     <string name="common_cancel">Cancel</string>

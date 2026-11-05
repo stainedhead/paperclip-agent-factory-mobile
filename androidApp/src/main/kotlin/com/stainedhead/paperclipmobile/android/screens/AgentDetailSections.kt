@@ -29,6 +29,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.CardSurface
 import com.stainedhead.paperclipmobile.android.designsystem.DisabledReason
 import com.stainedhead.paperclipmobile.android.designsystem.SectionHeader
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
+import com.stainedhead.paperclipmobile.android.designsystem.asksDeviceOwner
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.AgentActionUi
 import com.stainedhead.paperclipmobile.presentation.AgentDetailIntent
@@ -57,7 +58,9 @@ fun AgentActions(
                     AppButton(
                         stringResource(action.stringRes()),
                         { send(action.intent()) },
-                        modifier.testTag("agent-detail-${action.tag()}"),
+                        modifier
+                            .asksDeviceOwner(stringResource(action.stringRes()), action == AgentActionUi.Pause)
+                            .testTag("agent-detail-${action.tag()}"),
                         kind = if (action == AgentActionUi.Pause) ButtonKind.Destructive else ButtonKind.Secondary,
                         icon = if (action == AgentActionUi.Pause) painterResource(R.drawable.ic_lock) else null,
                     )

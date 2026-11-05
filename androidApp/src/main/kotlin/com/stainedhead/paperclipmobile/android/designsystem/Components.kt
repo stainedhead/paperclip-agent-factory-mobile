@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.heading
@@ -227,6 +228,20 @@ enum class StatusTone {
     Warn,
     Critical,
     Neutral,
+}
+
+/**
+ * A button that asks the device owner before it acts says so when TalkBack reads it: the lock glyph is for the eyes,
+ * this is for the ears. Does nothing when [locked] is false.
+ */
+@Composable
+fun Modifier.asksDeviceOwner(
+    text: String,
+    locked: Boolean = true,
+): Modifier {
+    if (!locked) return this
+    val spoken = stringResource(R.string.asks_device_owner_spoken, text)
+    return semantics { contentDescription = spoken }
 }
 
 /** The colour family shared presentation chose for a status, as this app's tone. */

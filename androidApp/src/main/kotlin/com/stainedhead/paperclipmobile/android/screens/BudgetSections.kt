@@ -50,6 +50,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
 import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
+import com.stainedhead.paperclipmobile.android.designsystem.asksDeviceOwner
 import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.BudgetChoice
@@ -314,10 +315,15 @@ fun BudgetSubmitBar(
             verticalArrangement = Arrangement.spacedBy(Spacing.large),
         ) {
             state.actionsDisabledReason?.let { DisabledReason(it) }
+            val submit = submitText(state)
             AppButton(
-                submitText(state),
+                submit,
                 { send(BudgetIntent.SubmitTapped) },
-                Modifier.testTag("budget-submit"),
+                Modifier
+                    .asksDeviceOwner(
+                        submit,
+                        state.submitNeedsDeviceAuth && !state.isSubmitting,
+                    ).testTag("budget-submit"),
                 enabled = state.canSubmit,
                 icon =
                     if (state.submitNeedsDeviceAuth &&

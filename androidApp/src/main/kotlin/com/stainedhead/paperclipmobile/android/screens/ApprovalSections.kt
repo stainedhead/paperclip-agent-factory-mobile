@@ -40,6 +40,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.HairlineDivider
 import com.stainedhead.paperclipmobile.android.designsystem.NOTE_FIELD_LINES
 import com.stainedhead.paperclipmobile.android.designsystem.SectionHeader
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
+import com.stainedhead.paperclipmobile.android.designsystem.asksDeviceOwner
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.ApprovalActionUi
 import com.stainedhead.paperclipmobile.presentation.ApprovalIntent
@@ -181,10 +182,11 @@ fun ApprovalActionBar(
                 buildList<@Composable (Modifier) -> Unit> {
                     if (ApprovalActionUi.Reject in state.actions) {
                         add { m ->
+                            val reject = stringResource(ApprovalActionUi.Reject.stringRes())
                             AppButton(
-                                stringResource(ApprovalActionUi.Reject.stringRes()),
+                                reject,
                                 { send(ApprovalIntent.RejectTapped) },
-                                m.testTag("approval-reject"),
+                                m.asksDeviceOwner(reject).testTag("approval-reject"),
                                 kind = ButtonKind.Destructive,
                                 icon = painterResource(R.drawable.ic_lock),
                             )

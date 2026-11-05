@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -29,6 +30,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.AppType
 import com.stainedhead.paperclipmobile.android.designsystem.ButtonKind
 import com.stainedhead.paperclipmobile.android.designsystem.FormField
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
+import com.stainedhead.paperclipmobile.android.designsystem.asksDeviceOwner
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.AgentDetailIntent
 import com.stainedhead.paperclipmobile.presentation.AgentDetailState
@@ -102,11 +104,13 @@ private fun BudgetForm(
             keyboardType = KeyboardType.Decimal,
             capitalization = KeyboardCapitalization.None,
         )
+        val save = stringResource(R.string.agent_detail_budget_save)
         AppButton(
-            stringResource(R.string.agent_detail_budget_save),
+            save,
             { send(AgentDetailIntent.BudgetSubmitted) },
-            Modifier.testTag("agent-budget-save"),
+            Modifier.asksDeviceOwner(save, state.saveBudgetNeedsDeviceAuth).testTag("agent-budget-save"),
             enabled = state.canSaveBudget,
+            icon = if (state.saveBudgetNeedsDeviceAuth) painterResource(R.drawable.ic_lock) else null,
         )
         AppButton(
             stringResource(R.string.common_cancel),
