@@ -140,6 +140,7 @@ class AgentsScreenTest {
         rule.awaitDisplayed("confirm-destructive-sheet")
         rule.onNodeWithTag("confirm-destructive-lock", useUnmergedTree = true).assertIsDisplayed()
         app.controls.biometricPromptCount shouldBe 0
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("feedback-banner") }
@@ -153,6 +154,7 @@ class AgentsScreenTest {
         show()
 
         tap("agent-${DemoId.AGENT_CTO}-pause")
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("agents-section-Paused") }

@@ -112,6 +112,7 @@ class AgentDetailScreenTest {
         tap("agent-detail-pause")
         rule.awaitDisplayed("confirm-destructive-sheet")
         app.controls.biometricPromptCount shouldBe 0
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("feedback-banner") }
@@ -120,6 +121,7 @@ class AgentDetailScreenTest {
         rule.hasTag("agent-detail-resume") shouldBe false
 
         tap("agent-detail-pause")
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("agent-detail-resume") }
@@ -132,6 +134,7 @@ class AgentDetailScreenTest {
     fun resumeNeedsNoPromptAndRunNowStartsARunWithoutOne() {
         show()
         tap("agent-detail-pause")
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("agent-detail-resume") }
 

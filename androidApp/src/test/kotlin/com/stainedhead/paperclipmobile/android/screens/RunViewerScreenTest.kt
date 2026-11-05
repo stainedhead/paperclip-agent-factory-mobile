@@ -103,6 +103,7 @@ class RunViewerScreenTest {
         rule.awaitDisplayed("confirm-destructive-sheet")
         rule.onNodeWithTag("confirm-destructive-lock", useUnmergedTree = true).assertIsDisplayed()
         app.controls.biometricPromptCount shouldBe 0
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("feedback-banner") }
@@ -116,6 +117,7 @@ class RunViewerScreenTest {
         show()
 
         rule.onNodeWithTag("run-cancel").performClick()
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.texts("run-status").firstOrNull()?.startsWith("Cancelled") == true }

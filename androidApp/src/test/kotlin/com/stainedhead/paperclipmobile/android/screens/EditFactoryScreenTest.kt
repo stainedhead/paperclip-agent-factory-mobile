@@ -230,6 +230,7 @@ class EditFactoryScreenTest {
 
         rule.onNodeWithTag("edit-remove").performScrollTo().performClick()
         rule.onNodeWithText("Remove “Home factory”?").assertIsDisplayed()
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("confirm-destructive-issue") }
@@ -238,6 +239,7 @@ class EditFactoryScreenTest {
         app.popsToRoot shouldBe 0
         factoryNames() shouldBe listOf("Home factory", "Cloud factory", "Test factory")
 
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { app.popsToRoot == 1 }

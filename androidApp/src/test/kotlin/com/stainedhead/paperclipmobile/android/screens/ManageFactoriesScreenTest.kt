@@ -130,12 +130,14 @@ class ManageFactoriesScreenTest {
         rule.onNodeWithText("Deletes its saved settings from this phone.", substring = true).assertIsDisplayed()
         rule.onNodeWithText("Revokes the key on the server if it can be reached.", substring = true).assertIsDisplayed()
         app.controls.biometricPromptCount shouldBe 0
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("confirm-destructive-issue") }
         app.controls.biometricPromptCount shouldBe 1
         storedOrder() shouldBe listOf("demo-home", "demo-cloud", "demo-test")
 
+        rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { storedOrder() == listOf("demo-cloud", "demo-test") }
