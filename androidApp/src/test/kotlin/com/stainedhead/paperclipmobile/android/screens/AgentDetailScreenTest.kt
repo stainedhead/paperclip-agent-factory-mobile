@@ -1,5 +1,7 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -14,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -164,6 +167,51 @@ class AgentDetailScreenTest {
         rule.onNodeWithTag("agent-budget").assertTextEquals("Monthly budget: $1,500 · 16% used")
         // A raise (1,000 to 1,500) asks the device owner once (DEC-1, R-004); cancel and decrease cases: Group 2.
         app.controls.biometricPromptCount shouldBe 1
+    }
+
+    private fun spokenName(tag: String) =
+        rule
+            .onNodeWithTag(tag)
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(SemanticsProperties.ContentDescription)
+            ?.joinToString(" ")
+            .orEmpty()
+
+    private fun typeBudget(text: String) {
+        tap("agent-set-budget")
+        rule.awaitDisplayed("agent-budget-form")
+        rule.onNodeWithTag("agent-budget-amount").performTextInput(text)
+        runBlocking { delay(SETTLE_MILLIS) }
+        rule.waitUntil(
+            WAIT_MILLIS,
+        ) { runCatching { rule.onNodeWithTag("agent-budget-save").assertIsEnabled() }.isSuccess }
+    }
+
+    @Test
+    fun aRaiseShowsTheLockOnSaveAndACancelledPromptChangesNothing() {
+        show()
+        app.scriptBiometrics(BiometricResult.Cancelled)
+
+        typeBudget("1500")
+
+        spokenName("agent-budget-save") shouldContain "fingerprint"
+        rule.onNodeWithTag("agent-budget-save").performClick()
+        rule.waitUntil(WAIT_MILLIS) { app.controls.biometricPromptCount == 1 }
+        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("feedback-banner") }
+        rule.onNodeWithTag("agent-budget").assertTextEquals("Monthly budget: $1,000 · 25% used")
+    }
+
+    @Test
+    fun aDecreaseHasNoLockAndAsksNothing() {
+        show()
+
+        typeBudget("500")
+
+        spokenName("agent-budget-save") shouldBe ""
+        rule.onNodeWithTag("agent-budget-save").performClick()
+        rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("agent-budget-form") }
+        app.controls.biometricPromptCount shouldBe 0
     }
 
     @Test
