@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.stainedhead.paperclipmobile.application.auth
 
 import com.stainedhead.paperclipmobile.domain.InstanceId
@@ -12,6 +14,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeSecretStore
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.advanceUntilIdle
