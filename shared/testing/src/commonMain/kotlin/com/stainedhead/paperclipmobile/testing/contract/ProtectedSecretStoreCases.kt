@@ -11,7 +11,9 @@ import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 /**
  * The protected-secret cases of the secret store contract (FR-011, R-001, R-011): a protected secret is opened only by
  * an authentication made for that read. [create] gives a fresh observable store, or `null` where the platform asks the
- * person itself (the iOS Keychain), which skips the cases.
+ * person itself (the iOS Keychain), which skips the cases. These cases describe a DEVICE store (ADR-139). The session
+ * cache above it (`SessionCachingSecretStore`, ADR-145) deliberately does not reuse approvals of the same kind: it
+ * passes the contract with `createProtected` left `null`, and its prompt counts have their own tests.
  */
 class ProtectedSecretStoreCases(
     private val create: () -> ProtectedStoreHarness?,
