@@ -79,13 +79,66 @@ class AndroidReleaseBuildRulesTest {
     }
 
     @Test
-    fun `only the releaseDemo build type turns the demo entry on and it is never the shipping type`() {
+    fun `only releaseDemo declares the demo entry, benchmark and nonMinified inherit it and release never has it`() {
         val types = block(buildScript, "buildTypes")
         Assertions.assertFalse("DEMO_ENTRY\", \"true\"" in block(types, "release"), "release has the demo entry")
-        Assertions.assertTrue("DEMO_ENTRY\", \"true\"" in block(types, "create(\"releaseDemo\")"))
+        val declaring = Regex("""create\("(\w+)"\)""").findAll(types).map { it.groupValues[1] }.filter {
+            "DEMO_ENTRY\", \"true\"" in block(types, "create(\"$it\")")
+        }.toList()
+        Assertions.assertEquals(listOf("releaseDemo"), declaring, "the demo entry is declared by one build type")
         Assertions.assertTrue(
             "applicationIdSuffix = \".demo\"" in block(types, "create(\"releaseDemo\")"),
             "demo shares the app id",
         )
+        // benchmark and nonMinified have the demo entry because they copy releaseDemo, then benchmark (R-017).
+        Assertions.assertTrue("initWith(getByName(\"releaseDemo\"))" in block(types, "create(\"benchmark\")"))
+        Assertions.assertTrue("initWith(getByName(\"benchmark\"))" in block(types, "create(\"nonMinified\")"))
+        listOf("benchmark", "nonMinified").forEach {
+            Assertions.assertFalse(
+                "DEMO_ENTRY" in block(types, "create(\"$it\")"),
+                "$it must inherit the demo entry, not restate it",
+            )
+        }
+    }
+
+    @Test
+    fun `a debug signed release needs an explicit opt in or a build outside CI`() {
+        Assertions.assertTrue(releaseSigningIsGuarded(buildScript), "the debug signing fallback is not guarded")
+        val lines = File(projectRoot, ".github/workflows/android.yml").readLines()
+        val at = lines.indexOfFirst { "assembleRelease" in it }
+        Assertions.assertTrue(at >= 0, "android.yml no longer builds the release: the rule would pass vacuously")
+        val start = lines.subList(0, at).indexOfLast { it.trimStart().startsWith("- ") }
+        val end = lines.drop(at + 1).indexOfFirst { it.trimStart().startsWith("- ") }.let { if (it < 0) lines.size else at + 1 + it }
+        Assertions.assertTrue(
+            lines.subList(start, end).any { OPT_IN in it },
+            "android.yml builds the release without setting $OPT_IN in that step",
+        )
+    }
+
+    @Test
+    fun `the signing guard check flags a fallback that nothing guards`() {
+        val unguarded = """signingConfig = if (upload.storeFile != null) upload else signingConfigs.getByName("debug")"""
+        Assertions.assertFalse(releaseSigningIsGuarded(unguarded))
+        val optInOnly = unguarded + "\n// $OPT_IN\n"
+        Assertions.assertFalse(releaseSigningIsGuarded(optInOnly), "naming the variable is not a guard")
+        val guarded =
+            unguarded +
+                """
+                tasks.register("verifyReleaseSigning") { doLast { System.getenv("$OPT_IN"); throw GradleException("x") } }
+                tasks.matching { it.name == "packageRelease" }.configureEach { dependsOn("verifyReleaseSigning") }
+                """.trimIndent()
+        Assertions.assertTrue(releaseSigningIsGuarded(guarded))
+        Assertions.assertTrue(releaseSigningIsGuarded("no fallback here"), "no fallback, nothing to guard")
+    }
+
+    private fun releaseSigningIsGuarded(script: String): Boolean {
+        val falls = Regex("""else\s+signingConfigs\.getByName\("debug"\)""").containsMatchIn(script)
+        if (!falls) return true
+        return OPT_IN in script && "GradleException" in script &&
+            Regex("""packageRelease[\s\S]{0,120}dependsOn\(""").containsMatchIn(script)
+    }
+
+    private companion object {
+        const val OPT_IN = "PAFM_ALLOW_DEBUG_SIGNED_RELEASE"
     }
 }
