@@ -22,4 +22,4 @@ Verify-first items R-005, R-021, R-008, R-025, R-026 are verifications, not deci
 
 ## References
 
-[phase-2a-android-ui-auto-review-PRD.md](./phase-2a-android-ui-auto-review-PRD.md) · [Android spec research](../archive/261104-phase-2a-android-ui/research.md)
+[phase-2a-android-ui-auto-review-PRD.md](./phase-2a-android-ui-auto-review-PRD.md) · [Android spec research](../261104-phase-2a-android-ui/research.md)

@@ -1,8 +1,8 @@
 # Spec: Phase 2a Android review fixes
 
-**Created:** 2026-11-04 · **Status:** Draft · **Spec dir:** `specs/261104-phase-2a-android-ui-auto-review/`
+**Created:** 2026-11-04 · **Status:** Draft · **Spec dir:** `specs/archive/261104-phase-2a-android-ui-auto-review/`
 **Source PRD:** [phase-2a-android-ui-auto-review-PRD.md](./phase-2a-android-ui-auto-review-PRD.md) (requirements R-001 to R-040, one per finding)
-**Reviews:** the Android spec [specs/archive/261104-phase-2a-android-ui](../archive/261104-phase-2a-android-ui/spec.md); pattern [phase-1a auto-review](../archive/261101-phase-1a-shared-contracts-auto-review/spec.md)
+**Reviews:** the Android spec [specs/archive/261104-phase-2a-android-ui](../261104-phase-2a-android-ui/spec.md); pattern [phase-1a auto-review](../261101-phase-1a-shared-contracts-auto-review/spec.md)
 
 ## Executive summary
 
@@ -132,5 +132,5 @@ Group 1 (shared) then Groups 2 and 3 then Group 4 then Group 5; owner-hardware t
 
 ## References
 
-- Source PRD: `specs/261104-phase-2a-android-ui-auto-review/phase-2a-android-ui-auto-review-PRD.md`
-- [../../AGENTS.md](../../AGENTS.md), [../../INTENT.md](../../INTENT.md)
+- Source PRD: `specs/archive/261104-phase-2a-android-ui-auto-review/phase-2a-android-ui-auto-review-PRD.md`
+- [../../AGENTS.md](../../../AGENTS.md), [../../INTENT.md](../../../INTENT.md)

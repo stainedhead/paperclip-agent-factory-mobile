@@ -1036,7 +1036,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 4. The refresh interval tests and main PRD acceptance criterion 8 run the shared `RefreshVisibleScreen` policy in a `TestScope` (virtual time) against the real holder from the demo graph, with a counting wrapper around the holder's `refreshTarget`. The holder's own work still happens on real threads, so the test waits for it in real time and asserts that no virtual time passed between the cancel tap and the run reading Cancelled (well inside one 5 second cycle), that one more cycle later it is still Cancelled, and that the timer then stops (no refresh in 60 further virtual seconds).
 5. `AgentRowUi.visibleActions()` keeps the iPhone parity rule (View run in place of Run now while a live run exists) in the app, unit-tested, until it moves into the holder (reported as a shared-core gap). Set monthly budget is a sheet shown only while the state says `canSetBudget`. **Corrected by ADR-141 (R-004): a raise or zero now asks the device owner, and the Save button carries the lock glyph while `saveBudgetNeedsDeviceAuth` says so; a decrease still asks nothing.**
 
-**Consequences.** Tab roots survive a late selection. The tile navigation needs no new shell concept. The log follows its end without a timer or a flag of our own and does not fight the person's finger. Criterion 8 as first written was proven only for a cancel made from the viewer, whose own response sets the run to Cancelled at once, so it could not show the policy discovering a cancel made elsewhere. **Corrected by R-020 (specs/261104-phase-2a-android-ui-auto-review): `FakeRunGateway.cancelElsewhere` and `DemoControls.cancelRunElsewhere` change the run on the server side only, and `RunRefreshTest` shows the run still Running until the 5 second timer fires and Cancelled after it; the test fails when the live interval is changed to 0.** The timer runs in virtual time; the holder's own work (`Dispatchers.Default`) is awaited in real time. The one view-level rule (View run for Run now) can drift from the iPhone's if the holders change; the unit test names it. Agents has no `isRefreshing` in its state, so pull to refresh shows no spinner (the indicator hides at once; the list refreshes). The factory switcher line of the iPhone screens is not ported (the Factories tab switches factory and company), as in 2a-5.
+**Consequences.** Tab roots survive a late selection. The tile navigation needs no new shell concept. The log follows its end without a timer or a flag of our own and does not fight the person's finger. Criterion 8 as first written was proven only for a cancel made from the viewer, whose own response sets the run to Cancelled at once, so it could not show the policy discovering a cancel made elsewhere. **Corrected by R-020 (specs/archive/261104-phase-2a-android-ui-auto-review): `FakeRunGateway.cancelElsewhere` and `DemoControls.cancelRunElsewhere` change the run on the server side only, and `RunRefreshTest` shows the run still Running until the 5 second timer fires and Cancelled after it; the test fails when the live interval is changed to 0.** The timer runs in virtual time; the holder's own work (`Dispatchers.Default`) is awaited in real time. The one view-level rule (View run for Run now) can drift from the iPhone's if the holders change; the unit test names it. Agents has no `isRefreshing` in its state, so pull to refresh shows no spinner (the indicator hides at once; the list refreshes). The factory switcher line of the iPhone screens is not ported (the Factories tab switches factory and company), as in 2a-5.
 
 
 ## ADR-131: Work and Issue are a tab root and a pushed route over stateless contents; typed text stays in the screen; the Files tab lists but cannot open; the web app opens https only
@@ -1064,7 +1064,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.**
 1. `release` sets `isMinifyEnabled` and `isShrinkResources` with `proguard-android-optimize.txt` and the app's rules. The only rule so far strips `android.util.Log` (the PRD's requirement). No keep rule was needed: R8 full mode produced no missing-class errors and the launched APK ran Inbox, Decision and every tab without a crash or class-loading error in logcat, so serialization, SQLDelight, Koin and Ktor keep rules come from the libraries. A rule is added only for a reproduced failure, and `AndroidReleaseBuildRulesTest` forbids blanket keeps.
-2. Signing reads `PAFM_UPLOAD_STORE_FILE`, `PAFM_UPLOAD_STORE_PASSWORD`, `PAFM_UPLOAD_KEY_ALIAS`, `PAFM_UPLOAD_KEY_PASSWORD`. Without them the release APK is signed with the debug key so it installs on a test device; that APK is not a distribution artifact. **Amended by R-015 (specs/261104-phase-2a-android-ui-auto-review): the task `verifyReleaseSigning` runs before `packageRelease`. A half-set upload configuration (the store file without the three other variables) fails everywhere; with no store file, a build with `CI` set fails unless `PAFM_ALLOW_DEBUG_SIGNED_RELEASE=1` (`android.yml` sets it, its release job is a smoke build), and a local build only warns. Lint and debug builds never run it.** No key or password is in the repository (`*.jks`, `*.keystore` are ignored and a Konsist rule scans for key files).
+2. Signing reads `PAFM_UPLOAD_STORE_FILE`, `PAFM_UPLOAD_STORE_PASSWORD`, `PAFM_UPLOAD_KEY_ALIAS`, `PAFM_UPLOAD_KEY_PASSWORD`. Without them the release APK is signed with the debug key so it installs on a test device; that APK is not a distribution artifact. **Amended by R-015 (specs/archive/261104-phase-2a-android-ui-auto-review): the task `verifyReleaseSigning` runs before `packageRelease`. A half-set upload configuration (the store file without the three other variables) fails everywhere; with no store file, a build with `CI` set fails unless `PAFM_ALLOW_DEBUG_SIGNED_RELEASE=1` (`android.yml` sets it, its release job is a smoke build), and a local build only warns. Lint and debug builds never run it.** No key or password is in the repository (`*.jks`, `*.keystore` are ignored and a Konsist rule scans for key files).
 3. `versionName` is the catalog's `android-app` version; `versionCode` is `git rev-list --count HEAD` (1 when git is unavailable). CI must fetch full history for a correct number.
 4. `releaseDemo` is `release` plus `BuildConfig.DEMO_ENTRY = true`, application id suffix `.demo`, debug-signed. It runs the identical R8 pipeline and code, so launching it proves the minified demo graph. The shipping `release` type never has the flag (Konsist rule). The alternative, honouring demo extras in `release`, would have weakened the guarantee that a shipped app cannot be put on fakes.
 5. `scripts/android-release-smoke.sh live|demo` builds, installs, launches, and fails on a missing process, a fatal exception, a class-loading error or a missing expected screen (the lock prompt or first run for live; the Inbox for demo).
@@ -1151,7 +1151,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-139: Protected Keystore keys are authorised per use through a `CryptoObject`; the 5 second window of ADR-123 is withdrawn
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui-auto-review, T-001 / R-001). Supersedes item 3 of ADR-123.
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui-auto-review, T-001 / R-001). Supersedes item 3 of ADR-123.
 
 **Context.** ADR-123 item 3 chose `setUserAuthenticationParameters(5 s, ...)` and said the window "opens only through a prompt the store itself asked for". That is false. Keystore authentication tokens are system-wide: unlocking the phone, or a biometric or credential check in any other app, inside the last 5 seconds opened the window for this app's key, so a protected `get()` could return `Found` with no prompt, and an approval stayed reusable for 5 seconds by anything that could reach `open()` in the process. That breaks FR-011 ("protected means the person is asked") and INTENT principle 1.
 
@@ -1161,7 +1161,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-140: The device-owner prompt never hangs a caller and is never shown with the secret store's lock held
 
-**Status:** Accepted (2026-11-04, specs/261104-phase-2a-android-ui-auto-review, T-002 / R-002)
+**Status:** Accepted (2026-11-04, specs/archive/261104-phase-2a-android-ui-auto-review, T-002 / R-002)
 
 **Context.** `ActivityPromptLauncher` read the resumed activity on the IO thread and posted the prompt to the main thread; if the app was backgrounded in between, `BiometricPrompt.authenticate` logged and returned without ever calling the callback (biometric 1.1.0, "Called after onSaveInstanceState()"), and an exception in the posted lambda crashed the app and left the coroutine unresumed. `KeystoreSecretStore` ran `authenticate` inside its single mutex, so one open prompt blocked `namespaces()`, `delete`, `deleteNamespace` and the startup orphan sweep, and a destructive use case hung on its spinner.
 
@@ -1171,7 +1171,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-141: A budget raise on an agent asks the device owner (DEC-1, run assumption, owner may overturn)
 
-**Status:** Accepted as a run assumption (2026-11-04, specs/261104-phase-2a-android-ui-auto-review, T-004 / R-004). Amends ADR-013, the `SetAgentBudget` entry of ADR-021 and FR-014.
+**Status:** Accepted as a run assumption (2026-11-04, specs/archive/261104-phase-2a-android-ui-auto-review, T-004 / R-004). Amends ADR-013, the `SetAgentBudget` entry of ADR-021 and FR-014.
 
 **Context.** AGENTS.md Security Rules list "budget raise" among the destructive actions that go through `Biometrics` before the use case runs, and INTENT principle 1 puts security over convenience. `SetAgentBudget` raised any agent's spend ceiling with no prompt, on an unlocked phone, on both platforms; ADR-013 and FR-014 limited the prompt to the budget incident. No owner was available during the run to decide.
 
@@ -1181,7 +1181,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-142: Android counts as online when the default network declares internet access, validated or not (DEC-2, run assumption, owner may overturn)
 
-**Status:** Accepted as a run assumption (2026-11-04, specs/261104-phase-2a-android-ui-auto-review, T-012 / R-012). Amends item 6 of ADR-123.
+**Status:** Accepted as a run assumption (2026-11-04, specs/archive/261104-phase-2a-android-ui-auto-review, T-012 / R-012). Amends item 6 of ADR-123.
 
 **Context.** `ConnectivityManagerConnectivity` required `NET_CAPABILITY_VALIDATED`. A home LAN, split-DNS network, captive portal, Tailscale-only path or a VPN whose probe fails is not validated, so the app showed offline and blocked mutations although the home factory was reachable, which is INTENT principle 7's primary case. INTENT principle 2 asks to show the server's truth.
 
@@ -1191,7 +1191,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-143: Opening an issue's attachment: a gateway port, an app-private cache that is never named by a secret, and a share through the platform's file provider (design only, R-038)
 
-**Status:** Proposed (2026-11-04, specs/261104-phase-2a-android-ui-auto-review, T-038 / R-038). Design only: no code in this phase. Builds on ADR-064 and ADR-131.
+**Status:** Proposed (2026-11-04, specs/archive/261104-phase-2a-android-ui-auto-review, T-038 / R-038). Design only: no code in this phase. Builds on ADR-064 and ADR-131.
 
 **Context.** Both apps list an issue's attachments (name, type, size) and say they cannot be opened. ADR-064 made the content an adapter-only ranged call (`IssueGatewayAdapter.attachmentContent`) with no port, so nothing above infrastructure can reach it. The endpoint needs the board key, so a URL cannot be handed to a browser or another app. Looking at an attachment before deciding is part of INTENT's "decide": a screenshot or a log file often is the evidence for an approval.
 
@@ -1201,7 +1201,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-144: With app lock on, how often may a refresh ask for the fingerprint? (OPEN OWNER DECISION, not implemented)
 
-**Status:** Proposed, undecided. Found in Group 1 of specs/261104-phase-2a-android-ui-auto-review (consequence of ADR-139). Nothing in the code changes until the owner decides; INTENT principle 1 (security over convenience) is the default until then.
+**Status:** Proposed, undecided. Found in Group 1 of specs/archive/261104-phase-2a-android-ui-auto-review (consequence of ADR-139). Nothing in the code changes until the owner decides; INTENT principle 1 (security over convenience) is the default until then.
 
 **Context.** When app lock is on, `KeyEnrollment` stores the board token as a protected secret (`requireUserPresence = appLockEnabled`). `StoredCredentials.call` reads the token for every gateway call. Since ADR-139 each protected read is its own system prompt, shown one at a time. A screen refresh that issues more than one gateway call therefore asks for a fingerprint more than once in a row, and the 15 second refresh timer makes that recurring. How many calls each screen makes was not counted, and the prompt count per refresh has not been observed on a device (R-009 checklist item on the per-use prompt count).
 

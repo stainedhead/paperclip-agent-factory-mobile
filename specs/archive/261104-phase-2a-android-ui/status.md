@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Complete (`research.md`, `data-dictionary.md`) |
 | Phase 2 Architecture and plan | Complete (`architecture.md`, `plan.md`) |
 | Phase 3 Task breakdown | Complete (`tasks.md`) |
-| Phase 4 Implementation | Complete for milestones 2a-0 to 2a-8 and T9.1 to T9.3; T9.4 (review) was done as `specs/261104-phase-2a-android-ui-auto-review` and its fixes; the R-009 hardware evidence below is outstanding |
+| Phase 4 Implementation | Complete for milestones 2a-0 to 2a-8 and T9.1 to T9.3; T9.4 (review) was done as `specs/archive/261104-phase-2a-android-ui-auto-review` and its fixes; the R-009 hardware evidence below is outstanding |
 | Phase 5 Completion and archive | The directory is already under `specs/archive/`, but the spec is **not closed**: the R-009 evidence record below has no result yet |
 
 ## Phase 0 checklist
@@ -90,7 +90,7 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T9.1 README, product-summary, product-details (Android column naming the proving tests and the parity ledger), technical-details (current counts), AGENTS.md (Android UI test row, android.yml row, device-test row), ADR-138
   - [x] T9.2 `user-docs/` Android notes; 20 Roborazzi images copied to `docs/images/android-*.png`, 8 to `user-docs/images/` (demo only, never pairing)
   - [x] T9.3 Map main PRD acceptance criteria 1 to 9 and 11 to 13 to named Android tests in `status.md` (done in Group 5 of the review spec; criteria whose proof needs hardware say "pending R-009 item N")
-  - [x] T9.4 `/dev-flow:review-code` was run; its findings are the 40 requirements of `specs/261104-phase-2a-android-ui-auto-review`, fixed one commit group each; archiving waits for the R-009 evidence record
+  - [x] T9.4 `/dev-flow:review-code` was run; its findings are the 40 requirements of `specs/archive/261104-phase-2a-android-ui-auto-review`, fixed one commit group each; archiving waits for the R-009 evidence record
 
 - 2026-11-04: milestone 2a-7 implemented (T7.1 to T7.3): Work list, Issue (header, subtasks, Thread, Plan, Runs, Files, comment bar, status and assignee menus), the five interaction forms and the web-app door for unsupported kinds, placeholders removed. Gates: spotlessCheck, detekt, lint, konsistTest, allTests, :androidApp:testDebugUnitTest (482, 0 failures), :androidApp:verifyRoborazziDebug (55 baselines at the time, 6 new), assembleDebug and assembleRelease. Emulator smoke on Pixel_9_Pro (demo): Work list and a subtask's Issue. Attachments cannot be opened (no shared port, ADR-064): reported. ADR-131.
 
