@@ -42,10 +42,13 @@ import com.stainedhead.paperclipmobile.android.designsystem.HairlineDivider
 import com.stainedhead.paperclipmobile.android.designsystem.SectionHeader
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.EditInstanceIntent
 import com.stainedhead.paperclipmobile.presentation.EditInstanceState
+import com.stainedhead.paperclipmobile.presentation.ExpiryDecision
 import com.stainedhead.paperclipmobile.presentation.ExpiryUi
+import com.stainedhead.paperclipmobile.presentation.FactoryStatusDecision
 import com.stainedhead.paperclipmobile.presentation.FactoryStatusUi
 import com.stainedhead.paperclipmobile.presentation.KeyExpiryUi
 import com.stainedhead.paperclipmobile.presentation.PairingStatus
@@ -77,8 +80,12 @@ internal fun StatusLine(
     status: FactoryStatusUi,
     expiry: ExpiryUi?,
 ) {
-    val presentation = FactoryStatusPresentation.of(status, expiry ?: ExpiryUi(KeyExpiryUi.NoExpiry, null))
-    StatusPill(stringResource(presentation.label.stringRes()), presentation.tone, Modifier.testTag("edit-status"))
+    val presentation = FactoryStatusDecision.of(status, expiry ?: ExpiryUi(KeyExpiryUi.NoExpiry, null))
+    StatusPill(
+        stringResource(presentation.label.stringRes()),
+        presentation.tone.statusTone(),
+        Modifier.testTag("edit-status"),
+    )
 }
 
 /**
@@ -205,7 +212,7 @@ internal fun EditCompanies(
             title = stringResource(R.string.edit_board_key),
             modifier = Modifier.testTag("edit-board-key").semantics(mergeDescendants = true) {},
         ) {
-            val expiry = ExpiryPresentation.of(state.expiry ?: ExpiryUi(KeyExpiryUi.NoExpiry, null))
+            val expiry = ExpiryDecision.of(state.expiry ?: ExpiryUi(KeyExpiryUi.NoExpiry, null))
             Text(expiry.text().orEmpty(), style = AppType.body, color = AppTheme.colors.textSecondary)
         }
     }

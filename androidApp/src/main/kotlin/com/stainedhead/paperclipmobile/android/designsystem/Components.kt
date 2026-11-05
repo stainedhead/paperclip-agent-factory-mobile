@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.stainedhead.paperclipmobile.android.R
+import com.stainedhead.paperclipmobile.presentation.ToneUi
 
 /** The mocks' four button looks. Every one is at least 48 dp tall. A disabled button is muted grey, not dimmed. */
 enum class ButtonKind {
@@ -227,6 +228,15 @@ enum class StatusTone {
     Critical,
     Neutral,
 }
+
+/** The colour family shared presentation chose for a status, as this app's tone. */
+fun ToneUi.statusTone(): StatusTone =
+    when (this) {
+        ToneUi.Success -> StatusTone.Success
+        ToneUi.Warn -> StatusTone.Warn
+        ToneUi.Critical -> StatusTone.Critical
+        ToneUi.Neutral -> StatusTone.Neutral
+    }
 
 internal fun StatusTone.foreground(colors: AppColors): Color =
     when (this) {

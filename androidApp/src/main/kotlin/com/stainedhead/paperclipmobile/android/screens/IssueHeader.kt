@@ -41,6 +41,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.AppType
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.AssigneeChoiceUi
 import com.stainedhead.paperclipmobile.presentation.AssigneeKindUi
@@ -84,12 +85,12 @@ fun IssueHeader(
         ) {
             StatusPill(
                 stringResource(header.status.stringRes()),
-                header.status.tone(),
+                header.status.tone.statusTone(),
                 Modifier.testTag("issue-status"),
             )
             StatusPill(
                 stringResource(header.priority.stringRes()),
-                header.priority.tone(),
+                header.priority.tone.statusTone(),
                 Modifier.testTag("issue-priority"),
             )
             AssigneeChip(state, header, send)

@@ -37,6 +37,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.compactText
 import com.stainedhead.paperclipmobile.android.designsystem.foreground
 import com.stainedhead.paperclipmobile.android.designsystem.rememberNowMillis
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.RunRowUi
 
@@ -156,7 +157,10 @@ private fun RunTrail(
         Text(
             stringResource(row.status.stringRes()),
             style = AppType.secondary,
-            color = row.status.tone().foreground(colors),
+            color =
+                row.status.tone
+                    .statusTone()
+                    .foreground(colors),
         )
     }
     if (stacked) {

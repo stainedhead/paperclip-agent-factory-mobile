@@ -50,6 +50,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
 import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.BudgetChoice
 import com.stainedhead.paperclipmobile.presentation.BudgetIncidentState
@@ -100,7 +101,7 @@ private fun BudgetHeader(state: BudgetIncidentState) {
         state.threshold?.let {
             StatusPill(
                 stringResource(it.stringRes()),
-                if (it == BudgetThresholdUi.Hard) StatusTone.Critical else StatusTone.Warn,
+                it.tone.statusTone(),
             )
         }
         Text(

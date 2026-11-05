@@ -34,6 +34,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.SectionHeader
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
 import com.stainedhead.paperclipmobile.presentation.DecideByUi
@@ -168,14 +169,6 @@ fun DecisionFinal(final: DecisionFinalUi) {
     ) { Text(text, style = AppType.body, color = AppTheme.colors.textPrimary) }
 }
 
-private fun EffectStatusUi.tone(): StatusTone =
-    when (this) {
-        EffectStatusUi.Executed -> StatusTone.Success
-        EffectStatusUi.Skipped -> StatusTone.Warn
-        EffectStatusUi.Failed -> StatusTone.Critical
-        EffectStatusUi.Claimed, EffectStatusUi.Unknown -> StatusTone.Neutral
-    }
-
 /** What each effect did once the decision was confirmed: done, skipped (with why) or failed. */
 @Composable
 fun DecisionExecution(execution: ExecutionUi) {
@@ -204,7 +197,7 @@ private fun EffectResultRow(result: EffectResultUi) {
     OutcomeRow(
         resultTitle(result.effectType),
         stringResource(result.status.stringRes()),
-        result.status.tone(),
+        result.status.tone.statusTone(),
         "decision-result-${result.index}",
         detail = reason,
     )

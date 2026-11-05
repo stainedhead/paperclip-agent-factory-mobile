@@ -2,8 +2,6 @@ package com.stainedhead.paperclipmobile.android.screens
 
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.android.shell.AppSheet
-import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
-import com.stainedhead.paperclipmobile.presentation.DecideByUi
 import com.stainedhead.paperclipmobile.presentation.InboxItemUi
 import com.stainedhead.paperclipmobile.presentation.OpenKindUi
 import com.stainedhead.paperclipmobile.presentation.SourceKindUi
@@ -32,16 +30,6 @@ sealed interface InboxDestination {
     data object None : InboxDestination
 }
 
-/** The decide-by written in the words the shared decision parser reads; a deadline-less card has none. */
-fun DecideByUi.hintText(): String? =
-    when (kind) {
-        DecideByKindUi.Today -> "today"
-        DecideByKindUi.ThisWeek -> "this_week"
-        DecideByKindUi.Whenever -> "whenever"
-        DecideByKindUi.OnDate -> isoDate
-        DecideByKindUi.None -> null
-    }
-
 /** The mapping of the shared open target onto this app's routes (the shared policy decided the kind). */
 fun inboxDestination(item: InboxItemUi): InboxDestination =
     when (item.open.kind) {
@@ -50,7 +38,7 @@ fun inboxDestination(item: InboxItemUi): InboxDestination =
                 AppRoute.Decision(
                     id = item.open.id,
                     originAgentName = item.originAgentName,
-                    decideBy = item.decideBy.hintText(),
+                    decideBy = item.decideBy.hintText,
                     dismissalKey = item.dismissalKey,
                     identifier = item.identifier,
                 ),

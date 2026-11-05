@@ -38,6 +38,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
 import com.stainedhead.paperclipmobile.android.designsystem.compactText
 import com.stainedhead.paperclipmobile.android.designsystem.foreground
 import com.stainedhead.paperclipmobile.android.designsystem.rememberNowMillis
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.AgentActionUi
 import com.stainedhead.paperclipmobile.presentation.AgentRowUi
@@ -66,7 +67,7 @@ fun agentLine(
 ): AgentLine {
     if (row.isBudgetPaused) return AgentLine(stringResource(R.string.agents_paused_by_budget), StatusTone.Critical)
     val parts = mutableListOf(stringResource(row.status.stringRes()))
-    val run = row.currentRun?.takeIf { it.status.isLive() }
+    val run = row.currentRun?.takeIf { row.offersViewRun }
     val heartbeat = row.lastHeartbeatAtEpochMillis
     if (row.status == AgentStatusUi.Running && run != null) {
         run.issueIdentifier?.let { parts += it }
@@ -76,7 +77,7 @@ fun agentLine(
         parts += stringResource(R.string.agents_last_heartbeat, age.compactText())
     }
     row.lifecycleState?.let { parts += it }
-    return AgentLine(parts.joinToString(" · "), row.status.tone())
+    return AgentLine(parts.joinToString(" · "), row.status.tone.statusTone())
 }
 
 /** The words of an agent's tone: neutral reads as ordinary secondary text, the rest in their colour. */
@@ -189,8 +190,8 @@ private fun AgentButtons(
     canSetBudget: Boolean,
     actions: AgentCardActions,
 ) {
-    val live = row.currentRun?.takeIf { it.status.isLive() }
-    val visible = row.visibleActions()
+    val live = row.currentRun?.takeIf { row.offersViewRun }
+    val visible = row.visibleActions
     val showsBudget = canSetBudget && row.hasBudget
     if (visible.isEmpty() && live == null && !showsBudget) return
     FlowRow(

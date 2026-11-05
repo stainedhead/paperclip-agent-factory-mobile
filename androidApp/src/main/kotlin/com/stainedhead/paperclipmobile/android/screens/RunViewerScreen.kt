@@ -37,6 +37,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
 import com.stainedhead.paperclipmobile.android.designsystem.rememberNowMillis
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.rememberRunHolder
 import com.stainedhead.paperclipmobile.android.labels.stringRes
@@ -148,7 +149,7 @@ private fun RunHeader(
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
         StatusPill(
             if (elapsed != null) stringResource(R.string.run_status_line, status, elapsed) else status,
-            run.status.tone(),
+            run.status.tone.statusTone(),
             Modifier.testTag("run-status"),
         )
         Text(

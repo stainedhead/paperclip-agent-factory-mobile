@@ -58,6 +58,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.Radius
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.IssueFilterUi
 import com.stainedhead.paperclipmobile.presentation.IssuePriorityUi
@@ -221,8 +222,8 @@ fun WorkRow(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
                     verticalArrangement = Arrangement.spacedBy(Spacing.medium),
                 ) {
-                    StatusPill(stringResource(row.status.stringRes()), row.status.tone())
-                    StatusPill(stringResource(row.priority.stringRes()), row.priority.tone())
+                    StatusPill(stringResource(row.status.stringRes()), row.status.tone.statusTone())
+                    StatusPill(stringResource(row.priority.stringRes()), row.priority.tone.statusTone())
                 }
                 Text(assignee, style = AppType.secondary, color = colors.textSecondary)
             }

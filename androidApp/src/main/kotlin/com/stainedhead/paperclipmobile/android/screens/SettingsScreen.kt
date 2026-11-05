@@ -53,11 +53,13 @@ import com.stainedhead.paperclipmobile.android.designsystem.ScreenTitleBar
 import com.stainedhead.paperclipmobile.android.designsystem.SectionHeader
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.foreground
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.rememberSettingsHolder
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.android.shell.TabNavigator
+import com.stainedhead.paperclipmobile.presentation.FactoryStatusDecision
 import com.stainedhead.paperclipmobile.presentation.SettingsFactoryUi
 import com.stainedhead.paperclipmobile.presentation.SettingsIntent
 import com.stainedhead.paperclipmobile.presentation.SettingsState
@@ -278,7 +280,7 @@ private fun Factories(
     CardGroup {
         factories.forEachIndexed { index, factory ->
             if (index > 0) HairlineDivider()
-            val status = FactoryStatusPresentation.of(factory.status, factory.expiry)
+            val status = FactoryStatusDecision.of(factory.status, factory.expiry)
             CardRow(
                 title = factory.name,
                 modifier =
@@ -292,7 +294,7 @@ private fun Factories(
                     stringResource(status.label.stringRes()),
                     Modifier.testTag("settings-factory-status-${factory.id}"),
                     style = AppType.body,
-                    color = status.tone.foreground(AppTheme.colors),
+                    color = status.tone.statusTone().foreground(AppTheme.colors),
                 )
                 Icon(
                     painterResource(R.drawable.ic_chevron_right),

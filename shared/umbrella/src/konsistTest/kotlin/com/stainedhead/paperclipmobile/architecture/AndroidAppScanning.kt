@@ -66,7 +66,8 @@ internal fun gluedSentences(source: String): List<String> =
     codeLines(source).filter { TEMPLATE_GLUE.containsMatchIn(it) || DOT_SEPARATOR.containsMatchIn(it) }
 
 private val CLASSIFICATION_EXTENSION = Regex("""\bfun\s+\w+Ui\.(?:tone|isLive|visibleActions|hintText)\s*\(""")
-private val CLASSIFICATION_TYPE = Regex("""\b(?:class|object|interface)\s+(?:FactoryStatusPresentation|ExpiryPresentation|FactoryStatusLabel)\b""")
+private val CLASSIFICATION_TYPE =
+    Regex("""\b(?:class|object|interface)\s+(?:FactoryStatusPresentation|ExpiryPresentation|FactoryStatusLabel)\b""")
 private val TONE_ARM = Regex("""^(?!ToneUi\.)[\w.]+(?:,\s*[\w.]+)*\s*->\s*StatusTone\.|\bto\s+StatusTone\.""")
 
 /**

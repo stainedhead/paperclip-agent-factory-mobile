@@ -54,13 +54,16 @@ import com.stainedhead.paperclipmobile.android.designsystem.ScreenTitleBar
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
 import com.stainedhead.paperclipmobile.android.designsystem.foreground
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.rememberFactoriesHolder
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.android.shell.TabNavigator
+import com.stainedhead.paperclipmobile.presentation.ExpiryDecision
 import com.stainedhead.paperclipmobile.presentation.FactoriesIntent
 import com.stainedhead.paperclipmobile.presentation.FactoriesState
 import com.stainedhead.paperclipmobile.presentation.FactoryRowUi
+import com.stainedhead.paperclipmobile.presentation.FactoryStatusDecision
 
 private val StatusDot = 10.dp
 private val SelectedBorder = 2.dp
@@ -162,8 +165,8 @@ private fun FactoryCard(
     onDetails: () -> Unit,
 ) {
     val colors = AppTheme.colors
-    val status = FactoryStatusPresentation.of(row.status, row.expiry)
-    val expiry = ExpiryPresentation.of(row.expiry)
+    val status = FactoryStatusDecision.of(row.status, row.expiry)
+    val expiry = ExpiryDecision.of(row.expiry)
     val shape = RoundedCornerShape(Radius.card)
     val selectedFrame =
         if (row.isSelected) {
@@ -183,7 +186,7 @@ private fun FactoryCard(
                     it,
                     Modifier.testTag("factory-expiry-${row.id}"),
                     style = AppType.secondary,
-                    color = expiry.tone.foreground(colors),
+                    color = expiry.tone.statusTone().foreground(colors),
                 )
             }
             row.error?.let { ErrorBanner(it) }
@@ -207,7 +210,7 @@ private fun FactoryCard(
 @Composable
 private fun FactoryHeader(
     row: FactoryRowUi,
-    status: FactoryStatusPresentation,
+    status: FactoryStatusDecision,
     onSwitch: () -> Unit,
     onDetails: () -> Unit,
 ) {
@@ -230,7 +233,7 @@ private fun FactoryHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
         ) {
-            Box(Modifier.size(StatusDot).clip(CircleShape).background(status.tone.foreground(colors)))
+            Box(Modifier.size(StatusDot).clip(CircleShape).background(status.tone.statusTone().foreground(colors)))
             Text(
                 row.name,
                 Modifier.weight(1f, fill = false).semantics { heading() }.testTag("factory-name-${row.id}"),
@@ -241,7 +244,7 @@ private fun FactoryHeader(
                 stringResource(status.label.stringRes()),
                 Modifier.testTag("factory-status-${row.id}"),
                 style = AppType.label,
-                color = status.tone.foreground(colors),
+                color = status.tone.statusTone().foreground(colors),
             )
         }
         BarIconButton(

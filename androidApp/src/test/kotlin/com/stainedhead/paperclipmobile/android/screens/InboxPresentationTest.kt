@@ -49,15 +49,6 @@ class InboxPresentationTest {
     }
 
     @Test
-    fun `decide by is written back in the words the shared parser reads`() {
-        DecideByUi(DecideByKindUi.Today, null).hintText() shouldBe "today"
-        DecideByUi(DecideByKindUi.ThisWeek, null).hintText() shouldBe "this_week"
-        DecideByUi(DecideByKindUi.Whenever, null).hintText() shouldBe "whenever"
-        DecideByUi(DecideByKindUi.OnDate, "2026-11-20").hintText() shouldBe "2026-11-20"
-        DecideByUi(DecideByKindUi.None, null).hintText() shouldBe null
-    }
-
-    @Test
     fun `an approval opens the approval and a budget alert opens the budget sheet`() {
         inboxDestination(item(open = OpenTargetUi(OpenKindUi.Approval, "ap-1", null))) shouldBe
             InboxDestination.Route(AppRoute.Approval("ap-1"))

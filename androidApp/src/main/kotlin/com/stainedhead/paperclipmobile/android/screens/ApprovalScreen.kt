@@ -31,6 +31,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
 import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
 import com.stainedhead.paperclipmobile.android.designsystem.UpdatedLabel
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.rememberApprovalHolder
 import com.stainedhead.paperclipmobile.android.labels.doneStringRes
@@ -172,7 +173,7 @@ private fun ApprovalHeader(state: ApprovalState) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
         AdaptiveRow(spacing = Spacing.medium) {
             Text(kindLine, Modifier.testTag("approval-kind-line"), style = AppType.label, color = colors.warn)
-            state.status?.let { StatusPill(stringResource(it.stringRes()), it.tone()) }
+            state.status?.let { StatusPill(stringResource(it.stringRes()), it.tone.statusTone()) }
         }
         Text(
             approvalTitle(state),

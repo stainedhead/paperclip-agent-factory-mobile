@@ -41,6 +41,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.RowControls
 import com.stainedhead.paperclipmobile.android.designsystem.ScreenTitleBar
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.foreground
+import com.stainedhead.paperclipmobile.android.designsystem.statusTone
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.rememberManageHolder
 import com.stainedhead.paperclipmobile.android.labels.stringRes
@@ -48,6 +49,7 @@ import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.android.shell.ConfirmDestructiveSheet
 import com.stainedhead.paperclipmobile.android.shell.TabNavigator
 import com.stainedhead.paperclipmobile.presentation.ExpiryUi
+import com.stainedhead.paperclipmobile.presentation.FactoryStatusDecision
 import com.stainedhead.paperclipmobile.presentation.KeyExpiryUi
 import com.stainedhead.paperclipmobile.presentation.ManageFactoriesIntent
 import com.stainedhead.paperclipmobile.presentation.ManageFactoriesState
@@ -183,7 +185,7 @@ private fun Notes(state: ManageFactoriesState) {
 @Composable
 private fun RowText(
     row: ManageRowUi,
-    status: FactoryStatusPresentation,
+    status: FactoryStatusDecision,
     onOpen: () -> Unit,
     modifier: Modifier,
 ) {
@@ -207,7 +209,7 @@ private fun RowText(
             stringResource(status.label.stringRes()),
             Modifier.testTag("manage-status-${row.id}"),
             style = AppType.label,
-            color = status.tone.foreground(colors),
+            color = status.tone.statusTone().foreground(colors),
         )
     }
 }
@@ -220,7 +222,7 @@ private fun ManageRow(
     onOpen: () -> Unit,
 ) {
     val colors = AppTheme.colors
-    val status = FactoryStatusPresentation.of(row.status, ExpiryUi(KeyExpiryUi.NoExpiry, null))
+    val status = FactoryStatusDecision.of(row.status, ExpiryUi(KeyExpiryUi.NoExpiry, null))
     val up = stringResource(R.string.manage_move_up)
     val down = stringResource(R.string.manage_move_down)
     Column {

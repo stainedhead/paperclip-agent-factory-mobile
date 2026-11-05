@@ -1,11 +1,5 @@
 package com.stainedhead.paperclipmobile.android.screens
 
-import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
-import com.stainedhead.paperclipmobile.presentation.AgentActionUi
-import com.stainedhead.paperclipmobile.presentation.AgentRowUi
-import com.stainedhead.paperclipmobile.presentation.AgentStatusUi
-import com.stainedhead.paperclipmobile.presentation.RunStatusUi
-
 private const val SHORT_NAME = 3
 private const val SECONDS_PER_MINUTE = 60L
 private const val SECONDS_PER_HOUR = 3_600L
@@ -51,33 +45,4 @@ object RunTime {
     }
 
     private fun pad(value: Long) = if (value < TEN) "0$value" else value.toString()
-}
-
-/** A run that has not ended: it can still change, so it is timed to the second and refreshed (PRD FR-090). */
-fun RunStatusUi.isLive(): Boolean =
-    this == RunStatusUi.Running || this == RunStatusUi.Queued || this == RunStatusUi.ScheduledRetry
-
-fun RunStatusUi.tone(): StatusTone =
-    when (this) {
-        RunStatusUi.Running, RunStatusUi.Succeeded -> StatusTone.Success
-        RunStatusUi.Failed, RunStatusUi.TimedOut -> StatusTone.Critical
-        RunStatusUi.Cancelled, RunStatusUi.Interrupted -> StatusTone.Warn
-        RunStatusUi.Queued, RunStatusUi.ScheduledRetry, RunStatusUi.Unknown -> StatusTone.Neutral
-    }
-
-fun AgentStatusUi.tone(): StatusTone =
-    when (this) {
-        AgentStatusUi.Running -> StatusTone.Success
-        AgentStatusUi.Error -> StatusTone.Critical
-        AgentStatusUi.Paused, AgentStatusUi.PendingApproval -> StatusTone.Warn
-        AgentStatusUi.Active, AgentStatusUi.Idle, AgentStatusUi.Terminated, AgentStatusUi.Unknown -> StatusTone.Neutral
-    }
-
-/**
- * The buttons of an agent row. While the agent has a run in progress the row offers View run where Run now would be
- * (the mock's CTO row), so no second run is started by a tap meant for the first; the rest are the holder's.
- */
-fun AgentRowUi.visibleActions(): List<AgentActionUi> {
-    val running = currentRun?.status?.isLive() == true
-    return actions.filter { !(it == AgentActionUi.RunNow && running) }
 }
