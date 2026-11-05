@@ -131,8 +131,13 @@ private fun WorkBody(
     state.error?.let {
         ErrorBanner(it, onRetry = { send(WorkListIntent.Refresh) }, onSignInAgain = onSignInAgain)
     }
-    WorkSearchField(state.search) { send(WorkListIntent.SearchChanged(it)) }
-    FilterChips(state.filter) { send(WorkListIntent.FilterSelected(it)) }
+    // The text lives here so a chip can apply what is typed: the field and the applied search never disagree.
+    var pending by rememberSaveable { mutableStateOf(state.search) }
+    WorkSearchField(pending, state.search, { pending = it }) { send(WorkListIntent.SearchChanged(it)) }
+    FilterChips(state.filter) {
+        if (pending.trim() != state.search) send(WorkListIntent.SearchChanged(pending))
+        send(WorkListIntent.FilterSelected(it))
+    }
     CountRow(state, onNewIssue)
     if (state.rows.isEmpty()) {
         WorkEmpty(state.search.isNotEmpty())

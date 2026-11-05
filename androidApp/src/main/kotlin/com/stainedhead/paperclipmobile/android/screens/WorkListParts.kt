@@ -76,16 +76,18 @@ private val EmptyHeight = Spacing.minimumTarget * 5
  */
 @Composable
 fun WorkSearchField(
+    text: String,
     applied: String,
+    onTextChange: (String) -> Unit,
     onSearch: (String) -> Unit,
 ) {
     val colors = AppTheme.colors
-    var text by rememberSaveable { mutableStateOf(applied) }
     OutlinedTextField(
         value = text,
         onValueChange = {
-            text = it.replace("\n", "")
-            if (text.isEmpty() && applied.isNotEmpty()) onSearch("")
+            val typed = it.replace("\n", "")
+            onTextChange(typed)
+            if (typed.isEmpty() && applied.isNotEmpty()) onSearch("")
         },
         modifier =
             Modifier
@@ -331,7 +333,7 @@ private fun CreateIssueForm(
             stringResource(R.string.work_create_save),
             { send(WorkListIntent.CreateSubmitted(title, priority)) },
             Modifier.testTag("work-create-save"),
-            enabled = !state.isCreating,
+            enabled = !state.isCreating && title.isNotBlank(),
         )
         AppButton(
             stringResource(R.string.common_cancel),

@@ -45,7 +45,7 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [x] T-033 R-033 (P2) Typing after Send is wiped and the failure banner can be off screen (Issue comment) (Group 2: tests (red) then fix; Send snapshots the text and the box drops only the sent prefix, Send is off for blank text, the feedback banner shows inside the comment bar)
 - [x] T-034 R-034 (P2) Interaction drafts can disagree with the holder after process death (Group 2: test (red) then fix; the restored draft is re-sent once to the holder (choices are not saved by the app, they come from the holder); restoring a typed answer on a card whose holder already has it sends nothing)
 - [x] T-036 R-036 (P2) Lock glyph has no description and row buttons have no disabled state (Group 2: tests (red) then fix; Modifier.asksDeviceOwner gives lock buttons a spoken name (Pause on rows and detail, Reject, budget Submit, Save budget on a raise); RowButton has an enabled state and the row buttons are disabled while an action runs. The detail screen already swaps its buttons for a spinner while busy)
-- [ ] T-037 R-037 (P2) Work search keeps unsent text; blank-title buttons enabled
+- [x] T-037 R-037 (P2) Work search keeps unsent text; blank-title buttons enabled (Group 2: tests (red) then fix; the search text is hoisted so a chip applies it first, Create issue and subtask Save are off for a blank title)
 - [ ] T-005 R-005 (P1) The Run viewer log tail may silently stop following
 - [ ] T-006 R-006 (P1) A pushed detail screen survives a factory or company switch
 - [ ] T-008 R-008 (P1) The Inbox fling misses the PRD jank budget (67% janky frames vs 5%)

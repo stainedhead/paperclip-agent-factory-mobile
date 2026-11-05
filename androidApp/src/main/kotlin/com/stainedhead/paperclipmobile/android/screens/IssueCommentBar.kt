@@ -289,7 +289,7 @@ private fun SubtaskForm(
             stringResource(R.string.issue_subtask_save),
             { send(IssueIntent.SubtaskSubmitted(title)) },
             Modifier.testTag("issue-subtask-save"),
-            enabled = !state.isBusy,
+            enabled = !state.isBusy && title.isNotBlank(),
         )
         AppButton(
             stringResource(R.string.common_cancel),
