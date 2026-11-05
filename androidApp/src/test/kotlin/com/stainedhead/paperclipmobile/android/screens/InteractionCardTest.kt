@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -229,6 +230,36 @@ class InteractionCardTest {
         rule.onNodeWithTag(tag("submit-issue")).assertTextEquals("Answer every required question.")
         rule.onNodeWithTag(tag("text-q1")).performTextInput("Platform team")
 
+        sent shouldContain IssueIntent.InteractionTextChanged(ID, "q1", "Platform team")
+    }
+
+    @Test
+    fun aRestoredAnswerIsSentToTheHolderSoTheFieldAndTheDraftAgree() {
+        val card =
+            interactionCard(
+                CardSpec(
+                    kind = InteractionKindUi.AskUserQuestions,
+                    primary = InteractionPrimaryUi.Respond,
+                    questions =
+                        listOf(QuestionUi("q1", "Who owns this?", null, false, true, true, emptyList(), "")),
+                ),
+            )
+        val tester = StateRestorationTester(rule)
+        tester.setContent {
+            app.Themed {
+                CompositionLocalProvider(
+                    LocalWebOpener provides WebOpener(launcher),
+                ) { InteractionCard(card, false, sent::add) }
+            }
+        }
+        rule.onNodeWithTag(tag("text-q1")).performTextInput("Platform team")
+        sent.clear()
+
+        // After process death the field is restored while the new holder's draft for it is empty.
+        tester.emulateSavedInstanceStateRestore()
+        rule.waitForIdle()
+
+        fieldText("text-q1") shouldBe "Platform team"
         sent shouldContain IssueIntent.InteractionTextChanged(ID, "q1", "Platform team")
     }
 
