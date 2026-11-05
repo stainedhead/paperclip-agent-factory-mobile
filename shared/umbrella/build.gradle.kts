@@ -57,7 +57,12 @@ kotlin {
                 // changes it and re-runs them (R-014). Taken from the task's outputs, not from a path under intermediates.
                 inputs
                     .files(
-                        provider { project(":androidApp").tasks.getByName("process${name}Manifest").outputs.files },
+                        provider {
+                            project(":androidApp")
+                                .tasks
+                                .getByName("process${name}Manifest")
+                                .outputs.files
+                        },
                     ).withPropertyName("mergedManifest$name")
                     .withPathSensitivity(PathSensitivity.NONE)
                 systemProperty(

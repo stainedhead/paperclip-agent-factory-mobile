@@ -107,13 +107,17 @@ class CiPinningRulesTest {
     @Test
     fun `the concurrency check flags a scheduled workflow whose group is only the ref`() {
         val head = "on:\n  push:\n  schedule:\n    - cron: '17 3 * * *'\n\nconcurrency:\n  group: "
-        Assertions.assertFalse(groupSeparatesScheduledRuns(head + "android-\${{ github.ref }}\n  cancel-in-progress: true\n"))
+        Assertions.assertFalse(
+            groupSeparatesScheduledRuns(head + "android-\${{ github.ref }}\n  cancel-in-progress: true\n"),
+        )
         Assertions.assertTrue(
             groupSeparatesScheduledRuns(
                 head + "android-\${{ $EVENT_NAME == 'schedule' && 'nightly' || github.ref }}\n",
             ),
         )
-        Assertions.assertTrue(groupSeparatesScheduledRuns("on:\n  push:\nconcurrency:\n  group: g-\${{ github.ref }}\n"))
+        Assertions.assertTrue(
+            groupSeparatesScheduledRuns("on:\n  push:\nconcurrency:\n  group: g-\${{ github.ref }}\n"),
+        )
     }
 
     private companion object {
