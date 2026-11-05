@@ -99,7 +99,7 @@ class CiPinningRulesTest {
         workflows.forEach {
             Assertions.assertTrue(
                 groupSeparatesScheduledRuns(it.readText()),
-                "${it.name}: the concurrency group must include $EVENT_NAME so a nightly run and a push do not cancel each other",
+                "${it.name}: the concurrency group must include $EVENT_NAME, or a nightly run cancels a push run",
             )
         }
     }

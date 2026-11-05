@@ -11,5 +11,5 @@ import com.github.takahirom.roborazzi.captureRoboImage
  */
 private val EXACT = RoborazziOptions(compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f))
 
-/** Records or verifies [path] with no pixel tolerance. Every screenshot test goes through this, not captureRoboImage. */
+/** Records or verifies [path] with no pixel tolerance; screenshot tests use this, never captureRoboImage. */
 fun SemanticsNodeInteraction.captureBaseline(path: String) = captureRoboImage(path, roborazziOptions = EXACT)

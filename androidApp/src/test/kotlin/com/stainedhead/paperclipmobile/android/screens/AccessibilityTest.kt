@@ -70,7 +70,7 @@ class AccessibilityTest {
         content: @Composable () -> Unit,
     ): List<String> = auditedAfter(ready, {}, content)
 
-    /** [act] runs after the screen is up (it opens a sheet); a sheet is a window of its own, so every root is audited. */
+    /** [act] runs once the screen is up (it opens a sheet); a sheet is its own window, so every root is audited. */
     private fun auditedAfter(
         ready: () -> Boolean,
         act: () -> Unit,

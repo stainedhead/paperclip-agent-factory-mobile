@@ -25,6 +25,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInteractionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
+import com.stainedhead.paperclipmobile.testing.fakes.cancelElsewhere
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest

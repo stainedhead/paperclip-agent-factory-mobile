@@ -15,6 +15,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDecisionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
+import com.stainedhead.paperclipmobile.testing.fakes.cancelElsewhere
 import com.stainedhead.paperclipmobile.testing.fakes.resolveElsewhere
 
 /**
@@ -29,7 +30,6 @@ class DemoControls internal constructor(
     private val approvals: FakeApprovalGateway,
     private val budgets: FakeBudgetGateway,
     private val reads: DemoReadFailures,
-    private val runs: FakeRunGateway,
 ) {
     /** How many device-owner prompts the graph has shown so far. */
     val biometricPromptCount: Int get() = biometrics.calls
@@ -58,7 +58,7 @@ class DemoControls internal constructor(
      * Someone else cancelled the run on the server. The phone is not told: a Run viewer shows it only when its next
      * refresh reads the run (PRD FR-090). False when the run is unknown or no longer active.
      */
-    fun cancelRunElsewhere(runId: String): Boolean = runs.cancelElsewhere(RunId(runId))
+    fun cancelRunElsewhere(runId: String): Boolean = reads.runs.cancelElsewhere(RunId(runId))
 
     /** The approval was approved elsewhere. */
     fun resolveApprovalElsewhere(approvalId: String) {
@@ -84,7 +84,7 @@ class DemoControls internal constructor(
 /** The fakes behind Factory home, Agents and the Run viewer, and the reads of theirs that [fail] breaks. */
 internal class DemoReadFailures(
     private val agents: FakeAgentGateway,
-    private val runs: FakeRunGateway,
+    val runs: FakeRunGateway,
     private val dashboard: FakeDashboardGateway,
 ) {
     fun fail(enabled: Boolean) {

@@ -34,9 +34,12 @@ class AndroidTestHygieneRulesTest {
 
     @Test
     fun `a screenshot test captures through captureBaseline, which allows no changed pixel`() {
-        Assertions.assertTrue(tests.size > 20, "No androidApp tests found: the rule would pass vacuously")
+        Assertions.assertTrue(tests.size > MIN_TESTS, "No androidApp tests found: the rule would pass vacuously")
         val screenshots = tests.filter { "captureBaseline(" in it.readText() }
-        Assertions.assertTrue(screenshots.size >= 7, "The screenshot tests no longer use captureBaseline")
+        Assertions.assertTrue(
+            screenshots.size >= MIN_SCREENSHOT_TESTS,
+            "The screenshot tests no longer use captureBaseline",
+        )
         val offenders = tests.associate { it.name to directCaptures(it.readText()) }.filterValues { it.isNotEmpty() }
         Assertions.assertTrue(
             offenders.isEmpty(),
@@ -78,5 +81,10 @@ class AndroidTestHygieneRulesTest {
             listOf("val loose = CompareOptions(changeThreshold = 0.01f)"),
             tolerantThresholds(source),
         )
+    }
+
+    private companion object {
+        const val MIN_TESTS = 20
+        const val MIN_SCREENSHOT_TESTS = 7
     }
 }

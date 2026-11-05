@@ -38,16 +38,6 @@ class FakeRunGateway(
         if (id in store) logText += text
     }
 
-    /**
-     * Someone else (the web app, another phone) cancelled the run on the server: it reads as cancelled from now on,
-     * and nothing tells the caller. False when the run is unknown or no longer active, as the server would refuse.
-     */
-    fun cancelElsewhere(id: RunId): Boolean {
-        val run = store[id]?.takeIf { it.canCancel } ?: return false
-        store[id] = run.copy(status = RunStatus.Cancelled)
-        return true
-    }
-
     private fun record(name: String): DomainError? {
         calls[name] = count(name) + 1
         return failures[name]
@@ -118,4 +108,14 @@ class FakeRunGateway(
     private companion object {
         const val DEFAULT_CHUNK = 65_536
     }
+}
+
+/**
+ * Someone else (the web app, another phone) cancelled the run on the server: it reads as cancelled from now on, and
+ * nothing tells the caller. False when the run is unknown or no longer active, as the server would refuse.
+ */
+fun FakeRunGateway.cancelElsewhere(id: RunId): Boolean {
+    val run = store[id]?.takeIf { it.canCancel } ?: return false
+    store[id] = run.copy(status = RunStatus.Cancelled)
+    return true
 }
