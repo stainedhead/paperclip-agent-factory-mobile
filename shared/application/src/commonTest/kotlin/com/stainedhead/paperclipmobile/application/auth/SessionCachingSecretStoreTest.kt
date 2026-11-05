@@ -146,6 +146,27 @@ class SessionCachingSecretStoreTest {
         }
 
     @Test
+    fun `a refusal produced before a re-pair is not handed to a caller that queued before it`() =
+        runTest {
+            val (device, cache) = setup()
+            device.inner.invalidated = true
+            device.gate = CompletableDeferred()
+
+            val first = async { cache.get(tokenA, "test") }
+            runCurrent()
+            val queued = async { cache.get(tokenA, "test") }
+            runCurrent()
+            device.inner.invalidated = false
+            cache.put(tokenA, Secret.of("pcp_board_TESTONLYnew"), plain)
+            device.gate?.complete(Unit)
+            advanceUntilIdle()
+
+            first.await() shouldBe SecretReadResult.Invalidated
+            device.gate = null
+            (queued.await() as SecretReadResult.Found).secret.reveal() shouldBe "pcp_board_TESTONLYnew"
+        }
+
+    @Test
     fun `a refused or invalidated or missing key is never cached`() =
         runTest {
             val (device, cache) = setup()

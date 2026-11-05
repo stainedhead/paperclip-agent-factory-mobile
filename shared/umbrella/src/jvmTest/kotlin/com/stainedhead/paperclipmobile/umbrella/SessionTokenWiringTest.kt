@@ -72,6 +72,53 @@ class SessionTokenWiringTest {
         }
 
     @Test
+    fun `returning to the foreground drops a token read while the app was in the background`() =
+        runTest {
+            val device = CountingStore()
+            val graph = graphOn(device)
+            val secrets = graph.resolve<SecretStore>()
+
+            graph.lifecycle.setForeground(false)
+            secrets.get(key, "test")
+            graph.lifecycle.setForeground(true)
+            secrets.get(key, "test")
+
+            device.reads shouldBe 2
+            graph.close()
+        }
+
+    @Test
+    fun `a foreground signal while already in the foreground keeps the cache, as when a system sheet closes`() =
+        runTest {
+            val device = CountingStore()
+            val graph = graphOn(device)
+            val secrets = graph.resolve<SecretStore>()
+            secrets.get(key, "test")
+
+            graph.lifecycle.setForeground(true)
+            secrets.get(key, "test")
+
+            device.reads shouldBe 1
+            graph.close()
+        }
+
+    @Test
+    fun `a new app shell starts locked, so it starts with an empty cache`() =
+        runTest {
+            val device = CountingStore()
+            val graph = graphOn(device)
+            val secrets = graph.resolve<SecretStore>()
+            secrets.get(key, "test")
+
+            val shell = graph.createAppStateHolder()
+            secrets.get(key, "test")
+
+            device.reads shouldBe 2
+            shell.close()
+            graph.close()
+        }
+
+    @Test
     fun `a 401 seen by the signed-out marker empties the cached token`() =
         runTest {
             val device = CountingStore()
