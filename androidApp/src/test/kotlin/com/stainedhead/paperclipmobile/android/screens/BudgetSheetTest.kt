@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -100,11 +101,15 @@ class BudgetSheetTest {
         app.scriptBiometrics(BiometricResult.Cancelled)
 
         choose("budget-choice-raise")
-        rule.onNodeWithTag("budget-amount-help").assertTextEquals("Must be more than $200, what has been spent.")
+        rule
+            .onNodeWithTag(
+                "budget-amount-help",
+                useUnmergedTree = true,
+            ).assertTextEquals("Must be more than $200, what has been spent.")
         typeAmount("150")
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("budget-amount-issue") }
         rule
-            .onNodeWithTag("budget-amount-issue")
+            .onNodeWithTag("budget-amount-issue", useUnmergedTree = true)
             .assertTextEquals("The new budget must be higher than what has been spent.")
         rule.onNodeWithTag("budget-submit").assertIsNotEnabled()
 
@@ -137,7 +142,12 @@ class BudgetSheetTest {
         choose("budget-choice-raise")
 
         // The field is blank again and the state holds no amount: Submit is off and names no amount (R-024).
-        rule.onNodeWithTag("budget-amount").assertTextContains("For example 250")
+        rule
+            .onNodeWithTag("budget-amount")
+            .fetchSemanticsNode()
+            .config[SemanticsProperties.EditableText]
+            .text shouldBe
+            ""
         rule.onNodeWithTag("budget-submit").assertIsNotEnabled()
         rule.onNodeWithTag("budget-submit").assertTextEquals("Raise and resume")
     }

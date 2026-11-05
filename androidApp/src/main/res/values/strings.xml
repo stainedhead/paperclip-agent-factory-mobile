@@ -695,7 +695,6 @@
 
     <!-- Work list (screen 10) and the key enums of Work and Issue. -->
     <string name="work_filters_label">Saved filters</string>
-    <string name="work_search_label">Search issues</string>
     <string name="work_search_placeholder">Search issues</string>
     <plurals name="work_count">
         <item quantity="one">%1$d issue</item>
@@ -790,7 +789,6 @@
     <string name="issue_files_note">Files can\'t be opened in the app yet. Open the issue in the web app to see them.</string>
     <string name="issue_loading_tab">Loading</string>
     <string name="issue_file_line">%1$s · %2$s</string>
-    <string name="issue_comment_field">Comment</string>
     <string name="issue_comment_placeholder">Comment to the agent</string>
     <string name="issue_comment_send">Send comment</string>
     <string name="issue_reopen_toggle">Reopen with this comment</string>

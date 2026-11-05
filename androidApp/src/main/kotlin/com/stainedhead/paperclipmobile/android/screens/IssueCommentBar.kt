@@ -174,14 +174,10 @@ private fun CommentField(
     onChange: (String) -> Unit,
 ) {
     val colors = AppTheme.colors
-    val label = stringResource(R.string.issue_comment_field)
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
-        modifier =
-            modifier.heightIn(min = Spacing.minimumTarget).testTag("issue-comment-field").semantics {
-                contentDescription = label
-            },
+        modifier = modifier.heightIn(min = Spacing.minimumTarget).testTag("issue-comment-field"),
         enabled = enabled,
         maxLines = FIELD_MAX_LINES,
         textStyle = AppType.body.copy(color = colors.textPrimary),

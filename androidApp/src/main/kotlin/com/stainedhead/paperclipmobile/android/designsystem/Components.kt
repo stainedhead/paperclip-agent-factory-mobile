@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -379,51 +380,60 @@ fun FormField(
     onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {
     val colors = AppTheme.colors
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-        Text(title, style = AppType.button, color = colors.textPrimary)
-        OutlinedTextField(
-            value = value,
-            onValueChange = { onValueChange(if (maxLines == 1) it.replace("\n", "") else it) },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = Spacing.minimumTarget)
-                    .onFocusChanged { onFocusChanged?.invoke(it.isFocused) }
-                    // The visible title is a separate Text, so the field is named for TalkBack here.
-                    .semantics { contentDescription = title }
-                    .testTag(tag),
-            enabled = enabled,
-            singleLine = maxLines == 1,
-            maxLines = maxLines,
-            isError = issue != null,
-            textStyle = AppType.body.copy(color = colors.textPrimary),
-            placeholder = placeholder?.let { { Text(it, style = AppType.body, color = colors.textSecondary) } },
-            shape = RoundedCornerShape(Radius.button),
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType = keyboardType,
-                    capitalization = capitalization,
-                    autoCorrectEnabled = false,
-                    imeAction = if (onDone != null) ImeAction.Done else ImeAction.Default,
-                ),
-            keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
-            colors =
-                OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = colors.surface,
-                    unfocusedContainerColor = colors.surface,
-                    disabledContainerColor = colors.muted,
-                    errorContainerColor = colors.surface,
-                    focusedBorderColor = colors.accent,
-                    unfocusedBorderColor = colors.border,
-                    errorBorderColor = colors.destructive,
-                ),
-        )
-        if (issue != null) {
-            Text(issue, Modifier.testTag("$tag-issue"), style = AppType.secondary, color = colors.destructive)
-        } else if (help != null) {
-            Text(help, Modifier.testTag("$tag-help"), style = AppType.secondary, color = colors.textSecondary)
-        }
-    }
+    val supporting = issue ?: help
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onValueChange(if (maxLines == 1) it.replace("\n", "") else it) },
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = Spacing.minimumTarget)
+                .onFocusChanged { onFocusChanged?.invoke(it.isFocused) }
+                // The label names the box and the issue is an error on it, so TalkBack reads the typed text, the
+                // name and the problem together; a contentDescription would replace the text it reads.
+                .semantics { if (issue != null) error(issue) }
+                .testTag(tag),
+        enabled = enabled,
+        singleLine = maxLines == 1,
+        maxLines = maxLines,
+        isError = issue != null,
+        textStyle = AppType.body.copy(color = colors.textPrimary),
+        label = { Text(title, style = AppType.secondary) },
+        placeholder = placeholder?.let { { Text(it, style = AppType.body, color = colors.textSecondary) } },
+        supportingText =
+            supporting?.let {
+                {
+                    Text(
+                        it,
+                        Modifier.testTag(if (issue != null) "$tag-issue" else "$tag-help"),
+                        style = AppType.secondary,
+                        color = if (issue != null) colors.destructive else colors.textSecondary,
+                    )
+                }
+            },
+        shape = RoundedCornerShape(Radius.button),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = keyboardType,
+                capitalization = capitalization,
+                autoCorrectEnabled = false,
+                imeAction = if (onDone != null) ImeAction.Done else ImeAction.Default,
+            ),
+        keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = colors.surface,
+                unfocusedContainerColor = colors.surface,
+                disabledContainerColor = colors.muted,
+                errorContainerColor = colors.surface,
+                focusedBorderColor = colors.accent,
+                unfocusedBorderColor = colors.border,
+                errorBorderColor = colors.destructive,
+                focusedLabelColor = colors.accent,
+                unfocusedLabelColor = colors.textSecondary,
+                errorLabelColor = colors.destructive,
+            ),
+    )
 }
 
 @Composable

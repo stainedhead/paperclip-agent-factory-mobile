@@ -34,7 +34,12 @@ fun audit(
             .map {
                 "target under 48 dp (${it.touchBoundsInRoot.width}x${it.touchBoundsInRoot.height} px): ${it.describe()}"
             }
-    return unnamed + roleless + small + orderFindings(all)
+    // A description on an edit box can replace the text TalkBack reads out; a field is named by its label (R-025).
+    val describedFields =
+        all
+            .filter { SemanticsActions.SetText in it.config && SemanticsProperties.ContentDescription in it.config }
+            .map { "text field named only by a description: ${it.describe()}" }
+    return unnamed + roleless + small + describedFields + orderFindings(all)
 }
 
 private fun SemanticsNode.flatten(): List<SemanticsNode> = listOf(this) + children.flatMap { it.flatten() }

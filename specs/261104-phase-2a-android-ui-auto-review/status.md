@@ -37,7 +37,7 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [x] T-013 R-013 (P2) `RecordFiles` robustness (test 22505a3, fix 0abf91a)
 - [x] T-003 R-003 (P1) Typed text is lost on state change and on rotation: approval comment, reject and revision notes, budget amount (Group 2: test d30d934, fix c7aa63a; comment draft hoisted in Discussion with the seen pattern, note and amount rememberSaveable, restored amount re-sent once to a fresh holder)
 - [x] T-023 R-023 (P2) `FormField` is single-line and strips newlines (iPhone parity) (Group 2: test + seam, then fix; FormField maxLines, notes, comment and decision text take up to four lines, address, name and amount stay single-line)
-- [ ] T-025 R-025 (P2) `FormField` TalkBack semantics hide typed text and the validation issue
+- [x] T-025 R-025 (P2) `FormField` TalkBack semantics hide typed text and the validation issue (Group 2: test (red) then fix; FormField uses a Material label, supportingText and error semantics, no contentDescription; the audit flags description-only fields (planted test); the Issue comment bar, Work search and interaction draft fields lose their redundant descriptions; Roborazzi baselines for the label look re-recorded at the end of Group 2)
 - [ ] T-026 R-026 (P2) Nothing that appears asynchronously is announced to TalkBack
 - [ ] T-027 R-027 (P2) System Back on the first-run Pair step does not cancel pairing
 - [ ] T-028 R-028 (P2) Manage factories reorder can show an order the store never accepted

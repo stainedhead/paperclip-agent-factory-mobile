@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -77,8 +76,7 @@ internal fun DraftField(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = Spacing.minimumTarget)
-                .testTag(tag)
-                .semantics { contentDescription = placeholder },
+                .testTag(tag),
         enabled = enabled,
         textStyle = AppType.body.copy(color = colors.textPrimary),
         placeholder = { Text(placeholder, style = AppType.body, color = colors.textSecondary) },

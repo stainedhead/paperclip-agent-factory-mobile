@@ -133,7 +133,9 @@ fun ComposeTestRule.awaitDisplayed(tag: String) {
     waitUntil(WAIT_MILLIS) { runCatching { onNodeWithTag(tag).assertIsDisplayed() }.isSuccess }
 }
 
-fun ComposeTestRule.hasTag(tag: String) = onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+// Unmerged: a field's help and issue are part of the field's merged node, and they are still on the screen.
+fun ComposeTestRule.hasTag(tag: String) =
+    onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
 
 fun ComposeTestRule.hasText(
     text: String,

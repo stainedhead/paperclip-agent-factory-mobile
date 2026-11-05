@@ -108,7 +108,7 @@ class ApprovalScreenTest {
         rule.onNodeWithTag("note-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("note-field-issue") }
-        rule.onNodeWithTag("note-field-issue").assertTextEquals("Add a note first.")
+        rule.onNodeWithTag("note-field-issue", useUnmergedTree = true).assertTextEquals("Add a note first.")
         app.controls.biometricPromptCount shouldBe 0
 
         rule.onNodeWithTag("note-field").performTextInput("Too expensive")

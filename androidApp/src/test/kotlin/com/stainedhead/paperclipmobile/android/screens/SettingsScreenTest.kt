@@ -2,6 +2,7 @@ package com.stainedhead.paperclipmobile.android.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -54,7 +55,7 @@ class SettingsScreenTest {
     fun thePhoneAndEveryFactoryAreShownAsInTheMock() {
         show()
 
-        rule.onNodeWithTag("settings-device-name").assertTextEquals("Alex's iPhone")
+        rule.onNodeWithTag("settings-device-name").assertTextContains("Alex's iPhone")
         rule.onNodeWithTag("settings-idle-period").assertTextEquals("Lock after", "5 minutes")
         rule.onNodeWithTag("settings-factory-demo-home", useUnmergedTree = true).assertIsDisplayed()
         rule.onNodeWithTag("settings-factory-status-demo-home", useUnmergedTree = true).assertTextEquals("Connected")

@@ -4,6 +4,7 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -110,7 +111,7 @@ class EditFactoryScreenTest {
         show(DemoId.CLOUD)
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("Cloud factory") }
-        rule.onNodeWithTag("edit-address").assertTextEquals("https://paperclip.example.com")
+        rule.onNodeWithTag("edit-address").assertTextContains("https://paperclip.example.com")
         rule.onNodeWithTag("edit-status").assertTextEquals("Key expired")
         rule.onNodeWithTag("edit-pair-again").assertIsEnabled()
     }

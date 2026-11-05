@@ -80,7 +80,6 @@ fun WorkSearchField(
 ) {
     val colors = AppTheme.colors
     var text by rememberSaveable { mutableStateOf(applied) }
-    val searchLabel = stringResource(R.string.work_search_label)
     OutlinedTextField(
         value = text,
         onValueChange = {
@@ -91,8 +90,7 @@ fun WorkSearchField(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = Spacing.minimumTarget)
-                .testTag("work-search")
-                .semantics { contentDescription = searchLabel },
+                .testTag("work-search"),
         singleLine = true,
         textStyle = AppType.body.copy(color = colors.textPrimary),
         placeholder = {

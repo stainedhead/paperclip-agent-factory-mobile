@@ -141,13 +141,17 @@ class DecisionScreenTest {
     fun aRequiredInputBlocksTheChoiceUntilItIsAnswered() {
         show(AppRoute.Decision(DemoId.DECISION_KEYS), ready = "decision-input-reason")
 
-        rule.onNodeWithTag("decision-input-reason-help").assertTextEquals("0 / 40")
+        rule.onNodeWithTag("decision-input-reason-help", useUnmergedTree = true).assertTextEquals("0 / 40")
         rule.onNodeWithTag("decision-option-yes").performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.isSelected("decision-option-yes") }
         rule.onNodeWithTag("decision-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("decision-input-reason-issue") }
-        rule.onNodeWithTag("decision-input-reason-issue").assertTextEquals("This answer is required.")
+        rule
+            .onNodeWithTag(
+                "decision-input-reason-issue",
+                useUnmergedTree = true,
+            ).assertTextEquals("This answer is required.")
         rule.hasTag("decision-execution") shouldBe false
     }
 
@@ -156,7 +160,7 @@ class DecisionScreenTest {
         show(AppRoute.Decision(DemoId.DECISION_KEYS), ready = "decision-input-reason")
 
         rule.onNodeWithTag("decision-input-reason").performTextInput("x".repeat(TOO_LONG))
-        rule.onNodeWithTag("decision-input-reason-help").assertTextEquals("$TOO_LONG / 40")
+        rule.onNodeWithTag("decision-input-reason-help", useUnmergedTree = true).assertTextEquals("$TOO_LONG / 40")
         settle()
         rule.onNodeWithTag("decision-option-yes").performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.isSelected("decision-option-yes") }
