@@ -125,23 +125,22 @@ private fun AutoScrollToggle(
 }
 
 /**
- * The output, in a console panel of fixed height with its own scroll. While following is on the panel stays at the
- * end as the text grows; when the person drags it away the holder is told where it ended up, and it stops following
- * (the rule is the holder's). Scrolling the panel by code never counts as the person scrolling.
+ * Keeps the panel at the end while following is on, and tells the holder where a drag ended. Following pauses while a
+ * finger is down, so the content never moves under it, and resumes on release (R-005).
  */
 @Composable
-private fun LogPanel(
-    state: RunViewerState,
+private fun FollowTail(
+    scroll: ScrollState,
+    autoScroll: Boolean,
     send: (RunViewerIntent) -> Unit,
 ) {
-    val scroll = rememberScrollState()
     var dragged by remember { mutableStateOf(false) }
     // Where a drag began when it began at the bottom (else NOT_AT_BOTTOM): text that grows under a held finger does not
     // make the release count as scrolling away.
     var bottomAtDragStart by remember { mutableIntStateOf(NOT_AT_BOTTOM) }
     // Following is paused while a finger is down, so the content never moves under it, and resumes on release (R-005).
-    LaunchedEffect(state.autoScroll) {
-        if (state.autoScroll) snapshotFlow { scroll.maxValue }.collect { if (!dragged) scroll.scrollTo(it) }
+    LaunchedEffect(autoScroll) {
+        if (autoScroll) snapshotFlow { scroll.maxValue }.collect { if (!dragged) scroll.scrollTo(it) }
     }
     LaunchedEffect(scroll) {
         scroll.interactionSource.interactions.collect {
@@ -162,6 +161,20 @@ private fun LogPanel(
             }
         }
     }
+}
+
+/**
+ * The output, in a console panel of fixed height with its own scroll. While following is on the panel stays at the
+ * end as the text grows; when the person drags it away the holder is told where it ended up, and it stops following
+ * (the rule is the holder's). Scrolling the panel by code never counts as the person scrolling.
+ */
+@Composable
+private fun LogPanel(
+    state: RunViewerState,
+    send: (RunViewerIntent) -> Unit,
+) {
+    val scroll = rememberScrollState()
+    FollowTail(scroll, state.autoScroll, send)
     val dark = AppTheme.colors.isDark
     val height = if (LocalDensity.current.fontScale >= LARGE_FONT_SCALE) LargePanelHeight else PanelHeight
     Column(

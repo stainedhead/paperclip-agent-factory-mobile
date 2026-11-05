@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -19,27 +20,14 @@ import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.AppType
 import com.stainedhead.paperclipmobile.android.designsystem.AttentionCard
 import com.stainedhead.paperclipmobile.android.designsystem.ButtonKind
-import com.stainedhead.paperclipmobile.android.designsystem.RelativeAge
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.designsystem.compactText
-import com.stainedhead.paperclipmobile.android.designsystem.rememberNowMillis
+import com.stainedhead.paperclipmobile.android.designsystem.rememberElapsedSince
 import com.stainedhead.paperclipmobile.android.designsystem.spokenText
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.InboxItemUi
 import com.stainedhead.paperclipmobile.presentation.InlineActionUi
 import com.stainedhead.paperclipmobile.presentation.SourceKindUi
-
-private const val MILLIS_PER_SECOND = 1_000L
-
-/** What a card can do; each is a plain forward of an intent or a navigation. */
-class InboxCardActions(
-    val onOpen: () -> Unit,
-    val onApprove: () -> Unit,
-    val onReject: () -> Unit,
-    val onKeepPaused: () -> Unit,
-    val onSnooze: (() -> Unit)?,
-    val onDismiss: (() -> Unit)?,
-)
 
 /**
  * One Inbox card: the shared [AttentionCard] plus the buttons the state offers. Buttons are disabled while the phone is
@@ -61,37 +49,45 @@ fun InboxCard(
     val line = kindLine(kindName, item.identifier, separator)
     val link = InboxCardLink.of(item)
     val web = rememberWebDoor(item)
-    val now by rememberNowMillis()
-    val age = RelativeAge.of((now - item.activityAtEpochMillis) / MILLIS_PER_SECOND)
+    val elapsed = rememberElapsedSince(item.activityAtEpochMillis)
+    val resources = LocalResources.current
+    val severity = stringResource(item.severity.stringRes())
+    // Read late, on a tick, by the age label and the card's semantics: the card itself is not recomposed (R-008).
     val spoken =
-        listOf(
-            stringResource(item.severity.stringRes()),
-            line,
-            title,
-            context,
-            stringResource(R.string.inbox_age_ago, age.spokenText()),
-        ).joinToString(". ")
+        remember(elapsed, resources, severity, line, title, context) {
+            {
+                listOf(
+                    severity,
+                    line,
+                    title,
+                    context,
+                    resources.getString(R.string.inbox_age_ago, elapsed.age().spokenText(resources)),
+                ).joinToString(". ")
+            }
+        }
     val snoozeLabel = stringResource(R.string.inbox_swipe_snooze)
     val dismissLabel = stringResource(R.string.inbox_swipe_dismiss)
     val custom =
-        listOfNotNull(
-            actions.onSnooze?.let { run ->
-                CustomAccessibilityAction(snoozeLabel) {
-                    run()
-                    true
-                }
-            },
-            actions.onDismiss?.let { run ->
-                CustomAccessibilityAction(dismissLabel) {
-                    run()
-                    true
-                }
-            },
-        )
+        remember(actions, snoozeLabel, dismissLabel) {
+            listOfNotNull(
+                actions.onSnooze?.let { run ->
+                    CustomAccessibilityAction(snoozeLabel) {
+                        run()
+                        true
+                    }
+                },
+                actions.onDismiss?.let { run ->
+                    CustomAccessibilityAction(dismissLabel) {
+                        run()
+                        true
+                    }
+                },
+            )
+        }
     AttentionCard(
         severity = item.severity,
         kind = line,
-        age = age.compactText(),
+        age = { elapsed.age().compactText() },
         title = title,
         modifier = modifier.testTag("inbox-card-${item.id}"),
         subtitle = context,
@@ -161,49 +157,6 @@ private fun CardButtons(
 
         InboxCardLink.Chevron -> {
             BudgetButtons(item, isDisabled, actions)
-        }
-    }
-}
-
-/** The web door of a card: [open] goes through [WebOpener], [failed] says the phone could not show the page. */
-private class WebDoor(
-    val usable: Boolean,
-    val open: () -> Unit,
-    val failed: Boolean,
-)
-
-/**
- * Opens the item in the web app through [WebOpener] (https only, Custom Tab or browser). Without a usable address there
- * is nothing to open, so there is no button; a phone that cannot show the page says so on the card.
- */
-@Composable
-private fun rememberWebDoor(item: InboxItemUi): WebDoor {
-    val opener = currentWebOpener()
-    var failed by remember { mutableStateOf(false) }
-    val url = (inboxDestination(item) as? InboxDestination.Web)?.url
-    return WebDoor(usable = url != null, open = { failed = !opener.open(url) }, failed = failed)
-}
-
-@Composable
-private fun OpenInWebButton(
-    item: InboxItemUi,
-    web: WebDoor,
-) {
-    if (!web.usable) return
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
-        AppButton(
-            stringResource(R.string.inbox_open_in_web),
-            web.open,
-            Modifier.testTag("inbox-web-${item.id}"),
-            kind = ButtonKind.Secondary,
-        )
-        if (web.failed) {
-            Text(
-                stringResource(R.string.issue_open_web_failed),
-                Modifier.testTag("inbox-web-failed-${item.id}"),
-                style = AppType.secondary,
-                color = AppTheme.colors.destructive,
-            )
         }
     }
 }

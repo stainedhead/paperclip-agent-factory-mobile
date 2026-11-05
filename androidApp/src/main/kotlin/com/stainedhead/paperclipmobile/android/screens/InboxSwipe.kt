@@ -14,10 +14,10 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,7 +28,6 @@ import com.stainedhead.paperclipmobile.android.designsystem.Radius
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.presentation.InboxIntent
 import com.stainedhead.paperclipmobile.presentation.InboxItemUi
-import com.stainedhead.paperclipmobile.presentation.InboxState
 
 private val SwipeGlyph = 20.dp
 
@@ -41,45 +40,60 @@ private val SwipeGlyph = 20.dp
 @Composable
 fun SwipeableCard(
     item: InboxItemUi,
-    state: InboxState,
+    enabled: Boolean,
+    isMutating: Boolean,
     send: (InboxIntent) -> Unit,
     open: (InboxItemUi) -> Unit,
     onSnooze: (String) -> Unit,
 ) {
-    val enabled = state.actionsDisabledReason == null
+    val latestItem = rememberUpdatedState(item)
     val latestSend = rememberUpdatedState(send)
+    val latestOpen = rememberUpdatedState(open)
     val latestSnooze = rememberUpdatedState(onSnooze)
     val swipe =
         rememberSwipeToDismissBoxState(
             confirmValueChange = { value ->
                 when (value) {
-                    SwipeToDismissBoxValue.EndToStart -> latestSend.value(InboxIntent.DismissTapped(item.id))
-                    SwipeToDismissBoxValue.StartToEnd -> latestSnooze.value(item.id)
-                    SwipeToDismissBoxValue.Settled -> Unit
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        latestSend.value(
+                            InboxIntent.DismissTapped(latestItem.value.id),
+                        )
+                    }
+
+                    SwipeToDismissBoxValue.StartToEnd -> {
+                        latestSnooze.value(latestItem.value.id)
+                    }
+
+                    SwipeToDismissBoxValue.Settled -> {
+                        Unit
+                    }
                 }
                 false
             },
         )
+    // One set of actions per card, built once: the lambdas read the latest callbacks, so a new screen state does not
+    // give the card new ones (and the card can skip recomposition).
+    val actions =
+        remember(item.id, enabled) {
+            InboxCardActions(
+                onOpen = { latestOpen.value(latestItem.value) },
+                onApprove = { latestSend.value(InboxIntent.ApproveTapped(item.id)) },
+                onReject = { latestSend.value(InboxIntent.RejectTapped(item.id)) },
+                onKeepPaused = { latestSend.value(InboxIntent.KeepPausedTapped(item.id)) },
+                onSnooze = if (enabled) ({ latestSnooze.value(item.id) }) else null,
+                onDismiss = if (enabled) ({ latestSend.value(InboxIntent.DismissTapped(item.id)) }) else null,
+            )
+        }
     SwipeToDismissBox(
         state = swipe,
-        backgroundContent = { SwipeBackground(swipe.dismissDirection) },
+        // Composed only while a finger drags the card: a settled card has nothing behind it (R-008).
+        backgroundContent = {
+            val direction = swipe.dismissDirection
+            if (direction != SwipeToDismissBoxValue.Settled) SwipeBackground(direction)
+        },
         enableDismissFromStartToEnd = enabled,
         enableDismissFromEndToStart = enabled,
-    ) {
-        InboxCard(
-            item = item,
-            isDisabled = !enabled || state.isMutating,
-            actions =
-                InboxCardActions(
-                    onOpen = { open(item) },
-                    onApprove = { send(InboxIntent.ApproveTapped(item.id)) },
-                    onReject = { send(InboxIntent.RejectTapped(item.id)) },
-                    onKeepPaused = { send(InboxIntent.KeepPausedTapped(item.id)) },
-                    onSnooze = if (enabled) ({ onSnooze(item.id) }) else null,
-                    onDismiss = if (enabled) ({ send(InboxIntent.DismissTapped(item.id)) }) else null,
-                ),
-        )
-    }
+    ) { InboxCard(item = item, isDisabled = !enabled || isMutating, actions = actions) }
 }
 
 /** What the card hides behind it while it is dragged: the action, in words and with a symbol. */
@@ -87,30 +101,26 @@ fun SwipeableCard(
 private fun SwipeBackground(direction: SwipeToDismissBoxValue) {
     val colors = AppTheme.colors
     val snooze = direction == SwipeToDismissBoxValue.StartToEnd
-    val shown = direction != SwipeToDismissBoxValue.Settled
     val tone = if (snooze) colors.accent else colors.destructive
     Row(
         Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(Radius.card))
-            .background(if (shown) tone else colors.muted)
+            .background(tone, RoundedCornerShape(Radius.card))
             .padding(horizontal = Spacing.page),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (snooze) Arrangement.Start else Arrangement.End,
     ) {
-        if (shown) {
-            Icon(
-                painterResource(if (snooze) R.drawable.ic_snooze else R.drawable.ic_dismiss),
-                contentDescription = null,
-                Modifier.size(SwipeGlyph),
-                tint = colors.onAccent,
-            )
-            Text(
-                stringResource(if (snooze) R.string.inbox_swipe_snooze else R.string.inbox_swipe_dismiss),
-                Modifier.padding(start = Spacing.medium),
-                style = AppType.button,
-                color = colors.onAccent,
-            )
-        }
+        Icon(
+            painterResource(if (snooze) R.drawable.ic_snooze else R.drawable.ic_dismiss),
+            contentDescription = null,
+            Modifier.size(SwipeGlyph),
+            tint = colors.onAccent,
+        )
+        Text(
+            stringResource(if (snooze) R.string.inbox_swipe_snooze else R.string.inbox_swipe_dismiss),
+            Modifier.padding(start = Spacing.medium),
+            style = AppType.button,
+            color = colors.onAccent,
+        )
     }
 }

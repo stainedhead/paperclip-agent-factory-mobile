@@ -20,6 +20,13 @@ import kotlinx.coroutines.launch
  * Opening can fail (a locked database, an unusable Keystore). The session then has no graph and no holders and carries
  * [StartupNotice.LiveGraphUnavailable]; [retryLaunch] opens it again, once per call. Nothing falls back to fakes.
  */
+class GraphOpening(
+    /** Where the graph is opened: a background dispatcher, or null for the calling thread. */
+    val dispatcher: CoroutineDispatcher? = null,
+    /** Runs on every session that opened a graph, before the screens see it (the debug launch's scripted answers). */
+    val onOpened: (GraphSession) -> Unit = {},
+)
+
 class AppEnvironment(
     provider: AppGraphProvider,
     private val scope: CoroutineScope,
@@ -28,11 +35,11 @@ class AppEnvironment(
     /** What the Diagnostics screen shows; it outlasts a replaced graph. */
     val diagnostics: DiagnosticsRecorder = DiagnosticsRecorder(UNKNOWN_VERSION),
     private val log: AppLog = AppLog.Off,
-    /** Where the graph is opened: the app gives a background dispatcher; null opens on the calling thread (tests). */
-    private val openOn: CoroutineDispatcher? = null,
-    /** Runs on every session that opened a graph, before the screens can see it (the debug launch's scripted answers). */
-    private val onOpened: (GraphSession) -> Unit = {},
+    /** How the graph is opened: the app opens it in the background; the default opens on the calling thread (tests). */
+    opening: GraphOpening = GraphOpening(),
 ) {
+    private val openOn = opening.dispatcher
+    private val onOpened = opening.onOpened
     private val lock = Any()
     private var provider: AppGraphProvider = provider
     private var foreground = true
@@ -92,7 +99,7 @@ class AppEnvironment(
     /** The first session: the opened graph at once when there is no background dispatcher, else the opening one. */
     private fun begin(): GraphSession =
         if (openOn == null) {
-            open()
+            build(provider, nextId++).also { it.graph?.lifecycle?.setForeground(foreground) }
         } else {
             GraphSession(nextId++, provider.mode, null, null, scope, SessionOptions(diagnostics = diagnostics))
         }
@@ -129,13 +136,7 @@ class AppEnvironment(
         session.abandonDeferred()
     }
 
-    /** Opens the provider's graph; whatever it throws is `Unavailable`. A foreground flag set earlier is re-applied. */
-    private fun open(): GraphSession {
-        val built = build(provider, nextId++)
-        built.graph?.lifecycle?.setForeground(foreground)
-        return built
-    }
-
+    /** Opens the graph of [using]; whatever it throws is `Unavailable`. */
     private fun build(
         using: AppGraphProvider,
         id: Int,

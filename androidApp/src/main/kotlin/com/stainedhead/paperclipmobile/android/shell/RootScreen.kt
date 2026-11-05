@@ -20,6 +20,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.EmptyState
 import com.stainedhead.paperclipmobile.android.designsystem.LoadingState
 import com.stainedhead.paperclipmobile.android.designsystem.LocalReferenceMillis
+import com.stainedhead.paperclipmobile.android.designsystem.ProvideNow
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
 import com.stainedhead.paperclipmobile.android.env.GraphMode
 import com.stainedhead.paperclipmobile.android.env.GraphSession
@@ -52,33 +53,53 @@ fun RootScreen(
             LocalReferenceMillis provides pinnedClock,
             LocalPairingSecurity provides reportPairing,
         ) {
-            val app = session.app
-            val owned = session.firstRun
-            if (session.isOpening) {
-                SideEffect { onSecureChanged(false) }
-                LoadingState(stringResource(R.string.common_loading), Modifier.testTag("graph-opening"))
-            } else if (session.notice != null || app == null || owned == null) {
-                SideEffect { onSecureChanged(false) }
-                StartupNoticeScreen(session.notice ?: StartupNotice.LiveGraphUnavailable, environment::retryLaunch)
-            } else {
-                val appState by app.state.collectAsStateWithLifecycle()
-                val firstRunState by owned.state.collectAsStateWithLifecycle()
-                val inProgress by session.firstRunInProgress.collectAsStateWithLifecycle()
-                val badge by session.inboxBadge.collectAsStateWithLifecycle()
-                Destination(
+            // One clock for every age label on every screen (R-008).
+            ProvideNow {
+                RootContent(
                     environment,
                     session,
-                    appState,
-                    firstRunState,
-                    inProgress,
-                    badge,
-                    LockActions(appState.unlockIssue) { app.send(AppIntent.UnlockRequested) },
-                    Slots(lock, firstRun, tabs),
                     pairingOnTabs,
+                    Slots(lock, firstRun, tabs),
                     onSecureChanged,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun RootContent(
+    environment: AppEnvironment,
+    session: GraphSession,
+    pairingOnTabs: Boolean,
+    slots: Slots,
+    onSecureChanged: (Boolean) -> Unit,
+) {
+    val app = session.app
+    val owned = session.firstRun
+    if (session.isOpening) {
+        SideEffect { onSecureChanged(false) }
+        LoadingState(stringResource(R.string.common_loading), Modifier.testTag("graph-opening"))
+    } else if (session.notice != null || app == null || owned == null) {
+        SideEffect { onSecureChanged(false) }
+        StartupNoticeScreen(session.notice ?: StartupNotice.LiveGraphUnavailable, environment::retryLaunch)
+    } else {
+        val appState by app.state.collectAsStateWithLifecycle()
+        val firstRunState by owned.state.collectAsStateWithLifecycle()
+        val inProgress by session.firstRunInProgress.collectAsStateWithLifecycle()
+        val badge by session.inboxBadge.collectAsStateWithLifecycle()
+        Destination(
+            environment,
+            session,
+            appState,
+            firstRunState,
+            inProgress,
+            badge,
+            LockActions(appState.unlockIssue) { app.send(AppIntent.UnlockRequested) },
+            slots,
+            pairingOnTabs,
+            onSecureChanged,
+        )
     }
 }
 

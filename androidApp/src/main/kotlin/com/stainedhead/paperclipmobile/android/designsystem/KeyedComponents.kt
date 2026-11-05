@@ -209,16 +209,19 @@ fun OfflineBanner(
  * With [onOpen] the text block is one button that opens the card: TalkBack reads it as [combinedLabel] (one sentence),
  * and the action buttons below it stay separate elements, so each can be found and tapped on its own. [customActions]
  * are the TalkBack actions of the card (snooze, dismiss), so a swipe is never the only way.
+ *
+ * The age and the spoken label are given as functions, read late: a card on a ticking clock is not recomposed by the
+ * tick, only the age label and the card's semantics follow it (R-008).
  */
 @Composable
 fun AttentionCard(
     severity: SeverityUi?,
     kind: String,
-    age: String,
+    age: @Composable () -> String,
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    combinedLabel: String? = null,
+    combinedLabel: (() -> String)? = null,
     onOpen: (() -> Unit)? = null,
     customActions: List<CustomAccessibilityAction> = emptyList(),
     actions: @Composable ColumnScope.() -> Unit,
@@ -228,8 +231,7 @@ fun AttentionCard(
     Column(
         modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(colors.surface)
+            .background(colors.surface, shape)
             .border(HairlineWidth, colors.hairline, shape)
             .padding(Spacing.card)
             .testTag("attention-card"),
@@ -243,7 +245,7 @@ fun AttentionCard(
                     .clickable(role = Role.Button, onClick = onOpen)
                     .testTag("attention-card-open")
                     .semantics {
-                        if (combinedLabel != null) contentDescription = combinedLabel
+                        combinedLabel?.let { contentDescription = it() }
                         this.customActions = customActions
                     },
                 verticalArrangement = Arrangement.spacedBy(Spacing.medium),
@@ -259,7 +261,7 @@ fun AttentionCard(
 private fun CardText(
     severity: SeverityUi?,
     kind: String,
-    age: String,
+    age: @Composable () -> String,
     title: String,
     subtitle: String?,
     isHeading: Boolean,
@@ -273,12 +275,12 @@ private fun CardText(
     if (stacked) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
             tag()
-            Text(age, style = AppType.label, color = colors.textSecondary)
+            AgeText(age, AppType.label, colors.textSecondary)
         }
     } else {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.medium)) { tag() }
-            Text(age, style = AppType.label, color = colors.textSecondary)
+            AgeText(age, AppType.label, colors.textSecondary)
         }
     }
     Text(

@@ -11,6 +11,7 @@ import com.stainedhead.paperclipmobile.android.env.AppGraphProvider
 import com.stainedhead.paperclipmobile.android.env.DemoGraphProvider
 import com.stainedhead.paperclipmobile.android.env.FirstRunDemoGraphProvider
 import com.stainedhead.paperclipmobile.android.env.ForegroundObserver
+import com.stainedhead.paperclipmobile.android.env.GraphOpening
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.LaunchConfiguration
 import com.stainedhead.paperclipmobile.android.env.LiveGraphProvider
@@ -62,8 +63,7 @@ class PaperclipApplication : Application() {
                 demoControls,
                 DiagnosticsRecorder(BuildConfig.VERSION_NAME),
                 AppLog(BuildConfig.DEBUG),
-                openOn = Dispatchers.Default,
-                onOpened = { opened -> scriptBiometrics(launch, opened) },
+                opening = GraphOpening(Dispatchers.Default) { opened -> scriptBiometrics(launch, opened) },
             ).also { environment = it }
         }
 

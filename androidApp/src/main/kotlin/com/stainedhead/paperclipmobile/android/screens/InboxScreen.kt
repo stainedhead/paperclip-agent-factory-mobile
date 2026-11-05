@@ -171,7 +171,7 @@ private fun InboxList(
         contentPadding = PaddingValues(start = Spacing.page, end = Spacing.page, bottom = UndoClearance),
         verticalArrangement = Arrangement.spacedBy(Spacing.extraLarge),
     ) {
-        item(key = "header") { InboxHeader(state, send) }
+        item(key = "header", contentType = "header") { InboxHeader(state, send) }
         when (state.phase) {
             InboxPhase.Loading -> item(key = "loading") { LoadingState(stringResource(R.string.common_loading)) }
             InboxPhase.Failed -> failure(state, send)
@@ -221,9 +221,14 @@ private fun LazyListScope.content(
     open: (InboxItemUi) -> Unit,
     onSnooze: (String) -> Unit,
 ) {
+    // Two Booleans, not the whole state, reach a card: a state change that touches neither skips every card.
+    val enabled = state.actionsDisabledReason == null
+    val isMutating = state.isMutating
     for (section in state.sections) {
-        item(key = "section-${section.group.name}") { GroupHeader(section) }
-        items(section.items, key = { it.id }) { item -> SwipeableCard(item, state, send, open, onSnooze) }
+        item(key = "section-${section.group.name}", contentType = "section") { GroupHeader(section) }
+        items(section.items, key = { it.id }, contentType = { "card" }) { item ->
+            SwipeableCard(item, enabled, isMutating, send, open, onSnooze)
+        }
     }
     if (state.canLoadMore) {
         item(key = "load-more") {

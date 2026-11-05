@@ -93,10 +93,10 @@ class KeyedComponentsTest {
                 AttentionCard(
                     severity = SeverityUi.High,
                     kind = "Approval",
-                    age = "1h",
+                    age = { "1h" },
                     title = "Hire a QA engineer agent",
                     subtitle = "Requested by CEO",
-                    combinedLabel = "Hire a QA engineer agent. Approval. 1 hour ago",
+                    combinedLabel = { "Hire a QA engineer agent. Approval. 1 hour ago" },
                     onOpen = { opens++ },
                 ) { AppButton("Approve", { approvals++ }) }
             }
@@ -117,7 +117,12 @@ class KeyedComponentsTest {
     fun anAttentionCardWithoutOnOpenShowsTextOnly() {
         rule.setContent {
             PaperclipTheme(darkTheme = false) {
-                AttentionCard(severity = null, kind = "Budget alert", age = "2h", title = "Engineer 2 hit its budget") {
+                AttentionCard(
+                    severity = null,
+                    kind = "Budget alert",
+                    age = { "2h" },
+                    title = "Engineer 2 hit its budget",
+                ) {
                     Text("action slot")
                 }
             }

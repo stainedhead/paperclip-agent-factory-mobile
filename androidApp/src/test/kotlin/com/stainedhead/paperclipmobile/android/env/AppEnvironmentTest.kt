@@ -170,7 +170,7 @@ class AppEnvironmentTest {
             }
 
         val environment =
-            AppEnvironment(provider, scope, demoEntryAvailable = true, openOn = Dispatchers.Default)
+            AppEnvironment(provider, scope, demoEntryAvailable = true, opening = GraphOpening(Dispatchers.Default))
                 .also { environments += it }
 
         environment.session.value.isOpening shouldBe true
@@ -190,7 +190,7 @@ class AppEnvironmentTest {
     fun `a failure while opening in the background still shows the notice and try again opens again`() {
         val provider = ScriptedProvider(GraphMode.Live, listOf(::unavailable, ::demoOpen))
         val environment =
-            AppEnvironment(provider, scope, demoEntryAvailable = true, openOn = Dispatchers.Default)
+            AppEnvironment(provider, scope, demoEntryAvailable = true, opening = GraphOpening(Dispatchers.Default))
                 .also { environments += it }
 
         val failed = runBlocking { withTimeout(WAIT_MILLIS) { environment.session.first { !it.isOpening } } }

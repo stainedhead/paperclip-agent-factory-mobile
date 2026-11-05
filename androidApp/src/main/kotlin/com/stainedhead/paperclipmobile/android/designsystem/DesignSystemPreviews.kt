@@ -46,7 +46,7 @@ private fun Cards() {
     AttentionCard(
         severity = SeverityUi.Critical,
         kind = "Decision · Plans queue",
-        age = "8m",
+        age = { "8m" },
         title = "Ship the billing migration to production?",
         subtitle = "CTO proposes 3 options · PAP-1182 · blocks 4 tasks",
         onOpen = {},

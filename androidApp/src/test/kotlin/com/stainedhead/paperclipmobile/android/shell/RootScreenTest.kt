@@ -18,6 +18,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
 import com.stainedhead.paperclipmobile.android.env.AppGraphProvider
 import com.stainedhead.paperclipmobile.android.env.GraphMode
+import com.stainedhead.paperclipmobile.android.env.GraphOpening
 import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
 import com.stainedhead.paperclipmobile.android.env.demoOpen
 import com.stainedhead.paperclipmobile.android.env.firstRunOpen
@@ -65,7 +66,10 @@ class RootScreenTest {
         openOn: CoroutineDispatcher? = null,
     ) {
         val env =
-            AppEnvironment(provider, scope, demoEntryAvailable = true, openOn = openOn).also { environment = it }
+            AppEnvironment(provider, scope, demoEntryAvailable = true, opening = GraphOpening(openOn)).also {
+                environment =
+                    it
+            }
         autoUnlock = unlock
         rule.setContent {
             PaperclipTheme(darkTheme = false) {

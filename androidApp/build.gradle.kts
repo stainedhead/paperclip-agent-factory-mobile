@@ -63,6 +63,12 @@ dependencies {
     androidTestUtil(libs.androidx.test.orchestrator)
 }
 
+composeCompiler {
+    // The shared presentation and domain types come from non-Compose modules; without this file the compiler treats
+    // every card and row parameter as unstable and recomposes it whenever its parent does (R-008).
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("stability_config.conf"))
+}
+
 android {
     namespace = "com.stainedhead.paperclipmobile.android"
     buildFeatures {

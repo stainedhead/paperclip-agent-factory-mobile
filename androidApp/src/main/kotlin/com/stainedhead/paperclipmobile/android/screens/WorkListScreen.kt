@@ -117,7 +117,10 @@ private fun WorkList(
         verticalArrangement = Arrangement.spacedBy(Spacing.roomy),
     ) {
         if (state.phase == DetailPhase.Content) {
-            workBody(state, send, onOpenIssue, onSignInAgain, onNewIssue, sheetOpen, pending) { pending = it }
+            workBody(state, WorkCallbacks(send, onOpenIssue, onSignInAgain, onNewIssue), sheetOpen, pending) {
+                pending =
+                    it
+            }
         } else {
             item(key = "unavailable", contentType = "unavailable") {
                 DetailUnavailable(
@@ -132,16 +135,24 @@ private fun WorkList(
     }
 }
 
+private class WorkCallbacks(
+    val send: (WorkListIntent) -> Unit,
+    val onOpenIssue: (String) -> Unit,
+    val onSignInAgain: () -> Unit,
+    val onNewIssue: () -> Unit,
+)
+
 private fun LazyListScope.workBody(
     state: WorkListState,
-    send: (WorkListIntent) -> Unit,
-    onOpenIssue: (String) -> Unit,
-    onSignInAgain: () -> Unit,
-    onNewIssue: () -> Unit,
+    callbacks: WorkCallbacks,
     sheetOpen: Boolean,
     pending: String,
     onPending: (String) -> Unit,
 ) {
+    val send = callbacks.send
+    val onOpenIssue = callbacks.onOpenIssue
+    val onSignInAgain = callbacks.onSignInAgain
+    val onNewIssue = callbacks.onNewIssue
     if (state.isOffline) item(key = "offline", contentType = "banner") { OfflineBanner(state.updatedAtEpochMillis) }
     state.actionsDisabledReason?.let { item(key = "disabled-reason", contentType = "banner") { DisabledReason(it) } }
     // While the sheet is open it shows the outcome of a create itself.
