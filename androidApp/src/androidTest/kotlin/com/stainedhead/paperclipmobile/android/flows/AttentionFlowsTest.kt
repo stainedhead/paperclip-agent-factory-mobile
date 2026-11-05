@@ -1,7 +1,6 @@
 package com.stainedhead.paperclipmobile.android.flows
 
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
@@ -31,9 +30,9 @@ class AttentionFlowsTest : FlowTest() {
         waitFor { exists("decision-option-ship") }
         val prompts = controls.biometricPromptCount
 
-        rule.onNodeWithTag("decision-option-ship").performClick()
+        tap("decision-option-ship")
         waitFor { selected("decision-option-ship") }
-        rule.onNodeWithTag("decision-confirm").performClick()
+        tap("decision-confirm")
 
         waitFor { exists("decision-execution") }
         waitFor { existsText("All effects ran") }
@@ -48,15 +47,15 @@ class AttentionFlowsTest : FlowTest() {
         val prompts = controls.biometricPromptCount
         script(BiometricResult.Cancelled)
 
-        rule.onNodeWithTag("decision-option-cancel").performClick()
+        tap("decision-option-cancel")
         waitFor { selected("decision-option-cancel") }
-        rule.onNodeWithTag("decision-confirm").performClick()
+        tap("decision-confirm")
         waitFor { exists("feedback-banner") }
         assertEquals(prompts + 1, controls.biometricPromptCount)
         assertFalse(exists("decision-execution"))
 
         script(BiometricResult.Approved)
-        rule.onNodeWithTag("decision-confirm").performClick()
+        tap("decision-confirm")
 
         waitFor { exists("decision-execution") }
         assertEquals(prompts + 2, controls.biometricPromptCount)
@@ -69,7 +68,7 @@ class AttentionFlowsTest : FlowTest() {
         waitFor { exists("approval-approve") }
         val prompts = controls.biometricPromptCount
 
-        rule.onNodeWithTag("approval-approve").performClick()
+        tap("approval-approve")
 
         waitFor { exists("approval-final") }
         assertTrue(existsText("This approval was approved. Nothing more to do."))
@@ -84,16 +83,16 @@ class AttentionFlowsTest : FlowTest() {
         val prompts = controls.biometricPromptCount
         script(BiometricResult.Cancelled)
 
-        rule.onNodeWithTag("approval-reject").performClick()
+        tap("approval-reject")
         waitFor { exists("note-sheet") }
         rule.onNodeWithTag("note-field").performTextInput("Too expensive")
-        rule.onNodeWithTag("note-confirm").performClick()
+        tap("note-confirm")
         waitFor { exists("note-issue") }
         assertEquals(prompts + 1, controls.biometricPromptCount)
         assertFalse(exists("approval-final"))
 
         script(BiometricResult.Approved)
-        rule.onNodeWithTag("note-confirm").performClick()
+        tap("note-confirm")
 
         waitFor { exists("approval-final") }
         assertTrue(existsText("This approval was rejected. Nothing more to do."))

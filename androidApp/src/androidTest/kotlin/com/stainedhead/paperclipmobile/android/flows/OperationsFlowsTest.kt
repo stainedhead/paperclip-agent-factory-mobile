@@ -2,7 +2,6 @@ package com.stainedhead.paperclipmobile.android.flows
 
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -41,14 +40,14 @@ class OperationsFlowsTest : FlowTest() {
         tap("agent-detail-pause")
         waitFor { exists("confirm-destructive-sheet") }
         assertEquals(prompts, controls.biometricPromptCount)
-        rule.onNodeWithTag("confirm-destructive-confirm").performClick()
+        tap("confirm-destructive-confirm")
         waitFor { exists("feedback-banner") }
         assertEquals(prompts + 1, controls.biometricPromptCount)
         assertFalse(exists("agent-detail-resume"))
 
         script(BiometricResult.Approved)
         tap("agent-detail-pause")
-        rule.onNodeWithTag("confirm-destructive-confirm").performClick()
+        tap("confirm-destructive-confirm")
 
         waitFor { exists("agent-detail-resume") }
         assertEquals(prompts + 2, controls.biometricPromptCount)
@@ -67,7 +66,7 @@ class OperationsFlowsTest : FlowTest() {
 
         tap("run-cancel")
         waitFor { exists("confirm-destructive-sheet") }
-        rule.onNodeWithTag("confirm-destructive-confirm").performClick()
+        tap("confirm-destructive-confirm")
         waitFor { exists("feedback-banner") }
         assertEquals(prompts + 1, controls.biometricPromptCount)
         assertTrue(exists("run-cancel"))
@@ -75,7 +74,7 @@ class OperationsFlowsTest : FlowTest() {
         script(BiometricResult.Approved)
         tap("run-cancel")
         waitFor { exists("confirm-destructive-sheet") }
-        rule.onNodeWithTag("confirm-destructive-confirm").performClick()
+        tap("confirm-destructive-confirm")
 
         waitFor { textOf("run-status").startsWith("Cancelled") }
         assertEquals(prompts + 2, controls.biometricPromptCount)
