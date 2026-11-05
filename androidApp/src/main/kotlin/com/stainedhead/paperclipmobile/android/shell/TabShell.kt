@@ -12,6 +12,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,9 @@ import com.stainedhead.paperclipmobile.android.designsystem.rememberReducedMotio
  * selected tab again returns to its root, as the platform does. The Inbox badge is [inboxBadge], the server's count;
  * the shell never computes it.
  *
+ * [selectionKey] names the selected factory and company: when it changes every tab goes back to its root, so no pushed
+ * screen outlives the selection it was opened for.
+ *
  * [tabRoot] draws a tab's first screen and [destination] a pushed route; both get the tab's [TabNavigator].
  */
 @Composable
@@ -59,6 +63,18 @@ fun TabShell(
     var selected by rememberSaveable { mutableStateOf(AppTab.Inbox) }
     val controllers = AppTab.entries.associateWith { rememberNavController() }
     val stateHolder = rememberSaveableStateHolder()
+    // A pushed detail screen addresses the factory and company it was opened in; a new selection starts every tab over
+    // (R-006). The key a recreation restores is the one the stack was built for, so rotation keeps the stack.
+    var openedFor by rememberSaveable { mutableStateOf(selectionKey) }
+    LaunchedEffect(selectionKey) {
+        if (openedFor != selectionKey) {
+            openedFor = selectionKey
+            // A tab never shown has no graph yet and nothing pushed.
+            controllers.values.filter { it.currentBackStackEntry != null }.forEach {
+                it.popBackStack(TabRoot, inclusive = false)
+            }
+        }
+    }
     Scaffold(
         modifier = modifier,
         containerColor = AppTheme.colors.background,

@@ -47,7 +47,7 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [x] T-036 R-036 (P2) Lock glyph has no description and row buttons have no disabled state (Group 2: tests (red) then fix; Modifier.asksDeviceOwner gives lock buttons a spoken name (Pause on rows and detail, Reject, budget Submit, Save budget on a raise); RowButton has an enabled state and the row buttons are disabled while an action runs. The detail screen already swaps its buttons for a spinner while busy)
 - [x] T-037 R-037 (P2) Work search keeps unsent text; blank-title buttons enabled (Group 2: tests (red) then fix; the search text is hoisted so a chip applies it first, Create issue and subtask Save are off for a blank title)
 - [ ] T-005 R-005 (P1) The Run viewer log tail may silently stop following
-- [ ] T-006 R-006 (P1) A pushed detail screen survives a factory or company switch
+- [x] T-006 R-006 (P1) A pushed detail screen survives a factory or company switch (Group 3: test (red) HASH_T006; fix: TabShell takes a selectionKey (instance/company from the app holder) and pops every visited tab to its root when it changes; the key is saved so rotation and process death keep the stack; the route-payload variant was not added)
 - [ ] T-008 R-008 (P1) The Inbox fling misses the PRD jank budget (67% janky frames vs 5%)
 - [ ] T-018 R-018 (P2) Graph opening runs on the main thread in `onCreate`
 - [ ] T-021 R-021 (P2) Locking probably disposes the tab shell without clearing back-stack entry ViewModels

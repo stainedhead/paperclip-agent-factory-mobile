@@ -1,6 +1,8 @@
 package com.stainedhead.paperclipmobile.android.shell
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.screens.AgentDetailScreen
 import com.stainedhead.paperclipmobile.android.screens.AgentsScreen
@@ -27,8 +29,10 @@ fun AppTabs(
     session: GraphSession,
     inboxBadge: Int,
 ) {
+    val app by checkNotNull(session.app) { "The tab shell needs the app holder" }.state.collectAsStateWithLifecycle()
     TabShell(
         inboxBadge = inboxBadge,
+        selectionKey = "${app.selectedInstanceId}/${app.selectedCompanyId}",
         tabRoot = { tab, navigator ->
             when (tab) {
                 AppTab.Inbox -> InboxScreen(session, navigator)
