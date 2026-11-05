@@ -54,6 +54,7 @@ fun TabShell(
     tabRoot: @Composable (tab: AppTab, navigator: TabNavigator) -> Unit,
     destination: @Composable (route: AppRoute, navigator: TabNavigator) -> Unit,
     modifier: Modifier = Modifier,
+    selectionKey: String? = null,
 ) {
     var selected by rememberSaveable { mutableStateOf(AppTab.Inbox) }
     val controllers = AppTab.entries.associateWith { rememberNavController() }

@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -34,10 +37,14 @@ class TabShellTest {
     val rule = createComposeRule()
 
     @Composable
-    private fun Shell(badge: Int) {
+    private fun Shell(
+        badge: Int,
+        selectionKey: String? = null,
+    ) {
         PaperclipTheme(darkTheme = false) {
             TabShell(
                 inboxBadge = badge,
+                selectionKey = selectionKey,
                 tabRoot = { tab, nav ->
                     Column {
                         Text("root ${tab.name}")
@@ -133,5 +140,34 @@ class TabShellTest {
 
         rule.onNodeWithTag("tab-Agents").assertIsSelected()
         rule.onNodeWithText("root Agents").assertIsDisplayed()
+    }
+
+    @Test
+    fun aFactoryOrCompanyChangeReturnsEveryTabToItsRoot() {
+        var key by mutableStateOf("factory-a")
+        rule.setContent { Shell(badge = 0, selectionKey = key) }
+        rule.onNodeWithText("push decision").performClick()
+        rule.onNodeWithTag("tab-Work").performClick()
+        rule.onNodeWithText("push settings").performClick()
+        rule.onNodeWithText("screen Settings", substring = true).assertIsDisplayed()
+
+        key = "factory-b"
+        rule.waitForIdle()
+
+        rule.onNodeWithText("root Work").assertIsDisplayed()
+        rule.onNodeWithTag("tab-Inbox").performClick()
+        rule.onNodeWithText("root Inbox").assertIsDisplayed()
+    }
+
+    @Test
+    fun anUnchangedSelectionKeepsThePushedScreens() {
+        var key by mutableStateOf("factory-a")
+        rule.setContent { Shell(badge = 0, selectionKey = key) }
+        rule.onNodeWithText("push decision").performClick()
+
+        key = "factory-a"
+        rule.waitForIdle()
+
+        rule.onNodeWithText("screen Decision", substring = true).assertIsDisplayed()
     }
 }
