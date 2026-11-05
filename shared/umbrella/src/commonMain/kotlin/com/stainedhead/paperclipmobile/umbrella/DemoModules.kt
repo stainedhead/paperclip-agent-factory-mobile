@@ -133,6 +133,7 @@ private fun org.koin.core.module.Module.demoControls() {
                 get<RunGateway>(RawPort) as FakeRunGateway,
                 get<DashboardGateway>(RawPort) as FakeDashboardGateway,
             ),
+            get<RunGateway>(RawPort) as FakeRunGateway,
         )
     }
 }

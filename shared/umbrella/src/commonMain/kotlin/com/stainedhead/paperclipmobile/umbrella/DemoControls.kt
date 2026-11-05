@@ -5,6 +5,7 @@ import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.BudgetIncidentId
 import com.stainedhead.paperclipmobile.domain.DecisionId
 import com.stainedhead.paperclipmobile.domain.DomainError
+import com.stainedhead.paperclipmobile.domain.RunId
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeApprovalGateway
@@ -28,6 +29,7 @@ class DemoControls internal constructor(
     private val approvals: FakeApprovalGateway,
     private val budgets: FakeBudgetGateway,
     private val reads: DemoReadFailures,
+    private val runs: FakeRunGateway,
 ) {
     /** How many device-owner prompts the graph has shown so far. */
     val biometricPromptCount: Int get() = biometrics.calls
@@ -51,6 +53,12 @@ class DemoControls internal constructor(
         decisionId: String,
         optionId: String,
     ) = decisions.resolveElsewhere(DecisionId(decisionId), optionId)
+
+    /**
+     * Someone else cancelled the run on the server. The phone is not told: a Run viewer shows it only when its next
+     * refresh reads the run (PRD FR-090). False when the run is unknown or no longer active.
+     */
+    fun cancelRunElsewhere(runId: String): Boolean = runs.cancelElsewhere(RunId(runId))
 
     /** The approval was approved elsewhere. */
     fun resolveApprovalElsewhere(approvalId: String) {
