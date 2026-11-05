@@ -208,6 +208,16 @@ private fun EffectResultRow(result: EffectResultUi) {
 private fun confirmText(state: DecisionState): String =
     stringResource(if (state.isSubmitting) R.string.decision_working else R.string.decision_confirm)
 
+@Composable
+private fun ChosenOptionLine(label: String) {
+    Text(
+        stringResource(R.string.decision_selected_option, label),
+        Modifier.testTag("decision-chosen"),
+        style = AppType.secondary,
+        color = AppTheme.colors.textSecondary,
+    )
+}
+
 /** The bar under the content: why actions are off, the chosen option restated, then Dismiss and Confirm. */
 @Composable
 fun DecisionActionBar(
@@ -241,15 +251,7 @@ fun DecisionActionBar(
             verticalArrangement = Arrangement.spacedBy(Spacing.large),
         ) {
             state.actionsDisabledReason?.let { DisabledReason(it) }
-            chosen?.let {
-                val line = stringResource(R.string.decision_selected_option, it.label)
-                Text(
-                    line,
-                    Modifier.testTag("decision-chosen"),
-                    style = AppType.secondary,
-                    color = AppTheme.colors.textSecondary,
-                )
-            }
+            chosen?.let { ChosenOptionLine(it.label) }
             ActionRow(
                 buildList<@Composable (Modifier) -> Unit> {
                     add { m ->

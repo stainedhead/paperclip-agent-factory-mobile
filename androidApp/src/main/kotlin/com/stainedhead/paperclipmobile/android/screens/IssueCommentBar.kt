@@ -79,7 +79,7 @@ fun IssueCommentBar(
     var reopen by rememberSaveable { mutableStateOf(false) }
     var interrupt by rememberSaveable { mutableStateOf(false) }
     var seen by rememberSaveable { mutableIntStateOf(state.commentSentCount) }
-    // What the last tap on Send sent: only that text goes when the holder counts the comment, never what was typed since.
+    // What the last tap on Send sent: only that goes when the holder counts the comment, not what was typed since.
     var sentText by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(state.commentSentCount) {
         if (state.commentSentCount != seen) {

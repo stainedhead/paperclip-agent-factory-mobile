@@ -35,15 +35,31 @@ class GraphSessionDeferralTest {
 
     private val probes = mutableMapOf<String, Probe>()
 
-    private fun session() =
+    private fun session() = settled(newSession())
+
+    /** The app holder follows the demo selection on its own thread; let that finish before the test drives it. */
+    private fun settled(session: GraphSession): GraphSession {
+        await {
+            session.app
+                ?.state
+                ?.value
+                ?.selectedCompanyId != null && session.inbox.value != null
+        }
+        return session
+    }
+
+    private fun newSession() =
         GraphSession(
             id = 1,
             mode = GraphMode.Demo,
             graph = graph,
             notice = null,
             parent = scope,
-            options = SessionOptions(autoRefresh = false),
-            inboxFactory = { _, instance, company -> probes.getOrPut("$instance/$company") { Probe() }.holder },
+            options =
+                SessionOptions(
+                    autoRefresh = false,
+                    inboxFactory = { _, instance, company -> probes.getOrPut("$instance/$company") { Probe() }.holder },
+                ),
         )
 
     @AfterEach

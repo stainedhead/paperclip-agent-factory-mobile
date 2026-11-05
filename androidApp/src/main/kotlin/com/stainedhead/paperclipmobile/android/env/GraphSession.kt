@@ -35,6 +35,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 data class SessionOptions(
     val autoRefresh: Boolean = true,
     val diagnostics: DiagnosticsRecorder = DiagnosticsRecorder(UNKNOWN_VERSION),
+    /** How the Inbox holder of a factory and company is made; tests give a holder whose work they control. */
+    val inboxFactory: ((PaperclipGraph, String, String) -> ScreenHolder<InboxState, InboxIntent>)? = null,
 )
 
 /**
@@ -49,9 +51,7 @@ class GraphSession internal constructor(
     val graph: PaperclipGraph?,
     val notice: StartupNotice?,
     parent: CoroutineScope,
-    options: SessionOptions = SessionOptions(),
-    /** How the Inbox holder of a factory and company is made; tests give a holder whose work they control. */
-    private val inboxFactory: ((PaperclipGraph, String, String) -> ScreenHolder<InboxState, InboxIntent>)? = null,
+    private val options: SessionOptions = SessionOptions(),
 ) {
     /** What the app has seen of itself, for the Diagnostics screen; the session feeds it, screens read it. */
     val diagnostics: DiagnosticsRecorder = options.diagnostics
@@ -162,7 +162,7 @@ class GraphSession internal constructor(
             val opened = graph
             if (opened == null || instance == null || company == null) return
             val holder =
-                inboxFactory?.invoke(opened, instance, company)
+                options.inboxFactory?.invoke(opened, instance, company)
                     ?: opened.attention.createInboxStateHolder(instance, company).screenHolder()
             if (autoRefresh) holder.refreshTarget?.let { refreshSession = opened.refresh.start(it) }
             mutableInbox.value = holder

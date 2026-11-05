@@ -384,8 +384,9 @@ fun StepIndicator(
 const val NOTE_FIELD_LINES = 4
 
 /**
- * A labelled text field, one line unless [maxLines] says more (notes, comments and decision text take up to four), with help or an issue underneath, as in the mocks. The text is the caller's state,
- * edited through [onValueChange]; the field owns nothing.
+ * A labelled text field, one line unless [maxLines] says more (notes, comments and decision text take up to four),
+ * with help or an issue underneath, as in the mocks. The text is the caller's state, edited through [onValueChange];
+ * the field owns nothing.
  */
 @Composable
 fun FormField(
