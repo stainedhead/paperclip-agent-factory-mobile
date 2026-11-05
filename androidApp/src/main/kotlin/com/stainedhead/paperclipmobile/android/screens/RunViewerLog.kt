@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.DragInteraction
@@ -20,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,8 +55,11 @@ import com.stainedhead.paperclipmobile.presentation.RunViewerState
 
 private const val LARGE_FONT_SCALE = 1.3f
 private const val AT_BOTTOM_SLACK = 4
+private const val NOT_AT_BOTTOM = -1
 private val PanelHeight = 240.dp
 private val LargePanelHeight = 360.dp
+
+private fun ScrollState.isAtBottom() = value >= maxValue - AT_BOTTOM_SLACK
 
 /** The dark panel of a console in both themes: the log is output, not prose, and reads best light on dark. */
 private val LogBackground = Token(light = 0x15171C, dark = 0x0B0C0E)
@@ -131,17 +136,29 @@ private fun LogPanel(
 ) {
     val scroll = rememberScrollState()
     var dragged by remember { mutableStateOf(false) }
+    // Where a drag began when it began at the bottom (else NOT_AT_BOTTOM): text that grows under a held finger does not
+    // make the release count as scrolling away.
+    var bottomAtDragStart by remember { mutableIntStateOf(NOT_AT_BOTTOM) }
+    // Following is paused while a finger is down, so the content never moves under it, and resumes on release (R-005).
     LaunchedEffect(state.autoScroll) {
-        if (state.autoScroll) snapshotFlow { scroll.maxValue }.collect { scroll.scrollTo(it) }
+        if (state.autoScroll) snapshotFlow { scroll.maxValue }.collect { if (!dragged) scroll.scrollTo(it) }
     }
     LaunchedEffect(scroll) {
-        scroll.interactionSource.interactions.collect { if (it is DragInteraction.Start) dragged = true }
+        scroll.interactionSource.interactions.collect {
+            if (it is DragInteraction.Start) {
+                dragged = true
+                bottomAtDragStart = if (scroll.isAtBottom()) scroll.value else NOT_AT_BOTTOM
+            }
+        }
     }
     LaunchedEffect(scroll) {
         snapshotFlow { scroll.isScrollInProgress }.collect { moving ->
             if (!moving && dragged) {
                 dragged = false
-                send(RunViewerIntent.UserScrolled(atBottom = scroll.value >= scroll.maxValue - AT_BOTTOM_SLACK))
+                val atBottom =
+                    scroll.isAtBottom() || (bottomAtDragStart != NOT_AT_BOTTOM && scroll.value >= bottomAtDragStart)
+                send(RunViewerIntent.UserScrolled(atBottom))
+                if (atBottom) scroll.scrollTo(scroll.maxValue)
             }
         }
     }
