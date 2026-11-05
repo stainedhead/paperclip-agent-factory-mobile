@@ -53,6 +53,13 @@ kotlin {
             listOf("debug", "release", "releaseDemo", "benchmark", "nonMinified").forEach { variant ->
                 val name = variant.replaceFirstChar { it.uppercase() }
                 dependsOn(":androidApp:process${name}Manifest")
+                // The merged manifest is read by the rules, so it is an input: an androidx bump that adds a permission
+                // changes it and re-runs them (R-014). Taken from the task's outputs, not from a path under intermediates.
+                inputs
+                    .files(
+                        provider { project(":androidApp").tasks.getByName("process${name}Manifest").outputs.files },
+                    ).withPropertyName("mergedManifest$name")
+                    .withPathSensitivity(PathSensitivity.NONE)
                 systemProperty(
                     "pafm.mergedManifest.$variant",
                     rootProject.layout.projectDirectory
@@ -77,6 +84,14 @@ kotlin {
                         include("**/*.kt", "**/*.xml")
                     },
                 ).withPropertyName("scannedAppSources")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+            // The release rules read the app's build files and R8 rules, and the dependency rules the version catalog.
+            inputs
+                .files(
+                    rootProject.layout.projectDirectory.file("androidApp/build.gradle.kts"),
+                    rootProject.layout.projectDirectory.file("androidApp/proguard-rules.pro"),
+                    rootProject.layout.projectDirectory.file("gradle/libs.versions.toml"),
+                ).withPropertyName("scannedBuildFiles")
                 .withPathSensitivity(PathSensitivity.RELATIVE)
             useJUnitPlatform()
         }
