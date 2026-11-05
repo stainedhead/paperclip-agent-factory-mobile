@@ -8,7 +8,7 @@ private val DOT_SEPARATOR = Regex("""joinToString\(\s*(?:"\s*·\s*"|SEPARATOR)|c
  * list joined with a hard-wired separator. Punctuation and order belong in a string resource (R-029).
  */
 internal fun gluedSentences(source: String): List<String> =
-    codeLines(source).filter { TEMPLATE_GLUE.containsMatchIn(it) || DOT_SEPARATOR.containsMatchIn(it) }
+    appCodeLines(source).filter { TEMPLATE_GLUE.containsMatchIn(it) || DOT_SEPARATOR.containsMatchIn(it) }
 
 private val CLASSIFICATION_EXTENSION = Regex("""\bfun\s+\w+Ui\.(?:tone|isLive|visibleActions|hintText)\s*\(""")
 private val CLASSIFICATION_TYPE =
@@ -22,7 +22,7 @@ private val TONE_ARM = Regex("""^(?!ToneUi\.)[\w.]+(?:,\s*[\w.]+)*\s*->\s*Status
  * a colour is the app's job and is allowed.
  */
 internal fun appClassifications(source: String): List<String> =
-    codeLines(source).filter {
+    appCodeLines(source).filter {
         CLASSIFICATION_EXTENSION.containsMatchIn(it) || CLASSIFICATION_TYPE.containsMatchIn(it) ||
             TONE_ARM.containsMatchIn(it)
     }

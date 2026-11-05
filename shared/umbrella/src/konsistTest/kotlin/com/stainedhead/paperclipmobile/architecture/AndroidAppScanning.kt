@@ -13,7 +13,7 @@ internal fun androidAppSources(root: File): List<File> =
 private val ALLOWED_INFRASTRUCTURE = "$APP_PACKAGE.infrastructure.platform"
 private val INFRASTRUCTURE = "$APP_PACKAGE.infrastructure."
 
-internal fun codeLines(source: String): List<String> =
+internal fun appCodeLines(source: String): List<String> =
     source
         .lines()
         .map { it.trim() }
@@ -24,26 +24,32 @@ internal fun appInfrastructureImports(source: String): List<String> =
 
 private val REVEAL_CALL = Regex("""\.\s*reveal\s*\(""")
 
-internal fun secretReveals(source: String): List<String> = codeLines(source).filter { REVEAL_CALL.containsMatchIn(it) }
+internal fun secretReveals(source: String): List<String> =
+    appCodeLines(source).filter {
+        REVEAL_CALL.containsMatchIn(it)
+    }
 
 private val LITERAL_TEXT = Regex("""\bText\(\s*(?:text\s*=\s*)?"""")
 
-internal fun literalTexts(source: String): List<String> = codeLines(source).filter { LITERAL_TEXT.containsMatchIn(it) }
+internal fun literalTexts(source: String): List<String> =
+    appCodeLines(source).filter {
+        LITERAL_TEXT.containsMatchIn(it)
+    }
 
 /** Lines naming `BiometricPrompt` in a file that declares composables; only `AuthHost` may touch the prompt. */
 internal fun composableBiometricCalls(source: String): List<String> =
-    if ("@Composable" in source) codeLines(source).filter { "BiometricPrompt" in it } else emptyList()
+    if ("@Composable" in source) appCodeLines(source).filter { "BiometricPrompt" in it } else emptyList()
 
 private val SYSTEM_LOG = Regex("""^import android\.util\.Log\b|(?<![A-Za-z0-9_.])Log\.(?:v|d|i|w|e|wtf)\(""")
 
 /** Lines that use `android.util.Log` directly; the app logs through `AppLog` only (AND-018). */
-internal fun directLogUse(source: String): List<String> = codeLines(source).filter { SYSTEM_LOG.containsMatchIn(it) }
+internal fun directLogUse(source: String): List<String> = appCodeLines(source).filter { SYSTEM_LOG.containsMatchIn(it) }
 
 private val SUPPRESSION = Regex("""@(?:file:)?Suppress(?:Lint|Warnings)?\b""")
 
 /** A rule is changed in its config file, never switched off where it fires (AGENTS.md "Toolchain"). */
 internal fun inlineSuppressions(source: String): List<String> =
-    codeLines(source).filter { SUPPRESSION.containsMatchIn(it) }
+    appCodeLines(source).filter { SUPPRESSION.containsMatchIn(it) }
 
 private val SAVING_API = Regex("""rememberSaveable|SavedStateHandle|savedStateHandle|onSaveInstanceState|outState\.""")
 private val SECRET_WORD = Regex("""secret|reveal|token|approvalUrl|boardKey|password""", RegexOption.IGNORE_CASE)
@@ -53,4 +59,4 @@ private val SECRET_WORD = Regex("""secret|reveal|token|approvalUrl|boardKey|pass
  * the factory address may be saved; a key, a token or the approval link never (AND-019).
  */
 internal fun secretsInSavedState(source: String): List<String> =
-    codeLines(source).filter { SAVING_API.containsMatchIn(it) && SECRET_WORD.containsMatchIn(it) }
+    appCodeLines(source).filter { SAVING_API.containsMatchIn(it) && SECRET_WORD.containsMatchIn(it) }
