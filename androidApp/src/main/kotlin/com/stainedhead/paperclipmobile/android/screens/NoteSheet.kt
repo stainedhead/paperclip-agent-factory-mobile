@@ -35,6 +35,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.AppType
 import com.stainedhead.paperclipmobile.android.designsystem.ButtonKind
 import com.stainedhead.paperclipmobile.android.designsystem.FormField
+import com.stainedhead.paperclipmobile.android.designsystem.NOTE_FIELD_LINES
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.labels.stringRes
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
@@ -107,6 +108,7 @@ fun NoteContent(
             help = text.help,
             issue = noteIssue,
             capitalization = KeyboardCapitalization.Sentences,
+            maxLines = NOTE_FIELD_LINES,
         )
         if (destructive) AuthLine(isWorking)
         deviceAuthIssue?.let {

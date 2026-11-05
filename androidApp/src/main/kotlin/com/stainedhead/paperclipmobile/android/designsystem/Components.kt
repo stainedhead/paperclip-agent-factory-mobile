@@ -354,8 +354,11 @@ fun StepIndicator(
     }
 }
 
+/** The most lines a note, a comment or a decision text shows before it scrolls. */
+const val NOTE_FIELD_LINES = 4
+
 /**
- * A labelled single-line text field with help or an issue underneath, as in the mocks. The text is the caller's state,
+ * A labelled text field, one line unless [maxLines] says more (notes, comments and decision text take up to four), with help or an issue underneath, as in the mocks. The text is the caller's state,
  * edited through [onValueChange]; the field owns nothing.
  */
 @Composable
@@ -380,7 +383,7 @@ fun FormField(
         Text(title, style = AppType.button, color = colors.textPrimary)
         OutlinedTextField(
             value = value,
-            onValueChange = { onValueChange(it.replace("\n", "")) },
+            onValueChange = { onValueChange(if (maxLines == 1) it.replace("\n", "") else it) },
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -390,7 +393,8 @@ fun FormField(
                     .semantics { contentDescription = title }
                     .testTag(tag),
             enabled = enabled,
-            singleLine = true,
+            singleLine = maxLines == 1,
+            maxLines = maxLines,
             isError = issue != null,
             textStyle = AppType.body.copy(color = colors.textPrimary),
             placeholder = placeholder?.let { { Text(it, style = AppType.body, color = colors.textSecondary) } },

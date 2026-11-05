@@ -36,7 +36,7 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [x] T-012 R-012 (P2) Connectivity counts "online" only when the network is VALIDATED (test 2b2d0a3, fix 04119ab)
 - [x] T-013 R-013 (P2) `RecordFiles` robustness (test 22505a3, fix 0abf91a)
 - [x] T-003 R-003 (P1) Typed text is lost on state change and on rotation: approval comment, reject and revision notes, budget amount (Group 2: test d30d934, fix c7aa63a; comment draft hoisted in Discussion with the seen pattern, note and amount rememberSaveable, restored amount re-sent once to a fresh holder)
-- [ ] T-023 R-023 (P2) `FormField` is single-line and strips newlines (iPhone parity)
+- [x] T-023 R-023 (P2) `FormField` is single-line and strips newlines (iPhone parity) (Group 2: test + seam, then fix; FormField maxLines, notes, comment and decision text take up to four lines, address, name and amount stay single-line)
 - [ ] T-025 R-025 (P2) `FormField` TalkBack semantics hide typed text and the validation issue
 - [ ] T-026 R-026 (P2) Nothing that appears asynchronously is announced to TalkBack
 - [ ] T-027 R-027 (P2) System Back on the first-run Pair step does not cancel pairing

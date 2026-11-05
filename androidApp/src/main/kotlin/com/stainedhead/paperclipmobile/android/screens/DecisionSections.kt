@@ -28,6 +28,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.CardSurface
 import com.stainedhead.paperclipmobile.android.designsystem.DisabledReason
 import com.stainedhead.paperclipmobile.android.designsystem.FormField
 import com.stainedhead.paperclipmobile.android.designsystem.HairlineDivider
+import com.stainedhead.paperclipmobile.android.designsystem.NOTE_FIELD_LINES
 import com.stainedhead.paperclipmobile.android.designsystem.ResultCard
 import com.stainedhead.paperclipmobile.android.designsystem.SectionHeader
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
@@ -143,6 +144,7 @@ fun DecisionInputs(
             issue =
                 feedback?.invalid?.takeIf { feedback.inputId == input.id }?.let { stringResource(it.stringRes()) },
             capitalization = KeyboardCapitalization.Sentences,
+            maxLines = NOTE_FIELD_LINES,
             enabled = !state.isSubmitting && state.actionsDisabledReason == null,
         )
     }

@@ -37,6 +37,7 @@ import com.stainedhead.paperclipmobile.android.designsystem.CardSurface
 import com.stainedhead.paperclipmobile.android.designsystem.DisabledReason
 import com.stainedhead.paperclipmobile.android.designsystem.FormField
 import com.stainedhead.paperclipmobile.android.designsystem.HairlineDivider
+import com.stainedhead.paperclipmobile.android.designsystem.NOTE_FIELD_LINES
 import com.stainedhead.paperclipmobile.android.designsystem.SectionHeader
 import com.stainedhead.paperclipmobile.android.designsystem.Spacing
 import com.stainedhead.paperclipmobile.android.labels.stringRes
@@ -145,6 +146,7 @@ private fun CommentBox(
             tag = "approval-comment-field",
             placeholder = stringResource(R.string.approval_comment_placeholder),
             capitalization = KeyboardCapitalization.Sentences,
+            maxLines = NOTE_FIELD_LINES,
         )
         AppButton(
             stringResource(R.string.approval_comment_post),
