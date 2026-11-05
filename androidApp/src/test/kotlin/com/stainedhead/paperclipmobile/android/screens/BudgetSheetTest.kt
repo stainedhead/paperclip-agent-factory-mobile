@@ -127,6 +127,22 @@ class BudgetSheetTest {
     }
 
     @Test
+    fun anAmountTypedThenAbandonedIsNotSentWhenRaiseIsChosenAgain() {
+        open()
+        choose("budget-choice-raise")
+        typeAmount("250")
+        rule.waitUntil(WAIT_MILLIS) { rule.isEnabled("budget-submit") }
+
+        choose("budget-choice-keep")
+        choose("budget-choice-raise")
+
+        // The field is blank again and the state holds no amount: Submit is off and names no amount (R-024).
+        rule.onNodeWithTag("budget-amount").assertTextContains("For example 250")
+        rule.onNodeWithTag("budget-submit").assertIsNotEnabled()
+        rule.onNodeWithTag("budget-submit").assertTextEquals("Raise and resume")
+    }
+
+    @Test
     fun theServersReasonShowsWhenItRefusesAnAmountTheLocalCheckAccepted() {
         open()
         app.controls.setBudgetServerSpend(SERVER_SPEND_CENTS)
