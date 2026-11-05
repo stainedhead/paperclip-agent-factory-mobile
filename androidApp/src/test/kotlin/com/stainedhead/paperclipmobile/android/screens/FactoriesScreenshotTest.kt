@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.captureRoboImage
+import com.stainedhead.paperclipmobile.android.captureBaseline
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -39,7 +39,7 @@ class FactoriesScreenshotTest {
         rule.setContent { app.Themed(darkTheme, content) }
         rule.waitUntil(WAIT_MILLIS, ready)
         rule.waitForIdle()
-        rule.onRoot().captureRoboImage("src/test/screenshots/$name-${if (darkTheme) "dark" else "light"}.png")
+        rule.onRoot().captureBaseline("src/test/screenshots/$name-${if (darkTheme) "dark" else "light"}.png")
     }
 
     private fun factories(darkTheme: Boolean) =

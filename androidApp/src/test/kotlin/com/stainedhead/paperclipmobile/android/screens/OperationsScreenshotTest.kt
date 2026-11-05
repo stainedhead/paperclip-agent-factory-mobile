@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.captureRoboImage
+import com.stainedhead.paperclipmobile.android.captureBaseline
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import org.junit.After
 import org.junit.Before
@@ -61,7 +61,7 @@ class OperationsScreenshotTest {
             } else {
                 "light"
             }
-        rule.onRoot().captureRoboImage("src/test/screenshots/$name-$suffix.png")
+        rule.onRoot().captureBaseline("src/test/screenshots/$name-$suffix.png")
     }
 
     private fun factoryHome(

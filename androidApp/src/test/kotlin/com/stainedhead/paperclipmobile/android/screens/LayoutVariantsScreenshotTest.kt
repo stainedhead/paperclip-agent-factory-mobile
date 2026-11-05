@@ -8,7 +8,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.captureRoboImage
+import com.stainedhead.paperclipmobile.android.captureBaseline
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import org.junit.After
 import org.junit.Before
@@ -60,7 +60,7 @@ class LayoutVariantsScreenshotTest {
         rule.setContent { app.ThemedAt(false, fontScale, content) }
         rule.waitUntil(WAIT_MILLIS, ready)
         rule.waitForIdle()
-        rule.onRoot().captureRoboImage("src/test/screenshots/$name.png")
+        rule.onRoot().captureBaseline("src/test/screenshots/$name.png")
     }
 
     private fun inbox(

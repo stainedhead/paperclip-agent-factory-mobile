@@ -5,7 +5,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.captureRoboImage
 import com.stainedhead.paperclipmobile.android.designsystem.LocalReferenceMillis
 import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
@@ -62,7 +61,7 @@ class ShellScreenshotTest {
         rule.setContent { PaperclipTheme(darkTheme = darkTheme, content = content) }
         rule.waitUntil(WAIT_MILLIS, ready)
         rule.waitForIdle()
-        rule.onRoot().captureRoboImage("src/test/screenshots/$name-${if (darkTheme) "dark" else "light"}.png")
+        rule.onRoot().captureBaseline("src/test/screenshots/$name-${if (darkTheme) "dark" else "light"}.png")
     }
 
     private fun shell(darkTheme: Boolean) {
