@@ -115,6 +115,7 @@ fun <T> ReorderableColumn(
     keyOf: (T) -> String,
     onReordered: (List<T>) -> Unit,
     modifier: Modifier = Modifier,
+    reorderRejected: Boolean = false,
     row: @Composable (item: T, controls: RowControls) -> Unit,
 ) {
     val commit by rememberUpdatedState(onReordered)
