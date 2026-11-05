@@ -9,4 +9,4 @@ Branch `worktree-adr144-unlock-session-token`. Updated after every task.
 - [x] T5 Konsist rule (2026-11-05)
 - [x] T6 Unlock investigation: not built, reported (ADR-145 "Unlock")
 - [x] T7 Docs (2026-11-05)
-- [ ] T8 Gates (shared gates green; Android app, emulator and iOS pending)
+- [x] T8 Gates: check green; androidApp 592 tests, Roborazzi, assembleRelease, emulator tests green; iOS: only the 16 baseline audit failures (2026-11-05)

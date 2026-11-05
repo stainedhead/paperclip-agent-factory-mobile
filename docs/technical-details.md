@@ -198,10 +198,10 @@ Numbers from the last local run (2026-11-05, branch `worktree-adr144-unlock-sess
 | Where | Tests |
 |---|---|
 | `shared/domain` | 149 (JVM, Android host and iOS simulator alike) |
-| `shared/application` | 366 (same on all three) |
+| `shared/application` | 367 (same on all three) |
 | `shared/presentation` | 398 JVM; 394 on the Android host and the iOS simulator |
 | `shared/testing` | 57 |
-| `shared/umbrella` | 88 JVM; 76 Android host; 70 iOS simulator |
+| `shared/umbrella` | 91 JVM; 76 Android host; 70 iOS simulator |
 | `shared/infrastructure/api` | 338 JVM; 336 Android host; 335 iOS simulator. `contractTest` needs a server and was not run locally |
 | `shared/infrastructure/persistence` | 61 JVM; 51 Android host; 56 iOS simulator |
 | `shared/infrastructure/securestore` | 3 JVM; 37 Android host; 35 iOS simulator |
@@ -210,7 +210,7 @@ Numbers from the last local run (2026-11-05, branch `worktree-adr144-unlock-sess
 | Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`) | Run for the Group 5 verification on Pixel_9_Pro (API 37, arm64): securestore 17 run, 14 passed, 3 skipped (the lock-screen phase tests among them), 0 failures; platform 6 passed; umbrella 9 passed. Persistence has 5 declared and was not re-run for this table. Re-run 2026-11-05 for ADR-145 on the same emulator: securestore 17 run, 0 failures, 3 skipped; platform 6 passed; umbrella 9 passed (`AndroidLiveGraphDeviceTest` now expects the session cache over `KeystoreSecretStore`) |
 | Android connected demo-flow (`:androidApp:connectedDebugAndroidTest`, emulator only) | 14 run on Pixel_9_Pro (API 37), 14 passed (Android Test Orchestrator, one process per test). The first Group 5 run had 2 failures: the lazy Agents list (R-032) no longer composes a row below the screen, so `OperationsFlowsTest` scrolls to the row first |
 | Konsist (`konsistTest`) | 125 tests in 28 files |
-| Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard); recorded 2026-11-03, not re-run for this table |
+| Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard); recorded 2026-11-03, not re-run for this table. Re-run 2026-11-05 on an iPhone 18 Pro simulator at commit b900f02 (before the last cache fixes, which are shared Kotlin covered by `iosSimulatorArm64Test`): 378 Swift Testing cases passed; 132 XCUITests with the same 16 `testAccessibilityAudit*` failures as the known baseline and no others |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
 
