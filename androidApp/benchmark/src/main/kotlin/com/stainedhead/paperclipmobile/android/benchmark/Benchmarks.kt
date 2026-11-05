@@ -26,10 +26,17 @@ internal fun MacrobenchmarkScope.launchDemo(inboxCards: Int = 0) {
     }
 }
 
-/** Waits until the Inbox list is on screen and returns it: the tallest scrollable (the filter row also scrolls). */
+/** The Inbox's filter chips (their content description): shown with the content, never while it is loading. */
+private const val CONTENT_MARKER = "Filter by kind"
+
+/**
+ * Waits until the Inbox shows its content and returns the list: the tallest scrollable (the filter row also scrolls).
+ * The list exists while the Inbox still loads, so the wait is for the filter chips, which only the content has: a
+ * fling must never start on a screen that is still opening (R-008).
+ */
 internal fun MacrobenchmarkScope.awaitInboxList(): androidx.test.uiautomator.UiObject2 {
-    check(device.wait(Until.hasObject(By.scrollable(true).pkg(TARGET_PACKAGE)), CONTENT_WAIT_MILLIS)) {
-        "the Inbox list did not appear"
+    check(device.wait(Until.hasObject(By.desc(CONTENT_MARKER).pkg(TARGET_PACKAGE)), CONTENT_WAIT_MILLIS)) {
+        "the Inbox content did not appear"
     }
     return device.findObjects(By.scrollable(true).pkg(TARGET_PACKAGE)).maxBy { it.visibleBounds.height() }
 }
