@@ -134,8 +134,9 @@ private fun DetailMessage(
 
 /**
  * Runs the shared refresh policy for a detail screen while it is on screen: started when the screen starts, stopped
- * when it stops. The interval (15 seconds while the item can change, none once it is final) is the state's own; no
- * timer lives here (PRD FR-090). A session that has refresh switched off (tests) starts nothing.
+ * when it stops. The interval is the state's own, never this function's: 15 seconds on most screens, 5 seconds on a
+ * live Run viewer and on an Agent detail with a current run, none once the item is final; no timer lives here (PRD
+ * FR-090). A session that has refresh switched off (tests) starts nothing.
  */
 @Composable
 fun RefreshWhileVisible(

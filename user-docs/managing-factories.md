@@ -23,6 +23,8 @@ The Factories tab, **Manage**, **Edit** and Settings work as above, with these d
 
 - **Reorder** in Manage by pressing and dragging the handle on the right. With TalkBack on, each row also offers "Move up" and "Move down" actions.
 - **Remove** asks for the confirmation sheet and then your fingerprint, face or screen lock.
+- If the app cannot save a new order it shows the saved order again and says "The order could not be saved. Try again."
+- Switching to another factory or company returns every tab to its first screen, so you never see a screen of the old factory under the new one.
 - The factory's top-bar actions are a pencil (Manage) and a gear (Settings). **Add a factory** is at the bottom of the list.
 
 <img src="images/android-manage-factories.png" alt="Android Edit factories with drag handles and remove buttons" width="240">

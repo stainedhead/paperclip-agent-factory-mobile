@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Proves that konsistTest cannot pass stale locally (R-014): the rules read the version catalog, the app's build files,
-# its R8 rules and its merged manifests, so changing any of them must make the task run again.
-#   scripts/test-konsist-inputs.sh [catalog|proguard|app-build]    default: all three
+# its R8 rules, its merged manifests and the documents whose claims the rules check (README, docs, the archived Android
+# spec status), so changing any of them must make the task run again.
+#   scripts/test-konsist-inputs.sh [catalog|proguard|app-build|docs|archive-status]    default: all five
 # Each case runs the task twice to reach "up to date", changes ONLY that one file (a trailing comment, restored on exit),
 # runs it a third time and fails when Gradle skipped the task. Uses the local Gradle build; takes a few minutes.
 set -euo pipefail
@@ -42,13 +43,15 @@ check_case() {
   esac
 }
 
-cases="${1:-catalog proguard app-build}"
+cases="${1:-catalog proguard app-build docs archive-status}"
 for c in $cases; do
   case "$c" in
     catalog) check_case catalog gradle/libs.versions.toml "#" ;;
     proguard) check_case proguard androidApp/proguard-rules.pro "#" ;;
     app-build) check_case app-build androidApp/build.gradle.kts "//" ;;
-    *) echo "usage: $0 [catalog|proguard|app-build]" >&2; exit 64 ;;
+    docs) check_case docs docs/technical-details.md "-" ;;
+    archive-status) check_case archive-status specs/archive/261104-phase-2a-android-ui/status.md "-" ;;
+    *) echo "usage: $0 [catalog|proguard|app-build|docs|archive-status]" >&2; exit 64 ;;
   esac
 done
 # Leave the build settled again after the restore.

@@ -97,7 +97,8 @@ No extra reaches a real factory: without `demo` the app opens the live graph.
 
 | Variable | Used by | Meaning |
 |---|---|---|
-| `PAFM_UPLOAD_STORE_FILE`, `PAFM_UPLOAD_STORE_PASSWORD`, `PAFM_UPLOAD_KEY_ALIAS`, `PAFM_UPLOAD_KEY_PASSWORD` | `:androidApp:assembleRelease` | The upload keystore. All four are read from the environment at build time and never committed (`*.jks` and `*.keystore` are git-ignored). Without `PAFM_UPLOAD_STORE_FILE` the release build is signed with the debug key. |
+| `PAFM_UPLOAD_STORE_FILE`, `PAFM_UPLOAD_STORE_PASSWORD`, `PAFM_UPLOAD_KEY_ALIAS`, `PAFM_UPLOAD_KEY_PASSWORD` | `:androidApp:assembleRelease` | The upload keystore. All four are read from the environment at build time and never committed (`*.jks` and `*.keystore` are git-ignored). Without `PAFM_UPLOAD_STORE_FILE` the release build is signed with the debug key (a local build warns; a build with `CI` set fails unless `PAFM_ALLOW_DEBUG_SIGNED_RELEASE=1`). Setting the store file without the other three fails the build everywhere. |
+| `PAFM_ALLOW_DEBUG_SIGNED_RELEASE` | `:androidApp:assembleRelease`, CI | `1` says a debug-signed release is meant (a smoke build). `android.yml` sets it. Without it, a CI build with no upload key fails in `verifyReleaseSigning`. |
 | `ANDROID_HOME` / `ANDROID_SDK_ROOT` | the Android scripts | SDK location for `adb` and `aapt2` (default `$HOME/Library/Android/sdk`). |
 | `ANDROID_SERIAL` | the Android scripts | Pick a device when several are connected. |
 | `PAFM_BENCHMARK_ALLOW_EMULATOR` | `scripts/run-benchmarks.sh` | `1` (default): record on an emulator, as a regression guard. `0`: refuse emulators (the Pixel 6 target needs a real Pixel 6). |

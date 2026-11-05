@@ -98,6 +98,18 @@ kotlin {
                     rootProject.layout.projectDirectory.file("gradle/libs.versions.toml"),
                 ).withPropertyName("scannedBuildFiles")
                 .withPathSensitivity(PathSensitivity.RELATIVE)
+            // The documentation rules read the README, the docs folder and the archived Android spec (counts, the ADR
+            // range, phrases found false, the acceptance mapping), so editing those re-runs them too (R-039, R-040).
+            inputs
+                .files(
+                    rootProject.layout.projectDirectory.file("README.md"),
+                    rootProject.fileTree("docs") { include("*.md") },
+                    rootProject.layout.projectDirectory.file("specs/archive/261104-phase-2a-android-ui/status.md"),
+                    rootProject.layout.projectDirectory.file(
+                        "specs/archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md",
+                    ),
+                ).withPropertyName("scannedDocuments")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
             useJUnitPlatform()
         }
     }

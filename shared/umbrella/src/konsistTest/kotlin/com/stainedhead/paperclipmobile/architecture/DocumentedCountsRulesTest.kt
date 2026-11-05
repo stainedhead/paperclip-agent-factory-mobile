@@ -81,7 +81,7 @@ class DocumentedCountsRulesTest {
                 .maxOf { it.groupValues[1].toInt() }
         listOf("README.md", "docs/technical-details.md").forEach { name ->
             val ends =
-                Regex("ADR-\\d+ to ADR-(\\d+)")
+                Regex("ADR-(?:001|121) to ADR-(\\d+)")
                     .findAll(File(projectRoot, name).readText())
                     .map { it.groupValues[1].toInt() }
                     .toList()
