@@ -51,6 +51,24 @@ object DemoInbox {
 
     fun items(): List<AttentionItem> = decideNow() + thisWeek() + whenever()
 
+    /**
+     * The mock's cards followed by [extra] generated low-severity ones with no due date, so the badge stays at three.
+     * For scrolling and memory measurements of a long Inbox (the on-demand benchmark); never shown to a person.
+     */
+    fun itemsWithGenerated(extra: Int): List<AttentionItem> = items() + (1..extra).map(::generated)
+
+    private fun generated(number: Int) =
+        card(
+            AttentionSourceKind.Decision,
+            AttentionSubject(
+                SubjectKind.Decision,
+                "dec-generated-$number",
+                title = "Generated decision $number",
+            ),
+            Triage(Severity.Low, DecideBy.Whenever, number.minutes),
+            "Generated card $number",
+        )
+
     /** How urgent a card is and how long ago it last changed. */
     private data class Triage(
         val severity: Severity,

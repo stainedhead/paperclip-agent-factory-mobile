@@ -10,7 +10,7 @@ private val TESTING_PACKAGE = "$APP_PACKAGE.testing"
 private val FAKE_MODULES = listOf("portsModule(", "demoPortsModule(", "sliceThreePorts(", "signalPorts(")
 
 /** Code that is part of the live seam: it calls into the live graph or names the live platform. */
-private val LIVE_SEAM = listOf("createLiveGraph(", "LivePlatform", "livePortsModule(")
+private val LIVE_SEAM = listOf("createLiveGraph(", "LivePlatform", "livePortsModule(", "AndroidLive")
 
 /**
  * The functions of a file in which a fake module may legitimately appear because they build the DEMO graph; in the
@@ -89,8 +89,45 @@ class LiveWiringRulesTest {
     @Test
     fun `the rule selects the live graph files it is meant to guard`() {
         val names = liveWiringSources(umbrellaSrc).map { it.name }
-        listOf("LiveGraph.kt", "LiveModules.kt", "LivePlatform.kt", "PaperclipCore.kt").forEach {
+        listOf(
+            "LiveGraph.kt",
+            "LiveModules.kt",
+            "LivePlatform.kt",
+            "PaperclipCore.kt",
+            "LiveIosPlatform.kt",
+            "AndroidLivePlatform.kt",
+            "LiveAndroidGraph.kt",
+            "AndroidLiveSettings.kt",
+        ).forEach {
             Assertions.assertTrue(it in names, "$it is not guarded; selected: $names")
+        }
+    }
+
+    @Test
+    fun `the rule flags a fake planted in an Android live file`() {
+        val root =
+            kotlin.io.path
+                .createTempDirectory("pafm-wiring-android")
+                .toFile()
+        try {
+            val dir = File(root, "src/androidMain/kotlin").also { it.mkdirs() }
+            File(dir, "AndroidLivePlatform.kt").writeText(
+                """
+                import $TESTING_PACKAGE.fakes.FakeSecretStore
+
+                internal class AndroidLivePlatform {
+                    val secretStore = FakeSecretStore()
+                }
+                """.trimIndent(),
+            )
+            val guarded = liveWiringSources(File(root, "src"))
+            Assertions.assertEquals(listOf("AndroidLivePlatform.kt"), guarded.map { it.name })
+            Assertions.assertEquals(
+                listOf("import $TESTING_PACKAGE.fakes.FakeSecretStore"),
+                wiringOffenders(guarded.single()),
+            )
+        } finally {
+            root.deleteRecursively()
         }
     }
 

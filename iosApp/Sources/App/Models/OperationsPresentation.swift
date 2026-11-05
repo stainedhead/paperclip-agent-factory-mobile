@@ -37,7 +37,7 @@ struct RunRowPresentation: Equatable {
         let issue = row.issueIdentifier
         title = [row.agentName, issue].compactMap { $0 }.joined(separator: " \u{00B7} ")
         issueLine = [issue, row.issueTitle].compactMap { $0 }.joined(separator: " \u{00B7} ").nilIfEmpty
-        isLive = Self.isLive(row.status)
+        isLive = row.status.isLive
         if let started = row.startedAtEpochMillis?.int64Value {
             let startedAt = Date(timeIntervalSince1970: Double(started) / 1000)
             let finishedAt = row.finishedAtEpochMillis.map { Date(timeIntervalSince1970: Double($0.int64Value) / 1000) }
@@ -53,18 +53,7 @@ struct RunRowPresentation: Equatable {
         RunTime.elapsed(seconds: (finishedAt ?? now).timeIntervalSince(startedAt))
     }
 
-    static func isLive(_ status: RunStatusUi) -> Bool {
-        status == .running || status == .queued || status == .scheduledRetry
-    }
-
-    static func tone(_ status: RunStatusUi) -> StatusTone {
-        switch status {
-        case .running, .succeeded: .success
-        case .failed, .timedOut: .critical
-        case .cancelled, .interrupted: .warn
-        case .queued, .scheduledRetry, .unknown: .neutral
-        }
-    }
+    static func tone(_ status: RunStatusUi) -> StatusTone { StatusTone(status.tone) }
 }
 
 /// One row of the Agents tab: the line under the name, the colour of its status, the avatar letters.
@@ -82,7 +71,7 @@ struct AgentRowPresentation: Equatable {
             tone = .critical
         } else {
             tone = Self.tone(row.status)
-            if row.status == .running, let run = row.currentRun, RunRowPresentation.isLive(run.status) {
+            if row.status == .running, let run = row.currentRun, run.status.isLive {
                 let presentation = RunRowPresentation(row: run, referenceDate: referenceDate)
                 parts += [run.issueIdentifier, presentation.compact].compactMap { $0 }
             } else if let heartbeat = row.lastHeartbeatAtEpochMillis?.int64Value, row.lifecycleState == nil {
@@ -94,14 +83,7 @@ struct AgentRowPresentation: Equatable {
         statusLine = parts.joined(separator: " \u{00B7} ")
     }
 
-    static func tone(_ status: AgentStatusUi) -> StatusTone {
-        switch status {
-        case .running: .success
-        case .error: .critical
-        case .paused, .pendingApproval: .warn
-        case .active, .idle, .terminated, .unknown: .neutral
-        }
-    }
+    static func tone(_ status: AgentStatusUi) -> StatusTone { StatusTone(status.tone) }
 
     /// Two or three letters for the avatar: a short all-capitals name as it is ("CTO", "QA agent" gives "QA"), a
     /// name ending in a number as its first letter and the number ("Engineer 2" gives "E2"), otherwise two letters.

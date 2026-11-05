@@ -104,7 +104,7 @@ private fun Module.agentUseCases() {
     single { PauseAgent(get(), get()) }
     single { ResumeAgent(get()) }
     single { InvokeHeartbeat(get(), get()) }
-    single { SetAgentBudget(get()) }
+    single { SetAgentBudget(get(), get()) }
 }
 
 private fun Module.runUseCases() {

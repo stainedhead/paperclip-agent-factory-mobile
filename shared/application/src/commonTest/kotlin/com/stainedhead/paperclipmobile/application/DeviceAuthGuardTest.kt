@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 class DeviceAuthGuardTest {
-    /** The six actions PRD FR-014 names, written out so the expectation does not read the policy under test. */
+    /** The actions PRD FR-014 names plus the budget raise of DEC-1 (R-004). */
     private val destructive =
         setOf(
             Action.PauseAgent,
@@ -16,6 +16,7 @@ class DeviceAuthGuardTest {
             Action.RejectApproval,
             Action.DecideDestructiveOption,
             Action.RaiseBudgetAndResume,
+            Action.RaiseAgentBudget,
             Action.RemoveFactory,
         )
 

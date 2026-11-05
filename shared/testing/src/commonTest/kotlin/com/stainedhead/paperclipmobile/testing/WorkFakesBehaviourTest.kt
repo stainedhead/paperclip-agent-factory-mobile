@@ -25,6 +25,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInteractionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
+import com.stainedhead.paperclipmobile.testing.fakes.cancelElsewhere
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest
@@ -145,6 +146,22 @@ class WorkFakesBehaviourTest {
             outcome.shouldBeInstanceOf<InvokeOutcome.Started>()
             started shouldBe listOf(outcome.run.id)
             gateway.get(scope, id).value().status shouldBe AgentStatus.Running
+        }
+
+    @Test
+    fun `a run cancelled elsewhere reads as cancelled and a finished or unknown run is left alone`() =
+        runTest {
+            val gateway = FakeRunGateway()
+            val id = RunId("run-live")
+            gateway.get(scope, id).value().status shouldBe RunStatus.Running
+
+            gateway.cancelElsewhere(id) shouldBe true
+
+            gateway.get(scope, id).value().status shouldBe RunStatus.Cancelled
+            gateway.live(scope).value().none { it.id == id } shouldBe true
+            gateway.cancel(scope, id).error() shouldBe DomainError.Conflict
+            gateway.cancelElsewhere(id) shouldBe false
+            gateway.cancelElsewhere(RunId("no-such-run")) shouldBe false
         }
 
     @Test

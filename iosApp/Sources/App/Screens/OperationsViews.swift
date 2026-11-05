@@ -43,7 +43,7 @@ struct RunListRow: View {
 
     var body: some View {
         TickingReference(
-            every: RunRowPresentation.isLive(row.status)
+            every: row.status.isLive
                 ? LiveClock.elapsedTick : LiveClock.ageTick
         ) { now in
             button(RunRowPresentation(row: row, referenceDate: now))

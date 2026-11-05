@@ -23,16 +23,15 @@ struct FactoryStatusPresentation: Equatable {
     let offersPairing: Bool
 
     init(status: FactoryStatusUi, expiry: ExpiryUi) {
-        if expiry.state == .expired {
-            (label, tone) = (.keyExpired, .warn)
-        } else {
-            switch status {
-            case .signedIn: (label, tone) = (.connected, .success)
-            case .signedOut: (label, tone) = (.signedOut, .neutral)
-            case .needsRePairing: (label, tone) = (.needsRePairing, .warn)
-            }
+        let decision = FactoryStatusDecision.companion.of(status: status, expiry: expiry)
+        tone = StatusTone(decision.tone)
+        offersPairing = decision.offersPairing
+        switch decision.label {
+        case .connected: label = .connected
+        case .keyExpired: label = .keyExpired
+        case .signedOut: label = .signedOut
+        case .needsRePairing: label = .needsRePairing
         }
-        offersPairing = status != .signedIn || expiry.state == .expired
     }
 
     var text: String {
@@ -60,14 +59,12 @@ struct ExpiryPresentation: Equatable {
     let tone: StatusTone
 
     init(_ expiry: ExpiryUi) {
-        switch expiry.state {
-        case .noExpiry:
-            (text, tone) = (nil, .neutral)
-        case .expired:
-            (text, tone) = (ShellLabel.expiryExpired.text, .warn)
-        case .valid, .expiringSoon:
-            let days = expiry.daysLeft?.intValue ?? 0
-            (text, tone) = (ShellLabel.expiryDays.plural(days), expiry.state == .expiringSoon ? .warn : .neutral)
+        let decision = ExpiryDecision.companion.of(expiry: expiry)
+        tone = StatusTone(decision.tone)
+        switch decision.kind {
+        case .none: text = nil
+        case .expired: text = ShellLabel.expiryExpired.text
+        case .days: text = ShellLabel.expiryDays.plural(Int(truncating: decision.days ?? 0))
         }
     }
 }

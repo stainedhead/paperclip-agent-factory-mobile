@@ -139,6 +139,21 @@ object PaperclipCore {
         )
 
     /**
+     * The demo graph whose Inbox holds the mock's nine cards plus [generatedCards] more, so a long list can be scrolled
+     * and measured (the on-demand benchmark). Not a real factory; the extra cards are filler.
+     */
+    fun createLargeInboxDemoGraph(generatedCards: Int): PaperclipGraph =
+        PaperclipGraph(
+            koinApplication {
+                modules(
+                    demoPortsModule(generatedInboxCards = generatedCards),
+                    useCaseModule(false),
+                    presentationModule(),
+                )
+            }.koin,
+        )
+
+    /**
      * Demo ports with no factory yet, so the first-run flow runs on fakes: the person approves every pairing at once
      * and the Factories list starts empty. For demo mode's "first run" launch and UI tests; not a real factory.
      */

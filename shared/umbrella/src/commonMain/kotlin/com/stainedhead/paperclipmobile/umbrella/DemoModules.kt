@@ -65,58 +65,60 @@ import org.koin.dsl.module
  * Every port backed by the shared fakes, seeded with the demo data set of the design mocks (ADR-026). The clock is
  * frozen at a mid-week instant; the Home factory holds a fake board key and every company-scoped read sees Acme Labs.
  */
-internal fun demoPortsModule(seeded: Boolean = true) =
-    module {
-        single<Clock> { FakeClock(DemoFactories.now) }
-        single<IdGenerator> { FakeIdGenerator("demo-") }
-        single<InstanceRepository> { FakeInstanceRepository(if (seeded) DemoFactories.instances() else emptyList()) }
-        single<SecretStore> {
-            FakeSecretStore().apply {
-                if (seeded) {
-                    seed(SecretKey(InstanceId(DemoIds.HOME_FACTORY), SecretName.BoardToken), DemoFactories.HOME_TOKEN)
-                }
+internal fun demoPortsModule(
+    seeded: Boolean = true,
+    generatedInboxCards: Int = 0,
+) = module {
+    single<Clock> { FakeClock(DemoFactories.now) }
+    single<IdGenerator> { FakeIdGenerator("demo-") }
+    single<InstanceRepository> { FakeInstanceRepository(if (seeded) DemoFactories.instances() else emptyList()) }
+    single<SecretStore> {
+        FakeSecretStore().apply {
+            if (seeded) {
+                seed(SecretKey(InstanceId(DemoIds.HOME_FACTORY), SecretName.BoardToken), DemoFactories.HOME_TOKEN)
             }
         }
-        single<AppSettingsStore> {
-            val selected = if (seeded) InstanceId(DemoIds.HOME_FACTORY) else null
-            FakeAppSettingsStore(AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = selected))
-        }
-        single { FakeBiometrics() }
-        single<Biometrics> { get<FakeBiometrics>() }
-        demoControls()
-        single { FakeConnectivity() }
-        single<Connectivity> { get<FakeConnectivity>() }
-        single<PairingBrowser> { FakePairingBrowser() }
-        single<HealthGateway> {
-            FakeHealthGateway(
-                DomainResult.Success(
-                    HealthReport(
-                        ServerStatus.Ok,
-                        DeploymentMode.Authenticated,
-                        Exposure.Private,
-                        DemoFactories.SERVER_VERSION,
-                        false,
-                    ),
-                ),
-            )
-        }
-        single<DeviceTimeZone> { FakeDeviceTimeZone() }
-        single<AuthGateway> {
-            FakeAuthGateway().apply {
-                meResult = DomainResult.Success(DemoFactories.access())
-                meWithKeyResult = DomainResult.Success(DemoFactories.access())
-                companiesResult = DomainResult.Success(DemoFactories.companies())
-                keysResult = DomainResult.Success(DemoFactories.boardKeys())
-                val clock = get<Clock>()
-                val repository = get<InstanceRepository>() as FakeInstanceRepository
-                hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }
-                approvePairings(from = { clock.now() })
-            }
-        }
-        demoAttentionPorts()
-        demoWorkPorts()
-        signalPorts()
     }
+    single<AppSettingsStore> {
+        val selected = if (seeded) InstanceId(DemoIds.HOME_FACTORY) else null
+        FakeAppSettingsStore(AppSettings(DemoFactories.DEVICE_NAME, selectedInstanceId = selected))
+    }
+    single { FakeBiometrics() }
+    single<Biometrics> { get<FakeBiometrics>() }
+    demoControls()
+    single { FakeConnectivity() }
+    single<Connectivity> { get<FakeConnectivity>() }
+    single<PairingBrowser> { FakePairingBrowser() }
+    single<HealthGateway> {
+        FakeHealthGateway(
+            DomainResult.Success(
+                HealthReport(
+                    ServerStatus.Ok,
+                    DeploymentMode.Authenticated,
+                    Exposure.Private,
+                    DemoFactories.SERVER_VERSION,
+                    false,
+                ),
+            ),
+        )
+    }
+    single<DeviceTimeZone> { FakeDeviceTimeZone() }
+    single<AuthGateway> {
+        FakeAuthGateway().apply {
+            meResult = DomainResult.Success(DemoFactories.access())
+            meWithKeyResult = DomainResult.Success(DemoFactories.access())
+            companiesResult = DomainResult.Success(DemoFactories.companies())
+            keysResult = DomainResult.Success(DemoFactories.boardKeys())
+            val clock = get<Clock>()
+            val repository = get<InstanceRepository>() as FakeInstanceRepository
+            hostOf = { id -> repository.current.firstOrNull { it.id == id }?.baseUri }
+            approvePairings(from = { clock.now() })
+        }
+    }
+    demoAttentionPorts(generatedInboxCards)
+    demoWorkPorts()
+    signalPorts()
+}
 
 private fun org.koin.core.module.Module.demoControls() {
     single {
@@ -135,9 +137,9 @@ private fun org.koin.core.module.Module.demoControls() {
     }
 }
 
-private fun org.koin.core.module.Module.demoAttentionPorts() {
+private fun org.koin.core.module.Module.demoAttentionPorts(generatedInboxCards: Int) {
     single<AttentionGateway>(RawPort) {
-        FakeAttentionGateway(get(), DemoInbox.items()).apply {
+        FakeAttentionGateway(get(), DemoInbox.itemsWithGenerated(generatedInboxCards)).apply {
             firstFeedAge = DemoInbox.FIRST_READ_AGE
             emptyCompanies = setOf(DemoIds.SIDE_PROJECT)
         }

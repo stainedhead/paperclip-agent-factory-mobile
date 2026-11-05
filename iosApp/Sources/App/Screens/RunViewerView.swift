@@ -69,7 +69,7 @@ private struct RunViewerScreen: View {
 
     private func header(_ run: RunRowUi) -> some View {
         let every =
-            RunRowPresentation.isLive(run.status)
+            run.status.isLive
             ? LiveClock.elapsedTick : LiveClock.ageTick
         return TickingReference(every: every) { now in
             header(run, RunRowPresentation(row: run, referenceDate: now))

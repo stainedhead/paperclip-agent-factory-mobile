@@ -5,6 +5,9 @@ plugins {
     // Declared once at the root so sibling modules share one plugin classloader (required for Kotlin/Native services).
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.android.kmp.library) apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.roborazzi) apply false
     alias(libs.plugins.skie) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.sqldelight) apply false
@@ -25,6 +28,9 @@ spotless {
             },
         )
         ktlint(libs.versions.ktlint.get())
+            // Compose functions that emit UI are PascalCase nouns (the Compose API guidelines); Spotless does not pass
+            // this .editorconfig property on to ktlint, so it is repeated here.
+            .editorConfigOverride(mapOf("ktlint_function_naming_ignore_when_annotated_with" to "Test,Composable"))
     }
     kotlinGradle {
         target(
@@ -42,10 +48,10 @@ detekt {
     buildUponDefaultConfig = true
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     parallel = true
-    // One root task scans every module's Kotlin sources (common, platform and test source sets).
+    // One root task scans every module's Kotlin sources (common, platform and test source sets) and the Android app.
     source.setFrom(
         fileTree(rootDir) {
-            include("shared/**/src/**/*.kt")
+            include("shared/**/src/**/*.kt", "androidApp/src/**/*.kt", "androidApp/benchmark/src/**/*.kt")
             exclude("**/build/**")
         },
     )

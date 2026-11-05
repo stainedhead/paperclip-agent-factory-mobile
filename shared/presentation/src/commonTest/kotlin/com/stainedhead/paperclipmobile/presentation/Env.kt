@@ -241,7 +241,7 @@ class Env(
             pauseAgent,
             resumeAgent,
             invoke,
-            SetAgentBudget(agents),
+            SetAgentBudget(agents, deviceAuth),
         )
 
     val runViewer =

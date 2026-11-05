@@ -8,6 +8,7 @@ import com.stainedhead.paperclipmobile.application.needsReread
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.CompanyContext
+import com.stainedhead.paperclipmobile.domain.DeviceAuthPolicy
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
@@ -126,11 +127,14 @@ class InvokeHeartbeat(
 }
 
 /**
- * Sets an agent's monthly budget (PRD FR-071). Owner only (the server would also let an operator, ADR-021), and not on
- * the device-authentication list of FR-014.
+ * Sets an agent's monthly budget (PRD FR-071). Owner only (the server would also let an operator, ADR-021). A budget
+ * above the current one, or zero, asks the device owner first like any raise of what an agent may spend (DEC-1, R-004,
+ * AGENTS.md "budget raise"); a decrease does not. Order: permission, currency, device authentication, ONE gateway call,
+ * one re-read after a timeout or conflict.
  */
 class SetAgentBudget(
     private val agents: AgentGateway,
+    private val deviceAuth: DeviceAuthGuard,
 ) {
     suspend operator fun invoke(
         context: CompanyContext,
@@ -141,6 +145,8 @@ class SetAgentBudget(
         if (monthly.currency != agent.monthlyBudget.currency) {
             return MutationResult.Invalid(InvalidInput.Amount(ResolutionIssue.WrongCurrency))
         }
+        val auth = deviceAuth(DeviceAuthPolicy.budgetSetAction(agent.monthlyBudget, monthly))
+        if (auth != BiometricResult.Approved) return MutationResult.NotAuthorized(auth)
         return agents.changed(context, agent) { agents.setBudget(context.scope, agent.id, monthly) }
     }
 }

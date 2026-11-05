@@ -30,14 +30,7 @@ enum ApprovalPresentation {
         }
     }
 
-    static func tone(_ status: ApprovalStatusUi) -> StatusPill.Tone {
-        switch status {
-        case .approved: .success
-        case .rejected: .critical
-        case .pending, .revisionRequested: .warn
-        case .cancelled, .unknown: .neutral
-        }
-    }
+    static func tone(_ status: ApprovalStatusUi) -> StatusPill.Tone { StatusPill.Tone(status.tone) }
 
     /// What a resolved or waiting approval says about itself (`approvalDone.<status>`).
     static func doneText(_ status: ApprovalStatusUi) -> String {

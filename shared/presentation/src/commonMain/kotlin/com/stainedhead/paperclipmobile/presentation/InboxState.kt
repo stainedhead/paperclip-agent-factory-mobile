@@ -101,7 +101,10 @@ data class InboxState(
     val rejectPrompt: RejectPromptUi? = null,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while an inline approve, reject or snooze is in flight; the screen is closed only after it (ADR-117). */
+    val isWorking: Boolean get() = isMutating
+}
 
 sealed interface InboxIntent {
     /** Pull to refresh, and refresh on foreground (PRD FR-035). */

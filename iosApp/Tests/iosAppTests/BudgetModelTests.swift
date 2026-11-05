@@ -63,6 +63,20 @@ struct BudgetModelTests {
         rig.finish()
     }
 
+    @Test func anAmountIsForgottenWhenKeepPausedIsChosenSoARevisitStartsBlank() async {
+        let rig = await makeRig()
+        rig.model.choose(.raiseAndResume)
+        rig.model.setAmount(text: "250", locale: enUS)
+        #expect(await eventually { rig.model.state.amountMinorUnits?.int64Value == 25_000 })
+        rig.model.choose(.keepPaused)
+        #expect(await eventually { rig.model.state.amountMinorUnits == nil })
+        rig.model.choose(.raiseAndResume)
+        #expect(await eventually { rig.model.state.choice == .raiseAndResume })
+        #expect(rig.model.state.amountMinorUnits == nil)
+        #expect(rig.model.state.canSubmit == false)
+        rig.finish()
+    }
+
     @Test func keepingPausedNeedsNoAmountAndEndsTheIncident() async {
         let rig = await makeRig()
         rig.model.choose(.keepPaused)

@@ -7,6 +7,9 @@ import com.stainedhead.paperclipmobile.application.budget.ResolveBudgetIncident
 enum class BudgetThresholdUi {
     Hard,
     Soft,
+    ;
+
+    val tone: ToneUi get() = if (this == Hard) ToneUi.Critical else ToneUi.Warn
 }
 
 enum class BudgetChoice {

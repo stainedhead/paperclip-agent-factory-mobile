@@ -5,6 +5,7 @@ import com.stainedhead.paperclipmobile.domain.ApprovalStatus
 import com.stainedhead.paperclipmobile.domain.BudgetIncidentId
 import com.stainedhead.paperclipmobile.domain.DecisionId
 import com.stainedhead.paperclipmobile.domain.DomainError
+import com.stainedhead.paperclipmobile.domain.RunId
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.testing.fakes.FakeAgentGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeApprovalGateway
@@ -14,6 +15,7 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeConnectivity
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeDecisionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
+import com.stainedhead.paperclipmobile.testing.fakes.cancelElsewhere
 import com.stainedhead.paperclipmobile.testing.fakes.resolveElsewhere
 
 /**
@@ -52,6 +54,12 @@ class DemoControls internal constructor(
         optionId: String,
     ) = decisions.resolveElsewhere(DecisionId(decisionId), optionId)
 
+    /**
+     * Someone else cancelled the run on the server. The phone is not told: a Run viewer shows it only when its next
+     * refresh reads the run (PRD FR-090). False when the run is unknown or no longer active.
+     */
+    fun cancelRunElsewhere(runId: String): Boolean = reads.runs.cancelElsewhere(RunId(runId))
+
     /** The approval was approved elsewhere. */
     fun resolveApprovalElsewhere(approvalId: String) {
         val id = ApprovalId(approvalId)
@@ -76,7 +84,7 @@ class DemoControls internal constructor(
 /** The fakes behind Factory home, Agents and the Run viewer, and the reads of theirs that [fail] breaks. */
 internal class DemoReadFailures(
     private val agents: FakeAgentGateway,
-    private val runs: FakeRunGateway,
+    val runs: FakeRunGateway,
     private val dashboard: FakeDashboardGateway,
 ) {
     fun fail(enabled: Boolean) {

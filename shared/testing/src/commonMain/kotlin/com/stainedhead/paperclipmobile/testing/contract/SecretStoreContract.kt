@@ -10,9 +10,29 @@ import com.stainedhead.paperclipmobile.domain.SecretWriteResult
 import com.stainedhead.paperclipmobile.domain.port.SecretStore
 import com.stainedhead.paperclipmobile.testing.TestData
 
+/**
+ * A store that can protect a secret behind the device owner (FR-011), seen from the contract: every request for the
+ * person's authentication is counted and answered by [approve].
+ */
+abstract class ProtectedStoreHarness {
+    abstract val store: SecretStore
+
+    /** How many times the person has been asked since the harness was made. */
+    abstract val prompts: Int
+
+    /** Whether the person approves the next request. */
+    abstract var approve: Boolean
+
+    /** The system invalidates the protected key (a new fingerprint was enrolled). */
+    abstract fun invalidate()
+}
+
 /** Behaviour every [SecretStore] must have (PRD FR-010). Real adapters subclass this in Phase 1b. */
 abstract class SecretStoreContract {
     abstract fun create(): SecretStore
+
+    /** A fresh store whose prompt is observable, or `null` where the platform asks the person itself (Keychain). */
+    open fun createProtected(): ProtectedStoreHarness? = null
 
     private val policy = SecretPolicy(requireUserPresence = false)
     private val a = InstanceId("a")
@@ -24,6 +44,7 @@ abstract class SecretStoreContract {
         deleteRemovesOnlyThatKey()
         deleteNamespaceRemovesOnlyThatInstance()
         namespacesListsEveryInstanceThatHoldsASecret()
+        ProtectedSecretStoreCases(::createProtected).runAll()
     }
 
     private suspend fun SecretStore.read(key: SecretKey): SecretReadResult = get(key, "contract test")

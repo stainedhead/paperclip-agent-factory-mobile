@@ -85,7 +85,18 @@ enum class DecideByKindUi {
 data class DecideByUi(
     val kind: DecideByKindUi,
     val isoDate: String?,
-)
+) {
+    /** The decide-by written in the words the shared decision parser reads; a deadline-less card has none (R-019). */
+    val hintText: String?
+        get() =
+            when (kind) {
+                DecideByKindUi.Today -> "today"
+                DecideByKindUi.ThisWeek -> "this_week"
+                DecideByKindUi.Whenever -> "whenever"
+                DecideByKindUi.OnDate -> isoDate
+                DecideByKindUi.None -> null
+            }
+}
 
 internal fun DecideBy.toUi(): DecideByUi =
     when (this) {

@@ -8,7 +8,8 @@ final class AgentDetailUITests: XCTestCase {
 
     @MainActor
     func testItShowsTheAgentSetsABudgetPausesWithFaceIDAndOpensAFinishedRun() {
-        let app = launchAgents(biometrics: "approved,cancelled,approved")
+        // Prompts in order: unlock, the budget raise (DEC-1), a cancelled pause, the pause.
+        let app = launchAgents(biometrics: "approved,approved,cancelled,approved")
         app.scroll(to: "agent-row-\(OpsIds.engineer1)", in: "agents-root")
         app.element("agent-row-\(OpsIds.engineer1)").tap()
         XCTAssertTrue(app.element("agent-detail-screen").waitForExistence(timeout: 15))

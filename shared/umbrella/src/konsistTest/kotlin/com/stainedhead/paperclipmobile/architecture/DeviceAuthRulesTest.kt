@@ -18,6 +18,7 @@ class DeviceAuthRulesTest {
             "RejectApproval",
             "ResolveBudgetIncident",
             "PauseAgent",
+            "SetAgentBudget",
             "CancelRun",
         )
 

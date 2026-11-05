@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The whole permission set (AND-002). A library that adds another fails AndroidManifestRulesTest. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!--
+        androidx.biometric also declares the deprecated USE_FINGERPRINT for its pre-Android 9 fallback. minSdk is 28, so
+        BiometricPrompt never needs it; it is removed rather than allow-listed.
+    -->
+    <uses-permission
+        android:name="android.permission.USE_FINGERPRINT"
+        tools:node="remove" />
+
+    <!-- enableOnBackInvokedCallback is API 33+; older versions ignore it, so lint is told the target. -->
+    <application
+        android:name=".PaperclipApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        tools:targetApi="33"
+        android:theme="@style/Theme.Paperclip"
+        android:usesCleartextTraffic="false">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Paperclip.Starting">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            androidx.profileinstaller (pulled in by Compose) declares an exported receiver so tooling can trigger profile
+            installation over adb. The app installs its profile at startup without it, and an exported receiver is
+            attack surface, so it is removed. T8.6 re-adds it for the benchmark build type only, in review.
+        -->
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            tools:node="remove" />
+    </application>
+</manifest>

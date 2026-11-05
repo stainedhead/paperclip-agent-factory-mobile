@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.infrastructure.persistence
 
 import android.content.Context
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
@@ -16,8 +17,8 @@ private val SIDECAR_SUFFIXES = listOf("", "-wal", "-shm", "-journal")
  * Auto Backup and device transfer skip, so the factory list never leaves the phone. A file that cannot be used is
  * recreated empty, see [openRecovering].
  *
- * Not covered by a test in this repository: the Android framework SQLite classes do not run on the host JVM and no
- * emulator test is set up yet (the shared contract suites run against the JDBC driver instead).
+ * The Android framework SQLite classes do not run on the host JVM, so `AndroidPersistenceDeviceTest` (emulator) covers
+ * this function; the shared contract suites run against the JDBC driver.
  */
 fun openAndroidPersistence(
     context: Context,
@@ -40,9 +41,18 @@ private fun openHelper(context: Context): SupportSQLiteOpenHelper =
             .builder(context)
             .name(DATABASE_NAME)
             .noBackupDirectory(true)
-            .callback(AndroidSqliteDriver.Callback(PaperclipDatabase.Schema))
+            .callback(KeepCorruptFileCallback())
             .build(),
     )
+
+/**
+ * The framework's default reaction to a database it cannot read is to delete the file and open a fresh empty one,
+ * without telling anyone. That would skip the recreation marker, the startup notice and the orphan secret sweep
+ * (F-R-1), so the file is left alone here; the open then fails and [openRecovering] decides, sets the marker and wipes.
+ */
+private class KeepCorruptFileCallback : AndroidSqliteDriver.Callback(PaperclipDatabase.Schema) {
+    override fun onCorruption(db: SupportSQLiteDatabase) = Unit
+}
 
 private fun pendingMarker(file: File): SweepMarker =
     FileMarker(

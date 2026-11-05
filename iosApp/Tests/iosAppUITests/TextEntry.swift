@@ -28,6 +28,17 @@ extension XCUIElement {
     /// placeholder is ambiguous: it may be placeholder or real text that happens to match it.
     var shownText: String { (value as? String) ?? "" }
 
+    /// Gives a slow runner up to two seconds to show the effect of the deletions just sent: the value is read from
+    /// the accessibility tree, which can trail the keyboard, so reading it at once can see "http" left of a cleared
+    /// address.
+    @MainActor
+    private func awaitCleared() {
+        let deadline = Date().addingTimeInterval(2)
+        while Date() < deadline && !shownText.isEmpty && shownText != placeholderValue {
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+    }
+
     /// Focuses the field, types the text and checks the field now holds exactly the intended text. A slow runner can
     /// drop a keystroke ("fctory"), so a mismatch is cleared and typed again up to twice before it fails.
     @MainActor
@@ -60,7 +71,8 @@ extension XCUIElement {
             let length = shownText.count
             coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
             typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: length + 5))
-        } while passes < 3 && !shownText.isEmpty && shownText != placeholderValue
+            awaitCleared()
+        } while passes < 6 && !shownText.isEmpty && shownText != placeholderValue
         let left = shownText
         XCTAssertTrue(
             left.isEmpty || left == placeholderValue, "Clearing \(identifier) left \"\(left)\" behind", file: file,

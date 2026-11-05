@@ -5,7 +5,7 @@ package com.stainedhead.paperclipmobile.domain
  * offers.
  */
 object Permissions {
-    private val ownerOnly = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget)
+    private val ownerOnly = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget, Action.RaiseAgentBudget)
 
     fun allows(
         role: Role,
@@ -28,8 +28,19 @@ object DeviceAuthPolicy {
             Action.RejectApproval,
             Action.DecideDestructiveOption,
             Action.RaiseBudgetAndResume,
+            Action.RaiseAgentBudget,
             Action.RemoveFactory,
         )
 
     fun requires(action: Action): Boolean = action in destructive
+
+    /**
+     * Which action setting an agent's monthly budget to [new] counts as (DEC-1, R-004): more than the [current] amount
+     * lets the agent spend more, and zero stops it in practice, so both are [Action.RaiseAgentBudget]; anything else is
+     * a plain [Action.SetAgentBudget]. Both amounts are in the same currency.
+     */
+    fun budgetSetAction(
+        current: Money,
+        new: Money,
+    ): Action = if (new.minorUnits == 0L || new > current) Action.RaiseAgentBudget else Action.SetAgentBudget
 }

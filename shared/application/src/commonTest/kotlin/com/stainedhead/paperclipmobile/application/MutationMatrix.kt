@@ -43,6 +43,9 @@ internal fun Env.allGatewayCalls(): Int =
         .plus(listOf(issues.calls, interactions.calls, agents.calls, runs.calls, dashboard.calls))
         .sumOf { calls -> calls.values.sum() }
 
+/** Above any budget in the fixtures, so the raise-class device authentication applies. */
+private const val RAISED_CENTS = 99_999_999L
+
 private val incident = AttentionFixtures.incident(observed = 10_000, limit = 10_000)
 private val pending = AttentionFixtures.approval()
 private val decision = AttentionFixtures.decision()
@@ -183,7 +186,19 @@ internal val mutationMatrix: List<MutationCase> =
             e,
             r,
             ->
-            SetAgentBudget(e.agents)(e.context(r), AgentFixtures.agents()[2], Money.usdCents(1_000))
+            SetAgentBudget(e.agents, e.deviceAuth)(e.context(r), AgentFixtures.agents()[2], Money.usdCents(1_000))
+        },
+        MutationCase(
+            "SetAgentBudget",
+            setOf(Action.RaiseAgentBudget),
+            "setBudget",
+            { it.agents.calls },
+            { it.agents.failures },
+        ) { e, r ->
+            SetAgentBudget(
+                e.agents,
+                e.deviceAuth,
+            )(e.context(r), AgentFixtures.agents()[2], Money.usdCents(RAISED_CENTS))
         },
         MutationCase("CommentOnIssue", setOf(Action.CommentOnIssue), "addComment", {
             it.issues.calls

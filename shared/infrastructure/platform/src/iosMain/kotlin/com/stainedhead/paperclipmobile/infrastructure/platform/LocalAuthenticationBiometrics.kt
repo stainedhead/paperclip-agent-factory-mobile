@@ -30,22 +30,6 @@ internal interface DeviceAuthenticator {
     suspend fun evaluate(reasonText: String): AuthOutcome
 }
 
-/** The sentence the system prompt shows for each reason. The app passes localized text; this is only a default. */
-class ReasonTexts(
-    val unlockApp: String,
-    val confirmDestructiveAction: String,
-) {
-    internal fun textFor(reason: AuthReason): String =
-        when (reason) {
-            AuthReason.UnlockApp -> unlockApp
-            AuthReason.ConfirmDestructiveAction -> confirmDestructiveAction
-        }
-
-    companion object {
-        val default: ReasonTexts = ReasonTexts("Unlock Paperclip", "Confirm this action")
-    }
-}
-
 /**
  * [Biometrics] on LocalAuthentication (AD-031). The policy is device-owner authentication: Face ID or Touch ID with the
  * device passcode as the fallback. A phone with no passcode cannot evaluate it at all, which is reported as

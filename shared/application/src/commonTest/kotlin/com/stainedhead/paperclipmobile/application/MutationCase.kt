@@ -27,6 +27,6 @@ internal class MutationCase(
     override fun toString() = "$useCase$actions"
 
     private companion object {
-        val OWNER_ONLY = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget)
+        val OWNER_ONLY = setOf(Action.RaiseBudgetAndResume, Action.SetAgentBudget, Action.RaiseAgentBudget)
     }
 }
