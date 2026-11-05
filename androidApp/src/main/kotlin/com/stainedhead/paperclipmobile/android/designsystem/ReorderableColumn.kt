@@ -107,7 +107,8 @@ internal class ReorderController<T>(
 
 /**
  * A column whose rows can be dragged into a new order by a long press on their handle, with one-step moves for
- * accessibility actions. Only for short lists (the person's factories): every row is composed.
+ * accessibility actions. Only for short lists (the person's factories): every row is composed. When [reorderRejected]
+ * rises the local order is dropped for [items], the order the store kept.
  */
 @Composable
 fun <T> ReorderableColumn(
@@ -119,7 +120,7 @@ fun <T> ReorderableColumn(
     row: @Composable (item: T, controls: RowControls) -> Unit,
 ) {
     val commit by rememberUpdatedState(onReordered)
-    val controller = remember(items) { ReorderController(items, keyOf) { commit(it) } }
+    val controller = remember(items, reorderRejected) { ReorderController(items, keyOf) { commit(it) } }
     Column(modifier) {
         for ((index, item) in controller.order.withIndex()) {
             val itemKey = keyOf(item)

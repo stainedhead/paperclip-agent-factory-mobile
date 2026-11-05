@@ -143,6 +143,7 @@ private fun FactoryRows(
             items = state.rows,
             keyOf = { it.id },
             onReordered = { rows -> send(ManageFactoriesIntent.Reordered(rows.map { it.id })) },
+            reorderRejected = state.reorderRejected,
         ) { row, controls ->
             ManageRow(
                 row,
