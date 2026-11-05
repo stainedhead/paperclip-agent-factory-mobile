@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -95,6 +96,20 @@ class TypedTextTest {
         tester.emulateSavedInstanceStateRestore()
 
         rule.onNodeWithTag("note-field").assertTextContains(TYPED)
+    }
+
+    @Test
+    fun aNoteKeepsItsNewlinesInTheIntent() {
+        var sent = ""
+        val text = NoteSheetText("Reject", "Note", "Why?", "Say why", "Reject")
+        rule.setContent {
+            PaperclipTheme(darkTheme = false) { NoteContent(text, { sent = it }, {}, false, false, null, null) }
+        }
+        rule.onNodeWithTag("note-field").performTextInput("a\nb")
+
+        rule.onNodeWithTag("note-confirm").performClick()
+
+        sent shouldBe "a\nb"
     }
 
     @Test

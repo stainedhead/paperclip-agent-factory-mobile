@@ -371,6 +371,7 @@ fun FormField(
     keyboardType: KeyboardType = KeyboardType.Text,
     capitalization: KeyboardCapitalization = KeyboardCapitalization.Words,
     enabled: Boolean = true,
+    maxLines: Int = 1,
     onDone: (() -> Unit)? = null,
     onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {

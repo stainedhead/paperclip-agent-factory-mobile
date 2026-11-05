@@ -90,6 +90,20 @@ class ComponentsTest {
     }
 
     @Test
+    fun aMultiLineFieldKeepsTheNewlinesItIsGiven() {
+        var typed = ""
+        rule.setContent {
+            PaperclipTheme(darkTheme = false) {
+                FormField("Note", typed, { typed = it }, "note", maxLines = 4)
+            }
+        }
+
+        rule.onNodeWithTag("note").performTextInput("a\nb")
+
+        typed shouldBe "a\nb"
+    }
+
+    @Test
     fun anEmptyStateOffersItsActionOnlyWhenGiven() {
         var taps = 0
         rule.setContent {
