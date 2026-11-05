@@ -79,7 +79,10 @@ class SessionTokenWiringTest {
             val secrets = graph.resolve<SecretStore>()
             secrets.get(key, "test")
 
-            graph.resolve<SignedOutMarker>().noteIfUnauthorized(key.instanceId, DomainResult.Failure(DomainError.Unauthorized))
+            graph.resolve<SignedOutMarker>().noteIfUnauthorized(
+                key.instanceId,
+                DomainResult.Failure(DomainError.Unauthorized),
+            )
             secrets.get(key, "test")
 
             device.reads shouldBe 2

@@ -43,8 +43,7 @@ class SessionCacheRulesTest {
                         "/src/jvmTest/" in it ||
                         "/src/konsistTest/" in it ||
                         it.endsWith("/SessionCachingSecretStore.kt")
-                }
-                .toList()
+                }.toList()
         Assertions.assertEquals(emptyList<String>(), offenders)
     }
 
@@ -59,7 +58,10 @@ class SessionCacheRulesTest {
             """.trimIndent()
 
         Assertions.assertTrue(persistenceUses(planted).size >= PLANTED_MINIMUM)
-        Assertions.assertEquals(emptyList<String>(), persistenceUses("// File and println are only words here\nval x = 1"))
+        Assertions.assertEquals(
+            emptyList<String>(),
+            persistenceUses("// File and println are only words here\nval x = 1"),
+        )
     }
 
     private fun code(source: String): String =

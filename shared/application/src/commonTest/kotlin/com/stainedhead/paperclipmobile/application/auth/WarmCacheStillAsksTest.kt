@@ -1,15 +1,15 @@
 package com.stainedhead.paperclipmobile.application.auth
 
 import com.stainedhead.paperclipmobile.application.Env
-import com.stainedhead.paperclipmobile.application.agent.PauseAgent
 import com.stainedhead.paperclipmobile.application.MutationResult
+import com.stainedhead.paperclipmobile.application.agent.PauseAgent
 import com.stainedhead.paperclipmobile.domain.Action
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
 import com.stainedhead.paperclipmobile.domain.port.AuthReason
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
-import com.stainedhead.paperclipmobile.testing.TestData
 import com.stainedhead.paperclipmobile.testing.AgentFixtures
+import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest

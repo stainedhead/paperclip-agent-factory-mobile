@@ -43,21 +43,17 @@ class SessionCachingSecretStore(
     private val device: SecretStore,
 ) : SecretStore,
     SessionTokens {
-    private class State(
-        val held: Map<InstanceId, Secret> = emptyMap(),
-        val generations: Map<InstanceId, Long> = emptyMap(),
-        val epoch: Long = 0,
-    ) {
-        fun generationOf(id: InstanceId): Long = (generations[id] ?: 0L) + epoch
+    /** One per factory: the lock around its device read, how many reads finished, and the last refusal. */
+    private class Flight {
+        val lock = Mutex()
+        val finished = MutableStateFlow<Pair<Long, SecretReadResult?>>(0L to null)
+
+        /** The refusal of a read that finished after [seenFinished], for a caller that waited on it. */
+        fun refusalSince(seenFinished: Long): SecretReadResult? =
+            finished.value.takeIf { it.first > seenFinished }?.second
     }
 
-    /** One per factory: the lock around its device read, how many reads finished, and the last refusal. */
-    private class Flight(
-        val lock: Mutex = Mutex(),
-        val finished: MutableStateFlow<Pair<Long, SecretReadResult?>> = MutableStateFlow(0L to null),
-    )
-
-    private val state = MutableStateFlow(State())
+    private val memory = SessionTokenMemory()
     private val flights = MutableStateFlow<Map<InstanceId, Flight>>(emptyMap())
 
     override suspend fun get(
@@ -66,11 +62,13 @@ class SessionCachingSecretStore(
     ): SecretReadResult {
         if (key.name != SecretName.BoardToken) return device.get(key, reason)
         val id = key.instanceId
-        hit(id)?.let { return it }
+        memory.copyOf(id)?.let { return SecretReadResult.Found(it) }
         val flight = flightOf(id)
         val seenFinished = flight.finished.value.first
         return flight.lock.withLock {
-            hit(id) ?: sharedRefusal(flight, seenFinished) ?: readThrough(key, reason, flight)
+            memory.copyOf(id)?.let { SecretReadResult.Found(it) }
+                ?: flight.refusalSince(seenFinished)
+                ?: readThrough(key, reason, flight)
         }
     }
 
@@ -80,104 +78,44 @@ class SessionCachingSecretStore(
         policy: SecretPolicy,
     ): SecretWriteResult {
         if (key.name != SecretName.BoardToken) return device.put(key, value, policy)
-        forget(key.instanceId)
-        return try {
-            device.put(key, value, policy)
-        } finally {
-            forget(key.instanceId)
-        }
+        return forgettingAround(key.instanceId) { device.put(key, value, policy) }
     }
 
-    override suspend fun delete(key: SecretKey) {
-        forget(key.instanceId)
-        try {
-            device.delete(key)
-        } finally {
-            forget(key.instanceId)
-        }
-    }
+    override suspend fun delete(key: SecretKey) = forgettingAround(key.instanceId) { device.delete(key) }
 
-    override suspend fun deleteNamespace(instanceId: InstanceId) {
-        forget(instanceId)
-        try {
-            device.deleteNamespace(instanceId)
-        } finally {
-            forget(instanceId)
-        }
-    }
+    override suspend fun deleteNamespace(instanceId: InstanceId) =
+        forgettingAround(instanceId) { device.deleteNamespace(instanceId) }
 
     override suspend fun namespaces(): Set<InstanceId> = device.namespaces()
 
-    override fun forget(instanceId: InstanceId) {
-        val before = state.getAndUpdateState {
-            State(
-                it.held - instanceId,
-                it.generations + (instanceId to ((it.generations[instanceId] ?: 0L) + 1L)),
-                it.epoch,
-            )
-        }
-        before.held[instanceId]?.wipe()
-    }
+    override fun forget(instanceId: InstanceId) = memory.forget(instanceId)
 
-    override fun forgetAll() {
-        val before = state.getAndUpdateState { State(emptyMap(), it.generations, it.epoch + 1L) }
-        before.held.values.forEach { it.wipe() }
-    }
+    override fun forgetAll() = memory.forgetAll()
 
-    private fun MutableStateFlow<State>.getAndUpdateState(next: (State) -> State): State {
-        while (true) {
-            val current = value
-            if (compareAndSet(current, next(current))) return current
+    /** Drops the entry before and after [change], so a read overlapping the change cannot bring the old token back. */
+    private suspend fun <T> forgettingAround(
+        id: InstanceId,
+        change: suspend () -> T,
+    ): T {
+        memory.forget(id)
+        return try {
+            change()
+        } finally {
+            memory.forget(id)
         }
     }
-
-    /**
-     * A copy of the held token, or null. The copy is checked against the entry afterwards: a clear wipes the entry only
-     * after removing it, so an entry that is still held proves the copy was complete.
-     */
-    private fun hit(id: InstanceId): SecretReadResult.Found? {
-        val held = state.value.held[id] ?: return null
-        val copy = held.copy()
-        if (state.value.held[id] === held) return SecretReadResult.Found(copy)
-        copy.wipe()
-        return null
-    }
-
-    private fun sharedRefusal(
-        flight: Flight,
-        seenFinished: Long,
-    ): SecretReadResult? = flight.finished.value.takeIf { it.first > seenFinished }?.second
 
     private suspend fun readThrough(
         key: SecretKey,
         reason: String,
         flight: Flight,
     ): SecretReadResult {
-        val id = key.instanceId
-        val started = state.value
+        val generation = memory.generationOf(key.instanceId)
         val result = device.get(key, reason)
-        val generation = started.generationOf(id)
-        if (result is SecretReadResult.Found) {
-            keepIfUnchanged(id, generation, result.secret)
-            flight.finished.update { (it.first + 1L) to null }
-        } else {
-            flight.finished.update { (it.first + 1L) to result }
-        }
+        val refusal = if (result is SecretReadResult.Found) null else result
+        if (result is SecretReadResult.Found) memory.keepIfUnchanged(key.instanceId, generation, result.secret)
+        flight.finished.update { (it.first + 1L) to refusal }
         return result
-    }
-
-    private fun keepIfUnchanged(
-        id: InstanceId,
-        generation: Long,
-        secret: Secret,
-    ) {
-        val mine = secret.copy()
-        var kept = false
-        state.getAndUpdateState {
-            kept = it.generationOf(id) == generation
-            if (kept) State(it.held + (id to mine), it.generations, it.epoch) else it
-        }
-        if (!kept) mine.wipe()
     }
 
     private fun flightOf(id: InstanceId): Flight {
