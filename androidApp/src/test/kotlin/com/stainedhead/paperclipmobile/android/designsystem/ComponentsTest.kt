@@ -5,6 +5,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.android.R
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,6 +89,22 @@ class ComponentsTest {
         rule.onNodeWithText("Help text").assertDoesNotExist()
         rule.onNodeWithTag("address").performTextInput("a\nb")
         typed shouldBe "ab"
+    }
+
+    @Test
+    fun aFieldIsNamedByItsLabelAndTiesItsIssueToItself() {
+        rule.setContent {
+            PaperclipTheme(darkTheme = false) {
+                FormField("Address", "https://x", {}, "address", help = "Help text", issue = "Bad address")
+            }
+        }
+
+        val config = rule.onNodeWithTag("address").fetchSemanticsNode().config
+        // A contentDescription can replace the typed text when TalkBack reads the box: the name is the label.
+        (SemanticsProperties.ContentDescription in config) shouldBe false
+        config[SemanticsProperties.EditableText].text shouldBe "https://x"
+        config[SemanticsProperties.Error] shouldBe "Bad address"
+        config[SemanticsProperties.Text].joinToString { it.text } shouldContain "Address"
     }
 
     @Test

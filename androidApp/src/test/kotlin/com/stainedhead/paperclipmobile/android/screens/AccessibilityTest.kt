@@ -5,16 +5,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.stainedhead.paperclipmobile.android.designsystem.FormField
 import com.stainedhead.paperclipmobile.android.designsystem.StatusPill
 import com.stainedhead.paperclipmobile.android.designsystem.StatusTone
 import com.stainedhead.paperclipmobile.android.designsystem.symbol
@@ -165,6 +169,20 @@ class AccessibilityTest {
             it shouldContain "no name"
             it shouldContain "no role"
         }
+    }
+
+    @Test
+    fun theAuditReportsATextFieldNamedOnlyByAContentDescription() {
+        audited({ true }) {
+            OutlinedTextField("typed", {}, Modifier.semantics { contentDescription = "Name" })
+        }.joinToString("\n") shouldContain "text field named only by a description"
+    }
+
+    @Test
+    fun aFormFieldIsAcceptedByTheAudit() {
+        audited({ true }) {
+            FormField("Name", "typed", {}, "name", issue = "Too short")
+        } shouldBe emptyList()
     }
 
     @Test
