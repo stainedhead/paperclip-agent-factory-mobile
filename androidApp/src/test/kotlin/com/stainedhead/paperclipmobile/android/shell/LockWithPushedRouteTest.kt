@@ -3,6 +3,8 @@ package com.stainedhead.paperclipmobile.android.shell
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -82,7 +84,8 @@ class LockWithPushedRouteTest {
                                     rememberHolderViewModel("probe") {
                                         ScreenHolder<Int, Int>(MutableStateFlow(0), {}, {}).also { opened += it }
                                     }
-                                Text("screen ${holder.state.value}")
+                                val value by holder.state.collectAsState()
+                                Text("screen $value")
                             },
                         )
                     },
