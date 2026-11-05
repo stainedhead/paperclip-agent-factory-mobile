@@ -2,6 +2,8 @@ package com.stainedhead.paperclipmobile.android.screens
 
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -138,14 +140,16 @@ class WorkListScreenTest {
     }
 
     @Test
-    fun aBlankTitleIsRefusedAndTheSheetStaysOpen() {
+    fun theSaveButtonIsOffUntilThereIsATitle() {
         show()
 
         openCreateSheet()
-        rule.onNodeWithTag("work-create-save").performClick()
 
-        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("feedback-banner") }
-        rule.onNodeWithTag("work-create-form").assertIsDisplayed()
+        rule.onNodeWithTag("work-create-save").assertIsNotEnabled()
+        rule.onNodeWithTag("work-create-title").performTextInput("   ")
+        rule.onNodeWithTag("work-create-save").assertIsNotEnabled()
+        rule.onNodeWithTag("work-create-title").performTextInput("Rotate")
+        rule.onNodeWithTag("work-create-save").assertIsEnabled()
         app.pushed shouldBe emptyList()
     }
 

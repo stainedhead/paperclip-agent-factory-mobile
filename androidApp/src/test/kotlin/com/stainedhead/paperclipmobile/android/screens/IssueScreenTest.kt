@@ -227,6 +227,7 @@ class IssueScreenTest {
 
         tap("issue-add-subtask")
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("issue-subtask-title") }
+        rule.onNodeWithTag("issue-subtask-save").assertIsNotEnabled()
         rule.onNodeWithTag("issue-subtask-title").performTextInput("Announce the switch")
         rule.onNodeWithTag("issue-subtask-save").performClick()
 

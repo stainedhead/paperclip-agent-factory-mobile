@@ -113,6 +113,18 @@ class WorkListVariantsTest {
     }
 
     @Test
+    fun aSearchTypedButNotSentIsAppliedWhenAChipIsChosen() {
+        val sent = mutableListOf<WorkListIntent>()
+        show(content(), sent::add)
+        rule.onNodeWithTag("work-search").performTextInput("retries")
+
+        rule.onNodeWithTag("work-filter-Blocked").performScrollTo().performClick()
+
+        sent shouldBe
+            listOf(WorkListIntent.SearchChanged("retries"), WorkListIntent.FilterSelected(IssueFilterUi.Blocked))
+    }
+
+    @Test
     fun reachingTheEndOfAPageAsksForTheNextOne() {
         val sent = mutableListOf<WorkListIntent>()
         show(content().copy(hasMore = true), sent::add)
