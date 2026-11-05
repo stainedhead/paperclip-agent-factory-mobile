@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.shell
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
@@ -12,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +31,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -59,6 +63,34 @@ fun TabShell(
     destination: @Composable (route: AppRoute, navigator: TabNavigator) -> Unit,
     modifier: Modifier = Modifier,
     selectionKey: String? = null,
+) {
+    val store = viewModel<ShellStore>()
+    ReleaseWhenLeft(store)
+    CompositionLocalProvider(LocalViewModelStoreOwner provides store) {
+        ShellBody(inboxBadge, tabRoot, destination, modifier, selectionKey)
+    }
+}
+
+/**
+ * Leaving the shell for good (the lock, first run) clears the store, so every pushed screen's holder closes instead of
+ * living until the activity is destroyed (R-021). A configuration change disposes the composition too, and the holders
+ * must survive that, so it clears nothing.
+ */
+@Composable
+private fun ReleaseWhenLeft(store: ShellStore) {
+    val activity = LocalActivity.current
+    DisposableEffect(store) {
+        onDispose { if (activity?.isChangingConfigurations != true) store.release() }
+    }
+}
+
+@Composable
+private fun ShellBody(
+    inboxBadge: Int,
+    tabRoot: @Composable (tab: AppTab, navigator: TabNavigator) -> Unit,
+    destination: @Composable (route: AppRoute, navigator: TabNavigator) -> Unit,
+    modifier: Modifier,
+    selectionKey: String?,
 ) {
     var selected by rememberSaveable { mutableStateOf(AppTab.Inbox) }
     val controllers = AppTab.entries.associateWith { rememberNavController() }

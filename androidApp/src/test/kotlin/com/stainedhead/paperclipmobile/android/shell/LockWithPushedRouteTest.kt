@@ -18,6 +18,7 @@ import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
 import com.stainedhead.paperclipmobile.android.env.demoOpen
 import com.stainedhead.paperclipmobile.android.env.rememberHolderViewModel
 import com.stainedhead.paperclipmobile.domain.IdlePeriod
+import com.stainedhead.paperclipmobile.presentation.AppIntent
 import com.stainedhead.paperclipmobile.presentation.SettingsIntent
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +43,7 @@ class LockWithPushedRouteTest {
     private lateinit var environment: AppEnvironment
     private var autoUnlock = true
     private val opened = mutableListOf<ScreenHolder<Int, Int>>()
+    private val roots = mutableListOf<ScreenHolder<Int, Int>>()
 
     @After
     fun tearDown() {
@@ -65,6 +67,11 @@ class LockWithPushedRouteTest {
                         TabShell(
                             inboxBadge = badge,
                             tabRoot = { tab, navigator ->
+                                if (tab == AppTab.Inbox) {
+                                    rememberHolderViewModel("root-probe") {
+                                        ScreenHolder<Int, Int>(MutableStateFlow(0), {}, {}).also { roots += it }
+                                    }
+                                }
                                 Column {
                                     Text("root ${tab.name}")
                                     AppButton("push decision", { navigator.push(AppRoute.Decision("dec-1")) })
@@ -106,10 +113,9 @@ class LockWithPushedRouteTest {
         lock()
 
         rule.waitUntil(WAIT_MILLIS) { opened.single().isClosed }
+        roots.single().isClosed shouldBe true
 
-        autoUnlock = true
-        environment.setForeground(false)
-        environment.setForeground(true)
+        checkNotNull(environment.session.value.app).send(AppIntent.UnlockRequested)
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("root Inbox") }
         rule.hasText("screen 0") shouldBe false
     }
