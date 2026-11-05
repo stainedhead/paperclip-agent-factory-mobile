@@ -14,12 +14,15 @@ import com.stainedhead.paperclipmobile.domain.port.InstanceRepository
 class SignedOutMarker(
     private val repository: InstanceRepository,
     private val locks: InstanceLocks,
+    private val tokens: SessionTokens = NoSessionTokens,
 ) {
     suspend fun <T> noteIfUnauthorized(
         id: InstanceId,
         result: DomainResult<T>,
     ) {
         val error = (result as? DomainResult.Failure)?.error
+        // The token in memory is the one that was just refused or lost; the next call must read it again (ADR-145).
+        if (error == DomainError.Unauthorized || error == DomainError.KeyInvalidated) tokens.forget(id)
         when (error) {
             DomainError.Unauthorized -> mark(id, InstanceStatus.SignedOut) { it != InstanceStatus.SignedOut }
             DomainError.KeyInvalidated -> mark(id, InstanceStatus.NeedsRePairing) { it.isSignedIn() }
