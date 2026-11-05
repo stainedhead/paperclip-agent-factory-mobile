@@ -70,6 +70,8 @@ class AppEnvironment(
     private fun closeSession(session: GraphSession) {
         session.close()
         session.graph?.close()
+        // Nothing can finish on a closed graph: a deferred close would wait for ever (R-007).
+        session.abandonDeferred()
     }
 
     /** Opens the provider's graph; whatever it throws is `Unavailable`. A foreground flag set earlier is re-applied. */

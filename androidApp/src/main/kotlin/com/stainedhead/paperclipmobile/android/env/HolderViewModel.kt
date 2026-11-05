@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -34,7 +33,7 @@ class HolderViewModel<S, I>(
             release()
         } else {
             idleScope.launch {
-                holder.state.first { !holder.isWorking(it) }
+                holder.awaitIdle()
                 release()
             }
         }

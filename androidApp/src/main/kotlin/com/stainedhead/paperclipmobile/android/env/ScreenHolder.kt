@@ -31,7 +31,10 @@ import com.stainedhead.paperclipmobile.presentation.ManageFactoriesStateHolder
 import com.stainedhead.paperclipmobile.presentation.SettingsIntent
 import com.stainedhead.paperclipmobile.presentation.SettingsState
 import com.stainedhead.paperclipmobile.presentation.SettingsStateHolder
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -52,6 +55,7 @@ class ScreenHolder<S, I>(
     private val inFlight: (S) -> Boolean = { false },
 ) {
     private val closed = AtomicBoolean(false)
+    private val closedFlow = MutableStateFlow(false)
 
     val isClosed: Boolean get() = closed.get()
 
@@ -60,6 +64,14 @@ class ScreenHolder<S, I>(
 
     fun isWorking(state: S): Boolean = inFlight(state)
 
+    /**
+     * Returns when the holder has no mutation in flight, or at once when it is closed: a closed holder's work was
+     * cancelled with it and will never report an outcome, so a waiter must not outlive it (R-007).
+     */
+    suspend fun awaitIdle() {
+        combine(state, closedFlow) { current, isClosedNow -> isClosedNow || !inFlight(current) }.first { it }
+    }
+
     /** Forwards the intent; once closed the holder is gone and the intent is dropped. */
     fun send(intent: I) {
         if (!closed.get()) deliver(intent)
@@ -67,7 +79,10 @@ class ScreenHolder<S, I>(
 
     /** Releases the Kotlin holder. Only the owner calls this; safe to call more than once. */
     fun close() {
-        if (closed.compareAndSet(false, true)) release()
+        if (closed.compareAndSet(false, true)) {
+            release()
+            closedFlow.value = true
+        }
     }
 }
 
@@ -75,7 +90,8 @@ fun AppStateHolder.screenHolder() = ScreenHolder<AppState, AppIntent>(state, ::o
 
 fun FirstRunStateHolder.screenHolder() = ScreenHolder<FirstRunState, FirstRunIntent>(state, ::onIntent, ::close)
 
-fun InboxStateHolder.screenHolder() = ScreenHolder<InboxState, InboxIntent>(state, ::onIntent, ::close)
+fun InboxStateHolder.screenHolder() =
+    ScreenHolder<InboxState, InboxIntent>(state, ::onIntent, ::close, refreshTarget) { it.isWorking }
 
 fun FactoriesStateHolder.screenHolder() = ScreenHolder<FactoriesState, FactoriesIntent>(state, ::onIntent, ::close)
 

@@ -57,6 +57,10 @@ class GraphSession internal constructor(
     val diagnostics: DiagnosticsRecorder = options.diagnostics
 
     private val scope = CoroutineScope(parent.coroutineContext + SupervisorJob(parent.coroutineContext[Job]))
+
+    // Outlives [scope]: a holder waiting for its work to end must still be closed after the session is.
+    private val retiring = CoroutineScope(parent.coroutineContext + SupervisorJob(parent.coroutineContext[Job]))
+    private val deferred = CopyOnWriteArrayList<ScreenHolder<InboxState, InboxIntent>>()
     private val lock = Any()
     private var refreshSession: RefreshSession? = null
     private var closed = false
@@ -157,22 +161,37 @@ class GraphSession internal constructor(
             stopInbox()
             val opened = graph
             if (opened == null || instance == null || company == null) return
-            val factory = inboxFactory
-            if (factory != null) {
-                mutableInbox.value = factory(opened, instance, company)
-                return
-            }
-            val holder = opened.attention.createInboxStateHolder(instance, company)
-            if (autoRefresh) refreshSession = opened.refresh.start(holder.refreshTarget)
-            mutableInbox.value = holder.screenHolder()
+            val holder =
+                inboxFactory?.invoke(opened, instance, company)
+                    ?: opened.attention.createInboxStateHolder(instance, company).screenHolder()
+            if (autoRefresh) holder.refreshTarget?.let { refreshSession = opened.refresh.start(it) }
+            mutableInbox.value = holder
         }
     }
 
     private fun stopInbox() {
         refreshSession?.stop()
         refreshSession = null
-        mutableInbox.value?.close()
+        val holder = mutableInbox.value
         mutableInbox.value = null
+        if (holder != null) retire(holder)
+    }
+
+    /**
+     * An approve or reject in flight is not cancelled by a selection change or by the session closing: the holder is
+     * closed after the outcome and the read that reconciles it are recorded (ADR-117, R-007).
+     */
+    private fun retire(holder: ScreenHolder<InboxState, InboxIntent>) {
+        if (!holder.isWorking) {
+            holder.close()
+            return
+        }
+        deferred += holder
+        retiring.launch {
+            holder.awaitIdle()
+            holder.close()
+            deferred -= holder
+        }
     }
 
     /**
@@ -191,10 +210,14 @@ class GraphSession internal constructor(
     }
 
     /** How many holders are still waiting for their work to finish before they close (R-007). */
-    internal val pendingCloses: Int get() = 0
+    internal val pendingCloses: Int get() = deferred.size
 
     /** The graph is going away: nothing can finish any more, so every deferred close happens now (R-007). */
-    fun abandonDeferred() = Unit
+    fun abandonDeferred() {
+        retiring.cancel()
+        deferred.toList().forEach { it.close() }
+        deferred.clear()
+    }
 
     /** Stops refreshing and closes every holder this session owns, once. The graph itself is closed by the owner. */
     fun close() {
