@@ -15,8 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -104,7 +105,17 @@ fun Discussion(
             )
         }
         for (comment in state.comments) CommentCard(comment)
-        if (ApprovalActionUi.Comment in state.actions) CommentBox(state, send)
+        // The draft lives here, above the conditional: a box that leaves while an action runs or the network blinks
+        // must come back with the text in it (R-003).
+        var draft by rememberSaveable { mutableStateOf("") }
+        var seen by rememberSaveable { mutableIntStateOf(state.commentPostedCount) }
+        LaunchedEffect(state.commentPostedCount) {
+            if (state.commentPostedCount != seen) {
+                seen = state.commentPostedCount
+                draft = ""
+            }
+        }
+        if (ApprovalActionUi.Comment in state.actions) CommentBox(state, draft, { draft = it }, send)
     }
 }
 
@@ -122,15 +133,15 @@ private fun CommentCard(comment: CommentUi) {
 @Composable
 private fun CommentBox(
     state: ApprovalState,
+    text: String,
+    onTextChange: (String) -> Unit,
     send: (ApprovalIntent) -> Unit,
 ) {
-    var text by remember { mutableStateOf("") }
-    LaunchedEffect(state.commentPostedCount) { text = "" }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
         FormField(
             title = stringResource(R.string.approval_comment_label),
             value = text,
-            onValueChange = { text = it },
+            onValueChange = onTextChange,
             tag = "approval-comment-field",
             placeholder = stringResource(R.string.approval_comment_placeholder),
             capitalization = KeyboardCapitalization.Sentences,

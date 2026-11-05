@@ -16,9 +16,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -240,9 +241,15 @@ private fun AmountField(
     state: BudgetIncidentState,
     send: (BudgetIntent) -> Unit,
 ) {
-    var text by remember { mutableStateOf("") }
+    var text by rememberSaveable { mutableStateOf("") }
     val observed = state.observed
     val format = MoneyInputFormat.of(observed?.currency ?: DEFAULT_CURRENCY)
+    // After a process death the text is restored but the new holder has no amount: send it once so both agree.
+    LaunchedEffect(Unit) {
+        if (text.isNotEmpty() && state.amountMinorUnits == null && state.amountIssue == null) {
+            send(BudgetIntent.AmountTyped(text, format.decimalSeparator, format.fractionDigits))
+        }
+    }
     FormField(
         title = stringResource(R.string.budget_amount_label),
         value = text,

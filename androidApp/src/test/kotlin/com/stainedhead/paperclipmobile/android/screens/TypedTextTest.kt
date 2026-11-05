@@ -21,7 +21,6 @@ import com.stainedhead.paperclipmobile.presentation.DetailPhase
 import com.stainedhead.paperclipmobile.presentation.FeedbackKind
 import com.stainedhead.paperclipmobile.presentation.FeedbackUi
 import com.stainedhead.paperclipmobile.presentation.MoneyUi
-import com.stainedhead.paperclipmobile.presentation.NotePromptKind
 import io.kotest.matchers.shouldBe
 import org.junit.Rule
 import org.junit.Test
@@ -86,15 +85,15 @@ class TypedTextTest {
 
     @Test
     fun theRejectNoteSurvivesRecreation() {
-        val sheet = open.copy(notePrompt = NotePromptKind.Reject)
+        val text = NoteSheetText("Reject", "Note", "Why?", "Say why", "Reject")
         val tester = StateRestorationTester(rule)
-        tester.setContent { PaperclipTheme(darkTheme = false) { ApprovalNoteSheet(sheet) {} } }
-        rule.awaitDisplayed("note-field")
+        tester.setContent {
+            PaperclipTheme(darkTheme = false) { NoteContent(text, {}, {}, true, false, null, null) }
+        }
         rule.onNodeWithTag("note-field").performTextInput(TYPED)
 
         tester.emulateSavedInstanceStateRestore()
 
-        rule.awaitDisplayed("note-field")
         rule.onNodeWithTag("note-field").assertTextContains(TYPED)
     }
 
