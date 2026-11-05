@@ -5,10 +5,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -118,6 +122,43 @@ class IssueVariantsTest {
         rule.onNodeWithTag("issue-blocker-pap-2").performClick()
 
         opened shouldBe listOf("pap-1", "pap-2")
+    }
+
+    @Test
+    fun textTypedAfterTheTapSurvivesTheCountMovingAndOnlyTheSentTextGoes() {
+        val sent = mutableListOf<IssueIntent>()
+        var state by mutableStateOf(content().copy(commentSentCount = 0))
+        rule.setContent { app.Themed { IssueContent(state, sent::add, {}, {}, {}, {}) } }
+        rule.onNodeWithTag("issue-comment-field").performTextInput("first")
+        rule.onNodeWithTag("issue-comment-send").performClick()
+        rule.onNodeWithTag("issue-comment-field").performTextInput(" and more")
+
+        state = state.copy(commentSentCount = 1)
+        rule.waitForIdle()
+
+        sent shouldContain IssueIntent.CommentSubmitted("first", reopen = false, interrupt = false)
+        fieldText("issue-comment-field") shouldBe " and more"
+    }
+
+    @Test
+    fun aBlankCommentCannotBeSent() {
+        show(content())
+
+        rule.onNodeWithTag("issue-comment-send").assertIsNotEnabled()
+        rule.onNodeWithTag("issue-comment-field").performTextInput("   ")
+        rule.onNodeWithTag("issue-comment-send").assertIsNotEnabled()
+        rule.onNodeWithTag("issue-comment-field").performTextInput("x")
+        rule.onNodeWithTag("issue-comment-send").assertIsEnabled()
+    }
+
+    @Test
+    fun aFailureShowsInsideTheBarSoItIsSeenWithoutScrolling() {
+        show(content().copy(feedback = FeedbackUi(FeedbackKind.Failed, error = ErrorUi(ErrorKey.ServerError))))
+
+        rule
+            .onNode(hasTestTag("feedback-banner") and hasAnyAncestor(hasTestTag("issue-comment-bar")))
+            .assertExists()
+        rule.onAllNodesWithTag("feedback-banner").assertCountEquals(1)
     }
 
     @Test

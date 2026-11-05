@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -172,13 +173,12 @@ class IssueScreenTest {
     }
 
     @Test
-    fun aCommentTheHolderRefusesStaysInTheBoxWithTheReason() {
+    fun aBlankCommentIsNotSentAndStaysInTheBox() {
         show()
 
         rule.onNodeWithTag("issue-comment-field").performTextInput("   ")
-        rule.onNodeWithTag("issue-comment-send").performClick()
 
-        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("feedback-banner") }
+        rule.onNodeWithTag("issue-comment-send").assertIsNotEnabled()
         fieldText("issue-comment-field") shouldBe "   "
     }
 
