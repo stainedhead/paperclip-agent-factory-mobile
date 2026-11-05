@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
@@ -91,8 +92,14 @@ class InboxVariantsTest {
     @After
     fun tearDown() = app.close()
 
+    private var launcher = RecordingLauncher()
+
     private fun show(state: InboxState) {
-        rule.setContent { app.Themed { InboxContent(state, { intents += it }, { opened += it }) } }
+        rule.setContent {
+            CompositionLocalProvider(LocalWebOpener provides WebOpener(launcher)) {
+                app.Themed { InboxContent(state, { intents += it }, { opened += it }) }
+            }
+        }
         rule.waitForIdle()
     }
 
@@ -120,17 +127,44 @@ class InboxVariantsTest {
         open.fetchSemanticsNode().config[SemanticsActions.CustomActions].size shouldBe 0
     }
 
+    private fun webCard(url: String?) =
+        card("future:x", SourceKindUi.Unsupported, OpenTargetUi(OpenKindUi.WebOnly, "x", null))
+            .copy(rawKind = "future_kind", webUrl = url)
+
     @Test
-    fun anUnknownKindOffersOnlyTheWebAppAndOpensItsAddress() {
-        val unknown =
-            card("future:x", SourceKindUi.Unsupported, OpenTargetUi(OpenKindUi.WebOnly, "x", null))
-                .copy(rawKind = "future_kind", webUrl = "https://paperclip.example/x")
+    fun anUnknownKindOffersOnlyTheWebAppAndOpensItsAddressThroughTheWebOpener() {
+        val unknown = webCard("https://paperclip.example/x")
 
         show(contentState(listOf(unknown)))
 
         rule.onNodeWithText("· future_kind").assertIsDisplayed()
         rule.onNodeWithTag("inbox-web-${unknown.id}").performClick()
-        opened shouldBe listOf(unknown)
+        launcher.tabbed shouldBe listOf("https://paperclip.example/x")
+        opened shouldBe emptyList()
+        rule.hasTag("inbox-web-failed-${unknown.id}") shouldBe false
+    }
+
+    @Test
+    fun aPhoneThatCannotShowThePageSaysSoOnTheCard() {
+        launcher = RecordingLauncher(tabs = false, browser = false)
+        val unknown = webCard("https://paperclip.example/x")
+
+        show(contentState(listOf(unknown)))
+        rule.onNodeWithTag("inbox-web-${unknown.id}").performClick()
+
+        rule.onNodeWithTag("inbox-web-failed-${unknown.id}").assertIsDisplayed()
+    }
+
+    @Test
+    fun aWebCardWithoutAUsableHttpsAddressHasNoWebButton() {
+        val none = webCard(null).copy(id = "future:none")
+        val insecure = webCard("http://paperclip.example/x").copy(id = "future:http")
+
+        show(contentState(listOf(none, insecure)))
+
+        rule.onNodeWithTag("inbox-card-${none.id}").assertIsDisplayed()
+        rule.hasTag("inbox-web-${none.id}") shouldBe false
+        rule.hasTag("inbox-web-${insecure.id}") shouldBe false
     }
 
     @Test
