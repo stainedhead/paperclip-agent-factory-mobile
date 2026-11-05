@@ -61,6 +61,13 @@ class AndroidManifestRulesTest {
     }
 
     @Test
+    fun `every variant opts in to the back callback, so predictive back is not left to the platform default`() {
+        listOf("debug", "release", "releaseDemo", "benchmark", "nonMinified").forEach {
+            Assertions.assertEquals("true", applicationAttribute(merged(it), "enableOnBackInvokedCallback"), it)
+        }
+    }
+
+    @Test
     fun `the permission set is read exactly and an own permission is not counted`() {
         val xml =
             """

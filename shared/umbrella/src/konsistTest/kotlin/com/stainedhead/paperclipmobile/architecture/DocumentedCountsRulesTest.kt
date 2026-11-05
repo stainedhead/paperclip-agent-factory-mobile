@@ -73,6 +73,58 @@ class DocumentedCountsRulesTest {
         }
     }
 
+    @Test
+    fun `the ADR range quoted in the README and the technical details ends at the last ADR`() {
+        val last =
+            Regex("^## ADR-(\\d+):", RegexOption.MULTILINE)
+                .findAll(File(projectRoot, "docs/architectural-decision-record.md").readText())
+                .maxOf { it.groupValues[1].toInt() }
+        listOf("README.md", "docs/technical-details.md").forEach { name ->
+            val ends =
+                Regex("ADR-\\d+ to ADR-(\\d+)")
+                    .findAll(File(projectRoot, name).readText())
+                    .map { it.groupValues[1].toInt() }
+                    .toList()
+            Assertions.assertTrue(ends.isNotEmpty(), "$name quotes no ADR range")
+            Assertions.assertTrue(ends.all { it == last }, "$name ends its ADR range at $ends, the last ADR is $last")
+        }
+    }
+
+    @Test
+    fun `phrases that were found false are gone from the docs and the code that carried them`() {
+        val falsehoods =
+            mapOf(
+                "androidApp/src/main/kotlin/com/stainedhead/paperclipmobile/android/screens/DetailSupport.kt" to
+                    listOf("15 seconds while the item can change"),
+                "specs/archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md" to
+                    listOf("is reserved in the manifest"),
+                "docs/technical-details.md" to listOf("acceptance criterion 8 in virtual time"),
+                "docs/product-details.md" to listOf("within one 5 s virtual cycle"),
+            )
+        falsehoods.forEach { (path, phrases) ->
+            val text = File(projectRoot, path).readText()
+            phrases.forEach { Assertions.assertFalse(it in text, "$path still says \"$it\"") }
+        }
+    }
+
+    @Test
+    fun `the archived Android status maps every criterion and names only test classes that exist`() {
+        val status = File(projectRoot, "specs/archive/261104-phase-2a-android-ui/status.md").readText()
+        Assertions.assertFalse("[TBD]" in status, "the acceptance mapping still has a [TBD]")
+        val sources =
+            listOf("androidApp", "shared", "iosApp")
+                .flatMap { File(projectRoot, it).walkTopDown().onEnter { d -> d.name != "build" }.toList() }
+                .filter { it.extension == "kt" || it.extension == "swift" }
+                .map { it.nameWithoutExtension }
+                .toSet()
+        val named = Regex("`([A-Z][A-Za-z0-9]*Tests?)[.`]").findAll(status).map { it.groupValues[1] }.toSet()
+        Assertions.assertTrue(
+            named.size > 20,
+            "the scan found only ${named.size} test classes: it would pass vacuously",
+        )
+        Assertions.assertEquals(emptySet<String>(), named - sources, "classes named in status.md that do not exist")
+    }
+
     private companion object {
         val STALE = 37 to 10
         val CURRENT = 71 to 17
