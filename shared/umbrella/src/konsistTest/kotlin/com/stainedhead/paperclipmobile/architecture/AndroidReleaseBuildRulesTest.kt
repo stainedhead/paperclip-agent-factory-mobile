@@ -82,9 +82,13 @@ class AndroidReleaseBuildRulesTest {
     fun `only releaseDemo declares the demo entry, benchmark and nonMinified inherit it and release never has it`() {
         val types = block(buildScript, "buildTypes")
         Assertions.assertFalse("DEMO_ENTRY\", \"true\"" in block(types, "release"), "release has the demo entry")
-        val declaring = Regex("""create\("(\w+)"\)""").findAll(types).map { it.groupValues[1] }.filter {
-            "DEMO_ENTRY\", \"true\"" in block(types, "create(\"$it\")")
-        }.toList()
+        val declaring =
+            Regex("""create\("(\w+)"\)""")
+                .findAll(types)
+                .map { it.groupValues[1] }
+                .filter {
+                    "DEMO_ENTRY\", \"true\"" in block(types, "create(\"$it\")")
+                }.toList()
         Assertions.assertEquals(listOf("releaseDemo"), declaring, "the demo entry is declared by one build type")
         Assertions.assertTrue(
             "applicationIdSuffix = \".demo\"" in block(types, "create(\"releaseDemo\")"),
@@ -108,7 +112,16 @@ class AndroidReleaseBuildRulesTest {
         val at = lines.indexOfFirst { "assembleRelease" in it }
         Assertions.assertTrue(at >= 0, "android.yml no longer builds the release: the rule would pass vacuously")
         val start = lines.subList(0, at).indexOfLast { it.trimStart().startsWith("- ") }
-        val end = lines.drop(at + 1).indexOfFirst { it.trimStart().startsWith("- ") }.let { if (it < 0) lines.size else at + 1 + it }
+        val end =
+            lines.drop(at + 1).indexOfFirst { it.trimStart().startsWith("- ") }.let {
+                if (it <
+                    0
+                ) {
+                    lines.size
+                } else {
+                    at + 1 + it
+                }
+            }
         Assertions.assertTrue(
             lines.subList(start, end).any { OPT_IN in it },
             "android.yml builds the release without setting $OPT_IN in that step",
@@ -117,14 +130,16 @@ class AndroidReleaseBuildRulesTest {
 
     @Test
     fun `the signing guard check flags a fallback that nothing guards`() {
-        val unguarded = """signingConfig = if (upload.storeFile != null) upload else signingConfigs.getByName("debug")"""
+        val unguarded = """signingConfig = if (upload != null) upload else signingConfigs.getByName("debug")"""
         Assertions.assertFalse(releaseSigningIsGuarded(unguarded))
         val optInOnly = unguarded + "\n// $OPT_IN\n"
         Assertions.assertFalse(releaseSigningIsGuarded(optInOnly), "naming the variable is not a guard")
         val guarded =
             unguarded +
                 """
-                tasks.register("verifyReleaseSigning") { doLast { System.getenv("$OPT_IN"); throw GradleException("x") } }
+                tasks.register("verifyReleaseSigning") {
+                    doLast { System.getenv("$OPT_IN"); throw GradleException("x") }
+                }
                 tasks.matching { it.name == "packageRelease" }.configureEach { dependsOn("verifyReleaseSigning") }
                 """.trimIndent()
         Assertions.assertTrue(releaseSigningIsGuarded(guarded))
