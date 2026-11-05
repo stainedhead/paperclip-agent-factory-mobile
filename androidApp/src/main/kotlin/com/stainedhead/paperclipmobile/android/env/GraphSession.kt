@@ -50,6 +50,8 @@ class GraphSession internal constructor(
     val notice: StartupNotice?,
     parent: CoroutineScope,
     options: SessionOptions = SessionOptions(),
+    /** How the Inbox holder of a factory and company is made; tests give a holder whose work they control. */
+    private val inboxFactory: ((PaperclipGraph, String, String) -> ScreenHolder<InboxState, InboxIntent>)? = null,
 ) {
     /** What the app has seen of itself, for the Diagnostics screen; the session feeds it, screens read it. */
     val diagnostics: DiagnosticsRecorder = options.diagnostics
@@ -146,7 +148,7 @@ class GraphSession internal constructor(
             pairing.toPairingOutcome()
         }
 
-    private fun followSelection(
+    internal fun followSelection(
         instance: String?,
         company: String?,
     ) {
@@ -155,6 +157,11 @@ class GraphSession internal constructor(
             stopInbox()
             val opened = graph
             if (opened == null || instance == null || company == null) return
+            val factory = inboxFactory
+            if (factory != null) {
+                mutableInbox.value = factory(opened, instance, company)
+                return
+            }
             val holder = opened.attention.createInboxStateHolder(instance, company)
             if (autoRefresh) refreshSession = opened.refresh.start(holder.refreshTarget)
             mutableInbox.value = holder.screenHolder()
