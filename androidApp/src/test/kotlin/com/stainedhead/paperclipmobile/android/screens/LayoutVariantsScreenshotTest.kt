@@ -85,14 +85,14 @@ class LayoutVariantsScreenshotTest {
     private fun agents(
         suffix: String,
         fontScale: Float? = null,
-    ) = capture("agents-$suffix", fontScale, { rule.hasTag("agent-${DemoId.AGENT_CTO}-pause") }) {
+    ) = capture("agents-$suffix", fontScale, { rule.hasTag("agents-count") }) {
         AgentsScreen(app.session, app.navigator)
     }
 
     private fun work(
         suffix: String,
         fontScale: Float? = null,
-    ) = capture("work-$suffix", fontScale, { rule.hasTag("work-row-${DemoId.ISSUE_RETRIES}") }) {
+    ) = capture("work-$suffix", fontScale, { rule.hasTag("work-count") }) {
         WorkListScreen(app.session, app.navigator)
     }
 

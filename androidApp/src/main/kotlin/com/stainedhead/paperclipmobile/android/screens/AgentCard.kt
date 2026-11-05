@@ -140,8 +140,9 @@ fun AgentCard(
     isBusy: Boolean,
     canSetBudget: Boolean,
     actions: AgentCardActions,
+    modifier: Modifier = Modifier,
 ) {
-    CardSurface(Modifier.testTag("agent-card-${row.id}")) {
+    CardSurface(modifier.testTag("agent-card-${row.id}")) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.large)) {
             AgentRowHeader(row, isBusy, actions.onOpen)
             AgentButtons(row, canSetBudget, isBusy, actions)

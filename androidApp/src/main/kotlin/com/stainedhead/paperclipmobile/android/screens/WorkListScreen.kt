@@ -2,10 +2,12 @@ package com.stainedhead.paperclipmobile.android.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -90,33 +92,15 @@ fun WorkListContent(
             onRefresh = { send(WorkListIntent.Refresh) },
             modifier = Modifier.weight(1f),
         ) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Spacing.page, vertical = Spacing.roomy)
-                    .testTag("work-screen"),
-                verticalArrangement = Arrangement.spacedBy(Spacing.roomy),
-            ) {
-                if (state.phase == DetailPhase.Content) {
-                    WorkBody(state, send, onOpenIssue, onSignInAgain, onNewIssue = { showsCreate = true }, showsCreate)
-                } else {
-                    DetailUnavailable(
-                        state.phase,
-                        state.error,
-                        state.isOffline,
-                        onRetry = { send(WorkListIntent.Refresh) },
-                        onSignInAgain = onSignInAgain,
-                    )
-                }
-            }
+            // Lazy: a company can have hundreds of issues, and only the rows on the screen are composed (R-032).
+            WorkList(state, send, onOpenIssue, onSignInAgain, onNewIssue = { showsCreate = true }, showsCreate)
         }
     }
     if (showsCreate) CreateIssueSheet(state, send) { showsCreate = false }
 }
 
 @Composable
-private fun WorkBody(
+private fun WorkList(
     state: WorkListState,
     send: (WorkListIntent) -> Unit,
     onOpenIssue: (String) -> Unit,
@@ -124,25 +108,77 @@ private fun WorkBody(
     onNewIssue: () -> Unit,
     sheetOpen: Boolean,
 ) {
-    if (state.isOffline) OfflineBanner(state.updatedAtEpochMillis)
-    state.actionsDisabledReason?.let { DisabledReason(it) }
-    // While the sheet is open it shows the outcome of a create itself.
-    if (!sheetOpen) state.feedback?.let { FeedbackBanner(it, { send(WorkListIntent.MessageDismissed) }) }
-    state.error?.let {
-        ErrorBanner(it, onRetry = { send(WorkListIntent.Refresh) }, onSignInAgain = onSignInAgain)
-    }
-    // The text lives here so a chip can apply what is typed: the field and the applied search never disagree.
+    // The text lives above the list so a chip can apply what is typed and a scrolled-away field keeps it: the field
+    // and the applied search never disagree.
     var pending by rememberSaveable { mutableStateOf(state.search) }
-    WorkSearchField(pending, state.search, { pending = it }) { send(WorkListIntent.SearchChanged(it)) }
-    FilterChips(state.filter) {
-        if (pending.trim() != state.search) send(WorkListIntent.SearchChanged(pending))
-        send(WorkListIntent.FilterSelected(it))
+    LazyColumn(
+        Modifier.fillMaxSize().testTag("work-screen"),
+        contentPadding = PaddingValues(horizontal = Spacing.page, vertical = Spacing.roomy),
+        verticalArrangement = Arrangement.spacedBy(Spacing.roomy),
+    ) {
+        if (state.phase == DetailPhase.Content) {
+            workBody(state, send, onOpenIssue, onSignInAgain, onNewIssue, sheetOpen, pending) { pending = it }
+        } else {
+            item(key = "unavailable", contentType = "unavailable") {
+                DetailUnavailable(
+                    state.phase,
+                    state.error,
+                    state.isOffline,
+                    onRetry = { send(WorkListIntent.Refresh) },
+                    onSignInAgain = onSignInAgain,
+                )
+            }
+        }
     }
-    CountRow(state, onNewIssue)
+}
+
+private fun LazyListScope.workBody(
+    state: WorkListState,
+    send: (WorkListIntent) -> Unit,
+    onOpenIssue: (String) -> Unit,
+    onSignInAgain: () -> Unit,
+    onNewIssue: () -> Unit,
+    sheetOpen: Boolean,
+    pending: String,
+    onPending: (String) -> Unit,
+) {
+    if (state.isOffline) item(key = "offline", contentType = "banner") { OfflineBanner(state.updatedAtEpochMillis) }
+    state.actionsDisabledReason?.let { item(key = "disabled-reason", contentType = "banner") { DisabledReason(it) } }
+    // While the sheet is open it shows the outcome of a create itself.
+    if (!sheetOpen) {
+        state.feedback?.let {
+            item(
+                key = "feedback",
+                contentType = "banner",
+            ) { FeedbackBanner(it, { send(WorkListIntent.MessageDismissed) }) }
+        }
+    }
+    state.error?.let {
+        item(key = "error", contentType = "banner") {
+            ErrorBanner(it, onRetry = { send(WorkListIntent.Refresh) }, onSignInAgain = onSignInAgain)
+        }
+    }
+    item(key = "search", contentType = "search") {
+        WorkSearchField(pending, state.search, onPending) { send(WorkListIntent.SearchChanged(it)) }
+    }
+    item(key = "filters", contentType = "filters") {
+        FilterChips(state.filter) {
+            if (pending.trim() != state.search) send(WorkListIntent.SearchChanged(pending))
+            send(WorkListIntent.FilterSelected(it))
+        }
+    }
+    item(key = "count", contentType = "count") { CountRow(state, onNewIssue) }
     if (state.rows.isEmpty()) {
-        WorkEmpty(state.search.isNotEmpty())
+        item(key = "empty", contentType = "empty") { WorkEmpty(state.search.isNotEmpty()) }
     } else {
-        for (row in state.rows) WorkRow(row, onOpen = { onOpenIssue(row.id) })
-        if (state.hasMore) LoadMoreRow { send(WorkListIntent.LoadMore) }
+        items(state.rows, key = { it.id }, contentType = { "issue" }) { row ->
+            WorkRow(row, onOpen = { onOpenIssue(row.id) })
+        }
+        if (state.hasMore) {
+            item(
+                key = "load-more",
+                contentType = "load-more",
+            ) { LoadMoreRow { send(WorkListIntent.LoadMore) } }
+        }
     }
 }

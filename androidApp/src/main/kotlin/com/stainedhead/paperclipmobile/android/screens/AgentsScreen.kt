@@ -3,12 +3,15 @@ package com.stainedhead.paperclipmobile.android.screens
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -118,24 +121,28 @@ fun AgentsContent(
             onRefresh = { send(AgentsIntent.Refresh) },
             modifier = Modifier.weight(1f),
         ) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Spacing.page, vertical = Spacing.roomy),
-                verticalArrangement = Arrangement.spacedBy(Spacing.roomy),
+            // Lazy: a company can have hundreds of agents, and only the rows on the screen are composed (R-032).
+            LazyColumn(
+                Modifier.fillMaxSize().testTag("agents-list"),
+                contentPadding = PaddingValues(horizontal = Spacing.page, vertical = Spacing.roomy),
             ) {
                 if (state.phase == DetailPhase.Content) {
-                    AgentsHeader(state, send, onSignInAgain, filter) { filter = it }
-                    AgentsBody(state, send, filter, onOpenAgent, onOpenRun)
+                    item(key = "header", contentType = "header") {
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.roomy)) {
+                            AgentsHeader(state, send, onSignInAgain, filter) { filter = it }
+                        }
+                    }
+                    agentsBody(state, send, filter, onOpenAgent, onOpenRun)
                 } else {
-                    DetailUnavailable(
-                        state.phase,
-                        state.error,
-                        state.isOffline,
-                        onRetry = { send(AgentsIntent.Refresh) },
-                        onSignInAgain = onSignInAgain,
-                    )
+                    item(key = "unavailable", contentType = "unavailable") {
+                        DetailUnavailable(
+                            state.phase,
+                            state.error,
+                            state.isOffline,
+                            onRetry = { send(AgentsIntent.Refresh) },
+                            onSignInAgain = onSignInAgain,
+                        )
+                    }
                 }
             }
         }
@@ -200,8 +207,7 @@ private fun FilterChips(
     }
 }
 
-@Composable
-private fun AgentsBody(
+private fun LazyListScope.agentsBody(
     state: AgentsState,
     send: (AgentsIntent) -> Unit,
     filter: AgentFilter,
@@ -210,37 +216,32 @@ private fun AgentsBody(
 ) {
     val shown = state.sections.filter { filter.includes(it.group) }
     if (state.sections.isEmpty()) {
-        EmptyState(
-            icon = painterResource(R.drawable.ic_tab_agents),
-            title = stringResource(R.string.agents_empty_title),
-            message = stringResource(R.string.agents_empty_message),
-            modifier = Modifier.heightIn(min = EmptyHeight).testTag("agents-empty"),
-        )
+        item(key = "empty", contentType = "empty") {
+            EmptyState(
+                icon = painterResource(R.drawable.ic_tab_agents),
+                title = stringResource(R.string.agents_empty_title),
+                message = stringResource(R.string.agents_empty_message),
+                modifier = Modifier.padding(top = Spacing.roomy).heightIn(min = EmptyHeight).testTag("agents-empty"),
+            )
+        }
     } else if (shown.isEmpty()) {
-        Text(
-            stringResource(R.string.agents_filter_empty),
-            Modifier.testTag("agents-filter-empty"),
-            style = AppType.body,
-            color = AppTheme.colors.textSecondary,
-        )
+        item(key = "filter-empty", contentType = "empty") {
+            Text(
+                stringResource(R.string.agents_filter_empty),
+                Modifier.padding(top = Spacing.roomy).testTag("agents-filter-empty"),
+                style = AppType.body,
+                color = AppTheme.colors.textSecondary,
+            )
+        }
     }
-    for (section in shown) AgentSection(section, state, send, onOpenAgent, onOpenRun)
-}
-
-@Composable
-private fun AgentSection(
-    section: AgentSectionUi,
-    state: AgentsState,
-    send: (AgentsIntent) -> Unit,
-    onOpenAgent: (String) -> Unit,
-    onOpenRun: (String) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
-        SectionHeader(
-            stringResource(section.group.stringRes()),
-            Modifier.testTag("agents-section-${section.group.name}"),
-        )
-        for (row in section.rows) {
+    for (section in shown) {
+        item(key = "section-${section.group.name}", contentType = "section") {
+            SectionHeader(
+                stringResource(section.group.stringRes()),
+                Modifier.padding(top = Spacing.roomy).testTag("agents-section-${section.group.name}"),
+            )
+        }
+        items(section.rows, key = { it.id }, contentType = { "agent" }) { row ->
             AgentCard(
                 row,
                 isBusy = state.busyAgentId == row.id,
@@ -251,6 +252,7 @@ private fun AgentSection(
                         onOpen = { onOpenAgent(row.id) },
                         onViewRun = onOpenRun,
                     ),
+                modifier = Modifier.padding(top = Spacing.medium),
             )
         }
     }

@@ -70,7 +70,8 @@ class WorkScreenshotTest {
         "work",
         darkTheme,
         fontScale,
-        { rule.hasTag("work-row-${DemoId.ISSUE_RETRIES}") && rule.hasTag("work-row-pap-1210") },
+        // The list is lazy: the count line shows with the rows, and the rows below the screen are not composed.
+        { rule.hasTag("work-count") },
     ) { WorkListScreen(app.session, app.navigator) }
 
     @Test
