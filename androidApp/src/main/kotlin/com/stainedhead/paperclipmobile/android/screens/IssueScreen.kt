@@ -95,7 +95,7 @@ fun IssueContent(
             ) {
                 if (state.isOffline && state.phase == DetailPhase.Content) OfflineBanner(state.updatedAtEpochMillis)
                 if (hasContent && header != null) {
-                    IssueBody(state, header, send, onOpenIssue, onOpenRun, onSignInAgain, showsSubtask) {
+                    IssueBody(state, header, send, onOpenIssue, onOpenRun, onSignInAgain) {
                         showsSubtask = true
                     }
                 } else {
@@ -109,7 +109,7 @@ fun IssueContent(
                 }
             }
         }
-        if (hasContent) IssueCommentBar(state, send)
+        if (hasContent) IssueCommentBar(state, send, showFeedback = !showsSubtask)
     }
     if (showsSubtask) SubtaskSheet(state, send) { showsSubtask = false }
 }
@@ -122,12 +122,9 @@ private fun IssueBody(
     onOpenIssue: (String) -> Unit,
     onOpenRun: (String) -> Unit,
     onSignInAgain: () -> Unit,
-    sheetOpen: Boolean,
     onAddSubtask: () -> Unit,
 ) {
     IssueHeader(state, header, send, onOpenIssue)
-    // While the subtask sheet is open it shows the outcome of adding a subtask itself.
-    if (!sheetOpen) state.feedback?.let { FeedbackBanner(it, { send(IssueIntent.MessageDismissed) }) }
     state.error?.let { ErrorBanner(it, onRetry = { send(IssueIntent.Refresh) }, onSignInAgain = onSignInAgain) }
     if (state.subtasks.isNotEmpty()) {
         SectionHeader(stringResource(R.string.issue_subtasks))

@@ -169,6 +169,9 @@ class IssueScreenTest {
 
         rule.waitUntil(WAIT_MILLIS) { fieldText("issue-comment-field") == "" }
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("Use exponential backoff") }
+        // The box is empty again, so there is nothing to send; a new comment enables it.
+        rule.onNodeWithTag("issue-comment-send").assertIsNotEnabled()
+        rule.onNodeWithTag("issue-comment-field").performTextInput("More")
         rule.onNodeWithTag("issue-comment-send").assertIsEnabled()
     }
 

@@ -249,6 +249,7 @@ class IssueVariantsTest {
         show(content().copy(interactionsUnavailable = true))
 
         rule.hasTag("issue-interactions-unavailable") shouldBe true
+        rule.onNodeWithTag("issue-comment-field").performTextInput("still works")
         rule.onNodeWithTag("issue-comment-send").assertIsEnabled()
     }
 

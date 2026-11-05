@@ -73,15 +73,19 @@ private val BAR_SHAPE = RoundedCornerShape(topStart = Radius.card, topEnd = Radi
 fun IssueCommentBar(
     state: IssueState,
     send: (IssueIntent) -> Unit,
+    showFeedback: Boolean = true,
 ) {
     var comment by rememberSaveable { mutableStateOf("") }
     var reopen by rememberSaveable { mutableStateOf(false) }
     var interrupt by rememberSaveable { mutableStateOf(false) }
     var seen by rememberSaveable { mutableIntStateOf(state.commentSentCount) }
+    // What the last tap on Send sent: only that text goes when the holder counts the comment, never what was typed since.
+    var sentText by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(state.commentSentCount) {
         if (state.commentSentCount != seen) {
             seen = state.commentSentCount
-            comment = ""
+            comment = comment.removePrefix(sentText)
+            sentText = ""
             reopen = false
             interrupt = false
         }
@@ -95,6 +99,8 @@ fun IssueCommentBar(
             .testTag("issue-comment-bar"),
         verticalArrangement = Arrangement.spacedBy(Spacing.medium),
     ) {
+        // The outcome of a send shows here, next to the box, not at the top of a thread that may be scrolled away.
+        if (showFeedback) state.feedback?.let { FeedbackBanner(it, { send(IssueIntent.MessageDismissed) }) }
         state.actionsDisabledReason?.let { DisabledReason(it) }
         if (state.canComment && state.canReopen) {
             SwitchRow(stringResource(R.string.issue_reopen_toggle), reopen, "issue-reopen") { reopen = it }
@@ -105,7 +111,10 @@ fun IssueCommentBar(
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.medium), verticalAlignment = Alignment.Bottom) {
             StatusMenu(state, send)
             CommentField(comment, state.canComment, Modifier.weight(1f)) { comment = it }
-            SendButton(state.canComment) { send(IssueIntent.CommentSubmitted(comment, reopen, interrupt)) }
+            SendButton(state.canComment && comment.isNotBlank()) {
+                sentText = comment
+                send(IssueIntent.CommentSubmitted(comment, reopen, interrupt))
+            }
         }
     }
 }
