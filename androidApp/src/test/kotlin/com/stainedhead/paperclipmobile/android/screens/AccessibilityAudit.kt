@@ -11,6 +11,12 @@ private const val MINIMUM_TARGET_DP = 48
 private const val ROUNDING_PX = 2f
 
 /**
+ * The scrim and the drag handle that `ModalBottomSheet` adds around every sheet: Material gives them a name and a click
+ * but no role, and offers no hook to add one. They are named, so TalkBack reads them; nothing else is exempt.
+ */
+private val MATERIAL_SHEET_PARTS = setOf("Close sheet", "Drag handle")
+
+/**
  * What a screen tells TalkBack, read from the merged semantics tree (T8.2): every control that can be clicked has a
  * name and a role and a touch target of at least 48 dp, and the reading order (tree order) follows the layout from the
  * top of the screen to the bottom. Returns one sentence per finding, empty for a clean screen.
@@ -27,6 +33,7 @@ fun audit(
     val roleless =
         controls
             .filter { it.config.getOrNull(SemanticsProperties.Role) == null && SemanticsActions.SetText !in it.config }
+            .filter { it.name() !in MATERIAL_SHEET_PARTS }
             .map { "no role: ${it.describe()}" }
     val small =
         controls
@@ -39,7 +46,13 @@ fun audit(
         all
             .filter { SemanticsActions.SetText in it.config && SemanticsProperties.ContentDescription in it.config }
             .map { "text field named only by a description: ${it.describe()}" }
-    return unnamed + roleless + small + describedFields + orderFindings(all)
+    // A control that is shown but has no width or no height cannot be touched, and `isPlaced` would skip it (R-030).
+    val collapsed =
+        all
+            .filter { SemanticsActions.OnClick in it.config && !it.isHidden() }
+            .filter { it.size.width == 0 || it.size.height == 0 }
+            .map { "zero size (${it.size.width}x${it.size.height} px): ${it.describe()}" }
+    return unnamed + roleless + small + describedFields + collapsed + orderFindings(all)
 }
 
 private fun SemanticsNode.flatten(): List<SemanticsNode> = listOf(this) + children.flatMap { it.flatten() }
