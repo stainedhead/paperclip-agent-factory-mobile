@@ -11,13 +11,16 @@ import com.stainedhead.paperclipmobile.android.env.AppGraphProvider
 import com.stainedhead.paperclipmobile.android.env.DemoGraphProvider
 import com.stainedhead.paperclipmobile.android.env.FirstRunDemoGraphProvider
 import com.stainedhead.paperclipmobile.android.env.ForegroundObserver
+import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.env.LaunchConfiguration
 import com.stainedhead.paperclipmobile.android.env.LiveGraphProvider
 import com.stainedhead.paperclipmobile.android.pairing.ActivityPageLauncher
 import com.stainedhead.paperclipmobile.android.pairing.CustomTabsPairingBrowser
 import com.stainedhead.paperclipmobile.android.pairing.PairingBrowserEvent
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Owns the one [AppEnvironment] of the process (AND-010). The graph is opened lazily by the first activity, because the
@@ -27,6 +30,7 @@ import java.lang.ref.WeakReference
 class PaperclipApplication : Application() {
     private var environment: AppEnvironment? = null
     private var resumed: WeakReference<Activity>? = null
+    private val scripted = AtomicBoolean(false)
 
     /** Shows the pairing approval page; the activity reports its pauses and resumes to it. */
     val pairingPage: CustomTabsPairingBrowser by lazy {
@@ -58,15 +62,19 @@ class PaperclipApplication : Application() {
                 demoControls,
                 DiagnosticsRecorder(BuildConfig.VERSION_NAME),
                 AppLog(BuildConfig.DEBUG),
-            ).also {
-                environment = it
-                launch.scriptedBiometrics.forEach { result ->
-                    it.session.value.graph
-                        ?.demoControls
-                        ?.scriptBiometrics(result)
-                }
-            }
+                openOn = Dispatchers.Default,
+                onOpened = { opened -> scriptBiometrics(launch, opened) },
+            ).also { environment = it }
         }
+
+    /** The debug launch scripts the demo graph's device-owner answers once, on the first graph (never in release). */
+    private fun scriptBiometrics(
+        launch: LaunchConfiguration,
+        opened: GraphSession,
+    ) {
+        if (!scripted.compareAndSet(false, true)) return
+        launch.scriptedBiometrics.forEach { result -> opened.graph?.demoControls?.scriptBiometrics(result) }
+    }
 
     private fun providerFor(launch: LaunchConfiguration): AppGraphProvider =
         when {

@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Owns the shared graph and every long-lived holder for the running app (AND-010): the app shell, the first-run flow
@@ -29,14 +30,27 @@ class AppEnvironment(
     private val log: AppLog = AppLog.Off,
     /** Where the graph is opened: the app gives a background dispatcher; null opens on the calling thread (tests). */
     private val openOn: CoroutineDispatcher? = null,
+    /** Runs on every session that opened a graph, before the screens can see it (the debug launch's scripted answers). */
+    private val onOpened: (GraphSession) -> Unit = {},
 ) {
     private val lock = Any()
     private var provider: AppGraphProvider = provider
     private var foreground = true
     private var nextId = 0
-    private val mutableSession = MutableStateFlow(open())
+    private var generation = 0
+    private var isShutDown = false
+    private val mutableSession = MutableStateFlow(begin())
 
+    /**
+     * The session of the running app. While the graph is being opened in the background it is a session with no graph
+     * and no notice ([GraphSession.isOpening]); the screen shows Loading. It then becomes the opened graph, or the
+     * notice that says why it could not be (R-018).
+     */
     val session: StateFlow<GraphSession> = mutableSession
+
+    init {
+        if (openOn != null) openInBackground(generation, this.provider, mutableSession.value.id)
+    }
 
     /** "Try again" on the startup notice: opens the real graph again. */
     fun retryLaunch() = replace(provider)
@@ -59,14 +73,52 @@ class AppEnvironment(
 
     /** Closes every holder and the graph, once. Nothing may be used afterwards. */
     fun shutdown() {
-        synchronized(lock) { closeSession(mutableSession.value) }
+        synchronized(lock) {
+            isShutDown = true
+            closeSession(mutableSession.value)
+        }
     }
 
     private fun replace(next: AppGraphProvider) {
         synchronized(lock) {
             closeSession(mutableSession.value)
             provider = next
-            mutableSession.value = open()
+            generation++
+            mutableSession.value = begin()
+            if (openOn != null) openInBackground(generation, next, mutableSession.value.id)
+        }
+    }
+
+    /** The first session: the opened graph at once when there is no background dispatcher, else the opening one. */
+    private fun begin(): GraphSession =
+        if (openOn == null) {
+            open()
+        } else {
+            GraphSession(nextId++, provider.mode, null, null, scope, SessionOptions(diagnostics = diagnostics))
+        }
+
+    /**
+     * Opens [using] on [openOn], off the main thread, then swaps it in for the opening session of [pendingId]. A result
+     * that arrives after a newer open began, or after the shutdown, is closed instead of shown.
+     */
+    private fun openInBackground(
+        generationAtStart: Int,
+        using: AppGraphProvider,
+        pendingId: Int,
+    ) {
+        val dispatcher = checkNotNull(openOn)
+        scope.launch(dispatcher) {
+            val id = synchronized(lock) { nextId++ }
+            val built = build(using, id)
+            synchronized(lock) {
+                if (isShutDown || generationAtStart != generation || mutableSession.value.id != pendingId) {
+                    closeSession(built)
+                } else {
+                    built.graph?.lifecycle?.setForeground(foreground)
+                    closeSession(mutableSession.value)
+                    mutableSession.value = built
+                }
+            }
         }
     }
 
@@ -79,21 +131,29 @@ class AppEnvironment(
 
     /** Opens the provider's graph; whatever it throws is `Unavailable`. A foreground flag set earlier is re-applied. */
     private fun open(): GraphSession {
-        val opened = runCatching { provider.makeGraph() }.getOrElse { AndroidGraphOpen.Unavailable(it) }
-        val id = nextId++
+        val built = build(provider, nextId++)
+        built.graph?.lifecycle?.setForeground(foreground)
+        return built
+    }
+
+    private fun build(
+        using: AppGraphProvider,
+        id: Int,
+    ): GraphSession {
+        val opened = runCatching { using.makeGraph() }.getOrElse { AndroidGraphOpen.Unavailable(it) }
         return when (opened) {
             is AndroidGraphOpen.Opened -> {
-                opened.graph.lifecycle.setForeground(foreground)
                 recordOpen(GraphOpenOutcome.Opened)
-                GraphSession(id, provider.mode, opened.graph, null, scope, SessionOptions(diagnostics = diagnostics))
+                GraphSession(id, using.mode, opened.graph, null, scope, SessionOptions(diagnostics = diagnostics))
+                    .also(onOpened)
             }
 
             is AndroidGraphOpen.Unavailable -> {
                 recordOpen(opened.cause.toGraphOpenOutcome())
-                val notice = StartupNotice.forLaunch(demo = provider.mode == GraphMode.Demo, liveOpened = false)
+                val notice = StartupNotice.forLaunch(demo = using.mode == GraphMode.Demo, liveOpened = false)
                 GraphSession(
                     id,
-                    provider.mode,
+                    using.mode,
                     null,
                     notice ?: StartupNotice.LiveGraphUnavailable,
                     scope,

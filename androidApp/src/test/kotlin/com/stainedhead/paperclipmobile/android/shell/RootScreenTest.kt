@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
 import com.stainedhead.paperclipmobile.android.env.AppEnvironment
+import com.stainedhead.paperclipmobile.android.env.AppGraphProvider
 import com.stainedhead.paperclipmobile.android.env.GraphMode
 import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
 import com.stainedhead.paperclipmobile.android.env.demoOpen
@@ -25,7 +26,9 @@ import com.stainedhead.paperclipmobile.domain.IdlePeriod
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.presentation.AppIntent
 import com.stainedhead.paperclipmobile.presentation.SettingsIntent
+import com.stainedhead.paperclipmobile.umbrella.AndroidGraphOpen
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,6 +37,8 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 private const val WAIT_MILLIS = 10_000L
 
@@ -54,11 +59,13 @@ class RootScreenTest {
     }
 
     private fun show(
-        provider: ScriptedProvider,
+        provider: AppGraphProvider,
         secure: MutableList<Boolean> = mutableListOf(),
         unlock: Boolean = true,
+        openOn: CoroutineDispatcher? = null,
     ) {
-        val env = AppEnvironment(provider, scope, demoEntryAvailable = true).also { environment = it }
+        val env =
+            AppEnvironment(provider, scope, demoEntryAvailable = true, openOn = openOn).also { environment = it }
         autoUnlock = unlock
         rule.setContent {
             PaperclipTheme(darkTheme = false) {
@@ -75,6 +82,26 @@ class RootScreenTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun loadingShowsWhileTheGraphOpensInTheBackgroundThenTheTabs() {
+        val release = CountDownLatch(1)
+        val slow =
+            object : AppGraphProvider {
+                override val mode = GraphMode.Demo
+
+                override fun makeGraph(): AndroidGraphOpen {
+                    release.await(WAIT_MILLIS, TimeUnit.MILLISECONDS)
+                    return demoOpen()
+                }
+            }
+        show(slow, openOn = Dispatchers.Default)
+
+        rule.onNodeWithTag("graph-opening").assertIsDisplayed()
+        rule.hasTag("tab-Inbox") shouldBe false
+        release.countDown()
+        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("tab-Inbox") }
     }
 
     @Test

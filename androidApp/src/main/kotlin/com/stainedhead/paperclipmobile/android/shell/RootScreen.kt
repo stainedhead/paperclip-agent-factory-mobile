@@ -54,7 +54,10 @@ fun RootScreen(
         ) {
             val app = session.app
             val owned = session.firstRun
-            if (session.notice != null || app == null || owned == null) {
+            if (session.isOpening) {
+                SideEffect { onSecureChanged(false) }
+                LoadingState(stringResource(R.string.common_loading), Modifier.testTag("graph-opening"))
+            } else if (session.notice != null || app == null || owned == null) {
                 SideEffect { onSecureChanged(false) }
                 StartupNoticeScreen(session.notice ?: StartupNotice.LiveGraphUnavailable, environment::retryLaunch)
             } else {
