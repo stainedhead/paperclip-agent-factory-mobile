@@ -14,6 +14,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -66,6 +67,9 @@ internal fun DraftField(
 ) {
     val colors = AppTheme.colors
     var text by rememberSaveable(tag) { mutableStateOf(initial) }
+    // After process death the text comes back from saved state but the new holder's draft is empty: tell it once, so
+    // the field, the draft and the shared "can answer" rule agree (R-034).
+    LaunchedEffect(Unit) { if (text != initial) onChange(text) }
     OutlinedTextField(
         value = text,
         onValueChange = {
