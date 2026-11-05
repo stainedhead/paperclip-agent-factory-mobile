@@ -187,6 +187,7 @@ private fun ChoiceCard(
 ) {
     val colors = AppTheme.colors
     val title = stringResource(choice.stringRes())
+    val spoken = stringResource(R.string.budget_choice_spoken, title, help)
     val shape = RoundedCornerShape(Radius.card)
     val tag = if (choice == BudgetChoice.KeepPaused) "budget-choice-keep" else "budget-choice-raise"
     Row(
@@ -201,7 +202,7 @@ private fun ChoiceCard(
                 shape,
             ).selectable(isSelected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .padding(Spacing.card)
-            .semantics { contentDescription = "$title. $help" }
+            .semantics { contentDescription = spoken }
             .testTag(tag),
         horizontalArrangement = Arrangement.spacedBy(Spacing.extraLarge),
     ) {

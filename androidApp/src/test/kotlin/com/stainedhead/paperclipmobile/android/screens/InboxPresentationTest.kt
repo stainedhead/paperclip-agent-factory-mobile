@@ -14,6 +14,8 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 /** AND-030: where a card goes, which buttons it offers and what the web address rule lets through. */
+private const val SEP = " · "
+
 class InboxPresentationTest {
     private fun item(
         kind: SourceKindUi = SourceKindUi.Decision,
@@ -103,15 +105,15 @@ class InboxPresentationTest {
 
     @Test
     fun `the agent is added to the context only when the reason does not name it already`() {
-        cardContext("CTO proposes 3 options", "CTO") shouldBe "CTO proposes 3 options"
-        cardContext("Requested by the board", "CEO") shouldBe "Requested by the board · CEO"
-        cardContext("Hard stop", null) shouldBe "Hard stop"
-        cardContext("Hard stop", "") shouldBe "Hard stop"
+        cardContext("CTO proposes 3 options", "CTO", SEP) shouldBe "CTO proposes 3 options"
+        cardContext("Requested by the board", "CEO", SEP) shouldBe "Requested by the board · CEO"
+        cardContext("Hard stop", null, SEP) shouldBe "Hard stop"
+        cardContext("Hard stop", "", SEP) shouldBe "Hard stop"
     }
 
     @Test
     fun `the kind line joins the kind and the identifier`() {
-        kindLine("Decision", "PAP-1182") shouldBe "Decision · PAP-1182"
-        kindLine("Approval", null) shouldBe "Approval"
+        kindLine("Decision", "PAP-1182", SEP) shouldBe "Decision · PAP-1182"
+        kindLine("Approval", null, SEP) shouldBe "Approval"
     }
 }

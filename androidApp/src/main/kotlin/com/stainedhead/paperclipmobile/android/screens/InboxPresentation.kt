@@ -13,7 +13,6 @@ import com.stainedhead.paperclipmobile.presentation.SourceKindUi
  * and the words that join. Which actions exist, in which order and for which role is the shared state's.
  */
 
-private const val SEPARATOR = " · "
 private const val HTTPS = "https://"
 
 /** Where a tapped card goes: a pushed route, the budget sheet, the web app, or nowhere. */
@@ -106,17 +105,19 @@ enum class InboxCardLink {
 fun cardContext(
     whyNow: String,
     origin: String?,
+    separator: String,
 ): String =
     if (origin.isNullOrEmpty() ||
         whyNow.contains(origin, ignoreCase = true)
     ) {
         whyNow
     } else {
-        "$whyNow$SEPARATOR$origin"
+        "$whyNow$separator$origin"
     }
 
 /** "Decision · PAP-1182": the kind and, when there is one, the identifier. */
 fun kindLine(
     kind: String,
     identifier: String?,
-): String = listOfNotNull(kind, identifier).joinToString(SEPARATOR)
+    separator: String,
+): String = listOfNotNull(kind, identifier).joinToString(separator)

@@ -407,7 +407,10 @@
     <string name="decision_no_effects">Changes nothing on any issue</string>
     <string name="decision_asks_auth">Asks you to confirm with your fingerprint, face or screen lock</string>
     <string name="decision_destructive">Destructive</string>
-    <string name="decision_selected">Selected</string>
+    <string name="decision_selected_option">Selected: %1$s</string>
+    <string name="decision_confirm_spoken">%1$s. %2$s</string>
+    <string name="budget_choice_spoken">%1$s. %2$s</string>
+    <string name="meta_separator">" · "</string>
     <string name="decision_confirm">Confirm choice</string>
     <string name="decision_dismiss">Dismiss</string>
     <string name="decision_snooze">Snooze</string>

@@ -63,9 +63,10 @@ fun DecisionHeader(
 ) {
     val colors = AppTheme.colors
     val kind = stringResource(R.string.kind_decision)
-    val kindLine = listOfNotNull(kind, state.decideBy.text()).joinToString(" · ").uppercase()
+    val separator = stringResource(R.string.meta_separator)
+    val kindLine = listOfNotNull(kind, state.decideBy.text()).joinToString(separator).uppercase()
     val proposed = state.originAgentName?.let { stringResource(R.string.decision_proposed_by, it) }
-    val meta = listOfNotNull(proposed, identifier).joinToString(" · ").ifEmpty { null }
+    val meta = listOfNotNull(proposed, identifier).joinToString(separator).ifEmpty { null }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
         Text(kindLine, Modifier.testTag("decision-kind-line"), style = AppType.label, color = colors.destructive)
         Text(
@@ -224,7 +225,11 @@ fun DecisionActionBar(
     val chosen = state.options.firstOrNull { it.id == state.selectedOptionId }
     val spoken =
         if (state.confirmNeedsDeviceAuth && !state.isSubmitting) {
-            "${confirmText(state)}. ${stringResource(R.string.decision_asks_auth)}"
+            stringResource(
+                R.string.decision_confirm_spoken,
+                confirmText(state),
+                stringResource(R.string.decision_asks_auth),
+            )
         } else {
             confirmText(state)
         }
@@ -243,9 +248,8 @@ fun DecisionActionBar(
             verticalArrangement = Arrangement.spacedBy(Spacing.large),
         ) {
             state.actionsDisabledReason?.let { DisabledReason(it) }
-            val selected = stringResource(R.string.decision_selected)
             chosen?.let {
-                val line = "$selected: ${it.label}"
+                val line = stringResource(R.string.decision_selected_option, it.label)
                 Text(
                     line,
                     Modifier.testTag("decision-chosen"),

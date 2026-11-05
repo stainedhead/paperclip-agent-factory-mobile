@@ -47,8 +47,9 @@ fun InboxCard(
     val kind = stringResource(item.kind.stringRes())
     val kindName = if (item.kind == SourceKindUi.Unsupported) item.rawKind ?: kind else kind
     val title = item.title ?: kindName
-    val context = cardContext(item.whyNow, item.originAgentName)
-    val line = kindLine(kindName, item.identifier)
+    val separator = stringResource(R.string.meta_separator)
+    val context = cardContext(item.whyNow, item.originAgentName, separator)
+    val line = kindLine(kindName, item.identifier, separator)
     val now by rememberNowMillis()
     val age = RelativeAge.of((now - item.activityAtEpochMillis) / MILLIS_PER_SECOND)
     val spoken =
