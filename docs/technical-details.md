@@ -99,7 +99,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 108 tests in 25 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 117 tests in 26 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -208,7 +208,7 @@ Numbers from the last local run (2026-11-04, branch `worktree-android-prd`; read
 | `androidApp` unit tests (`:androidApp:testDebugUnitTest`) | 538 in 80 classes (Robolectric on API 36, JUnit 4 plus JUnit 5 through the Vintage engine); 73 PNG files in `androidApp/src/test/screenshots` (72 baselines and the smoke image) checked by `verifyRoborazziDebug` |
 | Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`; not re-run for this table) | declared: securestore 17, platform 6, persistence 5, umbrella 9. Last recorded run (status.md, T8.9, Pixel_9_Pro API 37): securestore 12 passed and 3 skipped (the lock-screen phase tests among them), the others all passed |
 | Android connected demo-flow (`:androidApp:connectedDebugAndroidTest`, emulator only; not re-run for this table) | 14 declared; last recorded run 14 passed (Android Test Orchestrator, one process per test) |
-| Konsist (`konsistTest`) | 108 tests in 25 files |
+| Konsist (`konsistTest`) | 117 tests in 26 files |
 | Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard); recorded 2026-11-03, not re-run for this table |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.

@@ -158,7 +158,7 @@ private fun StatusMenu(
                     disabledContentColor = colors.textSecondary,
                 ),
         ) {
-            Icon(painterResource(R.drawable.ic_snooze), contentDescription = stringResource(R.string.issue_status_menu))
+            Icon(painterResource(R.drawable.ic_status), contentDescription = stringResource(R.string.issue_status_menu))
         }
         DropdownMenu(expanded, { expanded = false }) {
             for (status in state.statusOptions) {
