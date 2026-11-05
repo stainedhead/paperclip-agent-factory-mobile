@@ -72,7 +72,7 @@ internal fun Module.signalPorts() {
 
 /** The app lifecycle and the refresh policy: shared by the fake and the live graph, which differ in live events. */
 internal fun Module.lifecyclePorts() {
-    single { AppLifecycleBridge() }
+    single { AppLifecycleBridge(get()) }
     single<AppLifecycle> { get<AppLifecycleBridge>() }
     single { RefreshVisibleScreen(get(), get(), get()) }
 }

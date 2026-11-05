@@ -115,7 +115,7 @@ internal fun portsModule() =
         single<Clock> { FakeClock() }
         single<IdGenerator> { FakeIdGenerator("factory-") }
         single<InstanceRepository> { FakeInstanceRepository() }
-        single<SecretStore> { FakeSecretStore() }
+        single<SecretStore>(RawPort) { FakeSecretStore() }
         single<AppSettingsStore> { FakeAppSettingsStore() }
         single<Biometrics> { FakeBiometrics() }
         single<Connectivity> { FakeConnectivity() }
@@ -138,7 +138,8 @@ internal fun useCaseModule(allowInsecureLocal: Boolean) =
         single { DeviceAuthGuard(get()) }
         single { KeyRevoker(get()) }
         single { InstanceLocks() }
-        single { SignedOutMarker(get(), get()) }
+        sessionTokens()
+        single { SignedOutMarker(get(), get(), get()) }
         guardedGateways()
         single { KeyEnrollment(get(), get(), get(), get(), get(), get()) }
         instanceUseCases()

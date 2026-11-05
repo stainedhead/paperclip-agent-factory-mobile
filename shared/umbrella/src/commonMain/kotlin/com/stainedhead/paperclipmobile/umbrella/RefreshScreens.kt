@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.umbrella
 
+import com.stainedhead.paperclipmobile.application.auth.SessionTokens
 import com.stainedhead.paperclipmobile.application.refresh.RefreshSession
 import com.stainedhead.paperclipmobile.application.refresh.RefreshTarget
 import com.stainedhead.paperclipmobile.application.refresh.RefreshVisibleScreen
@@ -28,7 +29,9 @@ class RefreshScreens internal constructor(
  * (PRD FR-014, FR-090). [enterBackground] and [enterForeground] are the same calls spelled out. A shell that never
  * created an app state holder simply has no lock to tell.
  */
-class AppLifecycleBridge : AppLifecycle {
+class AppLifecycleBridge internal constructor(
+    private val tokens: SessionTokens,
+) : AppLifecycle {
     private val foreground = MutableStateFlow(true)
     private val shell = MutableStateFlow<AppStateHolder?>(null)
 
@@ -40,6 +43,8 @@ class AppLifecycleBridge : AppLifecycle {
     }
 
     fun setForeground(isForeground: Boolean) {
+        // The board token held for the unlock session ends with the foreground, before the lock is told (ADR-145).
+        if (!isForeground) tokens.forgetAll()
         foreground.value = isForeground
         shell.value?.onIntent(if (isForeground) AppIntent.CameToForeground else AppIntent.WentToBackground)
     }
