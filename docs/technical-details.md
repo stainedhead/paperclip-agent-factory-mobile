@@ -247,6 +247,8 @@ Each gate was shown to fail on a deliberate violation before it was trusted.
 
 The framework exports `presentation`, `application` and `domain`; `shared/testing` is not exported, so `PaperclipCore.createDemoGraph()` is the only demo entry.
 
+**Known iPhone UI-test state (checked 2026-11-04, specs/261104-phase-2a-android-ui-auto-review).** The same results appear on the commit before the Phase 2a review fixes and at HEAD, so neither is a regression. On the iPhone 17 simulator the full `./scripts/ios-test.sh` runs 132 XCUITests: 116 pass and 16 fail, every one a `testAccessibilityAudit*` (the non-blocking audit set of ADR-094; "Contrast failed for SwiftUI.AccessibilityNode"); every functional test passes. The script's default device is the first available iPhone on the newest runtime, which on the development machine is a custom "iPhone Duo" simulator (device type `iPhone19,4`, iOS 27.2) that exists only there; on it `AgentsUITests` fails 3 of 3 (the tab bar never appears), also before the fixes. Use `IOS_SIMULATOR_ID=<iPhone 17 udid>` locally. CI uses the standard iPhone simulator.
+
 ### Swift-facing rules
 
 The Swift interop review (acceptance criterion 6, in the spec's implementation notes) found these rules, several enforced by Konsist:

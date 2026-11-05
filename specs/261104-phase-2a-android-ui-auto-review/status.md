@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Complete |
 | Phase 2 Architecture and plan | Complete |
 | Phase 3 Task breakdown | Complete |
-| Phase 4 Implementation (Groups 1 to 5) | Group 1 done (shared core); Groups 2 to 5 not started |
+| Phase 4 Implementation (Groups 1 to 5) | Groups 1 to 4 done; Group 5 not started |
 | Phase 5 Completion and archive | Not Started |
 
 Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC-2 (R-012) are in force; owner may overturn.
@@ -53,14 +53,14 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [x] T-021 R-021 (P2) Locking probably disposes the tab shell without clearing back-stack entry ViewModels (Group 3: the verify-first test CONFIRMED the leak (pushed and root holders stayed open after a lock): test a2e9d41 (red), fix 2fad9ad; popping the controllers did not work (the pop transition never completes without a NavHost in composition), so the shell gives its navigation its own activity-scoped ViewModelStore (ShellStore), cleared when the shell leaves composition except for a configuration change; unlock lands on the tab root)
 - [x] T-022 R-022 (P2) Inbox "Open in web" door bypasses `WebOpener`, can crash with no browser, and can be an inert button (Group 3: tests 06646ed (red); fix 6e1b1ff: the card opens through WebOpener (button and card tap), a failure says so on the card, a card without a usable https address has no web button; Konsist rule forbidding LocalUriHandler/openUri in androidApp with a planted-violation test; Konsist count 108)
 - [x] T-032 R-032 (P2) The Agents and Work lists are not lazy (Group 3: test 585a83a (red); fix 28de7e3: LazyColumn with keys and contentType in both lists, the Work search text hoisted above the list; the screenshot tests wait for the count line instead of a row below the screen; verifyRoborazziDebug passes with NO baseline change)
-- [ ] T-014 R-014 (P2) The Konsist merged-manifest rules can pass stale locally on a dependency bump
-- [ ] T-015 R-015 (P2) A release can silently ship debug-signed
-- [ ] T-016 R-016 (P2) CI concurrency group lets the nightly benchmark and `push` runs cancel each other
-- [ ] T-017 R-017 (P2) Konsist guards are weaker than they read
-- [ ] T-020 R-020 (P2) A mutable-state rule is checked by tests that cannot fail
-- [ ] T-030 R-030 (P2) Test gaps against the Android PRD acceptance criteria
-- [ ] T-031 R-031 (P2) Roborazzi uses the default pixel-change threshold
-- [ ] T-035 R-035 (P2) TDD evidence for security code is weaker than the notes imply
+- [x] T-014 R-014 (P2) The Konsist merged-manifest rules can pass stale locally on a dependency bump (Group 4: test a9f2238 (script, red), fix 29fa383; konsistTest takes the merged manifests, app build files, R8 rules and catalog as inputs; scripts/test-konsist-inputs.sh proves catalog, proguard and app-build each re-run it)
+- [x] T-015 R-015 (P2) A release can silently ship debug-signed (Group 4: tests 1fb6e0b, fix c5b1975; verifyReleaseSigning on packageRelease: CI without upload key needs PAFM_ALLOW_DEBUG_SIGNED_RELEASE=1, half-set key refused; local build allowed with a warning)
+- [x] T-016 R-016 (P2) CI concurrency group lets the nightly benchmark and `push` runs cancel each other (Group 4: test 2766e78, fix c5b1975)
+- [x] T-017 R-017 (P2) Konsist guards are weaker than they read (Group 4: tests 1292bf2, 1fb6e0b, fix a29be9f: whole-call scan incl. handle.set; demo entry test covers benchmark and nonMinified by inheritance)
+- [x] T-020 R-020 (P2) A mutable-state rule is checked by tests that cannot fail (Group 4: test 88a835f, fix 329ddc8; FakeRunGateway.cancelElsewhere and DemoControls.cancelRunElsewhere; fails under a no-refresh mutation; the vacuous assertion is gone)
+- [x] T-030 R-030 (P2) Test gaps against the Android PRD acceptance criteria (Group 4: tests 23b972b, fix 094c39d; PARTIAL: see implementation-notes for the demoted large-font, error-state, pseudo-locale and Viewer-role swipe items)
+- [x] T-031 R-031 (P2) Roborazzi uses the default pixel-change threshold (Group 4: test 8d67057, fix cf693a4; changeThreshold 0 through captureBaseline, flag glyph for the Issue status menu, 4 baselines re-recorded)
+- [x] T-035 R-035 (P2) TDD evidence for security code is weaker than the notes imply (Group 4: recorded as a known deviation in implementation-notes; nothing to enforce in Konsist or CI)
 - [ ] T-039 R-039 (P2) Documentation claims that are false or stale
 - [ ] T-040 R-040 (P2) `status.md` is stale and the acceptance mapping is `[TBD]`
 - [ ] T-038 R-038 (P2) Attachments are not openable on either platform
