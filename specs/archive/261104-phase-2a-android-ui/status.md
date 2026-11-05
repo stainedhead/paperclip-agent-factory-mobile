@@ -9,11 +9,11 @@ Update this file after every task and phase. It is the single source of progress
 | Phase | State |
 |---|---|
 | Phase 0 Specification | Complete (review run 2026-11-04, gaps resolved in the spec files) |
-| Phase 1 Research and data model | Not Started (initial `research.md` and `data-dictionary.md` drafted) |
-| Phase 2 Architecture and plan | Not Started (drafts exist) |
-| Phase 3 Task breakdown | Not Started (draft in `tasks.md`) |
-| Phase 4 Implementation | Not Started |
-| Phase 5 Completion and archive | Not Started |
+| Phase 1 Research and data model | Complete (`research.md`, `data-dictionary.md`) |
+| Phase 2 Architecture and plan | Complete (`architecture.md`, `plan.md`) |
+| Phase 3 Task breakdown | Complete (`tasks.md`) |
+| Phase 4 Implementation | Complete for milestones 2a-0 to 2a-8 and T9.1 to T9.3; T9.4 (review) was done as `specs/261104-phase-2a-android-ui-auto-review` and its fixes; the R-009 hardware evidence below is outstanding |
+| Phase 5 Completion and archive | The directory is already under `specs/archive/`, but the spec is **not closed**: the R-009 evidence record below has no result yet |
 
 ## Phase 0 checklist
 
@@ -86,13 +86,13 @@ Update this file after every task and phase. It is the single source of progress
   - [x] T8.7 Merged-manifest permission / exported-component test (exact permission set, three build types, APK check with aapt2); the manual Pixel and Samsung BiometricPrompt and StrongBox pass is NOT done (no such devices here)
   - [x] T8.8 End-to-end demo-flow test (criterion 2): 14 connected tests on the Pixel_9_Pro emulator, all passing (ADR-136)
   - [x] T8.9 Emulator live-graph smoke (criteria 4, 5, 6): everything that needs no server executed and passing; the pairing against the pinned server was NOT executed (Docker daemon would not start here); fingerprint enrolment and the system prompt on a destructive action were NOT proven (ADR-137)
-- [ ] 2a-9 Documentation, screenshots, release gate
+- [x] 2a-9 Documentation, screenshots, release gate (T9.4 was carried out as the auto-review spec; the closing gate is the R-009 evidence record)
   - [x] T9.1 README, product-summary, product-details (Android column naming the proving tests and the parity ledger), technical-details (current counts), AGENTS.md (Android UI test row, android.yml row, device-test row), ADR-138
   - [x] T9.2 `user-docs/` Android notes; 20 Roborazzi images copied to `docs/images/android-*.png`, 8 to `user-docs/images/` (demo only, never pairing)
-  - [ ] T9.3 Map main PRD acceptance criteria 1 to 9 and 11 to 13 to named Android tests in `status.md`
-  - [ ] T9.4 Close status, run `/dev-flow:review-code`, fix findings one commit each, archive the spec
+  - [x] T9.3 Map main PRD acceptance criteria 1 to 9 and 11 to 13 to named Android tests in `status.md` (done in Group 5 of the review spec; criteria whose proof needs hardware say "pending R-009 item N")
+  - [x] T9.4 `/dev-flow:review-code` was run; its findings are the 40 requirements of `specs/261104-phase-2a-android-ui-auto-review`, fixed one commit group each; archiving waits for the R-009 evidence record
 
-- 2026-11-04: milestone 2a-7 implemented (T7.1 to T7.3): Work list, Issue (header, subtasks, Thread, Plan, Runs, Files, comment bar, status and assignee menus), the five interaction forms and the web-app door for unsupported kinds, placeholders removed. Gates: spotlessCheck, detekt, lint, konsistTest, allTests, :androidApp:testDebugUnitTest (482, 0 failures), :androidApp:verifyRoborazziDebug (55 baselines, 6 new), assembleDebug and assembleRelease. Emulator smoke on Pixel_9_Pro (demo): Work list and a subtask's Issue. Attachments cannot be opened (no shared port, ADR-064): reported. ADR-131.
+- 2026-11-04: milestone 2a-7 implemented (T7.1 to T7.3): Work list, Issue (header, subtasks, Thread, Plan, Runs, Files, comment bar, status and assignee menus), the five interaction forms and the web-app door for unsupported kinds, placeholders removed. Gates: spotlessCheck, detekt, lint, konsistTest, allTests, :androidApp:testDebugUnitTest (482, 0 failures), :androidApp:verifyRoborazziDebug (55 baselines at the time, 6 new), assembleDebug and assembleRelease. Emulator smoke on Pixel_9_Pro (demo): Work list and a subtask's Issue. Attachments cannot be opened (no shared port, ADR-064): reported. ADR-131.
 
 - 2026-11-04: milestone 2a-8 completed (T8.6, T8.8, T8.9). `:androidApp:benchmark` with baseline profile and nightly CI job (ADR-135), 14 connected demo-flow tests (ADR-136), live proofs that need no server plus an unrun pairing script (ADR-137). Measured: cold start to the Inbox with content 307 ms median of 10 on the emulator; the 5% jank budget is not met on the emulator. The pairing against the pinned server, fingerprint enrolment and the real prompt on a destructive action were not executed.
 
@@ -105,7 +105,17 @@ Update this file after every task and phase. It is the single source of progress
 | 5 A decision with three options shows each option's effects; choosing one calls `decide`, then shows per-effect results | `DecisionScreenTest.everyOptionShowsItsEffectsBeforeAnythingIsChosen`, `aNonDestructiveChoiceGoesThroughWithoutAskingTheDeviceOwnerAndShowsWhatHappened`, `aDestructiveChoiceWaitsForTheDeviceOwnerAndDoesNothingWhenTheyCancel`; `DecisionVariantsTest.aPartialRunShowsEachEffectWithItsOwnStatusAndWhyOneWasSkipped` | Passing (2a-5) |
 | 6 Every inline Inbox action resolves the item and the badge count updates without a manual refresh | `InlineActionsBadgeTest.approvingKeepingPausedAndRejectingEachResolveTheirCardAndTheBadgeFollows`; `BudgetSheetTest` (raise and keep paused from the sheet) | Passing (2a-5) |
 | 7 An `ask_user_questions` interaction can be answered on the phone and the answer appears in the web app thread | `InteractionFlowTest.answeringValidatesLiveOneQuestionAtATimeAndAChoiceReplacesTheOneBeforeIt`, `aTypedAnswerInPlaceOfAnOptionCompletesTheSecondQuestionAndKeepsEveryCharacter`, `sendingTheAnswersMarksTheCardAnsweredAndTheQuestionLeavesTheInboxFeed` (demo graph, real holder, the demo `onAnswered` hook); `InteractionCardTest` (the other four kinds and the unsupported kind) | Android half passing (2a-7): the answer goes through the shared holder to the gateway, the card reads Answered and the Inbox feed drops the question. "Appears in the web app thread" needs a real server: T8.9 and the shared contract tests for `respond` |
-| 1 to 4, 8, 9, 11 to 13 | [TBD] | Not Started |
+| 1 Two factories added by URI, paired, switched between; each key only in the Keystore | `FactoriesScreenTest.tappingAFactorySwitchesTheAppToIt`, `ShellFlowsTest.anotherCompanyAndAnotherFactoryAreSwitchedTo` (connected); pairing hand-off: `CustomTabsPairingBrowserTest`, `PairingRoutingTest`, `EditFactoryScreenTest.pairingAgainSignsAnExpiredFactoryInAgain`; key location: `SecretsAbsentDeviceTest.theBoardKeyIsInNoFileOfTheAppNotEvenTheDatabase` (device) | Android half passing. **Pending R-009 item 1**: a pairing against the pinned server, one over Tailscale and one over public https, and an inspected backup |
+| 2 `local_trusted` refused with an explanation; `http://` refused in a release build | `http`: `AndroidLiveGraphDeviceTest.aReleaseGraphRefusesAStoredHttpAddressBeforeAnyRequest` (device), `CustomTabsPairingBrowserTest` (an address that is not https is refused before any browser is asked), `EditFactoryScreenTest.eachAddressIssueIsSaidInWordsAsTheAddressIsTyped`; `local_trusted`: the refusal text exists (`KeyLabelsTest.everyProbeRefusalHasText`) and the rule is shared (`FirstRunStateHolderTest`, `InstanceUseCasesTest`) | `http` passing. **Gap, not proven on Android**: no Android screen test renders the `local_trusted` refusal text, and the pinned test server runs authenticated only. Pending R-009 item 1 for the live half |
+| 3 Deleting a factory removes its config, cache and secrets and revokes its key | `ManageFactoriesScreenTest.removingAsksConfirmationWithWhatItDeletesAndNothingGoesBeforeTheDeviceOwnerAgrees`, `EditFactoryScreenTest.removingAsksConfirmationThenTheDeviceOwnerAndACancelledPromptRemovesNothing`, `PairedDevicesScreenTest.revokingAnotherKeyAsksFirstThenRemovesItFromTheList`; the deletion and the revoke are shared (`RemoveInstanceTest`, `KeyUseCasesTest`) | Android half passing. **Pending R-009 item 1**: the revoke against a real server |
+| 4 With biometrics on, rejecting an approval and pausing an agent each need the device owner; a new fingerprint forces a re-pair | `ApprovalScreenTest.rejectingNeedsANoteThenTheDeviceOwnerAndStaysOpenIfTheyCancel`, `AgentDetailScreenTest.pauseAsksFirstThenWaitsForTheDeviceOwnerAndChangesNothingWhenTheyCancel`, `ConfirmSheetsTest`, `AgentLockSemanticsTest`; connected: `AttentionFlowsTest`, `OperationsFlowsTest`; keys: `KeystorePerUseDeviceTest`, `KeystoreInvalidationDeviceTest` | Prompt logic passing on the demo graph, whose prompt is scripted. **Pending R-009 items 2 and 3**: the real system prompt with an enrolled fingerprint and a real new-fingerprint invalidation |
+| 8 Cancelling a running run moves it to `cancelled` within one refresh cycle | `RunRefreshTest` (the cancel from the viewer, and, since R-020, a run cancelled elsewhere through `DemoControls.cancelRunElsewhere` that shows as cancelled after one five second refresh; the timer in virtual time, the holder's own work in real time), `RunViewerScreenTest.cancelMovesTheRunToCancelledWhenTheDeviceOwnerApprovesAndTheButtonGoes`; connected: `OperationsFlowsTest` | Passing on the demo graph. Not shown against a real server (the cancel endpoint is covered by the shared contract tests) |
+| 9 With the network off every read screen shows cached data with its timestamp and actions are disabled | `InboxScreenTest.offlineTheActionsAreDisabledWithTheirReasonAndOpeningStillWorks`, `InboxVariantsTest.offlineWithNothingSavedExplainsInsteadOfShowingABlankScreen`, `FactoryHomeScreenTest.offlineKeepsWhatWasLoadedAndSaysHowOldItIs`, `AgentsScreenTest.offlineKeepsTheListSaysSoAndOffersNoButtons`, `RunViewerScreenTest.offlineKeepsTheRunAndDisablesCancelWithItsReason`, `IssueScreenTest.offlineKeepsTheIssueDisablesTheBarAndSaysWhy`, `WorkListScreenTest.offlineKeepsTheRowsSaysSoAndOffersNoNewIssue`, `DecisionScreenTest.offlineTheChoiceIsDisabledWithItsReason`, `ApprovalScreenTest.offlineTheActionsGoWithTheirReasonAndThePayloadStays`, `FactoriesScreenTest.offlineTheListShowsTheLastLoadedFactoriesWithTheirAge`; the connectivity adapter: `ConnectivityDeviceTest` (airplane mode, emulator) | Passing. Online means the default network declares internet access, validated or not (ADR-142); an unvalidated network is therefore not offline. Tailscale-only: pending R-009 item 1 |
+| 11 First launch with no factory: setup adds and pairs a factory and lands on its Inbox; the demo works with no network | `MainActivityTest.theFirstRunFlowCanBeWalkedToItsEnd`, `MainActivityTest.aDemoLaunchWithNoFactoryReachesFirstRunAndTryTheDemoFactoryReachesTheInboxShell`, `FirstRunBackTest`; connected: `ShellFlowsTest.theFirstRunFlowIsWalkedFromTheAddressToTheInbox`, `ShellFlowsTest.theDemoFactoryCanBeTriedFromTheFirstRunScreen` | Passing on the demo graph (every pairing approved by the scripted browser). **Pending R-009 item 1** for a real pairing |
+| 12 Removing a factory asks confirmation and device authentication, deletes config, cache and secrets, and the next factory becomes active | `ManageFactoriesScreenTest.removingAsksConfirmationWithWhatItDeletesAndNothingGoesBeforeTheDeviceOwnerAgrees`, `ManageFactoriesScreenTest.decliningTheConfirmationRemovesNothingAndAsksNoOne`, `EditFactoryScreenTest.removingAsksConfirmationThenTheDeviceOwnerAndACancelledPromptRemovesNothing`; shared `RemoveInstanceTest` | Confirmation and device authentication passing. **Gap**: no named test asserts that the next factory becomes the active one after a removal |
+| 13 Renaming the device changes the name for new pairings only; the server profile is shown read-only | `SettingsScreenTest.theDeviceNameIsSavedWhenTheKeyboardIsDone`, `SettingsScreenTest.anEmptyDeviceNameIsRefusedInWords`, `SettingsScreenTest.thePhoneAndEveryFactoryAreShownAsInTheMock` | The rename is passing. **Gap**: "new pairings only" (a key already issued keeps its old name) and the read-only server profile are not asserted by an Android test; the app has no control that edits the profile |
+
+Every test class named in this file must exist (`DocumentedCountsRulesTest` in `konsistTest` checks it), and an unfilled placeholder marker fails the build.
 
 Wording check (2a-7): the main PRD's criterion 7 is the `ask_user_questions` one above; tasks.md T7.3 points at it. The Android PRD's own criterion 7 is about lifecycle (holders closed on leaving, kept on rotation) and belongs to T3.2 and T8.x, not to the Work and Issue milestone.
 
@@ -119,6 +129,25 @@ Measured 2026-11-04 on the Pixel_9_Pro AVD (`sdk_gphone64_arm64`, API 37, arm64,
 | Cold start to the Inbox with content (`timeToFullDisplayMs`), median of 10, with baseline profile | 307.4 ms (min 245.7, max 339.1) | under 1.5 s | Within budget on this emulator. The demo Inbox is in memory, so no network or database read is included. |
 | Same, no profile (`CompilationMode.None`) | TTID 228.6 ms, full display 356.3 ms | | The profile saves about 49 ms (14%) at full display; TTID is within noise. |
 | Fling over 209 Inbox cards, 5 runs of 10 flings, `FrameTimingMetric` | 2502 frames; 67% overran their deadline, 55% took over 16.7 ms of CPU, 11% over 33.3 ms; CPU P50 17.0 ms, P90 34.0, P99 42.6 | at most 5% janky | **Not met on this emulator.** An emulator renders through the host GPU stack and says little about a phone, but the figure is a regression baseline and an open item for the Pixel 6 run and the release gate. Not investigated further. |
+
+Update after the review fixes (R-008, Group 3, 2026-11-04, same emulator, `scripts/run-benchmarks.sh`, 5 flings in two directions, about 2530 frames): the 67% above was measured without waiting for the Inbox content; with the wait the fling had 52.4% of frames over their deadline (CPU P50 9.1 ms, P90 34.1 ms) and after the fixes 40.7% (P50 7.8 ms, P90 25.9 ms); cold start to the Inbox with content 315.4 ms (median of 10). The 5% budget is still not met on the emulator; the Pixel 6 run (R-009 item 8) decides.
+
+## R-009 evidence record (owner hardware and CI; the steps are in `docs/android-verification-checklist.md`)
+
+No item has a result yet. Replace "Not run" with the dated line (date, device and API, pass or fail, one line of output) copied from the checklist; a failure is a new finding and blocks closing this spec.
+
+| # | Evidence | Result |
+|---|---|---|
+| 1 | Live pairing against the pinned server (`scripts/android-live-pairing.sh`, then `android-live-smoke.sh`), also over Tailscale | Not run |
+| 2 | Real key invalidation after a fingerprint enrolment (and the two lock-screen phase tests) | Not run |
+| 3 | System BiometricPrompt on Pause, Cancel run, Reject, budget raise; "another app authenticated a moment ago" | Not run |
+| 4 | Prompts per refresh with app lock on (feeds ADR-144, an open owner decision) | Not run |
+| 5 | TalkBack walkthrough including text fields and live regions | Not run |
+| 6 | StrongBox (`KeyInfo`), or the recorded TEE fallback | Not run |
+| 7 | API 28 and API 33 emulators: `connectedDebugAndroidTest`, protected secret on 28, predictive back on 33 | Not run |
+| 8 | Pixel 6 and Samsung runs; Pixel 6 benchmark (`PAFM_BENCHMARK_ALLOW_EMULATOR=0`) | Not run |
+| 9 | First hosted `android.yml` run | Not run |
+| 10 | iPhone UI tests on a standard simulator instead of "iPhone Duo" | Not run |
 
 ## End-to-end demo flows (T8.8, main PRD acceptance criterion 2)
 
@@ -166,7 +195,7 @@ Run 2026-11-04 on the Pixel_9_Pro AVD (API 37, arm64, PIN 1234 set).
 
 ## Blockers
 
-None.
+None for the code. The R-009 evidence record above needs the owner's hardware, a Docker daemon and hosted CI.
 
 ## Recent activity
 
