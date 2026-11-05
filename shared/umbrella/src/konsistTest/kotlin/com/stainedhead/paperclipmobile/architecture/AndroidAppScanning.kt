@@ -54,3 +54,13 @@ private val SECRET_WORD = Regex("""secret|reveal|token|approvalUrl|boardKey|pass
  */
 internal fun secretsInSavedState(source: String): List<String> =
     codeLines(source).filter { SAVING_API.containsMatchIn(it) && SECRET_WORD.containsMatchIn(it) }
+
+private val TEMPLATE_GLUE = Regex(""""[^"\n]*\$\{?[\w.()]+\}?\s?[.:,;·-]\s\$\{?[\w.(]""")
+private val DOT_SEPARATOR = Regex("""joinToString\(\s*(?:"\s*·\s*"|SEPARATOR)|const val SEPARATOR\b""")
+
+/**
+ * Lines that build a user-facing sentence from parts in code: a template with punctuation between two values, or a
+ * list joined with a hard-wired separator. Punctuation and order belong in a string resource (R-029).
+ */
+internal fun gluedSentences(source: String): List<String> =
+    codeLines(source).filter { TEMPLATE_GLUE.containsMatchIn(it) || DOT_SEPARATOR.containsMatchIn(it) }
