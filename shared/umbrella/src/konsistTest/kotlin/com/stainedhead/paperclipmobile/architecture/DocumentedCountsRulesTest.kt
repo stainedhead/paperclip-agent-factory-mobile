@@ -119,13 +119,14 @@ class DocumentedCountsRulesTest {
                 .toSet()
         val named = Regex("`([A-Z][A-Za-z0-9]*Tests?)[.`]").findAll(status).map { it.groupValues[1] }.toSet()
         Assertions.assertTrue(
-            named.size > 20,
+            named.size > MIN_NAMED_CLASSES,
             "the scan found only ${named.size} test classes: it would pass vacuously",
         )
         Assertions.assertEquals(emptySet<String>(), named - sources, "classes named in status.md that do not exist")
     }
 
     private companion object {
+        const val MIN_NAMED_CLASSES = 20
         val STALE = 37 to 10
         val CURRENT = 71 to 17
         val PLANTED = 3 to 2
