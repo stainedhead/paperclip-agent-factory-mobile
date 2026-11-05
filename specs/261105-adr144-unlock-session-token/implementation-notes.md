@@ -1,0 +1,9 @@
+# Implementation notes
+
+- The advisor review flagged two traps that shaped the code: `StoredCredentials` and `CheckCredentials` wipe the `Secret` they are given, so the cache must hand out copies (`Secret.copy()`, `chars.copyOf()`, no `String`); and a read in flight (prompt up) can finish after a `put` or a background clear, so every entry carries a per-factory generation plus an epoch for "all" and a stale read is not kept.
+- `AppLifecycleBridge.setForeground` is not suspending, so the state is one immutable value in a `MutableStateFlow` (the `AppStateHolder` pattern). A reader copies the held secret and then checks it is still the held entry, because a clear wipes only after removing.
+- The lock engages only at process start and in `relock()` (needs `backgroundedAt`), so the background clear always precedes it; there is no foreground idle timer, so no extra hook was added.
+- Unlock (requirement 7): not built. A read can replace the unlock prompt only if the store attests that this read authenticated the person; `Found` alone can be an unprotected token (app lock turned on after pairing, `UpdateAppSettings` does not re-wrap) or a cache hit. It needs a port change in `SecretStore`, both real stores, the fake and the contract, and makes the Android unlock stricter (strong biometric instead of weak). Measured by reading the code: unlock = lock prompt + first protected read = two prompts; later refreshes none.
+- `SecretStoreContract` runs against the decorator with `createProtected = null` (the contract's protected cases describe device stores). The Keystore store keeps proving ADR-139.
+- iOS: `SecurityKeychain.read` builds a fresh `LAContext` per read, so the Keychain prompted per call before; not observed on a simulator or device.
+- Detekt `TooManyFunctions` forced the split into `SessionTokenMemory`; no rule was changed.
