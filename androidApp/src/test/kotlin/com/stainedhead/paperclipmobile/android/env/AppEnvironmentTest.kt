@@ -188,7 +188,13 @@ class AppEnvironmentTest {
 
     @Test
     fun `a failure while opening in the background still shows the notice and try again opens again`() {
-        val provider = ScriptedProvider(GraphMode.Live, listOf(::unavailable, ::demoOpen))
+        // The second open waits for the test, so "opening" is observable however fast the background thread is.
+        val release = CountDownLatch(1)
+        val secondOpen = {
+            release.await(BLOCK_SECONDS, TimeUnit.SECONDS)
+            demoOpen()
+        }
+        val provider = ScriptedProvider(GraphMode.Live, listOf(::unavailable, secondOpen))
         val environment =
             AppEnvironment(provider, scope, demoEntryAvailable = true, opening = GraphOpening(Dispatchers.Default))
                 .also { environments += it }
@@ -197,6 +203,7 @@ class AppEnvironmentTest {
         failed.notice shouldBe StartupNotice.LiveGraphUnavailable
         environment.retryLaunch()
         environment.session.value.isOpening shouldBe true
+        release.countDown()
         val opened = runBlocking { withTimeout(WAIT_MILLIS) { environment.session.first { !it.isOpening } } }
 
         opened.graph.shouldNotBeNull()
