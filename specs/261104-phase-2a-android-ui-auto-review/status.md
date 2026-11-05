@@ -63,7 +63,7 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [x] T-035 R-035 (P2) TDD evidence for security code is weaker than the notes imply (Group 4: recorded as a known deviation in implementation-notes; nothing to enforce in Konsist or CI)
 - [ ] T-039 R-039 (P2) Documentation claims that are false or stale
 - [ ] T-040 R-040 (P2) `status.md` is stale and the acceptance mapping is `[TBD]`
-- [ ] T-038 R-038 (P2) Attachments are not openable on either platform
+- [x] T-038 R-038 (P2) Attachments are not openable on either platform (Group 5, DESIGN ONLY as the PRD says: ADR-143 records the port, the cache rules and the platform shares; no code. The limitation is stated in docs/product-details.md (parity ledger) and user-docs/troubleshooting.md. Follow-up work items, NOT filed as hosted issues because that is an external action the run was not asked to take: (1) shared PR: `AttachmentGateway` port, `OpenAttachment` use case, fake, real adapter over `IssueGatewayAdapter.attachmentContent`, contract test with no token in the cache path; (2) Android PR: `AttachmentCache`, non-exported `FileProvider`, the Konsist provider rule change, `ACTION_VIEW`; (3) iPhone PR: QuickLook with a protected temp file. The owner decides the size limit, "open in other app" and cache encryption)
 - [ ] T-009 R-009 (P1) Acceptance evidence that has never been produced (needs the owner's hardware and CI)
 
 ## Blockers
