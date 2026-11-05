@@ -72,4 +72,33 @@ class AndroidAppHygieneRulesTest {
             secretsInSavedState(source),
         )
     }
+
+    @Test
+    fun `the app opens no web address through the platform uri handler`() {
+        assertClean(
+            ::uriHandlerUse,
+            "androidApp must open web addresses through WebOpener (https only), not LocalUriHandler",
+        )
+    }
+
+    @Test
+    fun `the uri handler scan flags the handler and the local and ignores comments`() {
+        val source =
+            """
+            // LocalUriHandler is not used here
+            import androidx.compose.ui.platform.LocalUriHandler
+            val uriHandler = LocalUriHandler.current
+            uriHandler.openUri(url)
+            val opener = currentWebOpener()
+            """.trimIndent()
+
+        Assertions.assertEquals(
+            listOf(
+                "import androidx.compose.ui.platform.LocalUriHandler",
+                "val uriHandler = LocalUriHandler.current",
+                "uriHandler.openUri(url)",
+            ),
+            uriHandlerUse(source),
+        )
+    }
 }

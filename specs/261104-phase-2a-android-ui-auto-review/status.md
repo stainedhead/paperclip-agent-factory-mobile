@@ -51,7 +51,7 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [ ] T-008 R-008 (P1) The Inbox fling misses the PRD jank budget (67% janky frames vs 5%)
 - [ ] T-018 R-018 (P2) Graph opening runs on the main thread in `onCreate`
 - [x] T-021 R-021 (P2) Locking probably disposes the tab shell without clearing back-stack entry ViewModels (Group 3: the verify-first test CONFIRMED the leak (pushed and root holders stayed open after a lock): test a2e9d41 (red), fix HASH21; popping the controllers did not work (the pop transition never completes without a NavHost in composition), so the shell gives its navigation its own activity-scoped ViewModelStore (ShellStore), cleared when the shell leaves composition except for a configuration change; unlock lands on the tab root)
-- [ ] T-022 R-022 (P2) Inbox "Open in web" door bypasses `WebOpener`, can crash with no browser, and can be an inert button
+- [x] T-022 R-022 (P2) Inbox "Open in web" door bypasses `WebOpener`, can crash with no browser, and can be an inert button (Group 3: tests 06646ed (red); fix HASH22: the card opens through WebOpener (button and card tap), a failure says so on the card, a card without a usable https address has no web button; Konsist rule forbidding LocalUriHandler/openUri in androidApp with a planted-violation test; Konsist count 108)
 - [ ] T-032 R-032 (P2) The Agents and Work lists are not lazy
 - [ ] T-014 R-014 (P2) The Konsist merged-manifest rules can pass stale locally on a dependency bump
 - [ ] T-015 R-015 (P2) A release can silently ship debug-signed

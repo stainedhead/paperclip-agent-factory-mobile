@@ -60,3 +60,9 @@ private val SECRET_WORD = Regex("""secret|reveal|token|approvalUrl|boardKey|pass
  */
 internal fun secretsInSavedState(source: String): List<String> =
     appCodeLines(source).filter { SAVING_API.containsMatchIn(it) && SECRET_WORD.containsMatchIn(it) }
+
+private val URI_HANDLER = Regex("""LocalUriHandler|\bUriHandler\b|\.openUri\(""")
+
+/** Lines that use the platform URI handler: it opens any scheme and throws without a browser (R-022). */
+internal fun uriHandlerUse(source: String): List<String> =
+    appCodeLines(source).filter { URI_HANDLER.containsMatchIn(it) }

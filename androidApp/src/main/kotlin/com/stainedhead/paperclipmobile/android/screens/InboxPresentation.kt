@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import com.stainedhead.paperclipmobile.android.pairing.acceptablePage
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.android.shell.AppSheet
 import com.stainedhead.paperclipmobile.presentation.InboxItemUi
@@ -10,8 +11,6 @@ import com.stainedhead.paperclipmobile.presentation.SourceKindUi
  * Lookups the Inbox needs and nothing more (AND-030): where a card goes, which navigation button goes with its kind,
  * and the words that join. Which actions exist, in which order and for which role is the shared state's.
  */
-
-private const val HTTPS = "https://"
 
 /** Where a tapped card goes: a pushed route, the budget sheet, the web app, or nowhere. */
 sealed interface InboxDestination {
@@ -66,7 +65,9 @@ fun inboxDestination(item: InboxItemUi): InboxDestination =
         }
 
         OpenKindUi.WebOnly -> {
-            item.webUrl?.takeIf { it.startsWith(HTTPS) }?.let { InboxDestination.Web(it) } ?: InboxDestination.None
+            item.webUrl
+                ?.let { acceptablePage(it, allowsInsecureLocal = false) }
+                ?.let { InboxDestination.Web(it) } ?: InboxDestination.None
         }
     }
 

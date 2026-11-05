@@ -25,7 +25,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -84,7 +83,6 @@ fun InboxScreen(
         return
     }
     val state by current.state.collectAsStateWithLifecycle()
-    val uriHandler = LocalUriHandler.current
     var budgetIncident by rememberSaveable { mutableStateOf<String?>(null) }
     var appeared by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
@@ -104,11 +102,8 @@ fun InboxScreen(
                 }
             }
 
-            is InboxDestination.Web -> {
-                uriHandler.openUri(destination.url)
-            }
-
-            InboxDestination.None -> {
+            // The web door belongs to the card: it opens through WebOpener and says on the card when it could not.
+            is InboxDestination.Web, InboxDestination.None -> {
                 Unit
             }
         }
