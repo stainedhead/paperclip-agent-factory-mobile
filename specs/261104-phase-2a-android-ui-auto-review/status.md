@@ -12,7 +12,7 @@ Update this file after every task and phase. It is the single source of progress
 | Phase 1 Research and data model | Complete |
 | Phase 2 Architecture and plan | Complete |
 | Phase 3 Task breakdown | Complete |
-| Phase 4 Implementation (Groups 1 to 5) | Groups 1 to 4 done; Group 5 not started |
+| Phase 4 Implementation (Groups 1 to 5) | Groups 1 to 5 done in code and docs; T-009 (R-009 evidence) is packaged and waits for the owner's hardware |
 | Phase 5 Completion and archive | Not Started |
 
 Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC-2 (R-012) are in force; owner may overturn.
@@ -61,16 +61,18 @@ Counts: 40 tasks · P0 0 · P1 9 · P2 31. Run assumptions DEC-1 (R-004) and DEC
 - [x] T-030 R-030 (P2) Test gaps against the Android PRD acceptance criteria (Group 4: tests 23b972b, fix 094c39d; PARTIAL: see implementation-notes for the demoted large-font, error-state, pseudo-locale and Viewer-role swipe items)
 - [x] T-031 R-031 (P2) Roborazzi uses the default pixel-change threshold (Group 4: test 8d67057, fix cf693a4; changeThreshold 0 through captureBaseline, flag glyph for the Issue status menu, 4 baselines re-recorded)
 - [x] T-035 R-035 (P2) TDD evidence for security code is weaker than the notes imply (Group 4: recorded as a known deviation in implementation-notes; nothing to enforce in Konsist or CI)
-- [ ] T-039 R-039 (P2) Documentation claims that are false or stale
-- [ ] T-040 R-040 (P2) `status.md` is stale and the acceptance mapping is `[TBD]`
+- [x] T-039 R-039 (P2) Documentation claims that are false or stale (Group 5: tests 1b4fda5 (red), fix 806702a; predictive back fixed in code, `android:enableOnBackInvokedCallback="true"` with `tools:targetApi="33"` and `AndroidManifestBackRulesTest`; the deep-link scheme claim reworded in the archived Android PRD; `RefreshWhileVisible` KDoc; ADR range; criterion 8 wording; ADR-130 and ADR-132 corrections; Group 1 to 4 behaviour documented; konsistTest now takes README, docs and the archived status as inputs, which was a stale-pass bug found here: `scripts/test-konsist-inputs.sh docs` was red first; connected-test fix for the lazy Agents list)
+- [x] T-040 R-040 (P2) The archived Android `status.md` is stale and the acceptance mapping has placeholders (Group 5: tests 1b4fda5 (red), fix 21131c3; criteria 1 to 4, 8, 9, 11 to 13 mapped with honest gaps (no test for the `local_trusted` text on Android, the next factory after a removal, the rename on old keys, the read-only profile); progress table current; `DocumentedCountsRulesTest` fails on a placeholder or a test class that does not exist)
 - [x] T-038 R-038 (P2) Attachments are not openable on either platform (Group 5, DESIGN ONLY as the PRD says: ADR-143 records the port, the cache rules and the platform shares; no code. The limitation is stated in docs/product-details.md (parity ledger) and user-docs/troubleshooting.md. Follow-up work items, NOT filed as hosted issues because that is an external action the run was not asked to take: (1) shared PR: `AttachmentGateway` port, `OpenAttachment` use case, fake, real adapter over `IssueGatewayAdapter.attachmentContent`, contract test with no token in the cache path; (2) Android PR: `AttachmentCache`, non-exported `FileProvider`, the Konsist provider rule change, `ACTION_VIEW`; (3) iPhone PR: QuickLook with a protected temp file. The owner decides the size limit, "open in other app" and cache encryption)
-- [ ] T-009 R-009 (P1) Acceptance evidence that has never been produced (needs the owner's hardware and CI)
+- [ ] T-009 R-009 (P1) Acceptance evidence that has never been produced (needs the owner's hardware and CI) (Group 5 PACKAGED, NOT PRODUCED: bae86f0 `docs/android-verification-checklist.md` has commands, expected results and a result line for 10 items, and the archived Android `status.md` has the "R-009 evidence record" table, all "Not run". The box stays open until the owner records results. `android-live-pairing.sh` was re-read, `bash -n` passes, no bug provable without a run. Open owner decision ADR-144 (prompts per refresh) is documented, not implemented. Also found: the 2 connected flow tests broke on the lazy Agents list (R-032) and were fixed)
 
 ## Blockers
 
 None.
 
 ## Recent activity
+
+- 2026-11-05: Group 5 (docs and status) done: T-039, T-040, T-038 (design only), T-009 packaged. Gates observed: `./gradlew check lint --continue` green; konsistTest 121 tests in 27 files; androidApp 592 unit tests in 91 classes, 0 failures; device tests on Pixel_9_Pro (securestore 17 run, 3 skipped; platform 6; umbrella 9; androidApp connected 14), all passing after the fix above.
 
 - 2026-11-04: Group 1 (shared core) implemented: T-001, T-002, T-004, T-007 (shared half), T-010 to T-013, T-019 (shared half), T-024 (shared half). Open for the Group 2 and 3 agents: the androidApp halves named on the lines above, plus switching androidApp to the shared members (`RunStatusUi.isLive`, `AgentRowUi.visibleActions` and `offersViewRun`, `ToneUi` on the status enums, `FactoryStatusDecision`, `ExpiryDecision`, `DecideByUi.hintText`, `InboxState.isWorking`, `AgentDetailState.saveBudgetNeedsDeviceAuth`), the Roborazzi baselines for the lock glyph, `AgentDetailScreenTest` (a raise now prompts once) and an `AuthHost` that returns the prompt activity only while started.
 - 2026-11-04: spec created from the review PRD (`/dev-flow:create-spec`).

@@ -30,6 +30,8 @@ DEC-1 (R-004) and DEC-2 (R-012) are run assumptions the owner may overturn.
 - R-015: the PRD's guard is "opt-in or CI unset"; a local build (CI unset) is allowed and warns, CI needs `PAFM_ALLOW_DEBUG_SIGNED_RELEASE=1` (set in `android.yml`). The check is a task wired to `packageRelease`, so lint and debug builds never need it. A half-set upload key fails everywhere.
 - R-030: the audit exempts only Material's `ModalBottomSheet` scrim ("Close sheet") and drag handle ("Drag handle"), which have a name and a click but no role and no hook to add one. Demoted, not done: a large-font audit, an error-state audit, a pseudo-locale test (only an RTL Inbox audit was added), a Viewer-role swipe test (the gating is tested through offline, which sets the same `actionsDisabledReason`), and the Run viewer swipe test (the Run viewer has no swipe).
 
+- Group 5 (docs): predictive back was fixed in code (the manifest attribute, a Konsist rule per variant, `tools:targetApi="33"` for lint) rather than by rewording. The deep-link claim was reworded: the scheme is not registered. `konsistTest` did not list the documents its documentation rules read as inputs, so a docs-only edit left it UP-TO-DATE (the R-014 bug class); fixed with the inputs and a red case in `scripts/test-konsist-inputs.sh`. ADR-143 (attachments, design only) and ADR-144 (prompts per refresh, an open OWNER decision, not implemented) are new. No hosted issues were filed for the R-038 follow-ups (an external action). T-009 is packaged, not produced.
+
 ## Lessons learned
 
-[TBD]
+- A change that makes a list lazy breaks every connected test that taps a row below the fold; Robolectric screens are tall enough to hide it. The connected flows are the only check, so run them after UI-structure changes (R-032 broke two of 14).

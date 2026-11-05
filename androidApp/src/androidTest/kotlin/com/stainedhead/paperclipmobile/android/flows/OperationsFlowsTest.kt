@@ -1,7 +1,9 @@
 package com.stainedhead.paperclipmobile.android.flows
 
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
@@ -20,11 +22,18 @@ private const val NEW_ISSUE = "Rotate the webhook secret"
  */
 @RunWith(AndroidJUnit4::class)
 class OperationsFlowsTest : FlowTest() {
+    /** The Agents list is lazy (R-032): the row may not be composed until the list is scrolled to it. */
+    private fun tapEngineer1() {
+        waitFor { exists("agents-list") }
+        rule.onNodeWithTag("agents-list").performScrollToNode(hasTestTag("agent-row-$ENGINEER_1"))
+        tap("agent-row-$ENGINEER_1")
+    }
+
     @Test
     fun anAgentIsPausedAfterTheDeviceOwnerApprovesAndNothingChangesWhenTheyCancel() {
         launchDemo()
         openTab("Agents")
-        tap("agent-row-$ENGINEER_1")
+        tapEngineer1()
         waitFor { exists("agent-detail-pause") }
         val prompts = controls.biometricPromptCount
         script(BiometricResult.Cancelled)
@@ -50,7 +59,7 @@ class OperationsFlowsTest : FlowTest() {
     fun aRunIsCancelledAfterTheDeviceOwnerApprovesAndNothingChangesWhenTheyCancel() {
         launchDemo()
         openTab("Agents")
-        tap("agent-row-$ENGINEER_1")
+        tapEngineer1()
         tap("agent-current-run")
         waitFor { exists("run-cancel") }
         val prompts = controls.biometricPromptCount
