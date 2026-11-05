@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -84,6 +85,9 @@ fun FirstRunScreen(
 ) {
     val holder = session.firstRun ?: return
     val state by holder.state.collectAsStateWithLifecycle()
+    // System Back on the Pair step does what the Back button does: it cancels pairing and returns to the Address. On
+    // the other steps the system keeps it (Address leaves the app; the shared Back means nothing on Secure).
+    BackHandler(enabled = state.step == FirstRunStep.Pair) { holder.send(FirstRunIntent.BackRequested) }
     Column(
         Modifier
             .fillMaxSize()
