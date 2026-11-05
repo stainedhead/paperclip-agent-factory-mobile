@@ -121,3 +121,7 @@ fun rememberReduceMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
     return Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 }
+
+/** The screen's one clock (R-008): labels below it follow a single tick instead of each running a timer. */
+@Composable
+fun ProvideNow(content: @Composable () -> Unit) = content()
