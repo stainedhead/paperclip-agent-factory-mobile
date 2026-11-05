@@ -6,6 +6,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.stainedhead.paperclipmobile.umbrella.PaperclipCore
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DynamicTest.dynamicTest
@@ -26,10 +30,13 @@ class HolderViewModelTest {
         val model: HolderViewModel<S, I>,
     )
 
-    private fun <S, I> own(holder: ScreenHolder<S, I>): Owned<S, I> {
+    private fun <S, I> own(
+        holder: ScreenHolder<S, I>,
+        idleScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    ): Owned<S, I> {
         val store = ViewModelStore()
         var created: HolderViewModel<S, I>? = null
-        val factory = viewModelFactory { initializer { HolderViewModel(holder).also { created = it } } }
+        val factory = viewModelFactory { initializer { HolderViewModel(holder, idleScope).also { created = it } } }
         ViewModelProvider.create(store, factory)[HolderViewModel::class.java]
         return Owned(store, checkNotNull(created))
     }
@@ -79,6 +86,22 @@ class HolderViewModelTest {
         while (closes == 0 && System.nanoTime() < deadline) Thread.sleep(POLL_MILLIS)
 
         closes shouldBe 1
+    }
+
+    @Test
+    fun `a working holder that is closed elsewhere ends the idle waiter`() {
+        val idleScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val holder = ScreenHolder(MutableStateFlow(true), { _: Boolean -> }, {}) { it }
+        own(holder, idleScope).store.clear()
+        idleScope.coroutineContext[Job]!!.children.count { it.isActive } shouldBe 1
+
+        holder.close()
+
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAIT_SECONDS)
+        while (idleScope.coroutineContext[Job]!!.children.any { it.isActive } && System.nanoTime() < deadline) {
+            Thread.sleep(POLL_MILLIS)
+        }
+        idleScope.coroutineContext[Job]!!.children.count { it.isActive } shouldBe 0
     }
 
     @TestFactory

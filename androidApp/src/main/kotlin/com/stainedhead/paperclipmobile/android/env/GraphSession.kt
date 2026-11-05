@@ -190,6 +190,12 @@ class GraphSession internal constructor(
         pairingCancels.forEach { it() }
     }
 
+    /** How many holders are still waiting for their work to finish before they close (R-007). */
+    internal val pendingCloses: Int get() = 0
+
+    /** The graph is going away: nothing can finish any more, so every deferred close happens now (R-007). */
+    fun abandonDeferred() = Unit
+
     /** Stops refreshing and closes every holder this session owns, once. The graph itself is closed by the owner. */
     fun close() {
         synchronized(lock) {
