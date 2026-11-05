@@ -66,10 +66,55 @@ class AndroidAppHygieneRulesTest {
         Assertions.assertEquals(
             listOf(
                 "var key by rememberSaveable { mutableStateOf(secret) }",
+                "handle.set(\"token\", token)",
                 "val saved = savedStateHandle.get<String>(\"approvalUrl\")",
                 "outState.putString(\"boardKey\", boardKey)",
             ),
             secretsInSavedState(source),
+        )
+    }
+
+    @Test
+    fun `the saved state scan reads the whole call, so a secret on a later line is flagged`() {
+        val source =
+            """
+            var address by rememberSaveable {
+                mutableStateOf("")
+            }
+            var key by rememberSaveable(
+                "k",
+            ) {
+                mutableStateOf(boardKey)
+            }
+            savedStateHandle.set(
+                "approvalUrl",
+                url,
+            )
+            outState.putParcelable("x", Holder(
+                reveal,
+            ))
+            class Vm(private val savedStateHandle: SavedStateHandle) {
+                val token = 1
+            }
+            """.trimIndent()
+
+        Assertions.assertEquals(
+            listOf(
+                "var key by rememberSaveable(",
+                "savedStateHandle.set(",
+                "outState.putParcelable(\"x\", Holder(",
+            ),
+            secretsInSavedState(source),
+        )
+    }
+
+    @Test
+    fun `the clock glyph means snooze and nothing else`() {
+        val users = sources.filter { "R.drawable.ic_snooze" in it.readText() }.map { it.name }.toSet()
+        Assertions.assertEquals(
+            setOf("InboxSwipe.kt", "DecisionScreen.kt"),
+            users,
+            "ic_snooze next to a control that is not Snooze misleads (the Issue status menu used it, R-031)",
         )
     }
 
