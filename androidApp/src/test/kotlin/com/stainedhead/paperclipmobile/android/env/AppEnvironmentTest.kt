@@ -3,6 +3,7 @@ package com.stainedhead.paperclipmobile.android.env
 import com.stainedhead.paperclipmobile.presentation.FirstRunIntent
 import com.stainedhead.paperclipmobile.presentation.ProbeStatus
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
+import com.stainedhead.paperclipmobile.umbrella.AndroidGraphOpen
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -15,6 +16,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 private const val WAIT_MILLIS = 10_000L
 private const val DEMO_BADGE = 3
@@ -148,4 +152,56 @@ class AppEnvironmentTest {
         session.value.graph
             .shouldNotBeNull()
             .lifecycle.isForeground.value
+
+    @Test
+    fun `the graph is opened off the calling thread and the session says it is opening until then`() {
+        val caller = Thread.currentThread()
+        val release = CountDownLatch(1)
+        val openedOn = AtomicReference<Thread?>(null)
+        val provider =
+            object : AppGraphProvider {
+                override val mode = GraphMode.Demo
+
+                override fun makeGraph(): AndroidGraphOpen {
+                    openedOn.set(Thread.currentThread())
+                    release.await(BLOCK_SECONDS, TimeUnit.SECONDS)
+                    return demoOpen()
+                }
+            }
+
+        val environment =
+            AppEnvironment(provider, scope, demoEntryAvailable = true, openOn = Dispatchers.Default)
+                .also { environments += it }
+
+        environment.session.value.isOpening shouldBe true
+        environment.session.value.graph
+            .shouldBeNull()
+        environment.session.value.notice
+            .shouldBeNull()
+        release.countDown()
+        val session = runBlocking { withTimeout(WAIT_MILLIS) { environment.session.first { !it.isOpening } } }
+
+        session.graph.shouldNotBeNull()
+        session.app.shouldNotBeNull()
+        (openedOn.get() !== caller) shouldBe true
+    }
+
+    @Test
+    fun `a failure while opening in the background still shows the notice and try again opens again`() {
+        val provider = ScriptedProvider(GraphMode.Live, listOf(::unavailable, ::demoOpen))
+        val environment =
+            AppEnvironment(provider, scope, demoEntryAvailable = true, openOn = Dispatchers.Default)
+                .also { environments += it }
+
+        val failed = runBlocking { withTimeout(WAIT_MILLIS) { environment.session.first { !it.isOpening } } }
+        failed.notice shouldBe StartupNotice.LiveGraphUnavailable
+        environment.retryLaunch()
+        environment.session.value.isOpening shouldBe true
+        val opened = runBlocking { withTimeout(WAIT_MILLIS) { environment.session.first { !it.isOpening } } }
+
+        opened.graph.shouldNotBeNull()
+        opened.notice.shouldBeNull()
+    }
 }
+
+private const val BLOCK_SECONDS = 2L

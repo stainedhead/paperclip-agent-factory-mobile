@@ -65,6 +65,9 @@ class GraphSession internal constructor(
     private var refreshSession: RefreshSession? = null
     private var closed = false
 
+    /** True while the graph is being opened: there is no graph and no notice yet (R-018). */
+    val isOpening: Boolean get() = graph == null && notice == null
+
     /** Whether this session refreshes screens by itself; a screen that starts a refresh honours it too. */
     val autoRefresh = options.autoRefresh
     private val pairingCancels = CopyOnWriteArrayList<() -> Unit>()

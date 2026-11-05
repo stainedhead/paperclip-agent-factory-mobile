@@ -6,6 +6,7 @@ import com.stainedhead.paperclipmobile.android.diagnostics.GraphOpenOutcome
 import com.stainedhead.paperclipmobile.android.diagnostics.toGraphOpenOutcome
 import com.stainedhead.paperclipmobile.presentation.StartupNotice
 import com.stainedhead.paperclipmobile.umbrella.AndroidGraphOpen
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,8 @@ class AppEnvironment(
     /** What the Diagnostics screen shows; it outlasts a replaced graph. */
     val diagnostics: DiagnosticsRecorder = DiagnosticsRecorder(UNKNOWN_VERSION),
     private val log: AppLog = AppLog.Off,
+    /** Where the graph is opened: the app gives a background dispatcher; null opens on the calling thread (tests). */
+    private val openOn: CoroutineDispatcher? = null,
 ) {
     private val lock = Any()
     private var provider: AppGraphProvider = provider
