@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stainedhead.paperclipmobile.android.R
@@ -79,7 +81,7 @@ fun DiagnosticsScreen(
             if (copied) {
                 Text(
                     stringResource(R.string.diagnostics_copied),
-                    Modifier.testTag("diagnostics-copied"),
+                    Modifier.semantics { liveRegion = LiveRegionMode.Polite }.testTag("diagnostics-copied"),
                     style = AppType.secondary,
                     color = AppTheme.colors.success,
                 )

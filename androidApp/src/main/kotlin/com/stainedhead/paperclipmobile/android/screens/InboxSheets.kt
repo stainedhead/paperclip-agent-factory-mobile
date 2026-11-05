@@ -20,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import com.stainedhead.paperclipmobile.android.R
@@ -92,6 +94,7 @@ fun UndoSnackbar(
             .clip(RoundedCornerShape(Radius.button))
             .background(colors.textPrimary)
             .padding(start = Spacing.roomy)
+            .semantics { liveRegion = LiveRegionMode.Polite }
             .testTag("inbox-undo"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.extraLarge),

@@ -27,7 +27,11 @@ class LiveRegionTest {
     val rule = createComposeRule()
 
     private fun liveRegion(tag: String) =
-        rule.onNodeWithTag(tag).fetchSemanticsNode().config.getOrNull(SemanticsProperties.LiveRegion)
+        rule
+            .onNodeWithTag(tag)
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(SemanticsProperties.LiveRegion)
 
     @Test
     fun theFeedbackBannerIsAPoliteLiveRegion() {

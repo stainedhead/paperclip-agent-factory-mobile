@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.stainedhead.paperclipmobile.android.R
@@ -52,6 +54,7 @@ fun FeedbackBanner(
             .clip(RoundedCornerShape(Radius.card))
             .background(colors.warnSoft)
             .padding(start = Spacing.card)
+            .semantics { liveRegion = LiveRegionMode.Polite }
             .testTag("feedback-banner"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.medium),

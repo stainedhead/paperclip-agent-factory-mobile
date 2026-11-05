@@ -24,10 +24,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.stainedhead.paperclipmobile.android.R
@@ -134,6 +136,7 @@ fun ErrorBanner(
             .clip(RoundedCornerShape(Radius.card))
             .background(colors.destructiveSoft)
             .padding(Spacing.card)
+            .semantics { liveRegion = LiveRegionMode.Polite }
             .testTag("error-banner"),
         verticalArrangement = Arrangement.spacedBy(Spacing.medium),
     ) {
