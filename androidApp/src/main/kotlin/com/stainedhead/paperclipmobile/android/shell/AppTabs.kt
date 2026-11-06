@@ -7,6 +7,7 @@ import com.stainedhead.paperclipmobile.android.env.GraphSession
 import com.stainedhead.paperclipmobile.android.screens.AgentDetailScreen
 import com.stainedhead.paperclipmobile.android.screens.AgentsScreen
 import com.stainedhead.paperclipmobile.android.screens.ApprovalScreen
+import com.stainedhead.paperclipmobile.android.screens.CompanyGateScreen
 import com.stainedhead.paperclipmobile.android.screens.DecisionScreen
 import com.stainedhead.paperclipmobile.android.screens.DiagnosticsScreen
 import com.stainedhead.paperclipmobile.android.screens.EditFactoryScreen
@@ -19,6 +20,7 @@ import com.stainedhead.paperclipmobile.android.screens.PairedDevicesScreen
 import com.stainedhead.paperclipmobile.android.screens.RunViewerScreen
 import com.stainedhead.paperclipmobile.android.screens.SettingsScreen
 import com.stainedhead.paperclipmobile.android.screens.WorkListScreen
+import com.stainedhead.paperclipmobile.presentation.CompanyGate
 
 /**
  * The tab shell with its screens: the five tab roots and every pushed route. Each `when` is exhaustive, so a new tab or
@@ -34,6 +36,11 @@ fun AppTabs(
         inboxBadge = inboxBadge,
         selectionKey = "${app.selectedInstanceId}/${app.selectedCompanyId}",
         tabRoot = { tab, navigator ->
+            // A company tab of a factory without a usable company says why, instead of loading for good (F-1).
+            if (tab != AppTab.Factories && app.companyGate != CompanyGate.Ready) {
+                CompanyGateScreen(session, navigator, app)
+                return@TabShell
+            }
             when (tab) {
                 AppTab.Inbox -> InboxScreen(session, navigator)
                 AppTab.Factory -> FactoryHomeScreen(session, navigator)

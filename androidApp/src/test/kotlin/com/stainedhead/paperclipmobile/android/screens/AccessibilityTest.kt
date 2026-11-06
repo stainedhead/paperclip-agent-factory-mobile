@@ -183,13 +183,29 @@ class AccessibilityTest {
         audited({ rule.hasTag("settings") }) { SettingsScreen(app.session, app.navigator) } shouldBe emptyList()
     }
 
-    @Test
-    fun companyGates() {
-        for (gate in CompanyGate.entries) {
-            audited({ true }) {
-                CompanyGateContent(gate, isChecking = false, error = ErrorUi(ErrorKey.Unreachable), {}, {})
-            } shouldBe emptyList()
+    private fun gateFindings(gate: CompanyGate) =
+        audited({ true }) {
+            CompanyGateContent(gate, isChecking = false, error = ErrorUi(ErrorKey.Unreachable), {}, {})
         }
+
+    @Test
+    fun companyGateNone() {
+        gateFindings(CompanyGate.NoCompany) shouldBe emptyList()
+    }
+
+    @Test
+    fun companyGateChoose() {
+        gateFindings(CompanyGate.ChooseCompany) shouldBe emptyList()
+    }
+
+    @Test
+    fun companyGateFailed() {
+        gateFindings(CompanyGate.Failed) shouldBe emptyList()
+    }
+
+    @Test
+    fun companyGateChecking() {
+        gateFindings(CompanyGate.Checking) shouldBe emptyList()
     }
 
     @Test

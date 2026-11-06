@@ -23,8 +23,8 @@ import com.stainedhead.paperclipmobile.presentation.ApprovalTypeUi
 import com.stainedhead.paperclipmobile.presentation.BudgetChoice
 import com.stainedhead.paperclipmobile.presentation.BudgetOutcomeUi
 import com.stainedhead.paperclipmobile.presentation.BudgetThresholdUi
-import com.stainedhead.paperclipmobile.presentation.CompanyGate
 import com.stainedhead.paperclipmobile.presentation.CommentAuthorUi
+import com.stainedhead.paperclipmobile.presentation.CompanyGate
 import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
 import com.stainedhead.paperclipmobile.presentation.DecisionFinalKind
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
