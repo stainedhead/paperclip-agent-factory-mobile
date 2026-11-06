@@ -9,6 +9,7 @@
 | "Signed out" or "Key expired" | [Re-pair](./key-expiry-and-repairing.md). |
 | Buttons are disabled with a reason | The phone is offline, or your role may not do it (a Viewer changes nothing; only an Owner raises budgets). |
 | The pairing sheet closed and nothing happened | It was cancelled or could not be shown; start pairing again. |
+| Inbox, Factory, Work or Agents says "No company yet" | The factory has no company this key can open. Create one in the Paperclip web app, then tap **Check again** (or pull down); the app also checks when you unlock it and when you come back to it. If it says "Choose a company", open **Factories** and tap the company you want. |
 | Face ID prompt cancelled | Nothing was sent; repeat the action. |
 | A change shows "outcome unknown" | The app never retries a change; it reloads and shows the server's truth. |
 

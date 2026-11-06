@@ -76,7 +76,7 @@ adb shell am start -n com.stainedhead.paperclipmobile/.android.MainActivity --ez
 **Android gates** (from the repository root, one Gradle build at a time):
 
 ```bash
-./gradlew :androidApp:testDebugUnitTest :androidApp:verifyRoborazziDebug   # 592 unit tests (JUnit 4 + Robolectric, JUnit 5) and the screenshot baselines
+./gradlew :androidApp:testDebugUnitTest :androidApp:verifyRoborazziDebug   # 621 unit tests (JUnit 4 + Robolectric, JUnit 5) and the screenshot baselines
 ./gradlew :androidApp:lint :androidApp:assembleRelease                      # Android Lint (warnings are errors) and the R8 release build
 ./gradlew spotlessCheck detekt konsistTest allTests koverVerifyCore koverVerifyPresentation   # as for the shared core
 ./gradlew :androidApp:connectedDebugAndroidTest                             # emulator or phone: the 14 demo-flow tests (not part of `check`)
