@@ -12,6 +12,7 @@ import com.stainedhead.paperclipmobile.domain.AppSettings
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import kotlinx.coroutines.CoroutineScope
@@ -105,7 +106,11 @@ class AppStateHolder(
     init {
         this.scope.launch {
             combine(useCases.observeSettings(), useCases.observeInstances()) { s, list ->
-                val first = internals.getAndUpdate { it.copy(settings = s) }.settings == null
+                val selectedNow =
+                    s.selectedInstanceId?.let { id -> list.firstOrNull { it.id == id } } ?: list.firstOrNull()
+                val signedIn = selectedNow?.status == InstanceStatus.SignedIn
+                val first =
+                    internals.getAndUpdate { it.copy(settings = s, selectedSignedIn = signedIn) }.settings == null
                 mutableState.update { it.fromSources(s, list, first).withGate() }
                 checkCompany(force = false)
             }.collect {}
@@ -211,6 +216,7 @@ class AppStateHolder(
     private fun checkCompany(force: Boolean) {
         val current = mutableState.value
         val id = current.selectedInstanceId ?: return
+        if (!internals.value.selectedSignedIn) return
         if (!current.isLoaded || current.lock != LockState.Unlocked || current.selectedCompanyId != null) return
         val claimed =
             internals.claim({ it.company.running || (!force && it.company.instanceId == id) }) {
@@ -249,6 +255,7 @@ private data class Internals(
     val settings: AppSettings? = null,
     val backgroundedAt: Instant? = null,
     val unlocking: Boolean = false,
+    val selectedSignedIn: Boolean = false,
     val company: CompanyCheck = CompanyCheck(),
 )
 
