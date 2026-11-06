@@ -52,6 +52,7 @@ import com.stainedhead.paperclipmobile.application.instance.UpdateInstance
 import com.stainedhead.paperclipmobile.application.settings.ObserveAppSettings
 import com.stainedhead.paperclipmobile.application.settings.ShouldLockApp
 import com.stainedhead.paperclipmobile.application.settings.UnlockApp
+import com.stainedhead.paperclipmobile.application.settings.UnlockSession
 import com.stainedhead.paperclipmobile.application.settings.UpdateAppSettings
 import com.stainedhead.paperclipmobile.domain.port.AppSettingsStore
 import com.stainedhead.paperclipmobile.domain.port.ApprovalGateway
@@ -181,6 +182,7 @@ private fun org.koin.core.module.Module.settingsUseCases() {
     single { ObserveAppSettings(get()) }
     single { UpdateAppSettings(get()) }
     single { UnlockApp(get()) }
+    single { UnlockSession(get(), get(), get()) }
     single { ShouldLockApp(get()) }
 }
 
