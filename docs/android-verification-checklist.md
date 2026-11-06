@@ -177,7 +177,17 @@ On a Pixel 6 and on one Samsung phone (screen lock set, USB debugging on): run t
 PAFM_BENCHMARK_ALLOW_EMULATOR=0 ./scripts/run-benchmarks.sh
 ```
 
-Expected: cold start to the Inbox with content under 1.5 s median of 10, and at most 5% of frames over their deadline in the 200-card Inbox fling (R-008). For comparison the Pixel_9_Pro emulator (API 37, arm64, host GPU, `run-benchmarks.sh`, 5 flings in two directions, about 2530 frames) gave 40.7% of frames over their deadline (CPU P50 7.8 ms, P90 25.9 ms) after the R-008 fixes and 52.4% before them, and a cold start of 315.4 ms (median of 10). If the Pixel 6 meets the budget the finding closes; if it does not, R-008 stays open and the next profile starts from the Pixel 6 trace (not the emulator's).
+**Command** (only the Pixel connected, unlocked, screen on; do not change the script or its thresholds):
+
+```bash
+PAFM_BENCHMARK_ALLOW_EMULATOR=0 ./scripts/run-benchmarks.sh
+```
+
+**Pass rule.** Cold start to the Inbox with content (`coldStartToTheInbox`, `timeToFullDisplayMs` median) under 1500 ms; and for `flingTwoHundredInboxCards` the printed `frameOverrunMs` **P95 is 0 ms or less** (at most 5% of frames finish after their deadline; the script prints percentiles, not a percentage). R-008 closes if both hold.
+
+**Send back**: the whole printed output of the script, and `androidApp/benchmark/build/outputs/connected_android_test_additional_output/benchmark/connected/<device>/` (the `*benchmarkData.json` and the `.perfetto-trace` files). If P95 is above 0, also run the same command once on the `main` branch and send both, so the effect of this branch's changes (a lighter `AppButton`, ADR-147) can be told from the phone's own noise. Run it 3 times and send all three; a single run on an emulator varied between 38% and 48%.
+
+For comparison the Pixel_9_Pro emulator (API 37, arm64, host GPU, 5 flings in two directions, about 2520 frames) gave 43.2% of frames over their deadline on main (median of three runs, range 38.3% to 47.6%; `frameOverrunMs` P95 about 22 ms) and 47.7% after the round 2 changes (range 44.6% to 47.8%), with a cold start of 350 ms median of 10; the traces show the emulator's host GPU and display path as the limit, not the app (technical-details.md, known limitation 6). If the Pixel meets the pass rule the finding closes; if not, R-008 stays open and the next profile starts from the Pixel's trace (not the emulator's).
 
 On the Samsung phone also check: the system prompt (item 3), Recents shows a blank thumbnail while locked (`FLAG_SECURE`), dark theme, font scale 2.0 and the back gesture.
 
