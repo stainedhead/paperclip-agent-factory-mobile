@@ -34,6 +34,9 @@ import com.stainedhead.paperclipmobile.android.shell.ConfirmContent
 import com.stainedhead.paperclipmobile.android.shell.ConfirmDestructiveContent
 import com.stainedhead.paperclipmobile.android.shell.LockActions
 import com.stainedhead.paperclipmobile.android.shell.LockScreen
+import com.stainedhead.paperclipmobile.presentation.CompanyGate
+import com.stainedhead.paperclipmobile.presentation.ErrorKey
+import com.stainedhead.paperclipmobile.presentation.ErrorUi
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.junit.After
@@ -178,6 +181,15 @@ class AccessibilityTest {
     @Test
     fun settings() {
         audited({ rule.hasTag("settings") }) { SettingsScreen(app.session, app.navigator) } shouldBe emptyList()
+    }
+
+    @Test
+    fun companyGates() {
+        for (gate in CompanyGate.entries) {
+            audited({ true }) {
+                CompanyGateContent(gate, isChecking = false, error = ErrorUi(ErrorKey.Unreachable), {}, {})
+            } shouldBe emptyList()
+        }
     }
 
     @Test
