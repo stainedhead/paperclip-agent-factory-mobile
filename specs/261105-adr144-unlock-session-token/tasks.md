@@ -7,4 +7,5 @@
 - T5 Konsist `SessionCacheRulesTest` (memory only, constructed by the composition root only).
 - T6 Investigate unlock = protected read; decision recorded in ADR-145.
 - T7 Docs: ADR-145, ADR-144/139/141/142 status text, technical details (known limitation 12, counts), user-docs/app-lock.md, device checklist item 4.
+- T9 (owner decision, same day) `SecretStore.readAttested` on the port, fake, Keystore and Keychain; cache pass-through; `UnlockSession`; graph proof that destructive actions still ask; ADR-146; docs; gates; PR.
 - T8 Gates: spotless, detekt, allTests, konsist (rerun), kover, lint, androidApp unit tests, Roborazzi verify, assembleRelease, emulator device tests, iOS build-kit, swiftlint, swift-format, ios-test.

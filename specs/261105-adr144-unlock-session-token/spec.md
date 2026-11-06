@@ -19,4 +19,4 @@ With app lock on, the board token is a protected secret and `StoredCredentials.c
 
 ## Out of scope
 
-A `SecretStore` port change so that one prompt both unlocks the app and reads the token (decision for the owner, see implementation notes). Any device measurement.
+Any device measurement. (The port change for a one-prompt unlock was first out of scope and then decided by the owner the same day: ADR-146.)

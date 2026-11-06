@@ -74,7 +74,7 @@ Result: _not run_
 
 With app lock **on** and a factory paired **after** it was turned on, the board token is a protected secret. Since ADR-145 the app keeps it in memory from the first protected read until the app goes to the background, a 401 or a re-pair, so one refresh no longer asks once per gateway call. The device store itself is still per-use (ADR-139). Count the prompts the person sees for each step and record them:
 
-1. Cold start, then unlock: expected two prompts, the lock prompt and then one prompt for the first read (the unlock prompt cannot read the key yet; see ADR-145, "Unlock").
+1. Cold start, then unlock: expected **one** prompt (the key prompt is the unlock, ADR-146). Repeat with a factory paired before app lock was turned on: one plain unlock prompt, no key prompt. Cancel the key prompt: the app stays locked and Unlock asks again.
 2. On the Inbox: one pull to refresh, one automatic 15 second refresh, opening an Agent detail, opening an Issue: expected **no further prompt** while the app stays in the foreground.
 3. Press Home, return inside the "Lock after" time: expected one prompt on the first call (the background empties the cache), none for the lock itself.
 4. Switch to a second factory that also has a protected key: one prompt for that factory.

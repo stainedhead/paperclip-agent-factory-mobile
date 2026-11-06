@@ -77,7 +77,7 @@ class UnlockSessionTest {
         }
 
     @Test
-    fun `the fallback prompt can still refuse, and then the app stays locked`() =
+    fun `the fallback prompt can still refuse and then the app stays locked`() =
         runTest {
             val env = env()
             env.store(open)
@@ -115,7 +115,7 @@ class UnlockSessionTest {
         }
 
     @Test
-    fun `a cached token never unlocks the app, cold cache or warm`() =
+    fun `a cached token never unlocks the app with a cold cache or a warm one`() =
         runTest {
             val env = env()
             env.store(open)
@@ -131,7 +131,7 @@ class UnlockSessionTest {
         }
 
     @Test
-    fun `an attested unlock warms the cache, so the first refresh does not ask again`() =
+    fun `an attested unlock warms the cache so the first refresh does not ask again`() =
         runTest {
             val env = env()
             env.store(protected)

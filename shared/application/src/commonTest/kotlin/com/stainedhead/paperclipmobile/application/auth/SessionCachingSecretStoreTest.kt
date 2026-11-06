@@ -325,7 +325,7 @@ class SessionCachingSecretStoreTest {
         (readAttested(key, "unlock") as? AttestedReadResult.Authenticated)?.secret?.reveal()
 
     @Test
-    fun `an attested read goes to the device even when the token is cached, and seeds the cache`() =
+    fun `an attested read goes to the device even when the token is cached and seeds the cache`() =
         runTest {
             val (device, cache) = setup()
             device.inner.seed(tokenA, "pcp_board_TESTONLYa", protected = true)

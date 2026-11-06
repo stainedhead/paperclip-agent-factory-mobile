@@ -397,7 +397,7 @@ class AppStateHolderTest {
         }
 
     @Test
-    fun `ADR-146 only the selected factory's token is used, another factory's protected token does not unlock`() =
+    fun `ADR-146 only the selected factory token is used and another factory token does not unlock`() =
         runTest {
             val env = Env(listOf(home, cloud))
             env.storeToken("cloud", protected = true)
