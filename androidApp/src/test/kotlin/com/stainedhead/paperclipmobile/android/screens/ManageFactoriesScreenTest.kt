@@ -149,6 +149,7 @@ class ManageFactoriesScreenTest {
         show()
 
         rule.onNodeWithTag("manage-remove-demo-cloud").performClick()
+        rule.awaitDisplayed("confirm-destructive-cancel")
         rule.onNodeWithTag("confirm-destructive-cancel").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("confirm-destructive-sheet") }
@@ -164,6 +165,9 @@ class ManageFactoriesScreenTest {
         rule.onNodeWithTag("add-factory-button").performScrollTo().performClick()
         rule.onNodeWithTag("manage-done-button").performClick()
 
+        awaitThat(
+            "the screens to be pushed and Done to pop to the root",
+        ) { app.pushed.size >= 2 && app.popsToRoot >= 1 }
         app.pushed shouldBe listOf(AppRoute.EditFactory(DemoId.CLOUD), AppRoute.EditFactory(null))
         app.popsToRoot shouldBe 1
     }

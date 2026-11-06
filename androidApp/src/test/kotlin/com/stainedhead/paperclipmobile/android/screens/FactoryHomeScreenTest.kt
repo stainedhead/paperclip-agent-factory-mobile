@@ -115,6 +115,7 @@ class FactoryHomeScreenTest {
 
         rule.onNodeWithTag("factory-run-run-cto-live").performScrollTo().performClick()
 
+        awaitThat("the run screen to be pushed") { app.pushed.isNotEmpty() }
         app.pushed shouldBe listOf(AppRoute.Run("run-cto-live"))
     }
 
@@ -127,6 +128,7 @@ class FactoryHomeScreenTest {
         rule.onNodeWithTag("factory-tile-approvals").performClick()
         rule.onNodeWithTag("factory-tile-budget").performScrollTo().performClick()
 
+        awaitThat("the four tiles to select their tabs") { app.selected.size >= 4 }
         app.selected shouldBe listOf(AppTab.Agents, AppTab.Work, AppTab.Inbox, AppTab.Inbox)
     }
 
