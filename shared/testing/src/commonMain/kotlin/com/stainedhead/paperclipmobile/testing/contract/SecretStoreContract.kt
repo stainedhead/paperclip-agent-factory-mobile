@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.testing.contract
 
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -44,6 +45,7 @@ abstract class SecretStoreContract {
         deleteRemovesOnlyThatKey()
         deleteNamespaceRemovesOnlyThatInstance()
         namespacesListsEveryInstanceThatHoldsASecret()
+        anUnprotectedOrMissingSecretIsNeverAttested()
         ProtectedSecretStoreCases(::createProtected).runAll()
     }
 
@@ -59,6 +61,22 @@ abstract class SecretStoreContract {
 
     private suspend fun aMissingSecretIsReportedAsMissing() {
         check(create().read(SecretKey(a, SecretName.BoardToken)) == SecretReadResult.Missing) { "missing key" }
+    }
+
+    /**
+     * A read attests that the person was authenticated only when this very read opened a protected secret. An
+     * unprotected secret (app lock turned on after pairing) and a missing one attest nothing, so the app lock never
+     * accepts them as an unlock (ADR-146).
+     */
+    private suspend fun anUnprotectedOrMissingSecretIsNeverAttested() {
+        val store = create()
+        val token = SecretKey(a, SecretName.BoardToken)
+        check(store.readAttested(token, "contract test") == AttestedReadResult.NotAttested) { "missing attests nothing" }
+        store.put(token, Secret.of("one"), policy)
+        check(store.readAttested(token, "contract test") == AttestedReadResult.NotAttested) {
+            "an unprotected secret attests nothing"
+        }
+        check(store.read(token) is SecretReadResult.Found) { "an attested read changes nothing" }
     }
 
     private suspend fun deleteRemovesOnlyThatKey() {

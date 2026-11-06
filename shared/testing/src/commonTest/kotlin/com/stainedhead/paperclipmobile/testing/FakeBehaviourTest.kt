@@ -4,6 +4,7 @@ import com.stainedhead.paperclipmobile.domain.ChallengeStatus
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
@@ -46,6 +47,33 @@ class FakeBehaviourTest {
 
         listOf(ids.generate(), ids.generate()) shouldBe listOf("x-1", "x-2")
     }
+
+    @Test
+    fun `the secret store attests a read only for a protected secret`() =
+        runTest {
+            val store = FakeSecretStore()
+            val id = com.stainedhead.paperclipmobile.domain.InstanceId("a")
+            val key = SecretKey(id, SecretName.BoardToken)
+            val other = SecretKey(id, SecretName.ClientCertificatePassword)
+
+            store.readAttested(key, "r") shouldBe AttestedReadResult.NotAttested
+            store.put(key, Secret.of("v"), SecretPolicy(requireUserPresence = false))
+            store.readAttested(key, "r") shouldBe AttestedReadResult.NotAttested
+            store.put(key, Secret.of("v"), SecretPolicy(requireUserPresence = true))
+            store.readAttested(key, "r") shouldBe AttestedReadResult.Authenticated(Secret.of("v"))
+            store.seed(other, "w", protected = true)
+            store.readAttested(other, "r") shouldBe AttestedReadResult.Authenticated(Secret.of("w"))
+
+            store.denyReads = true
+            store.readAttested(key, "r") shouldBe AttestedReadResult.Denied
+            store.denyReads = false
+            store.invalidated = true
+            store.readAttested(key, "r") shouldBe AttestedReadResult.Invalidated
+            store.invalidated = false
+            store.put(key, Secret.of("v2"), SecretPolicy(requireUserPresence = false))
+            store.readAttested(key, "r") shouldBe AttestedReadResult.NotAttested
+            store.attestedReads shouldBe 7
+        }
 
     @Test
     fun `the secret store can simulate invalidation denial and write failure`() =

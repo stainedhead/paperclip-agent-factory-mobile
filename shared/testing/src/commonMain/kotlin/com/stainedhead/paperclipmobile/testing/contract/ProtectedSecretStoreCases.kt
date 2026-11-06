@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.testing.contract
 
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -26,6 +27,8 @@ class ProtectedSecretStoreCases(
         create()?.let { aRefusedPromptDeniesTheReadAndTheWrite(it) }
         create()?.let { anInvalidatedKeyReadsAsInvalidated(it) }
         create()?.let { anEarlierApprovalIsNeverReused(it) }
+        create()?.let { aProtectedReadIsAttestedByExactlyOnePrompt(it) }
+        create()?.let { aRefusedOrInvalidatedAttestedReadIsNeverAuthenticated(it) }
     }
 
     private suspend fun twoConsecutiveReadsPromptTwice(harness: ProtectedStoreHarness) {
@@ -61,6 +64,29 @@ class ProtectedSecretStoreCases(
         harness.store.put(key, Secret.of("one"), protected)
         harness.invalidate()
         check(harness.store.get(key, "contract test") == SecretReadResult.Invalidated) { "invalidated key" }
+    }
+
+    private suspend fun aProtectedReadIsAttestedByExactlyOnePrompt(harness: ProtectedStoreHarness) {
+        harness.approve = true
+        harness.store.put(key, Secret.of("one"), protected)
+        val before = harness.prompts
+        val read = harness.store.readAttested(key, "contract test")
+        check(read is AttestedReadResult.Authenticated && read.secret == Secret.of("one")) {
+            "a protected read the person approved is Authenticated"
+        }
+        check(harness.prompts - before == 1) { "the attested read is the one prompt" }
+    }
+
+    private suspend fun aRefusedOrInvalidatedAttestedReadIsNeverAuthenticated(harness: ProtectedStoreHarness) {
+        harness.approve = true
+        harness.store.put(key, Secret.of("one"), protected)
+        harness.approve = false
+        check(harness.store.readAttested(key, "contract test") == AttestedReadResult.Denied) { "refused is Denied" }
+        harness.approve = true
+        harness.invalidate()
+        check(harness.store.readAttested(key, "contract test") == AttestedReadResult.Invalidated) {
+            "an invalidated key is Invalidated"
+        }
     }
 
     private suspend fun anEarlierApprovalIsNeverReused(harness: ProtectedStoreHarness) {
