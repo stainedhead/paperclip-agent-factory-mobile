@@ -6,6 +6,7 @@
     <string name="biometric_unlock_reason">Unlock Paperclip</string>
     <string name="biometric_confirm_reason">Confirm this action</string>
     <string name="biometric_write_reason">Protect the key for this factory</string>
+    <string name="biometric_key_read_reason">Read the board key to talk to the factory</string>
 
     <!-- Shared labels. -->
     <string name="common_loading">Loading…</string>

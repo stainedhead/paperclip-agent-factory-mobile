@@ -28,8 +28,9 @@ class AttentionGatewayAdapter(
     client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String = "",
 ) : AttentionGateway {
-    private val calls = CompanyCalls(client, instances, secrets)
+    private val calls = CompanyCalls(client, instances, secrets, keyReadReason)
 
     override suspend fun feed(
         scope: CompanyScope,

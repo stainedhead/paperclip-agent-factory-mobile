@@ -10,7 +10,8 @@ struct LiveGraphLaunchTests {
             keychainService: "pafm.live.launch.\(UUID().uuidString)",
             dataDirectory: folder,
             unlockReason: "Unlock Paperclip",
-            confirmReason: "Confirm this action")
+            confirmReason: "Confirm this action",
+            keyReadReason: "Read the board key")
     }
 
     @Test func anUnusableDataFolderIsAnErrorToCatchAndNotAnAbort() {

@@ -29,8 +29,9 @@ class AgentGatewayAdapter(
     client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String = "",
 ) : AgentGateway {
-    private val calls = CompanyCalls(client, instances, secrets)
+    private val calls = CompanyCalls(client, instances, secrets, keyReadReason)
 
     override suspend fun list(scope: CompanyScope): DomainResult<List<Agent>> =
         calls

@@ -14,12 +14,8 @@ import kotlin.test.Test
 class LiveKeyReadReasonTest {
     private suspend fun readReasonsAfterOneCall(platformReason: String?): List<String> {
         val secrets = FakeSecretStore()
-        val platform =
-            if (platformReason == null) {
-                LiveTestPlatform(secretStore = secrets)
-            } else {
-                LiveTestPlatform(secretStore = secrets, keyReadReason = platformReason)
-            }
+        val platform = LiveTestPlatform(secretStore = secrets).also { it.stub.withOneDecision() }
+        platformReason?.let { platform.keyReadReason = it }
         val graph = PaperclipCore.createLiveGraph(false, ApprovingBrowser(platform.stub), platform)
         graph.createFirstRunStateHolder().completeFirstRun()
         val factory =

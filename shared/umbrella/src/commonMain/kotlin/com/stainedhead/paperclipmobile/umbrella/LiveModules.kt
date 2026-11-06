@@ -61,23 +61,26 @@ internal fun livePortsModule(
     single<AppSettingsStore> { platform.persistence.settings }
     single<AttentionCache> { platform.persistence.attentionCache }
     single<HealthGateway> { HealthGatewayAdapter(client, get()) }
-    single<AuthGateway> { AuthGatewayAdapter(client, get(), get()) }
-    liveCompanyGateways(client)
+    single<AuthGateway> { AuthGatewayAdapter(client, get(), get(), platform.keyReadReason) }
+    liveCompanyGateways(client, platform.keyReadReason)
     // Board keys are rejected on the pinned server's WebSocket, so screens poll and no events arrive (ADR-068).
     single<LiveEvents> { PollingOnlyLiveEvents }
     lifecyclePorts()
 }
 
-private fun Module.liveCompanyGateways(client: PaperclipHttpClient) {
-    single<AttentionGateway>(RawPort) { AttentionGatewayAdapter(client, get(), get()) }
-    single<DecisionGateway>(RawPort) { DecisionGatewayAdapter(client, get(), get()) }
-    single<ApprovalGateway>(RawPort) { ApprovalGatewayAdapter(client, get(), get()) }
-    single<BudgetGateway>(RawPort) { BudgetGatewayAdapter(client, get(), get()) }
-    single<IssueGateway>(RawPort) { IssueGatewayAdapter(client, get(), get()) }
-    single<InteractionGateway>(RawPort) { InteractionGatewayAdapter(client, get(), get()) }
-    single<AgentGateway>(RawPort) { AgentGatewayAdapter(client, get(), get()) }
-    single<RunGateway>(RawPort) { RunGatewayAdapter(client, get(), get()) }
-    single<DashboardGateway>(RawPort) { DashboardGatewayAdapter(client, get(), get()) }
+private fun Module.liveCompanyGateways(
+    client: PaperclipHttpClient,
+    keyReadReason: String,
+) {
+    single<AttentionGateway>(RawPort) { AttentionGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<DecisionGateway>(RawPort) { DecisionGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<ApprovalGateway>(RawPort) { ApprovalGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<BudgetGateway>(RawPort) { BudgetGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<IssueGateway>(RawPort) { IssueGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<InteractionGateway>(RawPort) { InteractionGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<AgentGateway>(RawPort) { AgentGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<RunGateway>(RawPort) { RunGatewayAdapter(client, get(), get(), keyReadReason) }
+    single<DashboardGateway>(RawPort) { DashboardGatewayAdapter(client, get(), get(), keyReadReason) }
 }
 
 /** No live events: the pinned server's WebSocket refuses board keys, so the refresh policy polls instead. */

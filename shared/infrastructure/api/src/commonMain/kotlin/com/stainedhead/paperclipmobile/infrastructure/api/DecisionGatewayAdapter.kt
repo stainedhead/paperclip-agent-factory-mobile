@@ -26,8 +26,9 @@ class DecisionGatewayAdapter(
     client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String = "",
 ) : DecisionGateway {
-    private val calls = CompanyCalls(client, instances, secrets)
+    private val calls = CompanyCalls(client, instances, secrets, keyReadReason)
 
     override suspend fun get(
         scope: CompanyScope,

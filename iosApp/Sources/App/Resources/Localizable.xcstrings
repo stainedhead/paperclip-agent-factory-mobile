@@ -4018,6 +4018,17 @@
         }
       }
     },
+    "label.biometricKeyReadReason": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read the board key to talk to the factory"
+          }
+        }
+      }
+    },
     "label.biometricUnlockReason": {
       "extractionState": "manual",
       "localizations": {
