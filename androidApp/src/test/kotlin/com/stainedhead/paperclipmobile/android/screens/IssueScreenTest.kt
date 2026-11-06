@@ -115,6 +115,7 @@ class IssueScreenTest {
         rule.hasTag("issue-run-${DemoId.RUN_DONE}") shouldBe true
         rule.onNodeWithTag("issue-tab-Runs").assertTextEquals("Runs 3")
         tap("issue-run-${DemoId.RUN_FAILED}")
+        awaitThat("the run screen to be pushed") { app.pushed.isNotEmpty() }
         app.pushed shouldBe listOf(AppRoute.Run(DemoId.RUN_FAILED))
     }
 
@@ -148,6 +149,7 @@ class IssueScreenTest {
         rule.hasTag("issue-subtask-$SUBTASK_ONE") shouldBe true
         rule.hasTag("issue-subtask-pap-1186") shouldBe true
         tap("issue-subtask-$SUBTASK_ONE")
+        awaitThat("the subtask screen to be pushed") { app.pushed.isNotEmpty() }
         app.pushed shouldBe listOf(AppRoute.Issue(SUBTASK_ONE))
     }
 
@@ -157,6 +159,7 @@ class IssueScreenTest {
 
         rule.onNodeWithTag("issue-parent").assertTextEquals("Part of: PAP-1182 · Billing v2")
         tap("issue-parent")
+        awaitThat("the parent issue to be pushed") { app.pushed.isNotEmpty() }
         app.pushed shouldBe listOf(AppRoute.Issue(DemoId.ISSUE_BILLING))
     }
 
@@ -165,14 +168,15 @@ class IssueScreenTest {
         show()
 
         rule.onNodeWithTag("issue-comment-field").performTextInput("Use exponential backoff")
+        rule.awaitEnabled("issue-comment-send")
         rule.onNodeWithTag("issue-comment-send").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { fieldText("issue-comment-field") == "" }
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("Use exponential backoff") }
         // The box is empty again, so there is nothing to send; a new comment enables it.
-        rule.onNodeWithTag("issue-comment-send").assertIsNotEnabled()
+        rule.awaitDisabled("issue-comment-send")
         rule.onNodeWithTag("issue-comment-field").performTextInput("More")
-        rule.onNodeWithTag("issue-comment-send").assertIsEnabled()
+        rule.awaitEnabled("issue-comment-send")
     }
 
     @Test
@@ -192,6 +196,7 @@ class IssueScreenTest {
         rule.hasTag("issue-interrupt") shouldBe true
         rule.hasTag("issue-reopen") shouldBe false
         press("issue-status-menu")
+        rule.awaitDisplayed("issue-status-Done")
         press("issue-status-Done")
         rule.waitUntil(WAIT_MILLIS) { rule.texts("issue-status") == listOf("Done") }
 
@@ -204,6 +209,7 @@ class IssueScreenTest {
         show()
 
         press("issue-status-menu")
+        rule.awaitDisplayed("issue-status-InReview")
         rule.hasTag("issue-status-Blocked") shouldBe false
         rule.hasTag("issue-status-InReview") shouldBe true
         press("issue-status-InReview")
@@ -216,6 +222,7 @@ class IssueScreenTest {
         show()
 
         tap("issue-assignee-menu")
+        rule.awaitDisplayed("issue-assignee-${DemoId.AGENT_ENGINEER_2}")
         press("issue-assignee-${DemoId.AGENT_ENGINEER_2}")
 
         rule.waitUntil(WAIT_MILLIS) { rule.texts("issue-assignee-menu") == listOf("Engineer 2") }
@@ -229,6 +236,7 @@ class IssueScreenTest {
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("issue-subtask-title") }
         rule.onNodeWithTag("issue-subtask-save").assertIsNotEnabled()
         rule.onNodeWithTag("issue-subtask-title").performTextInput("Announce the switch")
+        rule.awaitEnabled("issue-subtask-save")
         rule.onNodeWithTag("issue-subtask-save").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("issue-subtask-form") }

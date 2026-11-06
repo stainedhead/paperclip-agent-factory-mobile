@@ -110,7 +110,9 @@ class InboxClockTickTest {
         val cardsAfterFirstDraw = inboxCardRuns.get()
         val labelsAfterFirstDraw = updatedLabelRuns.get()
 
-        Thread.sleep(2)
+        // The clock reads wall time: make sure some has passed since the first draw.
+        val drawnAt = System.currentTimeMillis()
+        awaitThat("the wall clock to move on") { System.currentTimeMillis() > drawnAt }
         rule.mainClock.advanceTimeBy(TICK_MILLIS * 2)
         rule.waitForIdle()
 

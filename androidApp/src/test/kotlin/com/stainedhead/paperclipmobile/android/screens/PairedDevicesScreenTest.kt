@@ -48,13 +48,15 @@ class PairedDevicesScreenTest {
         show()
 
         rule.onNodeWithTag("revoke-bk-demo-cli").performScrollTo().performClick()
-        rule.onNodeWithText("Revoke “paperclipai cli”?").assertIsDisplayed()
-        rule.onNodeWithText("Anything using this key loses access to the factory.").assertIsDisplayed()
+        rule.awaitTextDisplayed("Revoke “paperclipai cli”?")
+        rule.awaitTextDisplayed("Anything using this key loses access to the factory.")
+        rule.awaitDisplayed("confirm-sheet-cancel")
         rule.onNodeWithTag("confirm-sheet-cancel").performClick()
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("confirm-sheet") }
         rule.hasTag("device-key-bk-demo-cli") shouldBe true
 
         rule.onNodeWithTag("revoke-bk-demo-cli").performScrollTo().performClick()
+        rule.awaitDisplayed("confirm-sheet-confirm")
         rule.onNodeWithTag("confirm-sheet-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("device-key-bk-demo-cli") }

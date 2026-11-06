@@ -78,7 +78,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Context.** FR-014 lists the actions that need device authentication and says it cannot be turned off.
 **Decision.** `DeviceAuthPolicy.requires(action)` is a pure domain function with no settings input. Use cases call `DeviceAuthGuard` (application) before any gateway or repository call; if the `Biometrics` port does not approve, nothing else runs. `RemoveFactory` joins the list in the PRD's design rules.
-**Consequences.** The UI cannot skip or weaken the check. *Amended (R-004, DEC-1, run assumption, owner may overturn; ADR-141):* setting a monthly agent budget above the current amount, or to zero, also requires authentication (`Action.RaiseAgentBudget`); a decrease does not. The first version of this ADR said only the budget incident raise did, which contradicted AGENTS.md ("budget raise" is a destructive action).
+**Consequences.** The UI cannot skip or weaken the check. *Amended (R-004, DEC-1, confirmed by the owner 2026-11-05; ADR-141):* setting a monthly agent budget above the current amount, or to zero, also requires authentication (`Action.RaiseAgentBudget`); a decrease does not. The first version of this ADR said only the budget incident raise did, which contradicted AGENTS.md ("budget raise" is a destructive action).
 
 ## ADR-014: Contract suites are plain classes in `shared/testing`, run by thin test subclasses
 
@@ -125,7 +125,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 ## ADR-021: A request that the server refuses to a viewer is still blocked in the app, and owner-only budget stays client-side
 
 **Context.** Research A2/W4: the server rejects every non-GET for a `viewer` membership, but it lets an operator set an agent budget (no permission key) and never asks for device authentication.
-**Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD). *Amended (R-004, DEC-1, run assumption, owner may overturn; ADR-141):* it takes the `DeviceAuthGuard` and asks the device owner when the new amount is above the current one or zero, before its one gateway call; a decrease asks nothing.
+**Decision.** `Permissions` stays the single table. Every slice 1a-3 mutation use case takes a `CompanyContext`, checks `Permissions.allows` first and then follows ADR-019's order. `SetAgentBudget` is owner only (PRD). *Amended (R-004, DEC-1, confirmed by the owner 2026-11-05; ADR-141):* it takes the `DeviceAuthGuard` and asks the device owner when the new amount is above the current one or zero, before its one gateway call; a decrease asks nothing.
 **Consequences.** A viewer or an operator never reaches the gateway for a budget; a role change mid-session is handled by the server's 403 (`Forbidden`).
 
 ## ADR-022: Saved filters (`IssueFilter`) map to server params, except priority which is filtered on the client
@@ -263,7 +263,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-038: HTTP statuses outside the PRD list map to `Rejected`, `Timeout` or `Malformed`, and the status always wins
 
-**Status:** Accepted (2026-11-02, Phase 1b-1, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, Phase 1b-1, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** The server answers 400 for validation failures, malformed ids and a `revoke-current` without a board key (`access.ts:2815, 2852, 2959, 2972`; `error-handler.ts:225-243`), and a reverse proxy can answer anything, including a 200 or 502 HTML page. `DomainError` has no bad-request case and the PRD lists only 401, 403, 404, 409, 422, 429 and 5xx.
 **Decision.** One `ErrorMapper` decides. The status wins over the body: 401 `Unauthorized`, 403 `Forbidden`, 404 `NotFound`, 409 `Conflict`, 429 `RateLimited`, 408 `Timeout`, any other 4xx (including 400 and 422) `Rejected(reason)` with the server's `{"error"}` text cut to 200 characters (`http_<status>` when there is none), every 5xx `ServerError` (so a 502 HTML page is a server error, not Malformed). A 2xx whose body is not JSON, is empty or does not fit the DTO is `Malformed`. 1xx, 3xx and statuses above 599 are `Malformed`. A key id that is not a UUID is `NotFound` without a request, because the server would answer 400 for an id that cannot exist. An unknown challenge `status` is `Malformed`: the app does not guess.
@@ -295,7 +295,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-042: An unusable database is recreated empty; secrets are never in it
 
-**Status:** Accepted (2026-11-02, Phase 1b-2, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, Phase 1b-2, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** SQLite opens a garbage file and fails on the first statement; a file may also come from a newer app version after a downgrade, or lack a table. The database holds only non-secret factory configuration, settings and an Inbox cache. The credentials are in the Keychain or Keystore under `instance/{id}/`.
 **Decision.** After opening, the app probes the file (`user_version` not newer than the code; the three tables exist). If the probe shows the file is unusable (not a database, malformed, newer schema, a missing table), the database and its `-wal`/`-shm`/`-journal` files are deleted and a new empty one is created (`PaperclipPersistence.recreated` is true). Any other failure (busy, I/O, disk full, protected data unavailable, a migration that throws) deletes nothing and is reported as `StorageUnavailableException` (corrected by ADR-077). Only a failure of that second open is fatal. No secret column or secret-typed parameter exists: a test pins the exact column list and scans every stored value for `pcp_board_`, and a Konsist rule forbids importing `Secret` or `SecretKey` in the module.
@@ -312,7 +312,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-050: Keychain tests run in the iOS app test host, and the iOS tests are signed ad hoc
 
-**Status:** Accepted (2026-11-02, Phase 1b-3, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, Phase 1b-3, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** The Keychain needs an app's entitlements. A Kotlin/Native `iosSimulatorArm64Test` binary is a bare executable: run standalone it gets `errSecNotAvailable` (-25291, no `securityd`), run on a booted simulator it gets `errSecMissingEntitlement` (-34018); signing it with a `keychain-access-groups` entitlement makes `simctl spawn` refuse it ("Security policy issue"). The app test host also gets -34018 when it is built with `CODE_SIGNING_ALLOWED=NO` (what `scripts/ios-test.sh` used), and succeeds when built ad-hoc signed.
 **Decision.** The store's decisions (which protection, replace on duplicate, status to result mapping, marker, wiping) run in Kotlin/Native tests against a scripted `KeychainBackend`, together with the shared `SecretStoreContract`. The real Keychain runs in Swift Testing tests in the app test host (`iosApp/Tests/iosAppTests`), which call the store through `PlatformServices` in the umbrella, run the same contract on the real Keychain and check the stored attributes with `SecItemCopyMatching`. `scripts/ios-test.sh` builds with `CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES`. Each test uses its own Keychain service and cleans up.
@@ -495,7 +495,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-075: Pairing, pending-key and health calls carry the pins of the factory at that address
 
-**Status:** Accepted (2026-11-02, review1b F-A-1, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, review1b F-A-1, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** The fail-closed pin rule (ADR-040) is `request.pins.isNotEmpty() && !pinsEnforced`. Calls with a stored key read the pins from the `Instance`. The calls made before a key exists (health probe, `createChallenge`, `pollChallenge`, `meWithKey`, `listBoardKeysWithKey`) take only a `BaseUri` on the port, so they built `Destination(baseUri)` with no pins and went out over system trust TLS. Those calls carry the new board token, the challenge token and the pending key: the most sensitive traffic.
 **Decision.** The ports keep their signatures. `HealthGatewayAdapter` and `AuthGatewayAdapter` look up the pins of the configured factory at the same `BaseUri` (`PinLookup` over `InstanceRepository.observeAll()`, union of the pins of every factory at that address) and put them in the `Destination`, so the same refusal applies. A first pairing of an address no factory uses yet has no pins to apply, which is correct: nothing was pinned. A re-pair or probe of a pinned factory is refused with `CertificateInvalid` while no engine enforces pins. `HealthGatewayAdapter` now takes the `InstanceRepository`.
@@ -605,7 +605,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Consequences.** A server that already holds the fixed TESTONLY account could still be mutated; that account exists only where an earlier run of this test created it. Hex or base64 runs without any digit, capital or `+/=` (24 or more lower case letters only) are no longer redacted; real tokens carry digits.
 ## ADR-088: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-001/UI-002)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-001/UI-002)
 
 **Context.** Every screen needs an `@Observable` adapter over a Kotlin holder's `StateFlow`. Writing one per screen invites stale reads (an intent returns before the flow emits) and holders closed from a view's `.task` ending.
 
@@ -635,7 +635,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-091: (superseded by ADR-120) A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-010)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-010)
 
 **Context.** `PairingBrowser.open(approvalUrl: Secret)` needs the link, but `Secret.reveal` is hidden from Objective-C on purpose and a Konsist rule limits it to infrastructure and fakes. A Swift conformance to a Kotlin `suspend` interface also needs a `__open` name that SwiftLint and swift-format reject, and an error thrown from Swift into the holder's coroutine would end the app.
 
@@ -666,7 +666,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-094: The system accessibility audits must pass locally and report, without blocking, in CI
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui)
 
 **Context.** `performAccessibilityAudit` samples screenshots, and its findings depend on the OS: local development runs Xcode 27.2 on the iOS 27.2 simulator, the macOS runner image stops at Xcode 26.6 and the iOS 26.5 runtime (checked with a diagnostics step; no newer Xcode is installed). Across five CI runs of the same product code the audit tests failed differently each time: "Contrast failed" on black text on a white card (Edit form, Settings rows, Manage's "3 factories" caption, Settings' "Paired devices and keys"), "Hit area is too small | Device name" on a field that already has a 44 pt minimum height, and "Audit failed to complete in time" (error -56). Several of those passed on the next run, and none reproduced locally, where all six audits pass on the iPhone Air. The palette's secondary text is about 5.7:1 on its background, so the contrast findings are not a palette defect.
 
@@ -676,7 +676,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-095: The Inbox screen shows the one app-wide Inbox holder; the refresh session stays with the environment
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-020)
 
 **Context.** The Inbox feeds the tab badge, so its holder must exist whenever a factory and company are selected, not only while the tab is visible. A second holder (or a second `RefreshSession`) created by the view would double the polling and an approve on screen would not move the badge.
 
@@ -686,7 +686,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-096: The demo Inbox behaves like a server: resolving removes the card, the first read is 12 s old, Side Project is empty, and the phone can go offline
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-020)
 
 **Context.** UI tests and screenshots need the Inbox to react to approve, keep paused and refresh the way the real feed does, and to show empty and offline states.
 
@@ -696,7 +696,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-097: The Inbox renders the state's order and kinds; cards are a List with swipe actions and a combined text block
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-020)
 
 **Decision.** Sections, cards and chips are shown in the order the state gives (shared grouping sorts Critical first, so the budget alert precedes the HIGH approval, unlike the mock; chips are in kind order). The state has no sub-kind ("Plans queue", "Hire agent"), so the kind line is the kind and identifier. A `List` is used because only list rows support swipe actions; Snooze opens a confirmation dialog listing `snoozeOptions`. The card's text block is one button with a combined spoken label; the action buttons stay separate elements. Kinds the app cannot show open `item.webUrl` in `SFSafariViewController`, only for http(s). Decision, approval, budget-incident, issue, run and agent targets map to routes or a sheet that are labelled placeholders until later milestones.
 
@@ -704,7 +704,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-098: Detail screens own their model by route, refresh while visible, and take their hints from the card that opened them
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Context.** The Decision, Approval and Budget screens each have a shared holder that polls (15 s while the item can change, none once final) and that needs, for a decision, facts only the Inbox card knows (agent name, decide-by, snooze key).
 
@@ -714,7 +714,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-099: The demo can show a server that moved on: resolved elsewhere, offline after the detail loaded, the server's own spend
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Decision.** `DemoControls` gains `resolveDecisionElsewhere`, `resolveApprovalElsewhere`, `resolveIncidentElsewhere` (the Inbox feed still lists the card, as in a feed read a moment earlier) and `setBudgetServerSpend` (the server's spend is above what the incident showed, so a raise that clears the shown spend gets the server's 422 reason). Launch options: `-demo-resolved-elsewhere decision,approval,budget`, `-demo-offline-after-detail` (offline once the first detail screen has content, because all three holders refuse to load while offline), `-demo-budget-server-spend <cents>`, and `-demo-open decision:<id>|approval:<id>|budget:<id>`. Deciding or dismissing a decision removes its Inbox card through `FakeDecisionGateway.onResolved`; dec-1183 carries a required input with a 40 character limit; effect results carry the server's effect type.
 
@@ -722,7 +722,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-100: A hire approval's manager is named by the shared load, not by the view
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Context.** The payload holds only `reportsToAgentId`; the mock shows "Reports to CTO". Resolving an id to a name in Swift would be a rule in the app.
 
@@ -732,7 +732,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-101: Face ID is the use case's; destructive controls show the lock, a plain Confirm does not; disabled cards are muted, not dimmed
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Decision.** No screen asks Face ID itself and none adds a second confirmation sheet for a destructive option or a budget raise: the confirm button (lock glyph only when the state says `confirmNeedsDeviceAuth` or `submitNeedsDeviceAuth`; the mock shows the lock on every Confirm, a deviation) sends the intent, and a cancelled prompt comes back as `feedback.deviceAuth` and is shown, with nothing changed. A reject or revision note is asked in a sheet that stays open after a cancelled prompt (`notePrompt` stays set). Selectable cards use `CardSelectButtonStyle`, which mutes a disabled card with secondary text instead of the system's dimming (which failed the contrast audit offline). Detail screens hide the tab bar and keep their action bar outside the scroll view; the UI audit helper reports elements that reach below the action bar's top as `DETAIL-AUDIT-BEHIND-BAR` (scrolled content the bar hides) and returns every other finding.
 
@@ -740,7 +740,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-102: Runs and agent rows name their issue through a best-effort shared read, not a Swift guess
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Context.** A run carries only an issue id. The mocks show "PAP-1204" and "Add retries to webhook ingest" on Factory home, Agents rows, Agent detail and the Run viewer. Upper-casing the id would work for the demo and be wrong for a real server.
 
@@ -750,25 +750,25 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-103: Agent rows follow the shared rules, not the mock: a budget pause offers Budget, View run replaces Run now, Budget is the owner's
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** The Agents row offers exactly the state's actions plus two navigation buttons: View run (when the agent has a run in progress; it replaces Run now, as the mock's CTO row) and Budget (only when `canSetBudget`; it opens Agent detail, where "Set monthly budget" lives). A budget-paused agent (Engineer 2) has no Resume because the shared rule says a budget pause is lifted by the budget incident (research A1); the mock's Resume is a deviation. Pause is the only row action with the lock glyph (it is the one that asks Face ID; Resume and Run now do not). The mock's "Next heartbeat in 8m" and "last run timed out" are not in the state; rows show "last heartbeat 2m ago".
 
 ## ADR-104: Factory home and Agents models belong to a company; Run viewer and Agent detail to their route
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** `ScreenKey` gains `factoryHome` and `agents` (keyed by factory and company, kept while selected, closed when the company changes) and `agent(id)`, `run(id)` (closed when the route leaves the stack). Views start the shared refresh policy while visible (`refreshWhileVisible`); the Run viewer's 5 s interval while a run is live is the state's. Auto-scroll is the state's: the log toggle and a drag that leaves the bottom send `UserScrolled`/`JumpToLatest`. The cancelled Face ID result is shown as feedback on the screen (the confirm sheet closes when the intent is sent).
 
 ## ADR-105: The demo is honest about runs: Run now starts one, and a launch option breaks the reads
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** `FakeAgentGateway.invokeHeartbeat` puts the agent to work and reports the run (`onRunStarted`); the demo wiring adds it to the run store. `DemoControls.failReads` makes the Factory, Agents and Run reads fail with a server error; launch options `-demo-server-error` and `-demo-open run:<id>|agent:<id>` expose them. The demo's Running-now data, events and log are the mock's.
 
 ## ADR-106: The functional iOS tests run as three parallel CI jobs by test class
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Context.** The functional step took 40.5 minutes on the runner for the 2i-3 head (run 41542545380, 52 minutes in all, 60 minute timeout) and 2i-4 adds about 13 UI tests plus Swift Testing cases.
 
@@ -778,7 +778,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-107: The Inbox tab exposes its badge as its accessibility value; the demo refresh timer can be paused for tests
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui)
 
 **Context.** On the CI runner (Xcode 26.6, iOS 26.5) the Inbox tab button's accessibility element had label "Inbox" and no value, although the badge was painted (screenshot: red "3") and the state held badge=3. SwiftUI's `.badge` is drawn by the tab bar but not part of the button's accessibility element, so VoiceOver users and UI tests could not read it. Separately, `testPullToRefreshMakesTheUpdatedLabelCurrent` read "Updated 0s ago" instead of "12s": the shared refresh policy refreshes the visible Inbox every 15 s, a slow runner start (19 s to first read) let the timer fire before the test looked, and the demo clock is frozen so the refreshed read is exactly "0s".
 
@@ -788,7 +788,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-108: Work list and Issue are built on the existing holders; text input stays in the view
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-050)
 
 **Context.** The shared holders for both screens existed. The demo answered a question without telling the Inbox feed and stamped a new comment with the epoch, so it sorted first in the thread.
 
@@ -798,14 +798,14 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-109: The new Work and Issue audits are blocking-free but honest
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-050)
 
 **Decision.** `WorkAuditUITests` asserts the audit returns no findings with plain assertions (no expected failure, no allow-list) and is listed in the audit set of `scripts/ios-test.sh` (non-blocking in CI, ADR-094). The new functional classes `WorkUITests` and `IssueUITests` join shard 3.
 
 
 ## ADR-110: The tab bar's accessibility values follow key-value observation, not a timer
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, UI-060)
 
 **Context.** ADR-107 set the Inbox badge's accessibility value on the `UITabBarItem`s. UIKit rebuilds those items at moments SwiftUI gives no signal for (a sheet closing, a detail screen's bar returning), so the first version re-checked twice a second with a `Timer`. AGENTS.md and the brief forbid polling timers in views.
 
@@ -815,7 +815,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-111: Factory home and Agents audit findings are reported honestly, not expected
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, UI-060)
 
 **Context.** Three audits (Factory home, offline Factory home, Agents) used a non-strict `XCTExpectFailure` for "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text in the lower part of the screen (y about 575 to 775 of 874 pt).
 
@@ -825,7 +825,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-112: The live seam stays a provider; the real graph is plugged in when Phase 1b merges
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, G5)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, G5)
 
 **Decision.** `createLiveGraph`, `openLiveGraph` and `LivePlatform` exist only on `feat/phase-1b-adapters` (PR #7), so this branch does not call them (the Kotlin would not compile into the framework). `LiveGraphProvider` already has the Swift half (pairing browser, debug-only insecure local) and its `makeGraph()` is the single line to change. The exact steps are the "Merge checklist" in implementation-notes.md.
 
@@ -833,7 +833,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-113: Hit targets and reduce motion are checked by UI test and environment, not by a shared rule
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, UI-060)
 
 **Decision.** `HitTargetUITests` reads every button, switch and text field on each tab root and asserts at least 43.9 x 43.9 pt (rounding tolerance). Explicit animations read `accessibilityReduceMotion`. These are presentation rules with no shared state, so no Kotlin changed.
 
@@ -841,7 +841,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-114: A launch whose real graph cannot open says so and runs nothing; demo flags exist in Debug builds only
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A3, A7); amended on the 1b merge (ADR-120).
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A3, A7); amended on the 1b merge (ADR-120).
 
 **Context.** Before Phase 1b the iPhone app could only build the graph on fakes. `LiveGraphProvider.isAvailable` was never read, so a Release launch ran first-run pairing on `FakeBiometrics` (always approves). All `-demo*` flags and the diagnostics overlay worked in every build.
 
@@ -851,7 +851,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-115: Typed money is read by one strict shared parser; the app passes only the decimal separator and the currency's digits
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A4, A11, B-19, B-06)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A4, A11, B-19, B-06)
 
 **Context.** Swift parsed the budget amount: it dropped every character that was not a digit, the locale's decimal separator or a minus sign, so "250.50" typed in a comma-decimal locale became 25,050.00 (100 times too much), and the result was passed to a Face ID prompt that does not show it.
 
@@ -861,7 +861,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-116: Relative times are a function of a clock the view receives, not a value computed once
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A1, B-01, B-09)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A1, B-01, B-09)
 
 **Context.** "Updated 12s ago", card ages and a run's elapsed time were computed once in `body`, so an offline or final screen showed the age of its last render.
 
@@ -871,7 +871,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-117: A screen left while its mutation is in flight is closed after the outcome is recorded
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A6)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A6)
 
 **Context.** `ModelStore` closed a pushed screen's model when its route left the stack, and closing cancels the holder's coroutines. A back swipe during a request or a Face ID prompt dropped the outcome and the reconcile read.
 
@@ -881,7 +881,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-118: Audits set aside only the system tab bar's buttons, and say how many
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review C1 to C4)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review C1 to C4)
 
 **Context.** The audit helpers dropped any finding whose element reached below the top of the tab bar or of the app's own fixed action bar, which included the bar's own buttons. `HitTargetUITests` passed when it measured nothing.
 
@@ -891,7 +891,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-119: What the accessibility audit reports on scrolling screens, and what was changed because of it
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, round 3). The audit job is still non-blocking (ADR-094).
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, round 3). The audit job is still non-blocking (ADR-094).
 
 **Context.** After ADR-118 made the audits honest, 16 of 24 audit tests failed. A bisect on the Agents screen found two causes.
 
@@ -904,7 +904,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-120: The iPhone app opens the real graph through `LiveIosGraph.openLiveGraph` and a throwing provider
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, 1b integration)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, 1b integration)
 
 **Context.** Phase 1b (merged) provides `LiveIosGraph.openLiveGraph(allowInsecureLocal, pairingBrowser, settings)` (throws instead of aborting), `PairingBrowsers.onMainThread(show, dismiss)` and new outcomes: `AuthDeclined`, `KeyInvalidated`, `ServerKeyOutcome.Declined`, and the "here only" sign-out and removal when the key cannot be read.
 
@@ -1157,7 +1157,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision.** (1) A protected key is generated with `setUserAuthenticationParameters(0, BIOMETRIC_STRONG | DEVICE_CREDENTIAL)`: every use needs its own authentication (API 30 and later, as before; below that a protected write fails closed). (2) `KeystoreBackend.seal` and `open` return `NeedsAuthentication(cipher)` carrying an initialised, unused `javax.crypto.Cipher` and do no cryptography with a protected key; `finishSeal` and `finishOpen` complete the operation with the cipher the prompt authorised. (3) The store's `authenticate` is `suspend (reason, Cipher) -> Cipher?`; `BiometricPromptBiometrics.authenticateWithCipher` shows the prompt with `BiometricPrompt.CryptoObject(cipher)` (strong biometrics or the device credential, the only authenticators a crypto prompt accepts) and answers the cipher in `result.cryptoObject`, or `null` when the person did not approve. `javax.crypto` stays in `securestore` and `platform`; the activity never enters the store. (4) A protected key made before this change (validity not 0) is not trusted: reading it is `Invalidated`, so the factory asks for pairing again, and writing a protected value replaces it. (5) `UserNotAuthenticatedException` at the last step is `Unreadable` (`Denied`), not "ask again".
 
-**Consequences.** Cost to watch: the board token of a factory is a protected secret when app lock is on (`KeyEnrollment` sets `requireUserPresence` from `appLockEnabled`), and `StoredCredentials.call` reads it for every gateway call. With the 5 second window one prompt covered the calls made within 5 seconds; now each read of the protected token is its own prompt (serialised, one at a time), so a refresh that issues several calls can ask the person several times. Nothing caches the token (AD-001), and a fix is a product and security decision (for example one authorisation per refresh or a short in-memory token) for the owner; it is part of the R-009 evidence on a device with app lock on. Also: two consecutive protected reads prompt twice; `SecretStoreContract` has a protected case run on the fake-backed store, and device tests assert `KeyInfo.userAuthenticationValidityDurationSeconds == 0` and the old-key behaviour on the emulator. The real prompt with an enrolled fingerprint and the "another app authenticated a moment ago" step stay manual checks (R-009 evidence). Existing installs with a protected board key re-pair once. The iOS Keychain store is unaffected.
+**Consequences.** Cost to watch: the board token of a factory is a protected secret when app lock is on (`KeyEnrollment` sets `requireUserPresence` from `appLockEnabled`), and `StoredCredentials.call` reads it for every gateway call. With the 5 second window one prompt covered the calls made within 5 seconds; now each read of the protected token is its own prompt (serialised, one at a time), so a refresh that issues several calls can ask the person several times. *Amended 2026-11-05 (ADR-145):* the owner chose a short in-memory token for the foreground unlock session; it is held by a decorator above the secret store, so the Keystore and Keychain stores themselves stay per-use as described here, and the per-call cost described in this paragraph now applies to the store, not to a refresh. Also: two consecutive protected reads prompt twice; `SecretStoreContract` has a protected case run on the fake-backed store, and device tests assert `KeyInfo.userAuthenticationValidityDurationSeconds == 0` and the old-key behaviour on the emulator. The real prompt with an enrolled fingerprint and the "another app authenticated a moment ago" step stay manual checks (R-009 evidence). Existing installs with a protected board key re-pair once. The iOS Keychain store is unaffected.
 
 ## ADR-140: The device-owner prompt never hangs a caller and is never shown with the secret store's lock held
 
@@ -1169,23 +1169,23 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** The prompt can stay open for as long as the person likes without blocking other secret operations. The dropped check `host.current() === activity` of the PRD text is replaced by `canShowNow` because `AuthHost.current()` is suspending and cannot run on the main thread; the test seam covers the same case. Not proven here: a real activity stopped between `current()` and the post (device tests need a person at the screen).
 
-## ADR-141: A budget raise on an agent asks the device owner (DEC-1, run assumption, owner may overturn)
+## ADR-141: A budget raise on an agent asks the device owner (DEC-1, confirmed by the owner 2026-11-05)
 
-**Status:** Accepted as a run assumption (2026-11-04, specs/archive/261104-phase-2a-android-ui-auto-review, T-004 / R-004). Amends ADR-013, the `SetAgentBudget` entry of ADR-021 and FR-014.
+**Status:** Accepted (2026-11-04 as a run assumption, specs/archive/261104-phase-2a-android-ui-auto-review, T-004 / R-004); confirmed by the owner 2026-11-05. Amends ADR-013, the `SetAgentBudget` entry of ADR-021 and FR-014.
 
 **Context.** AGENTS.md Security Rules list "budget raise" among the destructive actions that go through `Biometrics` before the use case runs, and INTENT principle 1 puts security over convenience. `SetAgentBudget` raised any agent's spend ceiling with no prompt, on an unlocked phone, on both platforms; ADR-013 and FR-014 limited the prompt to the budget incident. No owner was available during the run to decide.
 
-**Decision.** (1) `Action.RaiseAgentBudget` joins `DeviceAuthPolicy`; `DeviceAuthPolicy.budgetSetAction(current, new)` maps a monthly budget change to it when `new` is above `current` or zero (zero stops the agent in practice), otherwise to `Action.SetAgentBudget`, which needs nothing. (2) `SetAgentBudget` takes the `DeviceAuthGuard`; order: permission, currency, device authentication, one gateway call, one re-read. Without an approved prompt the result is `NotAuthorized` and the gateway is never called. (3) `AgentDetailState.saveBudgetNeedsDeviceAuth` is computed in shared presentation from the typed amount, so Android and iPhone show the same lock glyph on the save button. (4) If the owner overturns this, AGENTS.md is amended to say "budget incident raise" only and this ADR, the policy entry and the tests named here are reverted; nothing else depends on it.
+**Decision.** (1) `Action.RaiseAgentBudget` joins `DeviceAuthPolicy`; `DeviceAuthPolicy.budgetSetAction(current, new)` maps a monthly budget change to it when `new` is above `current` or zero (zero stops the agent in practice), otherwise to `Action.SetAgentBudget`, which needs nothing. (2) `SetAgentBudget` takes the `DeviceAuthGuard`; order: permission, currency, device authentication, one gateway call, one re-read. Without an approved prompt the result is `NotAuthorized` and the gateway is never called. (3) `AgentDetailState.saveBudgetNeedsDeviceAuth` is computed in shared presentation from the typed amount, so Android and iPhone show the same lock glyph on the save button. (4) The owner confirmed this on 2026-11-05, so AGENTS.md keeps "budget raise" as a destructive action and nothing is reverted.
 
 **Consequences.** Behaviour change on the iPhone: raising a budget shows Face ID or the passcode (the prompt comes from the shared `Biometrics` port) and the Save button carries a lock glyph. `DeviceAuthRulesTest` lists `SetAgentBudget` as a use case that depends on the guard.
 
-## ADR-142: Android counts as online when the default network declares internet access, validated or not (DEC-2, run assumption, owner may overturn)
+## ADR-142: Android counts as online when the default network declares internet access, validated or not (DEC-2, confirmed by the owner 2026-11-05)
 
-**Status:** Accepted as a run assumption (2026-11-04, specs/archive/261104-phase-2a-android-ui-auto-review, T-012 / R-012). Amends item 6 of ADR-123.
+**Status:** Accepted (2026-11-04 as a run assumption, specs/archive/261104-phase-2a-android-ui-auto-review, T-012 / R-012); confirmed by the owner 2026-11-05. Amends item 6 of ADR-123.
 
 **Context.** `ConnectivityManagerConnectivity` required `NET_CAPABILITY_VALIDATED`. A home LAN, split-DNS network, captive portal, Tailscale-only path or a VPN whose probe fails is not validated, so the app showed offline and blocked mutations although the home factory was reachable, which is INTENT principle 7's primary case. INTENT principle 2 asks to show the server's truth.
 
-**Decision.** (1) Online is a default network that declares `NET_CAPABILITY_INTERNET`; no default network, or one without INTERNET, is offline (`isUsable`). (2) An unvalidated network is "online, unknown": requests are attempted and the real success or typed failure surfaces. (3) Mutations are not blocked by an unvalidated network and are still never auto-retried. (4) A callback the system refuses to register still leaves the value offline. No shared API change: `Connectivity` stays a `StateFlow<Boolean>`. If the owner overturns this, only `isUsable`, its tests and this text change.
+**Decision.** (1) Online is a default network that declares `NET_CAPABILITY_INTERNET`; no default network, or one without INTERNET, is offline (`isUsable`). (2) An unvalidated network is "online, unknown": requests are attempted and the real success or typed failure surfaces. (3) Mutations are not blocked by an unvalidated network and are still never auto-retried. (4) A callback the system refuses to register still leaves the value offline. No shared API change: `Connectivity` stays a `StateFlow<Boolean>`. The owner confirmed this on 2026-11-05; nothing is reverted.
 
 **Consequences.** On a captive portal the app tries and fails with a typed network error instead of announcing offline. The Tailscale-only case is part of the R-009 evidence (pair over Tailscale when available).
 
@@ -1199,9 +1199,9 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Consequences.** Not built in this phase: the Files tab still lists and says "open it in the web app", on both platforms (`docs/product-details.md` parity ledger, `user-docs/troubleshooting.md`). The feature lands as two pull requests, shared first and then each platform (AGENTS.md); the follow-up work items are listed in `status.md` of this spec and have not been filed as GitHub issues. Open design questions for the owner: the size limit, whether Android should offer "open in other app" at all (the file leaves the app's control) or only an in-app preview of images and text, and whether the cache should be encrypted at rest instead of relying on the app-private folder.
 
-## ADR-144: With app lock on, how often may a refresh ask for the fingerprint? (OPEN OWNER DECISION, not implemented)
+## ADR-144: With app lock on, how often may a refresh ask for the fingerprint? (resolved by ADR-145: option C)
 
-**Status:** Proposed, undecided. Found in Group 1 of specs/archive/261104-phase-2a-android-ui-auto-review (consequence of ADR-139). Nothing in the code changes until the owner decides; INTENT principle 1 (security over convenience) is the default until then.
+**Status:** Resolved 2026-11-05: the owner chose option C; implemented and recorded in [ADR-145](#adr-145-the-board-token-is-held-in-memory-per-factory-for-the-foreground-unlock-session-resolves-adr-144-option-c). Found in Group 1 of specs/archive/261104-phase-2a-android-ui-auto-review (consequence of ADR-139). The text below is the question as it was put to the owner.
 
 **Context.** When app lock is on, `KeyEnrollment` stores the board token as a protected secret (`requireUserPresence = appLockEnabled`). `StoredCredentials.call` reads the token for every gateway call. Since ADR-139 each protected read is its own system prompt, shown one at a time. A screen refresh that issues more than one gateway call therefore asks for a fingerprint more than once in a row, and the 15 second refresh timer makes that recurring. How many calls each screen makes was not counted, and the prompt count per refresh has not been observed on a device (R-009 checklist item on the per-use prompt count).
 
@@ -1212,10 +1212,47 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Trade-offs.** The prompt is the only thing that stands between an unlocked phone and the factory's data in option A, while B and C trade that for a usable app. All three keep the secret out of storage; B and C add a time-bound copy in memory. The iPhone has the same read path (`StoredCredentials` is shared); how often the Keychain asks per read there was not measured, and the same decision would apply if it asks per call.
 
-**Decision needed from the owner:** A, B or C, and for C the time bound. Then a change to ADR-139's consequences and the shared credentials path, test-first, with the prompt count recorded on a device. See `docs/technical-details.md` known limitations and `docs/android-verification-checklist.md`.
+**Decision needed from the owner (answered: C, no timer, see ADR-145):** A, B or C, and for C the time bound. Then a change to ADR-139's consequences and the shared credentials path, test-first, with the prompt count recorded on a device. See `docs/technical-details.md` known limitations and `docs/android-verification-checklist.md`.
+
+## ADR-145: The board token is held in memory per factory for the foreground unlock session (resolves ADR-144, option C)
+
+**Status:** Accepted, owner decision 2026-11-05 (specs/261105-adr144-unlock-session-token). Resolves ADR-144 with its option C. Amends ADR-139's consequences and supersedes, for this one place, the review's AD-001 statement "nothing caches the token".
+
+**Context.** ADR-139 made every read of a protected token its own system prompt, and `StoredCredentials.call` reads the token for every gateway call, so with app lock on a refresh asked for the fingerprint once per call (ADR-144). The owner chose option C: authorise once, keep the token in memory for the foreground session, still ask for destructive actions.
+
+**Decision.**
+1. *Above the store.* `SessionCachingSecretStore` (application, `auth`) decorates the `SecretStore` port. The graph binds the device store under `RawPort` and hands everything else the decorator (like the `SignedOutAware*` gateways). `KeystoreSecretStore` and `KeychainSecretStore` stay per-use, so ADR-139 is still true of them and of `SecretStoreContract`'s protected cases. The decorator is shared Kotlin, so the iPhone gets it too.
+2. *What it holds.* Only `SecretName.BoardToken`, per `InstanceId`, in a `SessionTokenMemory` (an atomic cell; no file, no `SavedStateHandle`, no log). Every read hands out a fresh `Secret.copy()` because callers wipe what they are given (without this the second call would send an empty token and sign the factory out); eviction wipes the held copy. `Secret.reveal` rules are unchanged, `toString` still redacts.
+3. *When it is emptied.* `put`, `delete` and `deleteNamespace` drop that factory's entry before and after the change (re-pair, sign out, remove, address change; a failed put too). Everything is dropped when the app goes to the background (`AppLifecycleBridge.setForeground(false)`, before the lock is told), when it returns to the foreground (for a read that began while it was away) and when an app shell is created (it starts locked). A foreground signal that changes nothing, such as the iOS scene turning active when the Face ID sheet closes, does not drop it; iOS maps only `.background` and Android only the process `ON_STOP` to the background, so a system prompt does not empty the cache. A 401 or a `KeyInvalidated` seen by `SignedOutMarker` drops that factory, so after a re-pair the next call sends the new token and never the refused one. A read that began before any of these does not repopulate the cache (a generation per factory and an epoch for "all").
+4. *The idle lock.* In `AppStateHolder` the lock engages at process start, for a newly created shell (the bridge clears when it attaches one) and in `relock()` on coming back to the foreground, which needs `backgroundedAt`; the background clear therefore always comes first. There is no foreground idle timer. No separate lock hook and no timer were added: the bound is the background and the app lock.
+5. *Single flight.* A per-factory mutex covers the miss: concurrent calls of one refresh cause one protected read (one prompt) and the others receive the cached copy. A refusal (`Denied`, `Invalidated`, `Missing`) is never cached but is shared with the callers that were waiting for it, so a cancelled prompt does not repeat for every queued call, unless the factory's token changed since that read began (a refusal from before a re-pair is not handed on, or the fresh pairing would be marked Signed out); the next call after it asks again. A cancelled read caches nothing and the next caller retries.
+6. *Destructive actions are unchanged.* `DeviceAuthGuard` through `Biometrics` runs before the use case whatever the cache holds (tested for pause, cancel, reject and budget raise with a warm cache). A stolen unlocked phone can read, not pause, cancel, reject or raise.
+7. *The contract.* `SecretStoreContract` runs against the decorator with `createProtected` left null on purpose: the contract's protected cases say an approval is never reused, which is the point of ADR-139 and not of this cache. Prompt counts of the decorator have their own tests. A Konsist rule (`SessionCacheRulesTest`) keeps the cache memory only (no persistence, serialization, files, settings, logging; never `reveal`) and constructed only by the composition root. This replaces the AD-001 statement deliberately; the kdoc of `StoredCredentials` and of `ProtectedSecretStoreCases` say so.
+
+**Unlock: what the person sees (superseded by ADR-146, which makes the unlock one prompt).** With the cache, one unlock costs two prompts when the token is protected: the lock prompt (`Biometrics` `UnlockApp`, which has no `CryptoObject`) and then the first protected read (a `CryptoObject` prompt). Making the unlock prompt itself the read needs a way for the store to attest that a specific read authenticated the person: a plain `Found` proves nothing, because it can come from an unprotected token (app lock turned on after pairing: `UpdateAppSettings` does not re-wrap tokens) or from a cache hit, and treating it as an unlock would bypass the app lock. That is a change to the `SecretStore` port, both real stores, the fake and the contract, and it would make the Android unlock stricter (strong biometric or screen lock instead of weak). It was not done in this change; it is reported to the owner as a follow-up decision. Also: switching to another factory prompts once for that factory; pairing with the lock on prompts for the write and then once for the first read (the write clears the entry). Returning from the background asks once on the first call, even inside the lock grace period, because the background clears the cache.
+
+**iOS.** `SecurityKeychain.read` builds a new `LAContext` for every read with no reuse duration, so by code reading a protected Keychain item prompted on every call before this change too. The decorator reduces that to one prompt per foreground session on the iPhone as well. Not observed on a device or simulator with enrolled biometrics.
+
+**Consequences.** Cost: while the app is in the foreground and unlocked, the board token sits in process memory and any code in the process can use it without a fresh prompt (until the background or a 401). It is cached even when the token is not protected (app lock off), where it only saves a Keystore decryption. The per-refresh prompt count on a real phone is still a device measurement (checklist item 4); the code reduces it to the unlock-time prompts above plus one per factory switch.
+
+## ADR-146: With app lock on, the protected read of the active factory's token is the unlock (SecretStore.readAttested)
+
+**Status:** Accepted, owner decision 2026-11-05 (specs/261105-adr144-unlock-session-token). Supersedes the "Unlock: what the person sees" paragraph of ADR-145 (two prompts at unlock). Amends ADR-145 decision 6 only in that the unlock prompt can now be the key prompt.
+
+**Context.** ADR-145 left an unlock at two prompts when the token is protected: the lock prompt (`Biometrics` `UnlockApp`, no `CryptoObject`) and then the first protected read. A plain `Found` cannot stand in for the lock prompt: the token may be unprotected (app lock turned on after pairing; `UpdateAppSettings` does not re-wrap tokens) or come from memory, and treating either as an unlock would open the app without the owner (INTENT principle 1).
+
+**Decision.**
+1. *Attestation, not inference.* `SecretStore.readAttested(key, reason)` returns `AttestedReadResult`: `Authenticated(secret)` only when this very read opened a user-authentication-bound secret after a prompt the person approved; `NotAttested` (unprotected, missing, or any failure that did not come from the prompt); `Denied` (the prompt this read showed was refused or failed); `Invalidated`. `Found` is not overloaded. The port default is `NotAttested`, so a store that does not implement it can never unlock the app.
+2. *Implementations.* Android `KeystoreSecretStore`: attested only when the `CryptoObject`-bound `finishOpen` ran after a successful `authenticate`; a read that never prompted attests nothing. iOS `KeychainSecretStore`: attested only for an item that has its protected marker (written and removed together with the access control) and was read through its `LAContext`; a refused prompt on a protected item is `Denied`, on an unprotected one nothing. `FakeSecretStore` is honest: it records which paths were stored with `requireUserPresence` (`put`, `seed(protected = true)`) and attests only those. `SecretStoreContract` has the same obligations for fake and real stores (unprotected and missing attest nothing; a protected read is exactly one prompt; refused is `Denied`; invalidated is `Invalidated`), and `KeychainSecretStoreTest` covers the Keychain through its fake backend.
+3. *The cache never attests.* `SessionCachingSecretStore.readAttested` goes to the device store under the factory's lock whatever the cache holds, and only an `Authenticated` answer seeds the cache (same generation rules, copies). A refresh that starts at the same time waits on that lock and shares the result, so one prompt serves both.
+4. *Unlock flow.* `UnlockSession(UnlockApp, SecretStore, SignedOutMarker)` is called by `AppStateHolder` with the selected factory. `Authenticated` is the unlock (one prompt, no second one). No active factory, no token, an unprotected token and `NotAttested` fall back to the plain `UnlockApp` prompt, so the lock always asks the owner. `Denied` keeps the app locked (the existing Cancelled issue; a retry asks again). A Konsist rule (`AttestedReadRulesTest`) lets only this use case call `readAttested`, apart from the cache and the store layers.
+5. *Invalidated key: deviation from "stay locked".* The owner's brief said an invalidated key leaves the app locked and offers re-pairing. That would lock the person out of the app they need to re-pair in (a new fingerprint on Android invalidates the key). So `Invalidated` marks the factory Needs re-pairing (through `SignedOutMarker`, which also drops any cached token) and then asks for the plain unlock prompt. The lock still requires the owner, and the factory shows its re-pair state once the app opens.
+6. *Android authenticators.* The key prompt uses strong biometric or the device credential (API 30 and later, the only levels with protected keys), which are exactly the authenticators of the plain unlock prompt on those versions. Nothing stricter is demanded, and a person with only a weak biometric unlocks with the device credential. A test pins that the two are equal.
+
+**Consequences.** With app lock on and the active factory's token protected, an unlock is one prompt; a factory paired before app lock was turned on keeps one plain prompt at unlock plus no key prompt (its token is unprotected). Other factories keep one prompt on first use. Not observed on a device: the real Keystore and Keychain prompts with enrolled credentials (checklist item 4).
 
 
-## ADR-145: `AppButton` is drawn directly, not as a Material `Button`, because a card composes two or three of them per scroll step
+## ADR-147: `AppButton` is drawn directly, not as a Material `Button`, because a card composes two or three of them per scroll step
 
 **Status:** Accepted (2026-11-06, specs/archive/261104-phase-2a-android-ui-auto-review, R-008 follow-up, round 2)
 

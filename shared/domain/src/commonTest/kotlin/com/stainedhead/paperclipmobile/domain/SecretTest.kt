@@ -52,4 +52,25 @@ class SecretTest {
         secret.startsWith("pcp_board_") shouldBe false
         Secret.of("").startsWith("p") shouldBe false
     }
+
+    @Test
+    fun `copy is an independent value that survives wiping the original and vice versa`() {
+        val original = Secret.of("pcp_board_TESTONLY1")
+
+        val copy = original.copy()
+        original.wipe()
+
+        copy shouldBe Secret.of("pcp_board_TESTONLY1")
+        copy.isWiped shouldBe false
+        original.isWiped shouldBe true
+
+        val again = copy.copy()
+        copy.wipe()
+        again shouldBe Secret.of("pcp_board_TESTONLY1")
+    }
+
+    @Test
+    fun `copy still redacts toString`() {
+        Secret.of("pcp_board_TESTONLY1").copy().toString() shouldBe "Secret(***)"
+    }
 }

@@ -17,15 +17,11 @@ import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-
-private const val SETTLE_MILLIS = 500L
 
 /** AND-051: Engineer 1 on the demo graph; the header, the work, the spend, the buttons and the owner-only budget. */
 @RunWith(AndroidJUnit4::class)
@@ -87,6 +83,7 @@ class AgentDetailScreenTest {
         tap("agent-current-run")
         tap("agent-run-${DemoId.RUN_DONE}")
 
+        awaitThat("the three taps to push their screens") { app.pushed.size >= 3 }
         app.pushed shouldBe
             listOf(
                 AppRoute.Issue(DemoId.ISSUE_RETRIES),
@@ -160,7 +157,7 @@ class AgentDetailScreenTest {
         rule.onNodeWithTag("agent-budget-save").assertIsNotEnabled()
 
         rule.onNodeWithTag("agent-budget-amount").performTextReplacement("1500")
-        runBlocking { delay(SETTLE_MILLIS) }
+        rule.awaitFieldText("agent-budget-amount", "1500")
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("agent-budget-amount-issue") }
         rule.onNodeWithTag("agent-budget-save").assertIsEnabled()
         rule.onNodeWithTag("agent-budget-save").performClick()
@@ -185,7 +182,7 @@ class AgentDetailScreenTest {
         tap("agent-set-budget")
         rule.awaitDisplayed("agent-budget-form")
         rule.onNodeWithTag("agent-budget-amount").performTextInput(text)
-        runBlocking { delay(SETTLE_MILLIS) }
+        rule.awaitFieldText("agent-budget-amount", text)
         rule.waitUntil(
             WAIT_MILLIS,
         ) { runCatching { rule.onNodeWithTag("agent-budget-save").assertIsEnabled() }.isSuccess }

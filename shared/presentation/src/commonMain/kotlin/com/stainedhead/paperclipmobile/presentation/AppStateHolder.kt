@@ -5,7 +5,7 @@ import com.stainedhead.paperclipmobile.application.instance.SwitchCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchInstance
 import com.stainedhead.paperclipmobile.application.settings.ObserveAppSettings
 import com.stainedhead.paperclipmobile.application.settings.ShouldLockApp
-import com.stainedhead.paperclipmobile.application.settings.UnlockApp
+import com.stainedhead.paperclipmobile.application.settings.UnlockSession
 import com.stainedhead.paperclipmobile.domain.AppSettings
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.Instance
@@ -59,7 +59,7 @@ sealed interface AppIntent {
 data class AppUseCases(
     val observeSettings: ObserveAppSettings,
     val observeInstances: ObserveInstances,
-    val unlock: UnlockApp,
+    val unlock: UnlockSession,
     val shouldLock: ShouldLockApp,
     val switchInstance: SwitchInstance,
     val switchCompany: SwitchCompany,
@@ -162,7 +162,7 @@ class AppStateHolder(
         scope.launch {
             val result =
                 try {
-                    useCases.unlock()
+                    useCases.unlock(mutableState.value.selectedInstanceId?.let(::InstanceId))
                 } finally {
                     internals.update { it.copy(unlocking = false) }
                 }

@@ -12,7 +12,10 @@ import com.stainedhead.paperclipmobile.domain.port.SecretStore
 
 /**
  * Finds where a factory lives and the key the device holds for it, for one call. The key is read from the
- * [SecretStore] for this call, handed to [call] and wiped afterwards; nothing here keeps it (AD-001).
+ * [SecretStore] for this call, handed to [call] and wiped afterwards; nothing here keeps it. The [SecretStore] it is
+ * given is the graph's session cache over the device store, which returns a fresh copy per read, so wiping is safe and
+ * a protected token costs one prompt per unlock session, not one per call (ADR-145; AD-001's "never cached" is
+ * superseded there).
  */
 internal class StoredCredentials(
     private val instances: InstanceRepository,

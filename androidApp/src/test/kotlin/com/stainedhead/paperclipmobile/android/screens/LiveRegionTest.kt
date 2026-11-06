@@ -74,7 +74,9 @@ class LiveRegionTest {
         try {
             rule.waitUntil(WAIT_MILLIS) { app.appState.selectedCompanyId != null }
             rule.setContent { app.Themed { DiagnosticsScreen(app.session, app.navigator) } }
+            rule.waitUntil(WAIT_MILLIS) { rule.hasTag("diagnostics-copy") }
             rule.onNodeWithTag("diagnostics-copy").performScrollTo().performClick()
+            rule.waitUntil(WAIT_MILLIS) { rule.hasTag("diagnostics-copied") }
 
             liveRegion("diagnostics-copied") shouldBe LiveRegionMode.Polite
         } finally {

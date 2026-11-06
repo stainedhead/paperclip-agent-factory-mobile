@@ -56,7 +56,7 @@ So the frames are late because the RenderThread and the buffer queue behind it a
 |---|---|---|---|
 | main | 210 | 9 | n/a |
 | Web door only for cards that are one | 208 | 9 | unchanged |
-| `AppButton` drawn directly (ADR-145), no Material Button/Surface | 133 | 3 | unchanged (the modifier order copies the Surface's; a first version that clipped first changed 41 baselines by at most 0.027% of pixels, corner anti-aliasing) |
+| `AppButton` drawn directly (ADR-147), no Material Button/Surface | 133 | 3 | unchanged (the modifier order copies the Surface's; a first version that clipped first changed 41 baselines by at most 0.027% of pixels, corner anti-aliasing) |
 
 | Frames over deadline, median of the 3 runs (min to max) | Run 1 | Run 2 | Run 3 | Median |
 |---|---|---|---|---|

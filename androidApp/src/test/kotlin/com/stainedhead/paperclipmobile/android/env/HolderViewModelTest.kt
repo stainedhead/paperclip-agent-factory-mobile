@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.stainedhead.paperclipmobile.android.screens.awaitThat
 import com.stainedhead.paperclipmobile.umbrella.PaperclipCore
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
-import java.util.concurrent.TimeUnit
 
 /** AND-011: leaving the back stack closes a holder exactly once; nothing else does. */
 class HolderViewModelTest {
@@ -82,8 +82,7 @@ class HolderViewModelTest {
         owned.store.clear()
         closes shouldBe 0
         working.value = false
-        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAIT_SECONDS)
-        while (closes == 0 && System.nanoTime() < deadline) Thread.sleep(POLL_MILLIS)
+        awaitThat("the idle waiter to close the holder") { closes == 1 }
 
         closes shouldBe 1
     }
@@ -97,10 +96,7 @@ class HolderViewModelTest {
 
         holder.close()
 
-        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAIT_SECONDS)
-        while (idleScope.coroutineContext[Job]!!.children.any { it.isActive } && System.nanoTime() < deadline) {
-            Thread.sleep(POLL_MILLIS)
-        }
+        awaitThat("the idle waiter to end") { idleScope.coroutineContext[Job]!!.children.none { it.isActive } }
         idleScope.coroutineContext[Job]!!.children.count { it.isActive } shouldBe 0
     }
 
@@ -115,9 +111,4 @@ class HolderViewModelTest {
             "editFactory" to { closedAfterClearing(graph.createEditInstanceStateHolder(null).screenHolder()) },
             "inbox" to { closedAfterClearing(graph.attention.createInboxStateHolder("i", "c").screenHolder()) },
         ).map { (name, check) -> dynamicTest(name) { check() shouldBe true } }
-
-    private companion object {
-        const val WAIT_SECONDS = 5L
-        const val POLL_MILLIS = 10L
-    }
 }
