@@ -154,6 +154,8 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case factoriesAdd
     case factoriesPairAgain
     case factoriesEmptyTitle
+    case companyGateRecheck
+    case companyGateOpenFactories
     case factoriesEmptyMessage
     case factoriesCurrent
     case factoriesLoadingCompanies

@@ -1642,6 +1642,116 @@
         }
       }
     },
+    "companyGate.checking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking for your companies…"
+          }
+        }
+      }
+    },
+    "companyGate.chooseCompany": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a company"
+          }
+        }
+      }
+    },
+    "companyGate.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't read the companies"
+          }
+        }
+      }
+    },
+    "companyGate.noCompany": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company yet"
+          }
+        }
+      }
+    },
+    "companyGate.ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company ready"
+          }
+        }
+      }
+    },
+    "companyGateMessage.checking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asking the factory which companies this key can open."
+          }
+        }
+      }
+    },
+    "companyGateMessage.chooseCompany": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This factory has several companies. Open Factories and choose the one to work in."
+          }
+        }
+      }
+    },
+    "companyGateMessage.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The factory did not answer the question, so nothing is shown as current."
+          }
+        }
+      }
+    },
+    "companyGateMessage.noCompany": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This factory has no company you can open yet. Create one in the Paperclip web app, then check again."
+          }
+        }
+      }
+    },
+    "companyGateMessage.ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A company is selected."
+          }
+        }
+      }
+    },
     "decideBy.none": {
       "extractionState": "manual",
       "localizations": {
@@ -4113,6 +4223,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Updated %@ ago"
+          }
+        }
+      }
+    },
+    "label.companyGateOpenFactories": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Factories"
+          }
+        }
+      }
+    },
+    "label.companyGateRecheck": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check again"
           }
         }
       }
