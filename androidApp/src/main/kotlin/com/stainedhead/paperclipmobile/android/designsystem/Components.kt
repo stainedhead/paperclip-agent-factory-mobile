@@ -3,6 +3,7 @@ package com.stainedhead.paperclipmobile.android.designsystem
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,14 +19,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.heading
@@ -64,6 +65,7 @@ private val HairlineWidth = 1.dp
 private val StepBadge = 24.dp
 private val LargeIcon = 40.dp
 private val SmallIcon = 16.dp
+private val ButtonShape = RoundedCornerShape(Radius.button)
 
 @Composable
 fun AppButton(
@@ -88,26 +90,32 @@ fun AppButton(
             ButtonKind.Secondary, ButtonKind.Muted -> colors.textPrimary
         }
     val outlined = kind == ButtonKind.Secondary || kind == ButtonKind.Destructive
-    Button(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth().heightIn(min = Spacing.minimumTarget),
-        enabled = enabled,
-        shape = RoundedCornerShape(Radius.button),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = container,
-                contentColor = content,
-                disabledContainerColor = colors.muted,
-                disabledContentColor = colors.textSecondary,
-            ),
-        border = if (outlined && enabled) BorderStroke(HairlineWidth, colors.border) else null,
-        contentPadding = PaddingValues(horizontal = Spacing.roomy, vertical = Spacing.medium),
+    val fill = if (enabled) container else colors.muted
+    val textColor = if (enabled) content else colors.textSecondary
+    // Drawn directly rather than as a Material Button (a Surface with a layer, an elevation animation and a content
+    // colour provider): a fling composes two or three of these per card and the look is the design system's (R-008).
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Spacing.minimumTarget)
+            .then(if (outlined && enabled) Modifier.border(HairlineWidth, colors.border, ButtonShape) else Modifier)
+            .background(fill, ButtonShape)
+            .clip(ButtonShape)
+            .clickable(
+                enabled = enabled,
+                role = Role.Button,
+                interactionSource = null,
+                indication = ripple(color = textColor),
+                onClick = onClick,
+            ).padding(horizontal = Spacing.roomy, vertical = Spacing.medium),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(SmallIcon))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(SmallIcon), tint = textColor)
             Box(Modifier.size(Spacing.medium))
         }
-        Text(text, style = AppType.button, textAlign = TextAlign.Center)
+        Text(text, style = AppType.button, color = textColor, textAlign = TextAlign.Center)
     }
 }
 
