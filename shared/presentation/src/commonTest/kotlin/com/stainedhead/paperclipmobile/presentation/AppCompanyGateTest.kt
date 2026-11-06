@@ -5,6 +5,7 @@ package com.stainedhead.paperclipmobile.presentation
 import com.stainedhead.paperclipmobile.domain.CompanyRef
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
@@ -168,6 +169,23 @@ class AppCompanyGateTest {
             val holder = unlocked(env)
 
             holder.onIntent(AppIntent.InstanceSelected("cloud"))
+            advanceUntilIdle()
+
+            env.auth.count("listCompanies") shouldBe 1
+            holder.state.value.companyGate shouldBe CompanyGate.NoCompany
+        }
+
+    @Test
+    fun `a factory that is not signed in yet is not asked, and is asked once pairing has signed it in`() =
+        runTest {
+            val pairing = empty.copy(status = InstanceStatus.SignedOut)
+            val env = Env(listOf(pairing)).also { it.noCompanies() }
+            val holder = unlocked(env)
+
+            env.auth.count("listCompanies") shouldBe 0
+            holder.state.value.companyGate shouldBe CompanyGate.Checking
+
+            env.repository.update(pairing.copy(status = InstanceStatus.SignedIn))
             advanceUntilIdle()
 
             env.auth.count("listCompanies") shouldBe 1
