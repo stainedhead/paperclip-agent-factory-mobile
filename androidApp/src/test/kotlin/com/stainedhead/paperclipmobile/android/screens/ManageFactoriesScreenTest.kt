@@ -126,9 +126,9 @@ class ManageFactoriesScreenTest {
 
         rule.onNodeWithTag("manage-remove-demo-home").performClick()
 
-        rule.onNodeWithText("Remove “Home factory”?").assertIsDisplayed()
-        rule.onNodeWithText("Deletes its saved settings from this phone.", substring = true).assertIsDisplayed()
-        rule.onNodeWithText("Revokes the key on the server if it can be reached.", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("Remove “Home factory”?")
+        rule.awaitTextDisplayed("Deletes its saved settings from this phone.", substring = true)
+        rule.awaitTextDisplayed("Revokes the key on the server if it can be reached.", substring = true)
         app.controls.biometricPromptCount shouldBe 0
         rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()

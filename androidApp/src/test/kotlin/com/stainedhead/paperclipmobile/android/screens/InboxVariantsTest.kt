@@ -152,7 +152,7 @@ class InboxVariantsTest {
         show(contentState(listOf(unknown)))
         rule.onNodeWithTag("inbox-web-${unknown.id}").performClick()
 
-        rule.onNodeWithTag("inbox-web-failed-${unknown.id}").assertIsDisplayed()
+        rule.awaitDisplayed("inbox-web-failed-${unknown.id}")
     }
 
     @Test

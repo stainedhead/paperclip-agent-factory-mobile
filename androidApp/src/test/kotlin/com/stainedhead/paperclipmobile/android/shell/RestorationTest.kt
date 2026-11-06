@@ -18,6 +18,8 @@ import com.stainedhead.paperclipmobile.android.env.GraphMode
 import com.stainedhead.paperclipmobile.android.env.ScriptedProvider
 import com.stainedhead.paperclipmobile.android.env.firstRunOpen
 import com.stainedhead.paperclipmobile.android.screens.FirstRunScreen
+import com.stainedhead.paperclipmobile.android.screens.WAIT_MILLIS
+import com.stainedhead.paperclipmobile.android.screens.awaitTextDisplayed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -71,7 +73,7 @@ class RestorationTest {
         rule.onNodeWithTag("tab-Work").assertIsSelected()
         rule.onNodeWithText("root Work").assertIsDisplayed()
         rule.onNodeWithTag("tab-Inbox").performClick()
-        rule.onNodeWithText("screen Settings", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("screen Settings", timeoutMillis = WAIT_MILLIS, substring = true)
     }
 
     @Test

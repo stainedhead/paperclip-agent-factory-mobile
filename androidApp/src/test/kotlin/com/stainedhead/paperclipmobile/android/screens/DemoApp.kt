@@ -165,7 +165,8 @@ fun ComposeTestRule.awaitDisplayed(
 fun ComposeTestRule.awaitTextDisplayed(
     text: String,
     timeoutMillis: Long = WAIT_MILLIS,
-) = waitUntil(timeoutMillis) { passes { onNodeWithText(text).assertIsDisplayed() } }
+    substring: Boolean = false,
+) = waitUntil(timeoutMillis) { passes { onNodeWithText(text, substring = substring).assertIsDisplayed() } }
 
 /** Waits for the node with [tag] to say exactly [text]. */
 fun ComposeTestRule.awaitText(
