@@ -12,7 +12,7 @@ class AttestedReadRulesTest {
     private val allowedCallers =
         listOf(
             "/application/src/commonMain/kotlin/com/stainedhead/paperclipmobile/application/settings/Settings.kt",
-            "/application/src/commonMain/kotlin/com/stainedhead/paperclipmobile/application/auth/SessionCachingSecretStore.kt",
+            "/application/src/commonMain/kotlin/com/stainedhead/paperclipmobile/application/auth/SessionCaching",
             "/infrastructure/securestore/src/",
             "/shared/domain/src/commonMain/",
             "/shared/testing/src/commonMain/",
