@@ -27,7 +27,7 @@ The Paperclip web app (`ui-dist` in the server package) is the reference for beh
 
 ## API documentation
 
-`GET /api/openapi.json` (covers about 217 of roughly 780 operations per the PRD). Server routes read in Phase 0 planning are listed in the [parent plan](../../261101-iphone-app/plan.md) section 2.
+`GET /api/openapi.json` (covers about 217 of roughly 780 operations per the PRD). Server routes read in Phase 0 planning are listed in the [parent plan](../261101-iphone-app/plan.md) section 2.
 
 ## Best practices
 

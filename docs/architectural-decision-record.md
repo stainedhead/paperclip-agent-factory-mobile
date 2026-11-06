@@ -263,7 +263,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-038: HTTP statuses outside the PRD list map to `Rejected`, `Timeout` or `Malformed`, and the status always wins
 
-**Status:** Accepted (2026-11-02, Phase 1b-1, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, Phase 1b-1, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** The server answers 400 for validation failures, malformed ids and a `revoke-current` without a board key (`access.ts:2815, 2852, 2959, 2972`; `error-handler.ts:225-243`), and a reverse proxy can answer anything, including a 200 or 502 HTML page. `DomainError` has no bad-request case and the PRD lists only 401, 403, 404, 409, 422, 429 and 5xx.
 **Decision.** One `ErrorMapper` decides. The status wins over the body: 401 `Unauthorized`, 403 `Forbidden`, 404 `NotFound`, 409 `Conflict`, 429 `RateLimited`, 408 `Timeout`, any other 4xx (including 400 and 422) `Rejected(reason)` with the server's `{"error"}` text cut to 200 characters (`http_<status>` when there is none), every 5xx `ServerError` (so a 502 HTML page is a server error, not Malformed). A 2xx whose body is not JSON, is empty or does not fit the DTO is `Malformed`. 1xx, 3xx and statuses above 599 are `Malformed`. A key id that is not a UUID is `NotFound` without a request, because the server would answer 400 for an id that cannot exist. An unknown challenge `status` is `Malformed`: the app does not guess.
@@ -295,7 +295,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-042: An unusable database is recreated empty; secrets are never in it
 
-**Status:** Accepted (2026-11-02, Phase 1b-2, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, Phase 1b-2, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** SQLite opens a garbage file and fails on the first statement; a file may also come from a newer app version after a downgrade, or lack a table. The database holds only non-secret factory configuration, settings and an Inbox cache. The credentials are in the Keychain or Keystore under `instance/{id}/`.
 **Decision.** After opening, the app probes the file (`user_version` not newer than the code; the three tables exist). If the probe shows the file is unusable (not a database, malformed, newer schema, a missing table), the database and its `-wal`/`-shm`/`-journal` files are deleted and a new empty one is created (`PaperclipPersistence.recreated` is true). Any other failure (busy, I/O, disk full, protected data unavailable, a migration that throws) deletes nothing and is reported as `StorageUnavailableException` (corrected by ADR-077). Only a failure of that second open is fatal. No secret column or secret-typed parameter exists: a test pins the exact column list and scans every stored value for `pcp_board_`, and a Konsist rule forbids importing `Secret` or `SecretKey` in the module.
@@ -312,7 +312,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-050: Keychain tests run in the iOS app test host, and the iOS tests are signed ad hoc
 
-**Status:** Accepted (2026-11-02, Phase 1b-3, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, Phase 1b-3, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** The Keychain needs an app's entitlements. A Kotlin/Native `iosSimulatorArm64Test` binary is a bare executable: run standalone it gets `errSecNotAvailable` (-25291, no `securityd`), run on a booted simulator it gets `errSecMissingEntitlement` (-34018); signing it with a `keychain-access-groups` entitlement makes `simctl spawn` refuse it ("Security policy issue"). The app test host also gets -34018 when it is built with `CODE_SIGNING_ALLOWED=NO` (what `scripts/ios-test.sh` used), and succeeds when built ad-hoc signed.
 **Decision.** The store's decisions (which protection, replace on duplicate, status to result mapping, marker, wiping) run in Kotlin/Native tests against a scripted `KeychainBackend`, together with the shared `SecretStoreContract`. The real Keychain runs in Swift Testing tests in the app test host (`iosApp/Tests/iosAppTests`), which call the store through `PlatformServices` in the umbrella, run the same contract on the real Keychain and check the stored attributes with `SecItemCopyMatching`. `scripts/ios-test.sh` builds with `CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES`. Each test uses its own Keychain service and cleans up.
@@ -495,7 +495,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-075: Pairing, pending-key and health calls carry the pins of the factory at that address
 
-**Status:** Accepted (2026-11-02, review1b F-A-1, `specs/261102-phase-1b-adapters`)
+**Status:** Accepted (2026-11-02, review1b F-A-1, `specs/archive/261102-phase-1b-adapters`)
 
 **Context.** The fail-closed pin rule (ADR-040) is `request.pins.isNotEmpty() && !pinsEnforced`. Calls with a stored key read the pins from the `Instance`. The calls made before a key exists (health probe, `createChallenge`, `pollChallenge`, `meWithKey`, `listBoardKeysWithKey`) take only a `BaseUri` on the port, so they built `Destination(baseUri)` with no pins and went out over system trust TLS. Those calls carry the new board token, the challenge token and the pending key: the most sensitive traffic.
 **Decision.** The ports keep their signatures. `HealthGatewayAdapter` and `AuthGatewayAdapter` look up the pins of the configured factory at the same `BaseUri` (`PinLookup` over `InstanceRepository.observeAll()`, union of the pins of every factory at that address) and put them in the `Destination`, so the same refusal applies. A first pairing of an address no factory uses yet has no pins to apply, which is correct: nothing was pinned. A re-pair or probe of a pinned factory is refused with `CertificateInvalid` while no engine enforces pins. `HealthGatewayAdapter` now takes the `InstanceRepository`.
@@ -605,7 +605,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 **Consequences.** A server that already holds the fixed TESTONLY account could still be mutated; that account exists only where an earlier run of this test created it. Hex or base64 runs without any digit, capital or `+/=` (24 or more lower case letters only) are no longer redacted; real tokens carry digits.
 ## ADR-088: Swift mirrors a state holder through one generic `HolderModel`, owned by an explicit owner
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-001/UI-002)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-001/UI-002)
 
 **Context.** Every screen needs an `@Observable` adapter over a Kotlin holder's `StateFlow`. Writing one per screen invites stale reads (an intent returns before the flow emits) and holders closed from a view's `.task` ending.
 
@@ -635,7 +635,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-091: (superseded by ADR-120) A Swift shell shows the pairing page through `ApprovalPageOpener`, a callback port, because Swift cannot read a `Secret`
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-010)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-010)
 
 **Context.** `PairingBrowser.open(approvalUrl: Secret)` needs the link, but `Secret.reveal` is hidden from Objective-C on purpose and a Konsist rule limits it to infrastructure and fakes. A Swift conformance to a Kotlin `suspend` interface also needs a `__open` name that SwiftLint and swift-format reject, and an error thrown from Swift into the holder's coroutine would end the app.
 
@@ -666,7 +666,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-094: The system accessibility audits must pass locally and report, without blocking, in CI
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui)
 
 **Context.** `performAccessibilityAudit` samples screenshots, and its findings depend on the OS: local development runs Xcode 27.2 on the iOS 27.2 simulator, the macOS runner image stops at Xcode 26.6 and the iOS 26.5 runtime (checked with a diagnostics step; no newer Xcode is installed). Across five CI runs of the same product code the audit tests failed differently each time: "Contrast failed" on black text on a white card (Edit form, Settings rows, Manage's "3 factories" caption, Settings' "Paired devices and keys"), "Hit area is too small | Device name" on a field that already has a 44 pt minimum height, and "Audit failed to complete in time" (error -56). Several of those passed on the next run, and none reproduced locally, where all six audits pass on the iPhone Air. The palette's secondary text is about 5.7:1 on its background, so the contrast findings are not a palette defect.
 
@@ -676,7 +676,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-095: The Inbox screen shows the one app-wide Inbox holder; the refresh session stays with the environment
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-020)
 
 **Context.** The Inbox feeds the tab badge, so its holder must exist whenever a factory and company are selected, not only while the tab is visible. A second holder (or a second `RefreshSession`) created by the view would double the polling and an approve on screen would not move the badge.
 
@@ -686,7 +686,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-096: The demo Inbox behaves like a server: resolving removes the card, the first read is 12 s old, Side Project is empty, and the phone can go offline
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-020)
 
 **Context.** UI tests and screenshots need the Inbox to react to approve, keep paused and refresh the way the real feed does, and to show empty and offline states.
 
@@ -696,7 +696,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-097: The Inbox renders the state's order and kinds; cards are a List with swipe actions and a combined text block
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-020)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-020)
 
 **Decision.** Sections, cards and chips are shown in the order the state gives (shared grouping sorts Critical first, so the budget alert precedes the HIGH approval, unlike the mock; chips are in kind order). The state has no sub-kind ("Plans queue", "Hire agent"), so the kind line is the kind and identifier. A `List` is used because only list rows support swipe actions; Snooze opens a confirmation dialog listing `snoozeOptions`. The card's text block is one button with a combined spoken label; the action buttons stay separate elements. Kinds the app cannot show open `item.webUrl` in `SFSafariViewController`, only for http(s). Decision, approval, budget-incident, issue, run and agent targets map to routes or a sheet that are labelled placeholders until later milestones.
 
@@ -704,7 +704,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-098: Detail screens own their model by route, refresh while visible, and take their hints from the card that opened them
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Context.** The Decision, Approval and Budget screens each have a shared holder that polls (15 s while the item can change, none once final) and that needs, for a decision, facts only the Inbox card knows (agent name, decide-by, snooze key).
 
@@ -714,7 +714,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-099: The demo can show a server that moved on: resolved elsewhere, offline after the detail loaded, the server's own spend
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Decision.** `DemoControls` gains `resolveDecisionElsewhere`, `resolveApprovalElsewhere`, `resolveIncidentElsewhere` (the Inbox feed still lists the card, as in a feed read a moment earlier) and `setBudgetServerSpend` (the server's spend is above what the incident showed, so a raise that clears the shown spend gets the server's 422 reason). Launch options: `-demo-resolved-elsewhere decision,approval,budget`, `-demo-offline-after-detail` (offline once the first detail screen has content, because all three holders refuse to load while offline), `-demo-budget-server-spend <cents>`, and `-demo-open decision:<id>|approval:<id>|budget:<id>`. Deciding or dismissing a decision removes its Inbox card through `FakeDecisionGateway.onResolved`; dec-1183 carries a required input with a 40 character limit; effect results carry the server's effect type.
 
@@ -722,7 +722,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-100: A hire approval's manager is named by the shared load, not by the view
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Context.** The payload holds only `reportsToAgentId`; the mock shows "Reports to CTO". Resolving an id to a name in Swift would be a rule in the app.
 
@@ -732,7 +732,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-101: Face ID is the use case's; destructive controls show the lock, a plain Confirm does not; disabled cards are muted, not dimmed
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-030)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-030)
 
 **Decision.** No screen asks Face ID itself and none adds a second confirmation sheet for a destructive option or a budget raise: the confirm button (lock glyph only when the state says `confirmNeedsDeviceAuth` or `submitNeedsDeviceAuth`; the mock shows the lock on every Confirm, a deviation) sends the intent, and a cancelled prompt comes back as `feedback.deviceAuth` and is shown, with nothing changed. A reject or revision note is asked in a sheet that stays open after a cancelled prompt (`notePrompt` stays set). Selectable cards use `CardSelectButtonStyle`, which mutes a disabled card with secondary text instead of the system's dimming (which failed the contrast audit offline). Detail screens hide the tab bar and keep their action bar outside the scroll view; the UI audit helper reports elements that reach below the action bar's top as `DETAIL-AUDIT-BEHIND-BAR` (scrolled content the bar hides) and returns every other finding.
 
@@ -740,7 +740,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-102: Runs and agent rows name their issue through a best-effort shared read, not a Swift guess
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Context.** A run carries only an issue id. The mocks show "PAP-1204" and "Add retries to webhook ingest" on Factory home, Agents rows, Agent detail and the Run viewer. Upper-casing the id would work for the demo and be wrong for a real server.
 
@@ -750,25 +750,25 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-103: Agent rows follow the shared rules, not the mock: a budget pause offers Budget, View run replaces Run now, Budget is the owner's
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** The Agents row offers exactly the state's actions plus two navigation buttons: View run (when the agent has a run in progress; it replaces Run now, as the mock's CTO row) and Budget (only when `canSetBudget`; it opens Agent detail, where "Set monthly budget" lives). A budget-paused agent (Engineer 2) has no Resume because the shared rule says a budget pause is lifted by the budget incident (research A1); the mock's Resume is a deviation. Pause is the only row action with the lock glyph (it is the one that asks Face ID; Resume and Run now do not). The mock's "Next heartbeat in 8m" and "last run timed out" are not in the state; rows show "last heartbeat 2m ago".
 
 ## ADR-104: Factory home and Agents models belong to a company; Run viewer and Agent detail to their route
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** `ScreenKey` gains `factoryHome` and `agents` (keyed by factory and company, kept while selected, closed when the company changes) and `agent(id)`, `run(id)` (closed when the route leaves the stack). Views start the shared refresh policy while visible (`refreshWhileVisible`); the Run viewer's 5 s interval while a run is live is the state's. Auto-scroll is the state's: the log toggle and a drag that leaves the bottom send `UserScrolled`/`JumpToLatest`. The cancelled Face ID result is shown as feedback on the screen (the confirm sheet closes when the intent is sent).
 
 ## ADR-105: The demo is honest about runs: Run now starts one, and a launch option breaks the reads
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Decision.** `FakeAgentGateway.invokeHeartbeat` puts the agent to work and reports the run (`onRunStarted`); the demo wiring adds it to the run store. `DemoControls.failReads` makes the Factory, Agents and Run reads fail with a server error; launch options `-demo-server-error` and `-demo-open run:<id>|agent:<id>` expose them. The demo's Running-now data, events and log are the mock's.
 
 ## ADR-106: The functional iOS tests run as three parallel CI jobs by test class
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-040)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-040)
 
 **Context.** The functional step took 40.5 minutes on the runner for the 2i-3 head (run 41542545380, 52 minutes in all, 60 minute timeout) and 2i-4 adds about 13 UI tests plus Swift Testing cases.
 
@@ -778,7 +778,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-107: The Inbox tab exposes its badge as its accessibility value; the demo refresh timer can be paused for tests
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui)
 
 **Context.** On the CI runner (Xcode 26.6, iOS 26.5) the Inbox tab button's accessibility element had label "Inbox" and no value, although the badge was painted (screenshot: red "3") and the state held badge=3. SwiftUI's `.badge` is drawn by the tab bar but not part of the button's accessibility element, so VoiceOver users and UI tests could not read it. Separately, `testPullToRefreshMakesTheUpdatedLabelCurrent` read "Updated 0s ago" instead of "12s": the shared refresh policy refreshes the visible Inbox every 15 s, a slow runner start (19 s to first read) let the timer fire before the test looked, and the demo clock is frozen so the refreshed read is exactly "0s".
 
@@ -788,7 +788,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-108: Work list and Issue are built on the existing holders; text input stays in the view
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-050)
 
 **Context.** The shared holders for both screens existed. The demo answered a question without telling the Inbox feed and stamped a new comment with the epoch, so it sorted first in the thread.
 
@@ -798,14 +798,14 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-109: The new Work and Issue audits are blocking-free but honest
 
-**Status:** Accepted (2026-11-02, specs/261102-phase-2i-iphone-ui, UI-050)
+**Status:** Accepted (2026-11-02, specs/archive/261102-phase-2i-iphone-ui, UI-050)
 
 **Decision.** `WorkAuditUITests` asserts the audit returns no findings with plain assertions (no expected failure, no allow-list) and is listed in the audit set of `scripts/ios-test.sh` (non-blocking in CI, ADR-094). The new functional classes `WorkUITests` and `IssueUITests` join shard 3.
 
 
 ## ADR-110: The tab bar's accessibility values follow key-value observation, not a timer
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, UI-060)
 
 **Context.** ADR-107 set the Inbox badge's accessibility value on the `UITabBarItem`s. UIKit rebuilds those items at moments SwiftUI gives no signal for (a sheet closing, a detail screen's bar returning), so the first version re-checked twice a second with a `Timer`. AGENTS.md and the brief forbid polling timers in views.
 
@@ -815,7 +815,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-111: Factory home and Agents audit findings are reported honestly, not expected
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, UI-060)
 
 **Context.** Three audits (Factory home, offline Factory home, Agents) used a non-strict `XCTExpectFailure` for "Dynamic Type font sizes are partially unsupported" and "Text clipped" on text in the lower part of the screen (y about 575 to 775 of 874 pt).
 
@@ -825,7 +825,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-112: The live seam stays a provider; the real graph is plugged in when Phase 1b merges
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, G5)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, G5)
 
 **Decision.** `createLiveGraph`, `openLiveGraph` and `LivePlatform` exist only on `feat/phase-1b-adapters` (PR #7), so this branch does not call them (the Kotlin would not compile into the framework). `LiveGraphProvider` already has the Swift half (pairing browser, debug-only insecure local) and its `makeGraph()` is the single line to change. The exact steps are the "Merge checklist" in implementation-notes.md.
 
@@ -833,7 +833,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-113: Hit targets and reduce motion are checked by UI test and environment, not by a shared rule
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, UI-060)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, UI-060)
 
 **Decision.** `HitTargetUITests` reads every button, switch and text field on each tab root and asserts at least 43.9 x 43.9 pt (rounding tolerance). Explicit animations read `accessibilityReduceMotion`. These are presentation rules with no shared state, so no Kotlin changed.
 
@@ -841,7 +841,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-114: A launch whose real graph cannot open says so and runs nothing; demo flags exist in Debug builds only
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A3, A7); amended on the 1b merge (ADR-120).
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A3, A7); amended on the 1b merge (ADR-120).
 
 **Context.** Before Phase 1b the iPhone app could only build the graph on fakes. `LiveGraphProvider.isAvailable` was never read, so a Release launch ran first-run pairing on `FakeBiometrics` (always approves). All `-demo*` flags and the diagnostics overlay worked in every build.
 
@@ -851,7 +851,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-115: Typed money is read by one strict shared parser; the app passes only the decimal separator and the currency's digits
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A4, A11, B-19, B-06)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A4, A11, B-19, B-06)
 
 **Context.** Swift parsed the budget amount: it dropped every character that was not a digit, the locale's decimal separator or a minus sign, so "250.50" typed in a comma-decimal locale became 25,050.00 (100 times too much), and the result was passed to a Face ID prompt that does not show it.
 
@@ -861,7 +861,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-116: Relative times are a function of a clock the view receives, not a value computed once
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A1, B-01, B-09)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A1, B-01, B-09)
 
 **Context.** "Updated 12s ago", card ages and a run's elapsed time were computed once in `body`, so an offline or final screen showed the age of its last render.
 
@@ -871,7 +871,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-117: A screen left while its mutation is in flight is closed after the outcome is recorded
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review A6)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review A6)
 
 **Context.** `ModelStore` closed a pushed screen's model when its route left the stack, and closing cancels the holder's coroutines. A back swipe during a request or a Face ID prompt dropped the outcome and the reconcile read.
 
@@ -881,7 +881,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-118: Audits set aside only the system tab bar's buttons, and say how many
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, review C1 to C4)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, review C1 to C4)
 
 **Context.** The audit helpers dropped any finding whose element reached below the top of the tab bar or of the app's own fixed action bar, which included the bar's own buttons. `HitTargetUITests` passed when it measured nothing.
 
@@ -891,7 +891,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-119: What the accessibility audit reports on scrolling screens, and what was changed because of it
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, round 3). The audit job is still non-blocking (ADR-094).
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, round 3). The audit job is still non-blocking (ADR-094).
 
 **Context.** After ADR-118 made the audits honest, 16 of 24 audit tests failed. A bisect on the Agents screen found two causes.
 
@@ -904,7 +904,7 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 ## ADR-120: The iPhone app opens the real graph through `LiveIosGraph.openLiveGraph` and a throwing provider
 
-**Status:** Accepted (2026-11-03, specs/261102-phase-2i-iphone-ui, 1b integration)
+**Status:** Accepted (2026-11-03, specs/archive/261102-phase-2i-iphone-ui, 1b integration)
 
 **Context.** Phase 1b (merged) provides `LiveIosGraph.openLiveGraph(allowInsecureLocal, pairingBrowser, settings)` (throws instead of aborting), `PairingBrowsers.onMainThread(show, dismiss)` and new outcomes: `AuthDeclined`, `KeyInvalidated`, `ServerKeyOutcome.Declined`, and the "here only" sign-out and removal when the key cannot be read.
 

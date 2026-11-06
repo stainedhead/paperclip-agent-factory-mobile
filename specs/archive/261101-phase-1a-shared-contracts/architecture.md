@@ -7,7 +7,7 @@
 
 ## Architecture overview
 
-Unchanged from [the parent plan](../../261101-iphone-app/plan.md) section 3: presentation, application and domain in shared Kotlin; infrastructure implements domain ports; the umbrella wires them; apps render state. This phase adds the contents of the three inner layers and the fakes.
+Unchanged from [the parent plan](../261101-iphone-app/plan.md) section 3: presentation, application and domain in shared Kotlin; infrastructure implements domain ports; the umbrella wires them; apps render state. This phase adds the contents of the three inner layers and the fakes.
 
 ## Component architecture
 

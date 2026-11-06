@@ -3,7 +3,7 @@
 **Created:** 2026-11-02
 **Status:** Draft
 **Owner:** J
-**Related:** [Main PRD](../../paperclip-agent-factory-mobile-PRD.md) · [iPhone plan](../261101-iphone-app/plan.md) section 4 (Phase 1b) · [Phase 1a spec](../archive/261101-phase-1a-shared-contracts/spec.md) · [ADR-030 to ADR-037](../../docs/architectural-decision-record.md)
+**Related:** [Main PRD](../../../paperclip-agent-factory-mobile-PRD.md) · [iPhone plan](../261101-iphone-app/plan.md) section 4 (Phase 1b) · [Phase 1a spec](../261101-phase-1a-shared-contracts/spec.md) · [ADR-030 to ADR-037](../../../docs/architectural-decision-record.md)
 
 ---
 
