@@ -130,6 +130,7 @@ class InboxScreenTest {
         rule.onNodeWithTag("inbox-reject-${hire.id}").performClick()
         rule.awaitDisplayed("note-sheet")
         rule.onNodeWithTag("note-field").performTextInput("Too expensive")
+        rule.awaitFieldText("note-field", "Too expensive")
         rule.onNodeWithTag("note-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("note-issue") }
@@ -148,6 +149,7 @@ class InboxScreenTest {
         val hire = item("Hire a QA engineer agent")
 
         rule.onNodeWithTag("inbox-reject-${hire.id}").performClick()
+        rule.awaitDisplayed("note-cancel")
         rule.onNodeWithTag("note-cancel").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("note-sheet") }
@@ -164,6 +166,7 @@ class InboxScreenTest {
         rule.onNodeWithTag("inbox-review-${decision.id}").performClick()
         rule.onNodeWithTag("inbox-details-${hire.id}").performClick()
 
+        awaitThat("both cards to push their screens") { app.pushed.size >= 2 }
         app.pushed shouldBe
             listOf(
                 AppRoute.Decision(DemoId.DECISION_BILLING, "CTO", "today", decision.dismissalKey, "PAP-1182"),
@@ -230,6 +233,7 @@ class InboxScreenTest {
         rule.onNodeWithTag("inbox-approve-${hire.id}").assertIsNotEnabled()
         rule.onNodeWithTag("inbox-reject-${hire.id}").assertIsNotEnabled()
         rule.onNodeWithTag("inbox-details-${hire.id}").performScrollTo().performClick()
+        awaitThat("the approval screen to be pushed") { AppRoute.Approval(DemoId.APPROVAL_HIRE) in app.pushed }
         app.pushed shouldContain AppRoute.Approval(DemoId.APPROVAL_HIRE)
         state.phase shouldBe InboxPhase.Content
         state.sections.flatMap { it.items }.any { it.kind == SourceKindUi.Approval } shouldBe true

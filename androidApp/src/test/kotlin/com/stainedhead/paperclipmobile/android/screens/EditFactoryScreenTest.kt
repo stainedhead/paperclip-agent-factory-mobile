@@ -29,7 +29,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-private const val HOLDER_SETTLE_MILLIS = 500L
 private const val FAKE_PIN = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 /** AND-022: add and edit a factory: address rules and refusals, the check, pin, re-pair, sign out and remove. */
@@ -179,11 +178,13 @@ class EditFactoryScreenTest {
         rule.onNodeWithTag("edit-pin-toggle").performScrollTo().performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("edit-pin-field") }
         rule.onNodeWithTag("edit-pin-field").performTextInput("not a pin")
+        rule.awaitFieldText("edit-pin-field", "not a pin")
         rule.onNodeWithTag("edit-pin-add").performScrollTo().performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("That is not a valid pin.") }
 
         rule.onNodeWithTag("edit-pin-field").performTextClearance()
         rule.onNodeWithTag("edit-pin-field").performTextInput(FAKE_PIN)
+        rule.awaitFieldText("edit-pin-field", FAKE_PIN)
         rule.onNodeWithTag("edit-pin-add").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasText(FAKE_PIN) }
@@ -197,15 +198,19 @@ class EditFactoryScreenTest {
         app.pops shouldBe 1
 
         rule.onNodeWithTag("edit-name").performTextReplacement("Cloud factory two")
-        rule.waitUntil(WAIT_MILLIS) { rule.hasText("Cloud factory two") }
-        settleHolder()
+        rule.awaitFieldText("edit-name", "Cloud factory two")
+        // The screen reads the holder's state when Cancel is tapped: let the edit reach it and the screen first.
+        rule.waitForIdle()
         rule.onNodeWithTag("edit-cancel-button").performClick()
-        rule.waitUntil(WAIT_MILLIS) { rule.hasText("Discard your changes?") }
+        rule.awaitTextDisplayed("Discard your changes?")
         rule.onNodeWithText("Keep editing").performClick()
+        rule.waitUntil(WAIT_MILLIS) { !rule.hasText("Discard your changes?") }
         app.pops shouldBe 1
 
         rule.onNodeWithTag("edit-cancel-button").performClick()
+        rule.awaitTextDisplayed("Discard changes")
         rule.onNodeWithText("Discard changes").performClick()
+        awaitThat("the screen to close after discarding") { app.pops == 2 }
         app.pops shouldBe 2
     }
 
@@ -215,7 +220,8 @@ class EditFactoryScreenTest {
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("edit-sign-out") }
 
         rule.onNodeWithTag("edit-sign-out").performScrollTo().performClick()
-        rule.onNodeWithText("Sign out of “Home factory”?").assertIsDisplayed()
+        rule.awaitTextDisplayed("Sign out of “Home factory”?")
+        rule.awaitDisplayed("confirm-sheet-confirm")
         rule.onNodeWithTag("confirm-sheet-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.onNodeWithTag("edit-status").hasText("Signed out") }
@@ -229,12 +235,12 @@ class EditFactoryScreenTest {
         app.scriptBiometrics(BiometricResult.Cancelled)
 
         rule.onNodeWithTag("edit-remove").performScrollTo().performClick()
-        rule.onNodeWithText("Remove “Home factory”?").assertIsDisplayed()
+        rule.awaitTextDisplayed("Remove “Home factory”?")
         rule.awaitDisplayed("confirm-destructive-confirm")
         rule.onNodeWithTag("confirm-destructive-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("confirm-destructive-issue") }
-        rule.onNodeWithText("Authentication was cancelled. Nothing was changed.").assertIsDisplayed()
+        rule.awaitTextDisplayed("Authentication was cancelled. Nothing was changed.")
         app.controls.biometricPromptCount shouldBe 1
         app.popsToRoot shouldBe 0
         factoryNames() shouldBe listOf("Home factory", "Cloud factory", "Test factory")
@@ -247,9 +253,6 @@ class EditFactoryScreenTest {
         factoryNames() shouldBe listOf("Cloud factory", "Test factory")
     }
 }
-
-/** The holder reads typed text on another dispatcher; give it a moment before asking what it made of it. */
-private fun settleHolder() = runBlocking { delay(HOLDER_SETTLE_MILLIS) }
 
 private fun ComposeTestRule.isEnabled(tag: String) = runCatching { onNodeWithTag(tag).assertIsEnabled() }.isSuccess
 

@@ -113,5 +113,5 @@ Milestones are listed below; relative sizes: 1b-1 L, 1b-2 M, 1b-3 M, 1b-4 L, 1b-
 ## 12. References
 
 - PRD: [phase-1b-adapters-PRD.md](./phase-1b-adapters-PRD.md)
-- [Main PRD](../../paperclip-agent-factory-mobile-PRD.md), [AGENTS.md](../../AGENTS.md), [INTENT.md](../../INTENT.md)
-- [Phase 1a spec](../archive/261101-phase-1a-shared-contracts/spec.md), [Phase 1a fix spec](../archive/261101-phase-1a-shared-contracts-auto-review/spec.md)
+- [Main PRD](../../../paperclip-agent-factory-mobile-PRD.md), [AGENTS.md](../../../AGENTS.md), [INTENT.md](../../../INTENT.md)
+- [Phase 1a spec](../261101-phase-1a-shared-contracts/spec.md), [Phase 1a fix spec](../261101-phase-1a-shared-contracts-auto-review/spec.md)

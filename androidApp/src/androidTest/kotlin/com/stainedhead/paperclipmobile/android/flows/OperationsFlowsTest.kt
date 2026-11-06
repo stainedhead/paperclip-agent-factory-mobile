@@ -47,6 +47,7 @@ class OperationsFlowsTest : FlowTest() {
 
         script(BiometricResult.Approved)
         tap("agent-detail-pause")
+        waitFor { exists("confirm-destructive-sheet") }
         tap("confirm-destructive-confirm")
 
         waitFor { exists("agent-detail-resume") }
@@ -89,6 +90,7 @@ class OperationsFlowsTest : FlowTest() {
         waitFor { exists("work-create-form") }
 
         rule.onNodeWithTag("work-create-title").performTextInput(NEW_ISSUE)
+        waitFor { existsText(NEW_ISSUE) }
         tap("work-create-priority-High")
         tap("work-create-save")
 

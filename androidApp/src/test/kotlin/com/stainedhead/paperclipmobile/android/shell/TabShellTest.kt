@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.android.designsystem.AppButton
 import com.stainedhead.paperclipmobile.android.designsystem.PaperclipTheme
+import com.stainedhead.paperclipmobile.android.screens.WAIT_MILLIS
+import com.stainedhead.paperclipmobile.android.screens.awaitTextDisplayed
 import io.kotest.matchers.shouldBe
 import org.junit.Rule
 import org.junit.Test
@@ -107,18 +109,18 @@ class TabShellTest {
         rule.setContent { Shell(badge = 0) }
 
         rule.onNodeWithText("push settings").performClick()
-        rule.onNodeWithText("screen Settings", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("screen Settings", timeoutMillis = WAIT_MILLIS, substring = true)
 
         rule.onNodeWithTag("tab-Work").performClick()
-        rule.onNodeWithText("root Work").assertIsDisplayed()
+        rule.awaitTextDisplayed("root Work")
         rule.onNodeWithText("push decision").performClick()
-        rule.onNodeWithText("screen Decision", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("screen Decision", timeoutMillis = WAIT_MILLIS, substring = true)
 
         rule.onNodeWithTag("tab-Inbox").performClick()
-        rule.onNodeWithText("screen Settings", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("screen Settings", timeoutMillis = WAIT_MILLIS, substring = true)
 
         rule.onNodeWithTag("tab-Work").performClick()
-        rule.onNodeWithText("screen Decision", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("screen Decision", timeoutMillis = WAIT_MILLIS, substring = true)
     }
 
     @Test
@@ -126,10 +128,10 @@ class TabShellTest {
         rule.setContent { Shell(badge = 0) }
 
         rule.onNodeWithText("push settings").performClick()
-        rule.onNodeWithText("screen Settings", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("screen Settings", timeoutMillis = WAIT_MILLIS, substring = true)
         rule.onNodeWithTag("tab-Inbox").performClick()
 
-        rule.onNodeWithText("root Inbox").assertIsDisplayed()
+        rule.awaitTextDisplayed("root Inbox")
     }
 
     @Test
@@ -149,14 +151,14 @@ class TabShellTest {
         rule.onNodeWithText("push decision").performClick()
         rule.onNodeWithTag("tab-Work").performClick()
         rule.onNodeWithText("push settings").performClick()
-        rule.onNodeWithText("screen Settings", substring = true).assertIsDisplayed()
+        rule.awaitTextDisplayed("screen Settings", timeoutMillis = WAIT_MILLIS, substring = true)
 
         key = "factory-b"
         rule.waitForIdle()
 
         rule.onNodeWithText("root Work").assertIsDisplayed()
         rule.onNodeWithTag("tab-Inbox").performClick()
-        rule.onNodeWithText("root Inbox").assertIsDisplayed()
+        rule.awaitTextDisplayed("root Inbox")
     }
 
     @Test
