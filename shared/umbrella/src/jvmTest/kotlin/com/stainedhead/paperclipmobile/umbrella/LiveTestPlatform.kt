@@ -31,6 +31,7 @@ internal class LiveTestPlatform(
     override val secretStore: SecretStore = FakeSecretStore(),
     override val biometrics: Biometrics = FakeBiometrics(),
     override val connectivity: Connectivity = FakeConnectivity(),
+    override val keyReadReason: String = DEFAULT_KEY_READ_REASON,
 ) : LivePlatform {
     override val idGenerator: IdGenerator = FakeIdGenerator("live-")
     override val timeZone: DeviceTimeZone = FakeDeviceTimeZone()
