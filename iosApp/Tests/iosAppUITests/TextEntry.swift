@@ -20,6 +20,14 @@ extension XCUIElement {
         XCTFail("The field \(identifier) never received keyboard focus after \(attempts) taps", file: file, line: line)
     }
 
+    /// Whether the element's accessibility value becomes `expected` within `timeout` seconds.
+    @MainActor
+    func waitForValue(_ expected: String, timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "value == %@", expected)
+        return XCTWaiter().wait(
+            for: [XCTNSPredicateExpectation(predicate: predicate, object: self)], timeout: timeout) == .completed
+    }
+
     var hasKeyboardFocus: Bool {
         (value(forKey: "hasKeyboardFocus") as? Bool) ?? false
     }

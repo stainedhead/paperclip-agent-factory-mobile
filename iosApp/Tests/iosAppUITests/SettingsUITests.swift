@@ -72,8 +72,11 @@ final class SettingsUITests: XCTestCase {
         let toggle = app.switches["settings-app-lock-toggle"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 10))
         waitUntil(toggle, "isHittable == true")
+        app.settle(toggle)
         toggle.tap()
-        // The switch follows the shared state holder, one asynchronous round trip after the tap.
+        // The switch follows the shared state holder, one asynchronous round trip after the tap. A tap that landed
+        // while the screen was still settling is lost: when the switch has not moved after 10 s it is tapped once more.
+        if !toggle.waitForValue("0", timeout: 10) { toggle.tap() }
         waitUntil(toggle, "value == '0'", timeout: 45)
 
         app.element("settings-idle-period").tap()
