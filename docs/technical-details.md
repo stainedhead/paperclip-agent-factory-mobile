@@ -99,7 +99,7 @@ Each `create...StateHolder` call returns a new holder with its own `CoroutineSco
 
 ## Layering rules and how they are enforced
 
-Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 121 tests in 27 files (`DocumentedCountsRulesTest` fails when this number is stale):
+Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsistTest`, part of `check`) fail the build on a violation. 124 tests in 28 files (`DocumentedCountsRulesTest` fails when this number is stale):
 
 | File | Rule |
 |---|---|
@@ -120,6 +120,7 @@ Konsist tests in `shared/umbrella/src/konsistTest` (task `:shared:umbrella:konsi
 | `AndroidManifestRulesTest` | The merged debug, release and releaseDemo manifests of `androidApp` (task dependency: `processDebugManifest`, `processReleaseManifest`, `processReleaseDemoManifest`; T8.7 added the exact permission set, "one activity, no service, receiver or alias, only androidx.startup's non-exported provider", and `scripts/android-release-smoke.sh` repeats the permission and debuggable check on the built APK with `aapt2`) set `allowBackup=false`, `dataExtractionRules` and `usesCleartextTraffic=false`, request only `INTERNET`, `ACCESS_NETWORK_STATE` and `USE_BIOMETRIC`, export only the launcher Activity, and (release) name no network security config and are not debuggable; the debug config allows cleartext for `localhost` and `10.0.2.2` only. |
 | `AndroidAppRulesTest` | `androidApp` imports no `infrastructure.*` package except `infrastructure.platform`, never calls `Secret.reveal`, has no `Text("literal")` and no `BiometricPrompt` in a file that declares composables. Each scan has a planted-violation test. |
 | `AndroidAppLoggingRulesTest` | `androidApp` uses `android.util.Log` only inside `AppLog` (debug-only, rejects secrets, addresses and ids); everything else logs through it. Planted-violation test. |
+| `AndroidTestWaitRulesTest` | No `androidApp` test (`src/test`, `src/androidTest`) calls `Thread.sleep` or `delay(…SETTLE…)`, or asserts `assertIsDisplayed`/`assertExists` on the line after a tap: state holders answer on other threads, so tests wait on the condition (`awaitThat`, `awaitDisplayed`, `awaitText`, …). Planted-violation test. |
 | `AndroidAppHygieneRulesTest` | `androidApp` has no inline `@Suppress`, `@SuppressLint` or `@SuppressWarnings`, and puts nothing secret-looking (secret, token, key, approval link) into `rememberSaveable`, `SavedStateHandle` or `outState`. Planted-violation tests. The task re-runs when `androidApp/src` changes. |
 | `AndroidReleaseBuildRulesTest` | The release type is minified and shrunk with `androidApp/proguard-rules.pro` (no blanket keep or `-dontobfuscate`), `Log` is stripped, signing comes from `PAFM_UPLOAD_*` environment variables with no key file or literal password in the repository, `versionName` is the catalog's `android-app` and `versionCode` the commit count, and only the `releaseDemo` type (own application id) turns the demo entry on. |
 | `DocumentedCountsRulesTest` | The Konsist count written in this file is the real number of `@Test` methods. |
@@ -208,7 +209,7 @@ Numbers from the last local run (2026-11-04, branch `worktree-android-prd`; read
 | `androidApp` unit tests (`:androidApp:testDebugUnitTest`) | 592 in 91 classes (Robolectric on API 36, JUnit 4 plus JUnit 5 through the Vintage engine); 73 PNG files in `androidApp/src/test/screenshots` (72 baselines and the smoke image) checked by `verifyRoborazziDebug` |
 | Android device (`connectedAndroidDeviceTest`, emulator only, not part of `check`) | Run for the Group 5 verification on Pixel_9_Pro (API 37, arm64): securestore 17 run, 14 passed, 3 skipped (the lock-screen phase tests among them), 0 failures; platform 6 passed; umbrella 9 passed. Persistence has 5 declared and was not re-run for this table |
 | Android connected demo-flow (`:androidApp:connectedDebugAndroidTest`, emulator only) | 14 run on Pixel_9_Pro (API 37), 14 passed (Android Test Orchestrator, one process per test). The first Group 5 run had 2 failures: the lazy Agents list (R-032) no longer composes a row below the screen, so `OperationsFlowsTest` scrolls to the row first |
-| Konsist (`konsistTest`) | 121 tests in 27 files |
+| Konsist (`konsistTest`) | 124 tests in 28 files |
 | Swift (`iosApp/Tests`) | 376 Swift Testing cases in `iosAppTests` (as reported by the test run, including 1b's live graph, Keychain and Info.plist tests) and 131 XCUITests in `iosAppUITests` (24 are audit tests, which do not block CI; 15 are the XXXL large-text guard); recorded 2026-11-03, not re-run for this table |
 
 `commonTest` runs on the JVM, the Android host (`testAndroidHostTest`) and the iOS simulator (`iosSimulatorArm64Test`) under `./gradlew check`.
