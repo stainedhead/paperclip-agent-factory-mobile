@@ -11,7 +11,7 @@ cd "$(dirname "$0")/.."
 mode="${1:-live}"
 case "$mode" in
   live) task=":androidApp:assembleRelease"; dir="release"; package="com.stainedhead.paperclipmobile"
-        launch=(); expect=("Paperclip is locked|Add your first factory|systemui:id/biometric_prompt") ;;
+        launch=(); expect=("Paperclip is locked|Add your first factory|systemui:id/biometric_prompt|Unlock Paperclip") ;;
   demo) task=":androidApp:assembleReleaseDemo"; dir="releaseDemo"; package="com.stainedhead.paperclipmobile.demo"
         launch=(--ez demo true); expect=("Inbox") ;;
   *) echo "usage: $0 live|demo" >&2; exit 2 ;;
@@ -51,7 +51,9 @@ if [ "$crashes" != "0" ]; then
   exit 1
 fi
 # R8 stripping shows up as these even when the process survives (a caught-and-logged failure).
-if adb logcat -d | grep -E "ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|SerializationException|MissingMethodException" | grep "$package"; then
+# java.lang.ClassValue does not exist before API 34: a library probes for it, ART logs the miss at info level and the app
+# carries on (seen on an API 28 emulator, where the app reached its unlock screen). It is not an R8 stripping failure.
+if adb logcat -d | grep -E "ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|SerializationException|MissingMethodException" | grep "$package" | grep -v "java.lang.ClassValue"; then
   echo "FAIL: class loading problems in logcat" >&2
   exit 1
 fi
