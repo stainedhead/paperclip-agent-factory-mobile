@@ -143,8 +143,11 @@ class ApprovalScreenTest {
         show()
 
         rule.onNodeWithTag("approval-comment-field").performScrollTo().performTextInput("Please add a test plan")
+        rule.awaitFieldText("approval-comment-field", "Please add a test plan")
+        rule.awaitEnabled("approval-comment-post")
         rule.onNodeWithTag("approval-comment-post").performScrollTo().performClick()
 
+        rule.awaitFieldText("approval-comment-field", "")
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("Please add a test plan") }
         rule.onAllNodesWithText("Please add a test plan").assertCountEquals(1)
     }
