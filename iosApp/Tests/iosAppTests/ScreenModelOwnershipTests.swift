@@ -159,7 +159,7 @@ struct ScreenModelOwnershipTests {
             keychainService: "pafm.wall-clock.\(UUID().uuidString)",
             dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(
                 "pafm-clock-\(UUID().uuidString)"),
-            unlockReason: "Unlock", confirmReason: "Confirm")
+            unlockReason: "Unlock", confirmReason: "Confirm", keyReadReason: "Read")
         let environment = AppEnvironment(
             configuration: LaunchConfiguration(arguments: ["iosApp"]),
             provider: LiveGraphProvider(opener: ASWebAuthSessionPairingBrowser(), settings: settings))
