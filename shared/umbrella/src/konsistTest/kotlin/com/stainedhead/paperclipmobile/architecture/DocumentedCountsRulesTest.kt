@@ -98,8 +98,16 @@ class DocumentedCountsRulesTest {
                     listOf("15 seconds while the item can change"),
                 "specs/archive/261104-phase-2a-android-ui/paperclip-agent-factory-android-PRD.md" to
                     listOf("is reserved in the manifest"),
-                "docs/technical-details.md" to listOf("acceptance criterion 8 in virtual time"),
-                "docs/product-details.md" to listOf("within one 5 s virtual cycle"),
+                "docs/technical-details.md" to
+                    listOf("acceptance criterion 8 in virtual time", "new-fingerprint invalidation of the Keystore key"),
+                "docs/product-details.md" to
+                    listOf("within one 5 s virtual cycle", "New-fingerprint invalidation, the system prompt"),
+                // ADR-149: on Android a new fingerprint does not invalidate the key (the PIN fallback keeps it valid).
+                "paperclip-agent-factory-mobile-PRD.md" to listOf("enrolling a new fingerprint forces a re-pair"),
+                "user-docs/key-expiry-and-repairing.md" to listOf("enrolled a new fingerprint"),
+                "user-docs/app-lock.md" to listOf("The same happens when new fingerprints are enrolled"),
+                "docs/architectural-decision-record.md" to
+                    listOf("a new fingerprint on Android invalidates the key"),
             )
         falsehoods.forEach { (path, phrases) ->
             val text = File(projectRoot, path).readText()
