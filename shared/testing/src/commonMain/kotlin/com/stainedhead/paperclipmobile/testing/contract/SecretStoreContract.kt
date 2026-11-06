@@ -24,7 +24,10 @@ abstract class ProtectedStoreHarness {
     /** Whether the person approves the next request. */
     abstract var approve: Boolean
 
-    /** The system invalidates the protected key (a new fingerprint was enrolled). */
+    /**
+     * The system invalidates the protected key (iPhone: the enrolled biometrics changed; Android: the screen
+     * lock was removed).
+     */
     abstract fun invalidate()
 }
 

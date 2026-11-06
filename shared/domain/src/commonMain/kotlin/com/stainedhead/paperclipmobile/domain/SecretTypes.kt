@@ -47,7 +47,10 @@ sealed interface AttestedReadResult {
     /** The person refused or failed the prompt this read showed. */
     data object Denied : AttestedReadResult
 
-    /** The protected key was invalidated (for example a new fingerprint); the factory needs pairing again. */
+    /**
+     * The protected key was invalidated (iPhone: changed biometrics; Android: removed screen lock); the factory
+     * needs pairing again.
+     */
     data object Invalidated : AttestedReadResult
 }
 
@@ -58,7 +61,7 @@ sealed interface SecretReadResult {
 
     data object Missing : SecretReadResult
 
-    /** The key was invalidated, for example by a new fingerprint. The factory needs re-pairing (FR-015). */
+    /** The key was invalidated, for example by changed biometrics on iPhone. The factory needs re-pairing (FR-015). */
     data object Invalidated : SecretReadResult
 
     /** The person declined the device authentication that guards this secret. */

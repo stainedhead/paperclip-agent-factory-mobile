@@ -36,8 +36,9 @@ class IssueGatewayAdapter(
     client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String = "",
 ) : IssueGateway {
-    private val calls = CompanyCalls(client, instances, secrets)
+    private val calls = CompanyCalls(client, instances, secrets, keyReadReason)
 
     /** A slice of an attachment: [start] is the offset of the first byte and [total] the whole size when known. */
     class AttachmentSlice(

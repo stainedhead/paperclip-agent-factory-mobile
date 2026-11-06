@@ -51,7 +51,8 @@ struct AppEnvironmentTests {
             keychainService: "pafm.app-env.\(UUID().uuidString)",
             dataDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(
                 "pafm-env-\(UUID().uuidString)"),
-            unlockReason: "Unlock Paperclip", confirmReason: "Confirm this action")
+            unlockReason: "Unlock Paperclip", confirmReason: "Confirm this action",
+            keyReadReason: "Read the board key")
     }
 
     @Test func aLaunchWithoutTheDemoFlagOpensTheRealGraphAndStartsAtFirstRun() async {
@@ -134,6 +135,8 @@ struct AppEnvironmentTests {
         #expect(settings.keychainService == "com.stainedhead.paperclipmobile.board-keys")
         #expect(settings.unlockReason == ShellLabel.biometricUnlockReason.text)
         #expect(settings.confirmReason == ShellLabel.biometricConfirmReason.text)
+        #expect(settings.keyReadReason == ShellLabel.biometricKeyReadReason.text)
+        #expect(settings.keyReadReason == "Read the board key to talk to the factory")
         #expect(settings.dataDirectory.path.contains("Application Support"))
     }
 

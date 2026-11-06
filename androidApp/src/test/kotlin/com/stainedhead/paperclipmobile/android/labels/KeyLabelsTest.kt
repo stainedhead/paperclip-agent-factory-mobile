@@ -24,6 +24,7 @@ import com.stainedhead.paperclipmobile.presentation.BudgetChoice
 import com.stainedhead.paperclipmobile.presentation.BudgetOutcomeUi
 import com.stainedhead.paperclipmobile.presentation.BudgetThresholdUi
 import com.stainedhead.paperclipmobile.presentation.CommentAuthorUi
+import com.stainedhead.paperclipmobile.presentation.CompanyGate
 import com.stainedhead.paperclipmobile.presentation.DecideByKindUi
 import com.stainedhead.paperclipmobile.presentation.DecisionFinalKind
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
@@ -134,6 +135,12 @@ class KeyLabelsTest {
 
     @Test
     fun everyIdlePeriodHasText() = check("idle", IdlePeriod.entries, IdlePeriod::stringRes)
+
+    @Test
+    fun everyCompanyGateHasTitle() = check("company_gate", CompanyGate.entries, CompanyGate::stringRes)
+
+    @Test
+    fun everyCompanyGateHasMessage() = check("company_gate_message", CompanyGate.entries, CompanyGate::messageRes)
 
     @Test
     fun everyPairedDevicesStatusHasText() =

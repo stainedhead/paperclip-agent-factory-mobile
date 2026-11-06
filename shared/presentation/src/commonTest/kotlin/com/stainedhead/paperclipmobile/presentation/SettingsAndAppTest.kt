@@ -322,6 +322,7 @@ class AppStateHolderTest {
                 env.shouldLock,
                 env.switchInstance,
                 env.switchCompany,
+                env.resolveActiveCompany,
             )
         return AppStateHolder(useCases, env.clock, CoroutineScope(StandardTestDispatcher(testScheduler)))
     }

@@ -68,7 +68,10 @@ enum class ErrorKey {
      */
     AuthDeclined,
 
-    /** The phone's key was invalidated (for example a new fingerprint): the factory needs re-pairing (FR-015). */
+    /**
+     * The phone's key was invalidated (iPhone: changed biometrics; Android: removed screen lock): the factory
+     * needs re-pairing (FR-015).
+     */
     KeyInvalidated,
 
     /** This phone does not know which server key is its own, so it will not revoke keys (PRD FR-025). */

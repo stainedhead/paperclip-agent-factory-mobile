@@ -32,6 +32,7 @@ internal class LiveTestPlatform(
     override val biometrics: Biometrics = FakeBiometrics(),
     override val connectivity: Connectivity = FakeConnectivity(),
 ) : LivePlatform {
+    override var keyReadReason: String = DEFAULT_KEY_READ_REASON
     override val idGenerator: IdGenerator = FakeIdGenerator("live-")
     override val timeZone: DeviceTimeZone = FakeDeviceTimeZone()
     override val persistence: PaperclipPersistence = openJvmPersistence(clock, file)

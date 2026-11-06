@@ -84,6 +84,7 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case startupRetry
     case biometricUnlockReason
     case biometricConfirmReason
+    case biometricKeyReadReason
     case editSignOutHereOnlyTitle
     case editSignOutHereOnlyMessage
     case editSignOutHereOnlyConfirm
@@ -154,6 +155,8 @@ enum ShellLabel: String, CaseIterable, CatalogKey {
     case factoriesAdd
     case factoriesPairAgain
     case factoriesEmptyTitle
+    case companyGateRecheck
+    case companyGateOpenFactories
     case factoriesEmptyMessage
     case factoriesCurrent
     case factoriesLoadingCompanies

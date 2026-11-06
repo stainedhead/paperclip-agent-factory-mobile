@@ -72,6 +72,7 @@ class LiveGraphProvider(
                     unlockReason = context.getString(R.string.biometric_unlock_reason),
                     confirmReason = context.getString(R.string.biometric_confirm_reason),
                     writeReason = context.getString(R.string.biometric_write_reason),
+                    keyReadReason = context.getString(R.string.biometric_key_read_reason),
                 ),
         )
 }

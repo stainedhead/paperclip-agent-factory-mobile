@@ -46,6 +46,7 @@ import com.stainedhead.paperclipmobile.application.instance.ProbeInstance
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.ReorderInstances
+import com.stainedhead.paperclipmobile.application.instance.ResolveActiveCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchInstance
 import com.stainedhead.paperclipmobile.application.instance.UpdateInstance
@@ -161,6 +162,7 @@ private fun org.koin.core.module.Module.instanceUseCases() {
     single { ObserveInstances(get()) }
     single { SwitchInstance(get(), get()) }
     single { SwitchCompany(get(), get()) }
+    single { ResolveActiveCompany(get(), get(), get()) }
     single { BuildInstanceLink() }
     single { ParseAddLink() }
 }
@@ -195,7 +197,9 @@ internal fun presentationModule() =
                 params.get(),
             )
         }
-        factory { params -> AppStateHolder(AppUseCases(get(), get(), get(), get(), get(), get()), get(), params.get()) }
+        factory { params ->
+            AppStateHolder(AppUseCases(get(), get(), get(), get(), get(), get(), get()), get(), params.get())
+        }
         factory { params ->
             FactoriesStateHolder(
                 FactoriesUseCases(get(), get(), get(), get(), get(), get(), get()),

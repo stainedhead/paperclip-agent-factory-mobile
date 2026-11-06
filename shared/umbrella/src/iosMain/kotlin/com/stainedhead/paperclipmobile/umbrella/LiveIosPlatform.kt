@@ -28,6 +28,7 @@ internal class IosLivePlatform(
     dataDirectory: String?,
     reasons: ReasonTexts,
     monitorFactory: () -> NwConnectivity = ::NwConnectivity,
+    override val keyReadReason: String = DEFAULT_KEY_READ_REASON,
 ) : LivePlatform {
     override val clock: Clock = SystemClock()
     override val idGenerator: IdGenerator = UuidIdGenerator()
@@ -51,13 +52,15 @@ internal actual fun defaultLivePlatform(): LivePlatform =
 /**
  * Where an iOS app or test puts things. [keychainService] is the Keychain `kSecAttrService` of the board keys,
  * [dataDirectory] holds the database (the app passes a folder in `Application Support`), and the two reasons are the
- * localized sentences the system shows when unlocking the app and before a destructive action.
+ * localized sentences the system shows when unlocking the app and before a destructive action, and [keyReadReason] is
+ * the one it shows when a call to the factory reads the board key (F-3, ADR-151).
  */
 data class IosLiveSettings(
     val keychainService: String,
     val dataDirectory: String,
     val unlockReason: String,
     val confirmReason: String,
+    val keyReadReason: String,
 )
 
 /**
@@ -91,6 +94,7 @@ object LiveIosGraph {
                 settings.keychainService,
                 settings.dataDirectory,
                 ReasonTexts(settings.unlockReason, settings.confirmReason),
+                keyReadReason = settings.keyReadReason,
             ),
         )
 }

@@ -44,7 +44,10 @@ internal fun StubPaperclipServer.withOneDecision(): StubPaperclipServer {
 }
 
 /** Walks the first-run flow to the end: probe, save, pair (the browser approves), choose Acme, finish. */
-suspend fun FirstRunStateHolder.completeFirstRun(address: String = LIVE_ADDRESS) {
+suspend fun FirstRunStateHolder.completeFirstRun(
+    address: String = LIVE_ADDRESS,
+    company: String? = ServerFixtures.COMPANY_ACME,
+) {
     onIntent(FirstRunIntent.AddressChanged(address))
     onIntent(FirstRunIntent.ProbeRequested)
     state.awaitLive { it.probe == ProbeStatus.Accepted }
@@ -52,7 +55,7 @@ suspend fun FirstRunStateHolder.completeFirstRun(address: String = LIVE_ADDRESS)
     state.awaitLive { it.step == FirstRunStep.Pair }
     onIntent(FirstRunIntent.PairRequested)
     state.awaitLive { it.step == FirstRunStep.Secure }
-    onIntent(FirstRunIntent.DefaultCompanyChosen(ServerFixtures.COMPANY_ACME))
+    company?.let { onIntent(FirstRunIntent.DefaultCompanyChosen(it)) }
     onIntent(FirstRunIntent.FinishRequested)
     state.awaitLive { it.step == FirstRunStep.Done }
 }

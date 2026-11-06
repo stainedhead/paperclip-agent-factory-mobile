@@ -52,6 +52,7 @@ import com.stainedhead.paperclipmobile.application.instance.ProbeInstance
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.ReorderInstances
+import com.stainedhead.paperclipmobile.application.instance.ResolveActiveCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchInstance
 import com.stainedhead.paperclipmobile.application.instance.UpdateInstance
@@ -170,6 +171,7 @@ class Env(
     val checkCredentials = CheckCredentials(repository, secrets, locks)
     val unlock = UnlockSession(UnlockApp(biometrics), secrets, signedOutMarker)
     val shouldLock = ShouldLockApp(clock)
+    val resolveActiveCompany = ResolveActiveCompany(repository, loadAccess, switchCompany)
     val validateAddress = validate
 
     private val resolveContext = ResolveCompanyContext(loadAccess)

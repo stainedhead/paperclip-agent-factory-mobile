@@ -247,6 +247,7 @@ class AtomicGuardsTest {
                         env.shouldLock,
                         env.switchInstance,
                         env.switchCompany,
+                        env.resolveActiveCompany,
                     )
                 val scope = newScope()
                 val holder = AppStateHolder(useCases, env.clock, scope)

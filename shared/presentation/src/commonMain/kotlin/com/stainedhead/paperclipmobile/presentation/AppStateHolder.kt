@@ -1,6 +1,8 @@
 package com.stainedhead.paperclipmobile.presentation
 
+import com.stainedhead.paperclipmobile.application.instance.ActiveCompanyOutcome
 import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
+import com.stainedhead.paperclipmobile.application.instance.ResolveActiveCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchInstance
 import com.stainedhead.paperclipmobile.application.settings.ObserveAppSettings
@@ -10,6 +12,7 @@ import com.stainedhead.paperclipmobile.domain.AppSettings
 import com.stainedhead.paperclipmobile.domain.CompanyId
 import com.stainedhead.paperclipmobile.domain.Instance
 import com.stainedhead.paperclipmobile.domain.InstanceId
+import com.stainedhead.paperclipmobile.domain.InstanceStatus
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +31,18 @@ enum class LockState {
     Unlocked,
 }
 
+/**
+ * Whether the selected factory has a company the tabs can show (F-1, ADR-150). Without one the company tabs show the
+ * matching explanation instead of a spinner. [Checking] means the question is not answered yet.
+ */
+enum class CompanyGate {
+    Ready,
+    Checking,
+    NoCompany,
+    ChooseCompany,
+    Failed,
+}
+
 /** What the app shell needs: the lock, whether to show setup or the tabs, and the current factory and company. */
 data class AppState(
     val isLoaded: Boolean = false,
@@ -37,6 +52,9 @@ data class AppState(
     val selectedInstanceId: String? = null,
     val selectedInstanceName: String? = null,
     val selectedCompanyId: String? = null,
+    val companyGate: CompanyGate = CompanyGate.Ready,
+    val isCheckingCompanies: Boolean = false,
+    val companyError: ErrorUi? = null,
 )
 
 sealed interface AppIntent {
@@ -45,6 +63,9 @@ sealed interface AppIntent {
     data object CameToForeground : AppIntent
 
     data object UnlockRequested : AppIntent
+
+    /** Reads the selected factory's companies again: from the "No company yet" screen, a pull or a retry. */
+    data object RecheckCompanies : AppIntent
 
     data class InstanceSelected(
         val instanceId: String,
@@ -63,6 +84,7 @@ data class AppUseCases(
     val shouldLock: ShouldLockApp,
     val switchInstance: SwitchInstance,
     val switchCompany: SwitchCompany,
+    val resolveCompany: ResolveActiveCompany,
 )
 
 /**
@@ -84,8 +106,13 @@ class AppStateHolder(
     init {
         this.scope.launch {
             combine(useCases.observeSettings(), useCases.observeInstances()) { s, list ->
-                val first = internals.getAndUpdate { it.copy(settings = s) }.settings == null
-                mutableState.update { it.fromSources(s, list, first) }
+                val selectedNow =
+                    s.selectedInstanceId?.let { id -> list.firstOrNull { it.id == id } } ?: list.firstOrNull()
+                val signedIn = selectedNow?.status == InstanceStatus.SignedIn
+                val first =
+                    internals.getAndUpdate { it.copy(settings = s, selectedSignedIn = signedIn) }.settings == null
+                mutableState.update { it.fromSources(s, list, first).withGate() }
+                checkCompany(force = false)
             }.collect {}
         }
     }
@@ -99,6 +126,11 @@ class AppStateHolder(
 
             AppIntent.CameToForeground -> {
                 relock()
+                checkCompany(force = true)
+            }
+
+            AppIntent.RecheckCompanies -> {
+                checkCompany(force = true)
             }
 
             AppIntent.UnlockRequested -> {
@@ -173,7 +205,49 @@ class AppStateHolder(
                     it.copy(unlockIssue = result.toIssue())
                 }
             }
+            checkCompany(force = false)
         }
+    }
+
+    /**
+     * Settles which company the selected factory shows, once per factory and again on [force] (foreground, the retry
+     * button, a pull). It reads the board token, so it waits for the unlock; a locked app reads nothing.
+     */
+    private fun checkCompany(force: Boolean) {
+        val current = mutableState.value
+        val id = current.selectedInstanceId ?: return
+        if (!internals.value.selectedSignedIn) return
+        if (!current.isLoaded || current.lock != LockState.Unlocked || current.selectedCompanyId != null) return
+        val claimed =
+            internals.claim({ it.company.running || (!force && it.company.instanceId == id) }) {
+                it.copy(company = CompanyCheck(id, running = true, outcome = it.company.outcomeFor(id)))
+            }
+        if (!claimed) return
+        mutableState.update { it.withGate() }
+        scope.launch {
+            val outcome = useCases.resolveCompany(InstanceId(id))
+            internals.update { it.copy(company = CompanyCheck(id, running = false, outcome = outcome)) }
+            mutableState.update { it.withGate() }
+        }
+    }
+
+    private fun AppState.withGate(): AppState {
+        val check = internals.value.company
+        val outcome = check.outcomeFor(selectedInstanceId)
+        val gate =
+            when {
+                selectedInstanceId == null || selectedCompanyId != null -> CompanyGate.Ready
+                outcome == null || outcome is ActiveCompanyOutcome.Ready -> CompanyGate.Checking
+                outcome is ActiveCompanyOutcome.NoCompany -> CompanyGate.NoCompany
+                outcome is ActiveCompanyOutcome.ChooseCompany -> CompanyGate.ChooseCompany
+                else -> CompanyGate.Failed
+            }
+        return copy(
+            companyGate = gate,
+            isCheckingCompanies = check.running && check.instanceId == selectedInstanceId,
+            companyError =
+                (outcome as? ActiveCompanyOutcome.Failed)?.takeIf { gate == CompanyGate.Failed }?.error?.toErrorUi(),
+        )
     }
 }
 
@@ -181,4 +255,15 @@ private data class Internals(
     val settings: AppSettings? = null,
     val backgroundedAt: Instant? = null,
     val unlocking: Boolean = false,
+    val selectedSignedIn: Boolean = false,
+    val company: CompanyCheck = CompanyCheck(),
 )
+
+/** The last company check: for which factory, whether it is running, and what it found. */
+private data class CompanyCheck(
+    val instanceId: String? = null,
+    val running: Boolean = false,
+    val outcome: ActiveCompanyOutcome? = null,
+) {
+    fun outcomeFor(id: String?): ActiveCompanyOutcome? = outcome.takeIf { instanceId == id }
+}

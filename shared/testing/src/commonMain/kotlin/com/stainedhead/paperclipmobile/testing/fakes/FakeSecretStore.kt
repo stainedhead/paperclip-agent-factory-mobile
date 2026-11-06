@@ -20,7 +20,10 @@ class FakeSecretStore : SecretStore {
     var attestedReads = 0
         private set
 
-    /** When true every read reports [SecretReadResult.Invalidated] (a new fingerprint was enrolled, FR-015). */
+    /** The reason text of every read, in order: what a real store would show on its system prompt. */
+    val readReasons = mutableListOf<String>()
+
+    /** When true every read reports [SecretReadResult.Invalidated] (the key was invalidated, FR-015). */
     var invalidated = false
 
     /** When true every read reports [SecretReadResult.Denied]. */
@@ -69,7 +72,12 @@ class FakeSecretStore : SecretStore {
     override suspend fun get(
         key: SecretKey,
         reason: String,
-    ): SecretReadResult =
+    ): SecretReadResult {
+        readReasons += reason
+        return read(key)
+    }
+
+    private fun read(key: SecretKey): SecretReadResult =
         when {
             invalidated -> SecretReadResult.Invalidated
             denyReads -> SecretReadResult.Denied

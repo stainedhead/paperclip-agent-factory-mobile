@@ -28,6 +28,14 @@ private const val TAG_BITS = 128
 private const val PER_USE_AUTHORIZATION = 0
 
 /**
+ * Who may open a protected key: strong biometrics or the device credential (PIN fallback, ADR-149). Because the
+ * credential is allowed, enrolling a new fingerprint does not invalidate the key; removing the screen lock deletes it.
+ * The unlock prompt (`CIPHER_AUTHENTICATORS` in `infrastructure/platform`) must name the same set.
+ */
+internal const val PROTECTED_KEY_AUTHENTICATORS =
+    KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL
+
+/**
  * [KeystoreBackend] on the Android Keystore: non-exportable AES-256-GCM keys generated inside the secure hardware, in
  * StrongBox when the device has it and in the TEE otherwise (a device without StrongBox reports it by throwing
  * [StrongBoxUnavailableException], which is the capability probe). A key that demands user authentication needs a
@@ -195,7 +203,7 @@ internal class AndroidKeystoreBackend(
                 .setUserAuthenticationRequired(true)
                 .setUserAuthenticationParameters(
                     PER_USE_AUTHORIZATION,
-                    KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL,
+                    PROTECTED_KEY_AUTHENTICATORS,
                 ).setInvalidatedByBiometricEnrollment(true)
         }
         return KeyGenerator

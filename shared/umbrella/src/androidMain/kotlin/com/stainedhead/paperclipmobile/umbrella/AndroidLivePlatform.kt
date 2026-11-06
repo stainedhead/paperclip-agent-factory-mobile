@@ -32,6 +32,7 @@ internal class AndroidLivePlatform(
     override val biometrics: Biometrics,
     openPersistence: (Clock) -> PaperclipPersistence,
     openConnectivity: () -> Connectivity,
+    override val keyReadReason: String = DEFAULT_KEY_READ_REASON,
 ) : LivePlatform {
     override val clock: Clock = SystemClock()
     override val idGenerator: IdGenerator = UuidIdGenerator()
@@ -69,6 +70,7 @@ internal fun androidLivePlatform(
         biometrics = prompts,
         openPersistence = { clock -> openAndroidPersistence(context, clock) },
         openConnectivity = { ConnectivityManagerConnectivity(context) },
+        keyReadReason = settings.keyReadReason,
     )
 }
 

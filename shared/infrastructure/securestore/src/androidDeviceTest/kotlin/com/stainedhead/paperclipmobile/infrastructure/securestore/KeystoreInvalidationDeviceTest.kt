@@ -20,10 +20,14 @@ import kotlin.test.assertTrue
 
 /**
  * What a real Keystore does to a user-authentication key when the secure lock screen is removed, in two runs with the
- * change between them. An emulator cannot enrol a fingerprint without a person at the screen, so this is the closest
- * a script can get to invalidation; it is not the same event. Run by hand (see `docs/technical-details.md`): set a PIN,
- * run phase 1, clear the PIN, run phase 2. Without the `invalidationPhase` instrumentation argument both phase tests
- * are skipped. The mapping of `KeyPermanentlyInvalidatedException` itself is checked by the last test.
+ * change between them. Run by hand (see `docs/android-verification-checklist.md`, item 2): set a PIN, run phase 1,
+ * clear the PIN, run phase 2. Without the `invalidationPhase` instrumentation argument both phase tests are skipped.
+ * Install the test APK yourself between the phases: Gradle uninstalls it afterwards, which deletes its keys.
+ *
+ * The key allows the device credential (ADR-149), so **enrolling a new fingerprint does not invalidate it**; this was
+ * observed on the emulator and is the decided policy. Only removing the lock screen (or deleting the key) ends its
+ * use, and phase 2 accepts exactly that. The mapping of `KeyPermanentlyInvalidatedException` itself is checked by the
+ * last test.
  */
 @RunWith(AndroidJUnit4::class)
 class KeystoreInvalidationDeviceTest {
@@ -48,8 +52,9 @@ class KeystoreInvalidationDeviceTest {
     @Test
     fun invalidationPhaseTwoFindsNoUsableKeyAfterTheLockScreenWasRemoved() {
         assumeTrue(phase == "2")
-        // Observed on the Pixel 9 Pro emulator (API 37): the system deletes the key; a device may instead keep it and
+        // Removing the lock screen: the Pixel 9 Pro emulator (API 37) deletes the key; a device may instead keep it and
         // throw KeyPermanentlyInvalidatedException. Both must read as "this record cannot be opened", never as data.
+        // A new fingerprint is not this event (ADR-149): it leaves the key usable, i.e. NeedsAuthentication.
         val outcome = backend.open("key", iv, ciphertext, byteArrayOf(2))
         assertTrue(outcome == OpenOutcome.KeyMissing || outcome == OpenOutcome.Invalidated, "got $outcome")
         backend.deleteKey("key")
