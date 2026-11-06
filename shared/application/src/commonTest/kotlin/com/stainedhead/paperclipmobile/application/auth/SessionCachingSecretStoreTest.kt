@@ -2,6 +2,7 @@
 
 package com.stainedhead.paperclipmobile.application.auth
 
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -37,6 +38,18 @@ class SessionCachingSecretStoreTest {
     ) : SecretStore by inner {
         var reads = 0
         var gate: CompletableDeferred<Unit>? = null
+
+        var attested = 0
+
+        override suspend fun readAttested(
+            key: SecretKey,
+            reason: String,
+        ): AttestedReadResult {
+            attested += 1
+            val answer = inner.readAttested(key, reason)
+            gate?.await()
+            return answer
+        }
 
         override suspend fun get(
             key: SecretKey,
@@ -306,6 +319,121 @@ class SessionCachingSecretStoreTest {
             device.gate = null
             cache.token(tokenA)
             device.reads shouldBe 2
+        }
+
+    private suspend fun SecretStore.attestedToken(key: SecretKey): String? =
+        (readAttested(key, "unlock") as? AttestedReadResult.Authenticated)?.secret?.reveal()
+
+    @Test
+    fun `an attested read goes to the device even when the token is cached, and seeds the cache`() =
+        runTest {
+            val (device, cache) = setup()
+            device.inner.seed(tokenA, "pcp_board_TESTONLYa", protected = true)
+            cache.token(tokenA)
+            device.reads shouldBe 1
+
+            cache.attestedToken(tokenA) shouldBe "pcp_board_TESTONLYa"
+            device.attested shouldBe 1
+
+            cache.forgetAll()
+            cache.attestedToken(tokenA) shouldBe "pcp_board_TESTONLYa"
+            cache.token(tokenA) shouldBe "pcp_board_TESTONLYa"
+            device.reads shouldBe 1
+            device.attested shouldBe 2
+        }
+
+    @Test
+    fun `a cached token never attests: an unprotected device token stays NotAttested with a warm cache`() =
+        runTest {
+            val (device, cache) = setup()
+            cache.token(tokenA)
+
+            cache.readAttested(tokenA, "unlock") shouldBe AttestedReadResult.NotAttested
+            device.attested shouldBe 1
+        }
+
+    @Test
+    fun `a denied or invalidated or unattested read seeds nothing`() =
+        runTest {
+            val (device, cache) = setup()
+            device.inner.seed(tokenA, "pcp_board_TESTONLYa", protected = true)
+
+            device.inner.denyReads = true
+            cache.readAttested(tokenA, "unlock") shouldBe AttestedReadResult.Denied
+            device.inner.denyReads = false
+            device.inner.invalidated = true
+            cache.readAttested(tokenA, "unlock") shouldBe AttestedReadResult.Invalidated
+            device.inner.invalidated = false
+            cache.readAttested(tokenB, "unlock") shouldBe AttestedReadResult.NotAttested
+
+            cache.token(tokenA) shouldBe "pcp_board_TESTONLYa"
+            cache.token(tokenB) shouldBe "pcp_board_TESTONLYb"
+            device.reads shouldBe 2
+        }
+
+    @Test
+    fun `a read that waits behind an attested read shares its prompt`() =
+        runTest {
+            val (device, cache) = setup()
+            device.inner.seed(tokenA, "pcp_board_TESTONLYa", protected = true)
+            device.gate = CompletableDeferred()
+
+            val unlock = async { cache.attestedToken(tokenA) }
+            runCurrent()
+            val refresh = (1..3).map { async { cache.token(tokenA) } }
+            runCurrent()
+            device.gate?.complete(Unit)
+
+            unlock.await() shouldBe "pcp_board_TESTONLYa"
+            refresh.awaitAll() shouldBe List(3) { "pcp_board_TESTONLYa" }
+            device.attested shouldBe 1
+            device.reads shouldBe 0
+        }
+
+    @Test
+    fun `an attested read that began before a clear is not kept`() =
+        runTest {
+            val (device, cache) = setup()
+            device.inner.seed(tokenA, "pcp_board_TESTONLYa", protected = true)
+            device.gate = CompletableDeferred()
+
+            val inFlight = async { cache.attestedToken(tokenA) }
+            runCurrent()
+            cache.forgetAll()
+            device.gate?.complete(Unit)
+            advanceUntilIdle()
+            inFlight.await()
+
+            device.gate = null
+            cache.token(tokenA)
+            device.reads shouldBe 1
+        }
+
+    /** A store written before the attested read existed: it overrides nothing, so it can never attest. */
+    private class BareStore : SecretStore {
+        override suspend fun put(
+            key: SecretKey,
+            value: Secret,
+            policy: SecretPolicy,
+        ) = SecretWriteResult.Failed
+
+        override suspend fun get(
+            key: SecretKey,
+            reason: String,
+        ) = SecretReadResult.Found(Secret.of("x"))
+
+        override suspend fun delete(key: SecretKey) = Unit
+
+        override suspend fun deleteNamespace(instanceId: InstanceId) = Unit
+
+        override suspend fun namespaces(): Set<InstanceId> = emptySet()
+    }
+
+    @Test
+    fun `a store that does not implement the attested read never attests`() =
+        runTest {
+            SessionCachingSecretStore(BareStore()).readAttested(tokenA, "unlock") shouldBe
+                AttestedReadResult.NotAttested
         }
 
     @Test
