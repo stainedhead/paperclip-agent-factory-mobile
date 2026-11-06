@@ -126,9 +126,13 @@ echo "In the app, add the factory ${base}, check it, pair, and give the screen l
 read -r _
 
 # 1. The Keystore-wrapped record exists, and no board key prefix is in any file the app wrote or in the log.
-records="$(adb shell run-as "$package" sh -c 'find . -path "*secrets*" -type f 2>/dev/null' | tr -d '\r')"
+# One string for adb: it joins its arguments and the device shell parses them again, so `sh -c '...'` as separate arguments
+# loses its quotes and runs `find` or `grep` with no arguments (the first run listed every file and scanned nothing).
+records="$(adb shell "run-as $package sh -c 'find . -path \"*secrets*\" -type f 2>/dev/null'" | tr -d '\r')"
 [ -n "$records" ] || fail "no Keystore-wrapped secret record was written: the pairing did not complete"
-hits="$(adb shell run-as "$package" sh -c 'grep -rl "pcp_boar[d]_" . 2>/dev/null' | tr -d '\r' || true)"
+control="$(adb shell "run-as $package sh -c 'grep -rl \"SQLite format\" . 2>/dev/null'" | tr -d '\r')"
+[ -n "$control" ] || fail "the scan found no SQLite header in the app's files: the scan itself is broken"
+hits="$(adb shell "run-as $package sh -c 'grep -rl \"pcp_boar[d]_\" . 2>/dev/null'" | tr -d '\r' || true)"
 [ -z "$hits" ] || fail "a board key prefix is in: $hits"
 [ "$(adb logcat -d | grep -c 'pcp_boar[d]_' || true)" = "0" ] || fail "a board key prefix is in logcat"
 echo "OK 1: the board key is only in the Keystore-wrapped record (${records//$'\n'/ }); no files, no log"

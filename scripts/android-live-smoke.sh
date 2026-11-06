@@ -42,7 +42,8 @@ echo "OK 1: a launch without the demo flag opens the real graph"
 #    this device the same scan checks the real record: the key may be in the Keystore-wrapped record only, as ciphertext.)
 files=$(adb shell run-as "$package" sh -c 'find . -type f 2>/dev/null' | tr -d '\r')
 [ -n "$files" ] || fail "run-as listed no files: the scan would prove nothing"
-hits=$(adb shell run-as "$package" sh -c 'grep -rl "pcp_boar[d]_" . 2>/dev/null' | tr -d '\r' || true)
+# One string for adb (it joins arguments and the device shell parses them again; see android-live-pairing.sh).
+hits=$(adb shell "run-as $package sh -c 'grep -rl \"pcp_boar[d]_\" . 2>/dev/null'" | tr -d '\r' || true)
 [ -z "$hits" ] || fail "a board key prefix is in: $hits"
 log_hits=$(adb logcat -d | grep -c "pcp_boar[d]_" || true)
 [ "$log_hits" = "0" ] || fail "$log_hits logcat lines hold a board key prefix"
