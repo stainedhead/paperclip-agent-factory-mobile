@@ -8,7 +8,9 @@ import UIKit
 final class PrivacyShieldController {
     static let level = UIWindow.Level.alert + 1
 
-    private var window: UIWindow?
+    /// The shield window while it is up. Readable so a test can check this controller's own window instead of
+    /// counting every window above alerts, which also counts the shield of the app hosting the tests.
+    private(set) var window: UIWindow?
 
     func setShown(_ shown: Bool) {
         if shown { show() } else { hide() }

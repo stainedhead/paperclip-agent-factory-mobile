@@ -20,6 +20,14 @@ extension XCUIElement {
         XCTFail("The field \(identifier) never received keyboard focus after \(attempts) taps", file: file, line: line)
     }
 
+    /// Whether the element's accessibility value becomes `expected` within `timeout` seconds.
+    @MainActor
+    func waitForValue(_ expected: String, timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "value == %@", expected)
+        return XCTWaiter().wait(
+            for: [XCTNSPredicateExpectation(predicate: predicate, object: self)], timeout: timeout) == .completed
+    }
+
     var hasKeyboardFocus: Bool {
         (value(forKey: "hasKeyboardFocus") as? Bool) ?? false
     }
@@ -39,16 +47,30 @@ extension XCUIElement {
         }
     }
 
+    /// Gives a slow runner up to `timeout` seconds to show exactly `text`. The value is read from the accessibility
+    /// tree, which trails the keyboard, so a read right after `typeText` can see a half-typed value that is later
+    /// correct. Returns whether the field showed the text; it never passes when the text never arrives.
+    @MainActor
+    func awaitShownText(_ text: String, timeout: TimeInterval = 4) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while shownText != text && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        return shownText == text
+    }
+
     /// Focuses the field, types the text and checks the field now holds exactly the intended text. A slow runner can
-    /// drop a keystroke ("fctory"), so a mismatch is cleared and typed again up to twice before it fails.
+    /// drop a keystroke ("fctory"), so a mismatch that persists for a few seconds is cleared and typed again up to
+    /// twice before it fails.
     @MainActor
     func enterText(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
         focus(file: file, line: line)
         typeText(text)
-        for _ in 0..<2 where shownText != text {
+        for _ in 0..<2 where !awaitShownText(text) {
             clearText(file: file, line: line)
             typeText(text)
         }
+        _ = awaitShownText(text)
         XCTAssertEqual(shownText, text, "Typing into \(identifier) produced the wrong text", file: file, line: line)
     }
 

@@ -82,7 +82,7 @@ extension XCUIApplication {
     @MainActor
     func waitUntilUnlocked(file: StaticString = #filePath, line: UInt = #line) {
         let lock = element("lock-screen")
-        guard lock.waitForExistence(timeout: 3) else { return }
+        guard lock.waitForExistence(timeout: 10) else { return }
         let cleared = NSPredicate(format: "exists == false")
         let grace = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: cleared, object: lock)], timeout: 8)
         if grace != .completed, buttons["unlock-button"].exists { buttons["unlock-button"].tap() }
