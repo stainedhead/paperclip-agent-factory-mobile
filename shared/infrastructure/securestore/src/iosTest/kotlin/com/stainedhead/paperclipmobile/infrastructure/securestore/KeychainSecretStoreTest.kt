@@ -185,7 +185,7 @@ class KeychainSecretStoreTest {
         }
 
     @Test
-    fun `ADR-146 a declined or failed prompt on a protected item is Denied and on an unprotected one attests nothing`() =
+    fun `ADR-146 a declined prompt on a protected item is Denied but attests nothing when unprotected`() =
         runTest {
             store.put(key, Secret.of("v"), protected)
             backend.readFailure = errSecUserCanceled

@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.infrastructure.securestore
 
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -48,6 +49,16 @@ class KeychainSecretStore internal constructor(
         reason: String,
     ): SecretReadResult = withContext(Dispatchers.Default) { getNow(key.path, reason) }
 
+    /**
+     * Attested only for an item that was written protected (it has its marker) and was read, so the access control
+     * evaluated through the prompt (ADR-146). The marker is written and removed together with the protection, so it
+     * stands for "this item's access control demands the person". An unprotected or missing item attests nothing.
+     */
+    override suspend fun readAttested(
+        key: SecretKey,
+        reason: String,
+    ): AttestedReadResult = withContext(Dispatchers.Default) { attestedNow(key.path, reason) }
+
     override suspend fun delete(key: SecretKey) = withContext(Dispatchers.Default) { deleteNow(key.path) }
 
     override suspend fun deleteNamespace(instanceId: InstanceId) =
@@ -89,6 +100,39 @@ class KeychainSecretStore internal constructor(
             errSecSuccess -> SecretReadResult.Invalidated
             errSecItemNotFound -> SecretReadResult.Missing
             else -> SecretReadResult.Denied
+        }
+    }
+
+    private fun attestedNow(
+        account: String,
+        reason: String,
+    ): AttestedReadResult {
+        val markedProtected = backend.exists(account + MARKER_SUFFIX) == errSecSuccess
+        val outcome = backend.read(account, reason)
+        val data = outcome.data
+        return when {
+            outcome.status == errSecSuccess && data != null -> {
+                val secret = Secret.of(data.decodeToString())
+                data.fill(0)
+                if (markedProtected) {
+                    AttestedReadResult.Authenticated(secret)
+                } else {
+                    secret.wipe()
+                    AttestedReadResult.NotAttested
+                }
+            }
+
+            mapReadFailure(outcome.status) == ReadFailure.Unreadable -> {
+                if (markedProtected) AttestedReadResult.Denied else AttestedReadResult.NotAttested
+            }
+
+            markedProtected -> {
+                AttestedReadResult.Invalidated
+            }
+
+            else -> {
+                AttestedReadResult.NotAttested
+            }
         }
     }
 
