@@ -34,7 +34,8 @@ class UnlockSessionTest {
 
     private fun env() = Env(listOf(TestData.instance()))
 
-    private fun Env.unlock(secrets: SecretStore = this.secrets) = UnlockSession(UnlockApp(biometrics), secrets, signedOut)
+    private fun Env.unlock(secrets: SecretStore = this.secrets) =
+        UnlockSession(UnlockApp(biometrics), secrets, signedOut)
 
     private suspend fun Env.store(policy: SecretPolicy) {
         secrets.put(key, Secret.of(TestData.TOKEN), policy)
@@ -108,7 +109,9 @@ class UnlockSessionTest {
             env.unlock()(id) shouldBe BiometricResult.Cancelled
 
             env.biometrics.prompts shouldBe listOf(AuthReason.UnlockApp)
-            env.repository.current.single().status shouldBe InstanceStatus.NeedsRePairing
+            env.repository.current
+                .single()
+                .status shouldBe InstanceStatus.NeedsRePairing
         }
 
     @Test

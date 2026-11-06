@@ -74,6 +74,7 @@ import com.stainedhead.paperclipmobile.application.run.TailRunLog
 import com.stainedhead.paperclipmobile.application.settings.ObserveAppSettings
 import com.stainedhead.paperclipmobile.application.settings.ShouldLockApp
 import com.stainedhead.paperclipmobile.application.settings.UnlockApp
+import com.stainedhead.paperclipmobile.application.settings.UnlockSession
 import com.stainedhead.paperclipmobile.application.settings.UpdateAppSettings
 import com.stainedhead.paperclipmobile.domain.AppSettings
 import com.stainedhead.paperclipmobile.domain.CompanyScope
@@ -167,7 +168,7 @@ class Env(
     val revokeKey = RevokeBoardKey(repository, auth, signOut, signedOutMarker)
     val expiry = KeyExpiryStatus(clock)
     val checkCredentials = CheckCredentials(repository, secrets, locks)
-    val unlock = UnlockApp(biometrics)
+    val unlock = UnlockSession(UnlockApp(biometrics), secrets, signedOutMarker)
     val shouldLock = ShouldLockApp(clock)
     val validateAddress = validate
 
