@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.infrastructure.securestore
 
 import android.content.Context
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -78,7 +79,42 @@ class KeystoreSecretStore internal constructor(
     override suspend fun get(
         key: SecretKey,
         reason: String,
-    ): SecretReadResult = withContext(Dispatchers.IO) { getNow(key.path, reason) }
+    ): SecretReadResult = withContext(Dispatchers.IO) { getNow(key.path, reason).result }
+
+    /**
+     * Attested only when the Keystore-bound decrypt succeeded under a prompt the person approved for this call
+     * (ADR-146). An unprotected record, a missing one and any failure that did not come from the prompt attest nothing;
+     * a refused prompt is Denied and an invalidated key is Invalidated.
+     */
+    override suspend fun readAttested(
+        key: SecretKey,
+        reason: String,
+    ): AttestedReadResult =
+        withContext(Dispatchers.IO) {
+            val attempt = getNow(key.path, reason)
+            when (val read = attempt.result) {
+                is SecretReadResult.Found -> {
+                    if (attempt.prompted) {
+                        AttestedReadResult.Authenticated(read.secret)
+                    } else {
+                        read.secret.wipe()
+                        AttestedReadResult.NotAttested
+                    }
+                }
+
+                SecretReadResult.Denied -> {
+                    if (attempt.prompted) AttestedReadResult.Denied else AttestedReadResult.NotAttested
+                }
+
+                SecretReadResult.Invalidated -> {
+                    AttestedReadResult.Invalidated
+                }
+
+                SecretReadResult.Missing -> {
+                    AttestedReadResult.NotAttested
+                }
+            }
+        }
 
     override suspend fun delete(key: SecretKey) =
         withContext(Dispatchers.IO) {
@@ -150,13 +186,24 @@ class KeystoreSecretStore internal constructor(
     private suspend fun getNow(
         path: String,
         reason: String,
-    ): SecretReadResult {
+    ): ReadAttempt {
         val aad = path.encodeToByteArray()
         val begun = lock.withLock { beginRead(path, aad) }
-        if (begun !is ReadStep.Ask) return (begun as ReadStep.Done).result
+        if (begun !is ReadStep.Ask) return ReadAttempt((begun as ReadStep.Done).result, prompted = false)
         // The person is asked with the lock free: every other secret operation carries on meanwhile.
-        val authorised = promptLock.withLock { authenticate(reason, begun.cipher) } ?: return SecretReadResult.Denied
-        return lock.withLock {
+        val authorised =
+            promptLock.withLock { authenticate(reason, begun.cipher) }
+                ?: return ReadAttempt(SecretReadResult.Denied, prompted = true)
+        return ReadAttempt(finishRead(path, aad, begun, authorised), prompted = true)
+    }
+
+    private suspend fun finishRead(
+        path: String,
+        aad: ByteArray,
+        begun: ReadStep.Ask,
+        authorised: Cipher,
+    ): SecretReadResult =
+        lock.withLock {
             val now =
                 try {
                     files.read(path)
@@ -173,7 +220,6 @@ class KeystoreSecretStore internal constructor(
                 else -> readResult(backend.finishOpen(authorised, record.ciphertext, aad))
             }
         }
-    }
 
     private fun beginRead(
         path: String,
@@ -202,6 +248,12 @@ class KeystoreSecretStore internal constructor(
 
     override fun toString(): String = "KeystoreSecretStore"
 }
+
+/** A read's result and whether the person was asked for it: only a read that asked can attest (ADR-146). */
+private class ReadAttempt(
+    val result: SecretReadResult,
+    val prompted: Boolean,
+)
 
 /** What the first, locked step of a write found: nothing left to ask, or a cipher for the person to authorise. */
 private sealed interface WriteStep {

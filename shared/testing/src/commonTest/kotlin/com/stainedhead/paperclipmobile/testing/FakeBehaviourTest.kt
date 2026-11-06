@@ -1,10 +1,10 @@
 package com.stainedhead.paperclipmobile.testing
 
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.ChallengeStatus
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
-import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
 import com.stainedhead.paperclipmobile.domain.SecretName
@@ -52,7 +52,9 @@ class FakeBehaviourTest {
     fun `the secret store attests a read only for a protected secret`() =
         runTest {
             val store = FakeSecretStore()
-            val id = com.stainedhead.paperclipmobile.domain.InstanceId("a")
+            val id =
+                com.stainedhead.paperclipmobile.domain
+                    .InstanceId("a")
             val key = SecretKey(id, SecretName.BoardToken)
             val other = SecretKey(id, SecretName.ClientCertificatePassword)
 

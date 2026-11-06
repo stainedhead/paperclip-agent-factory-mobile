@@ -71,7 +71,9 @@ abstract class SecretStoreContract {
     private suspend fun anUnprotectedOrMissingSecretIsNeverAttested() {
         val store = create()
         val token = SecretKey(a, SecretName.BoardToken)
-        check(store.readAttested(token, "contract test") == AttestedReadResult.NotAttested) { "missing attests nothing" }
+        check(
+            store.readAttested(token, "contract test") == AttestedReadResult.NotAttested,
+        ) { "missing attests nothing" }
         store.put(token, Secret.of("one"), policy)
         check(store.readAttested(token, "contract test") == AttestedReadResult.NotAttested) {
             "an unprotected secret attests nothing"
