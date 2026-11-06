@@ -89,32 +89,7 @@ class KeystoreSecretStore internal constructor(
     override suspend fun readAttested(
         key: SecretKey,
         reason: String,
-    ): AttestedReadResult =
-        withContext(Dispatchers.IO) {
-            val attempt = getNow(key.path, reason)
-            when (val read = attempt.result) {
-                is SecretReadResult.Found -> {
-                    if (attempt.prompted) {
-                        AttestedReadResult.Authenticated(read.secret)
-                    } else {
-                        read.secret.wipe()
-                        AttestedReadResult.NotAttested
-                    }
-                }
-
-                SecretReadResult.Denied -> {
-                    if (attempt.prompted) AttestedReadResult.Denied else AttestedReadResult.NotAttested
-                }
-
-                SecretReadResult.Invalidated -> {
-                    AttestedReadResult.Invalidated
-                }
-
-                SecretReadResult.Missing -> {
-                    AttestedReadResult.NotAttested
-                }
-            }
-        }
+    ): AttestedReadResult = withContext(Dispatchers.IO) { getNow(key.path, reason).attested() }
 
     override suspend fun delete(key: SecretKey) =
         withContext(Dispatchers.IO) {
@@ -188,56 +163,31 @@ class KeystoreSecretStore internal constructor(
         reason: String,
     ): ReadAttempt {
         val aad = path.encodeToByteArray()
-        val begun = lock.withLock { beginRead(path, aad) }
+        val begun = lock.withLock { beginRead(files, backend, path, aad) }
         if (begun !is ReadStep.Ask) return ReadAttempt((begun as ReadStep.Done).result, prompted = false)
         // The person is asked with the lock free: every other secret operation carries on meanwhile.
         val authorised =
             promptLock.withLock { authenticate(reason, begun.cipher) }
                 ?: return ReadAttempt(SecretReadResult.Denied, prompted = true)
-        return ReadAttempt(finishRead(path, aad, begun, authorised), prompted = true)
-    }
+        val result =
+            lock.withLock {
+                val now =
+                    try {
+                        files.read(path)
+                    } catch (_: RecordFileException) {
+                        return@withLock SecretReadResult.Denied
+                    }
+                val record = now?.let(SecretRecord::decode)
+                when {
+                    now == null || record == null -> SecretReadResult.Missing
 
-    private suspend fun finishRead(
-        path: String,
-        aad: ByteArray,
-        begun: ReadStep.Ask,
-        authorised: Cipher,
-    ): SecretReadResult =
-        lock.withLock {
-            val now =
-                try {
-                    files.read(path)
-                } catch (_: RecordFileException) {
-                    return@withLock SecretReadResult.Denied
+                    // Replaced while the prompt was open: the person approved the old secret, not this one. Ask again.
+                    !now.contentEquals(begun.stored) -> SecretReadResult.Denied
+
+                    else -> readResult(backend.finishOpen(authorised, record.ciphertext, aad))
                 }
-            val record = now?.let(SecretRecord::decode)
-            when {
-                now == null || record == null -> SecretReadResult.Missing
-
-                // Replaced while the prompt was open: the person approved the old secret, not this one. Ask again.
-                !now.contentEquals(begun.stored) -> SecretReadResult.Denied
-
-                else -> readResult(backend.finishOpen(authorised, record.ciphertext, aad))
             }
-        }
-
-    private fun beginRead(
-        path: String,
-        aad: ByteArray,
-    ): ReadStep {
-        val stored =
-            try {
-                files.read(path)
-            } catch (_: RecordFileException) {
-                return ReadStep.Done(SecretReadResult.Denied)
-            } ?: return ReadStep.Done(SecretReadResult.Missing)
-        val record = SecretRecord.decode(stored) ?: return ReadStep.Done(SecretReadResult.Missing)
-        val outcome = backend.open(aliasFor(path, record.protection), record.iv, record.ciphertext, aad)
-        return if (outcome is OpenOutcome.NeedsAuthentication) {
-            ReadStep.Ask(outcome.cipher, stored)
-        } else {
-            ReadStep.Done(readResult(outcome))
-        }
+        return ReadAttempt(result, prompted = true)
     }
 
     private suspend fun removeLocked(block: () -> Unit) =
@@ -249,11 +199,57 @@ class KeystoreSecretStore internal constructor(
     override fun toString(): String = "KeystoreSecretStore"
 }
 
+private fun beginRead(
+    files: RecordFiles,
+    backend: KeystoreBackend,
+    path: String,
+    aad: ByteArray,
+): ReadStep {
+    val stored =
+        try {
+            files.read(path)
+        } catch (_: RecordFileException) {
+            return ReadStep.Done(SecretReadResult.Denied)
+        } ?: return ReadStep.Done(SecretReadResult.Missing)
+    val record = SecretRecord.decode(stored) ?: return ReadStep.Done(SecretReadResult.Missing)
+    val outcome = backend.open(aliasFor(path, record.protection), record.iv, record.ciphertext, aad)
+    return if (outcome is OpenOutcome.NeedsAuthentication) {
+        ReadStep.Ask(outcome.cipher, stored)
+    } else {
+        ReadStep.Done(readResult(outcome))
+    }
+}
+
 /** A read's result and whether the person was asked for it: only a read that asked can attest (ADR-146). */
 private class ReadAttempt(
     val result: SecretReadResult,
     val prompted: Boolean,
 )
+
+/** Reads the attempt as an attestation: only a read that asked the person and then decrypted attests (ADR-146). */
+private fun ReadAttempt.attested(): AttestedReadResult =
+    when (result) {
+        is SecretReadResult.Found -> {
+            if (prompted) {
+                AttestedReadResult.Authenticated(result.secret)
+            } else {
+                result.secret.wipe()
+                AttestedReadResult.NotAttested
+            }
+        }
+
+        SecretReadResult.Denied -> {
+            if (prompted) AttestedReadResult.Denied else AttestedReadResult.NotAttested
+        }
+
+        SecretReadResult.Invalidated -> {
+            AttestedReadResult.Invalidated
+        }
+
+        SecretReadResult.Missing -> {
+            AttestedReadResult.NotAttested
+        }
+    }
 
 /** What the first, locked step of a write found: nothing left to ask, or a cipher for the person to authorise. */
 private sealed interface WriteStep {

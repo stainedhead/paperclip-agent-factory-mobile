@@ -343,7 +343,7 @@ class SessionCachingSecretStoreTest {
         }
 
     @Test
-    fun `a cached token never attests: an unprotected device token stays NotAttested with a warm cache`() =
+    fun `a warm cache never attests an unprotected device token`() =
         runTest {
             val (device, cache) = setup()
             cache.token(tokenA)

@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.application.auth
 
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -68,8 +69,21 @@ class SessionCachingSecretStore(
                 ?.refusal
     }
 
+    /** The [Flight] of each factory, made on first use and shared by every caller. */
+    private class Flights {
+        private val all = MutableStateFlow<Map<InstanceId, Flight>>(emptyMap())
+
+        fun of(id: InstanceId): Flight {
+            all.value[id]?.let { return it }
+            val fresh = Flight()
+            var winner = fresh
+            all.update { map -> (map[id] ?: fresh).also { winner = it }.let { map + (id to it) } }
+            return winner
+        }
+    }
+
     private val memory = SessionTokenMemory()
-    private val flights = MutableStateFlow<Map<InstanceId, Flight>>(emptyMap())
+    private val flights = Flights()
 
     override suspend fun get(
         key: SecretKey,
@@ -78,12 +92,32 @@ class SessionCachingSecretStore(
         if (key.name != SecretName.BoardToken) return device.get(key, reason)
         val id = key.instanceId
         memory.copyOf(id)?.let { return SecretReadResult.Found(it) }
-        val flight = flightOf(id)
+        val flight = flights.of(id)
         val seenFinished = flight.finished.value.count
         return flight.lock.withLock {
             memory.copyOf(id)?.let { SecretReadResult.Found(it) }
                 ?: flight.refusalSince(seenFinished, memory.generationOf(id))
                 ?: readThrough(key, reason, flight)
+        }
+    }
+
+    /**
+     * Never answered from memory: a cached token proves nothing about the person (ADR-146). The read goes to the device
+     * store under the factory's lock, so a refresh that starts meanwhile waits and then shares the result. Only an
+     * [AttestedReadResult.Authenticated] answer seeds the cache; a refusal, an invalidated key or an unattested read
+     * leave it as it was.
+     */
+    override suspend fun readAttested(
+        key: SecretKey,
+        reason: String,
+    ): AttestedReadResult {
+        if (key.name != SecretName.BoardToken) return device.readAttested(key, reason)
+        val id = key.instanceId
+        return flights.of(id).lock.withLock {
+            val generation = memory.generationOf(id)
+            val result = device.readAttested(key, reason)
+            if (result is AttestedReadResult.Authenticated) memory.keepIfUnchanged(id, generation, result.secret)
+            result
         }
     }
 
@@ -131,13 +165,5 @@ class SessionCachingSecretStore(
         if (result is SecretReadResult.Found) memory.keepIfUnchanged(key.instanceId, generation, result.secret)
         flight.finished.update { Finished(it.count + 1L, refusal, generation) }
         return result
-    }
-
-    private fun flightOf(id: InstanceId): Flight {
-        flights.value[id]?.let { return it }
-        val fresh = Flight()
-        var winner = fresh
-        flights.update { map -> (map[id] ?: fresh).also { winner = it }.let { map + (id to it) } }
-        return winner
     }
 }
