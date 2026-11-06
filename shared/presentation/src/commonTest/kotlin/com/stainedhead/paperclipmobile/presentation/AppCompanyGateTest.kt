@@ -176,7 +176,7 @@ class AppCompanyGateTest {
         }
 
     @Test
-    fun `a factory that is not signed in yet is not asked, and is asked once pairing has signed it in`() =
+    fun `a factory that is not signed in yet is not asked until pairing has signed it in`() =
         runTest {
             val pairing = empty.copy(status = InstanceStatus.SignedOut)
             val env = Env(listOf(pairing)).also { it.noCompanies() }
