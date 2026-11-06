@@ -39,7 +39,7 @@ Result (2026-11-06, Pixel_9_Pro emulator API 37 arm64, `main` 0693434; second ru
 
 A protected secret needs app lock **on**, so first pair a factory (item 1), then Settings, turn on **Lock app**, and pair again (or sign out and back in) so the board key is stored protected. Then add a fingerprint: on a phone, Settings, Security, Fingerprint, add one; on an emulator, Settings, Security, Fingerprint, then `adb -e emu finger touch 1` for each touch.
 
-Expected: opening the app and reading the factory says the key was invalidated and offers **Pair again** (`Invalidated`); no crash, no "denied" loop, no unprotected read. After pairing again the factory works. Also expected on the emulator: removing the screen lock deletes the key and the factory reads as needing re-pairing (observed in ADR-123, finding 7a).
+Expected (decided 2026-11-06, F-2): on Android the key policy is `BIOMETRIC_STRONG | DEVICE_CREDENTIAL` (PIN fallback), so enrolling a **new fingerprint does not invalidate the key** and the factory keeps working; this differs from the iPhone, where `.biometryCurrentSet` does invalidate. Check that: no crash, no "denied" loop, no unprotected read. What does invalidate the key is removing the screen lock. Also expected on the emulator: removing the screen lock deletes the key and the factory reads as needing re-pairing (observed in ADR-123, finding 7a).
 
 Also run the two lock-screen phase tests, which skip unless told which phase they are in:
 
@@ -58,7 +58,7 @@ Result (2026-11-06, Pixel_9_Pro emulator API 37, `main` 0693434 plus this PR's t
 - `connectedAndroidDeviceTest -P...invalidationPhase=1` passed (phase 1 not skipped), but **Gradle uninstalls the test APK afterwards, which deletes its Keystore keys, so a later phase 2 passes vacuously**. Run the phases by hand: `adb install -r -t shared/infrastructure/securestore/build/outputs/apk/androidTest/securestore-androidTest.apk`, then `adb shell am instrument -w -e invalidationPhase 1 -e class com.stainedhead.paperclipmobile.infrastructure.securestore.KeystoreInvalidationDeviceTest com.stainedhead.paperclipmobile.shared.infrastructure.securestore.test/androidx.test.runner.AndroidJUnitRunner`, change the lock or the fingerprints, then the same with `invalidationPhase 2`.
 - After enrolling a **second** fingerprint, phase 2 **failed**: `got NeedsAuthentication`. The key was still usable (the test only accepts `KeyMissing` or `Invalidated`, which is what removing the PIN gives).
 - A scratch instrumented test (not committed) made two per-use keys, `AUTH_BIOMETRIC_STRONG` only and `AUTH_BIOMETRIC_STRONG or AUTH_DEVICE_CREDENTIAL` (the shipping `AndroidKeystoreBackend` setting), both with `setInvalidatedByBiometricEnrollment(true)`. After enrolling a **third** fingerprint the biometric-only key threw `KeyPermanentlyInvalidatedException` and the shipping combination was still `usable`. So on this emulator a key that allows the screen lock as an authenticator is not invalidated by a new fingerprint, while the emulator does invalidate biometric-only keys: it is the key configuration, not the emulator.
-- Meaning: the `Invalidated` and "Pair again" path on enrolment is unreachable with `BIOMETRIC_STRONG | DEVICE_CREDENTIAL`; a person who knows the PIN can add a fingerprint and the app keeps working (they could already use the PIN). **Owner decision:** keep the PIN fallback and correct the docs and the phase 2 expectation, or go biometric-only (loses the PIN fallback; enrolment then invalidates). No app change made.
+- Meaning: the `Invalidated` and "Pair again" path on enrolment is unreachable with `BIOMETRIC_STRONG | DEVICE_CREDENTIAL`; a person who knows the PIN can add a fingerprint and the app keeps working (they could already use the PIN). **Owner decision (2026-11-06): keep the PIN fallback.** A new fingerprint does not invalidate the Android key; FR-015, the ADR and the manual phase 2 test text are to be corrected to say so (ADR pending in another PR; the phase 2 test expectation for the enrolment case is a documentation and test follow-up there). No app change in this PR.
 - Not re-run: removing the screen lock deleting the key (observed in ADR-123).
 - **Still the owner's:** the same on a real Pixel, to confirm the platform behaves like the emulator.
 
@@ -72,7 +72,7 @@ On a device with an enrolled fingerprint, with a paired factory (item 1), do eac
 | Cancel a run | Run viewer | same; cancel the prompt and the run is still running |
 | Reject an approval | Approval | same; cancel and the approval is still pending |
 | A destructive decision option | Decision | same |
-| Raise a budget | Agent detail, Set monthly budget (above the current amount, or zero) | the Save button shows the lock glyph and its spoken name says it asks the device owner; the system prompt appears once; cancel and the budget is unchanged. A **decrease** shows no lock and no prompt (run assumption DEC-1, ADR-141). |
+| Raise a budget | Agent detail, Set monthly budget (above the current amount, or zero) | the Save button shows the lock glyph and its spoken name says it asks the device owner; the system prompt appears once; cancel and the budget is unchanged. A **decrease** shows no lock and no prompt (DEC-1, confirmed by the owner 2026-11-05, ADR-141). |
 | Raise or resume from the budget incident | Budget incident sheet | same |
 | Remove a factory | Manage factories | confirmation sheet, then the system prompt |
 
@@ -91,19 +91,27 @@ Result (2026-11-06, API 37 emulator with an enrolled fingerprint; `main` 0693434
 - **Wording bug (F-3, not fixed):** the key prompt's subtitle reads `call paperclip` (lower case, an internal string): `StoredCredentials.kt`, `REASON`. It appears at unlock and on every refresh prompt.
 - **Still the owner's:** the rows above that were not run, on a Pixel and a Samsung phone with a real fingerprint sensor.
 
-## 4. Prompts per refresh with app lock on (feeds an owner decision)
+## 4. Prompts at unlock and per refresh with the session cache (a device check of ADR-145)
 
-With app lock **on** (the board token is a protected secret) every gateway call reads the token and each read is its own system prompt (ADR-139). Count the prompts the person sees for: opening the app and landing on the Inbox, one pull to refresh on the Inbox, one automatic 15 second refresh on Factory home, opening an Agent detail, opening an Issue. A screen recording helps (`adb shell screenrecord /sdcard/prompts.mp4`, then `adb pull`; delete it afterwards, it may show real data).
+With app lock **on** and a factory paired **after** it was turned on, the board token is a protected secret. Since ADR-145 the app keeps it in memory from the first protected read until the app goes to the background, a 401 or a re-pair, so one refresh no longer asks once per gateway call. The device store itself is still per-use (ADR-139). Count the prompts the person sees for each step and record them:
 
-Expected: this is a measurement, not a pass or fail. Record the counts. If the app asks more than once per user action it is usable only with option B or C of the [open owner decision, ADR-144](./architectural-decision-record.md#adr-144-with-app-lock-on-how-often-may-a-refresh-ask-for-the-fingerprint-open-owner-decision-not-implemented) (one authorisation per refresh, or a short in-memory token for the foreground unlock session). Do not implement either before the owner decides.
+1. Cold start, then unlock: expected **one** prompt (the key prompt is the unlock, ADR-146). Repeat with a factory paired before app lock was turned on: one plain unlock prompt, no key prompt. Cancel the key prompt: the app stays locked and Unlock asks again.
+2. On the Inbox: one pull to refresh, one automatic 15 second refresh, opening an Agent detail, opening an Issue: expected **no further prompt** while the app stays in the foreground.
+3. Press Home, return inside the "Lock after" time: expected one prompt on the first call (the background empties the cache), none for the lock itself.
+4. Switch to a second factory that also has a protected key: one prompt for that factory.
+5. Pause an agent (or any destructive action) with the cache warm: the confirmation sheet and the system prompt appear every time.
+6. Re-pair a factory, then refresh: the next call uses the new key and the factory stays Signed in.
+7. Unlock with the PIN or pattern instead of the fingerprint, then refresh twice: the second refresh must not prompt (a system sheet must not look like the app going to the background and empty the cache).
 
-Result (2026-11-06, API 37 emulator, tested on `origin/worktree-adr144-unlock-session-token` at **1bdb70c** (the PR #11 head) with this PR's script fix cherry-picked; prompts counted from logcat lines `BiometricScheduler: [Finishing] ... FingerprintAuthenticationClient ... owner=com.stainedhead.paperclipmobile` and by answering each prompt through `uiautomator`): **the cache behaves as ADR-145 and ADR-146 describe.**
+A screen recording helps (`adb shell screenrecord /sdcard/prompts.mp4`, then `adb pull`; delete it afterwards, it may show real data).
+
+Expected: the counts above. Any extra prompt per refresh is a bug in the cache; an extra prompt at unlock is the known two (ADR-145).
+
+Result (2026-11-06, API 37 emulator, tested on the PR #11 head **1bdb70c** with this PR's script fix cherry-picked; the merged `main` (dc4f18e) has no production-code difference from it (the diff of 1bdb70c to origin/main is empty under `shared/application`, `shared/infrastructure`, `shared/presentation`, `shared/umbrella/src/commonMain` and `androidApp/src/main`), so the counts describe the merged code; prompts counted from logcat lines `BiometricScheduler: [Finishing] ... FingerprintAuthenticationClient ... owner=com.stainedhead.paperclipmobile` and by answering each prompt through `uiautomator`): **the cache behaves as ADR-145 and ADR-146 describe.**
 
 Counts with app lock on and a factory paired after app lock was on: cold start then unlock **1**; Inbox open **0**; Inbox pull **0**; Factory auto refresh (15 s) **0**; Agents list and Agent detail **0**; Issue open **0**; Home then return then first pull to refresh **1** (the background emptied the cache; no prompt for the lock itself); that prompt answered with the **PIN** ("Use PIN"), then two more refreshes **0**; Pause agent (sheet, then system prompt) **1 each time**, also with the cache warm. Pairing itself showed **2** prompts (protect the key, then one read). Cancelling the unlock prompt: a new prompt appeared at once (the UI is hidden under FLAG_SECURE, so whether the app showed its Unlock screen in between could not be seen). On `main` (0693434, no cache) the pairing and first start showed at least four consecutive prompts ("Unlock Paperclip", "Protect the key", then two "call paperclip" reads).
 
 **Not run:** a second factory with its own protected key; a factory paired before app lock was turned on; the same on a real device. (The Inbox of a factory without companies hung, see item 1, F-1; the counts above were taken after the company existed.)
-
-If PR #11 merges first, keep its item 4 text and this Result line.
 
 ## 5. TalkBack
 
@@ -208,7 +216,7 @@ Run without the owner's hardware on the Pixel_9_Pro (API 37), Pixel_API28 and Pi
 | Id | Finding | State |
 |---|---|---|
 | F-1 | A factory with no company leaves Inbox and Factory on "Loading..." forever (item 1) | open, no fix |
-| F-2 | A new fingerprint does not invalidate the shipping key because it also allows the screen lock (item 2) | open, owner decision |
+| F-2 | A new fingerprint does not invalidate the shipping key because it also allows the screen lock (item 2) | decided: keep PIN fallback, ADR pending |
 | F-3 | The key prompt subtitle reads `call paperclip` (item 3) | open, no fix |
 | F-4 | `android-live-pairing.sh` checks passed vacuously (quoting) | fixed, 305aedb |
 | F-5 | `KeystorePerUseDeviceTest` failed on API 28 (no API 30 gate) | fixed, 4e5b03c |
@@ -219,7 +227,7 @@ What only the owner can still do, and what to send back:
 | Item | Needs | Command | Send back |
 |---|---|---|---|
 | 1 | Tailscale | `ANDROID_SERIAL=<serial> ./scripts/android-live-pairing.sh` with a Tailscale address | the `OK 1` and `OK 2` lines, and whether the factory showed Connected |
-| 2 | a real Pixel with a fingerprint | enrol a second fingerprint after pairing with app lock on, then read the factory | whether "Pair again" appeared (the emulator says no, F-2) |
+| 2 | a real Pixel with a fingerprint | enrol a second fingerprint after pairing with app lock on, then read the factory | that no "Pair again" appears after a new fingerprint (the emulator agrees, F-2 decided) |
 | 3 | a real sensor, a second `BiometricPrompt` app | the table in item 3: cancel run, reject approval, decision option, budget raise, budget incident, remove factory | one line per row: prompt shown, cancel left the server unchanged |
 | 4 | a real device | the seven steps of item 4 on `1bdb70c` or later | the counts |
 | 5 | TalkBack with sound | the walk in item 5 | what was not announced or read in a wrong order |
@@ -233,6 +241,6 @@ What only the owner can still do, and what to send back:
 
 | Open item | Where | Owner decision needed |
 |---|---|---|
-| Prompts per refresh with app lock on | item 4, [ADR-144](./architectural-decision-record.md#adr-144-with-app-lock-on-how-often-may-a-refresh-ask-for-the-fingerprint-open-owner-decision-not-implemented) | option A, B or C |
-| A budget raise asks the device owner | item 3, ADR-141 (DEC-1) | keep, or revert and amend AGENTS.md |
-| An unvalidated network counts as online | item 1 (Tailscale), ADR-142 (DEC-2) | keep, or revert |
+| Prompts at unlock and per refresh with the cache | item 4, [ADR-145](./architectural-decision-record.md#adr-145-the-board-token-is-held-in-memory-per-factory-for-the-foreground-unlock-session-resolves-adr-144-option-c) | decided (option C, 2026-11-05); only the device counts and the one-prompt-at-unlock follow-up are open |
+| A budget raise asks the device owner | item 3, ADR-141 (DEC-1) | decided: kept, confirmed by the owner 2026-11-05 |
+| An unvalidated network counts as online | item 1 (Tailscale), ADR-142 (DEC-2) | decided: kept, confirmed by the owner 2026-11-05 |

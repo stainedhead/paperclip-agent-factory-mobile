@@ -96,7 +96,7 @@ class AndroidLiveGraphDeviceTest {
 
         val bound =
             listOf(
-                graph.resolve<SecretStore>(),
+                graph.resolveRaw<SecretStore>(),
                 graph.resolve<Biometrics>(),
                 graph.resolve<Connectivity>(),
                 graph.resolve<Clock>(),
@@ -108,6 +108,10 @@ class AndroidLiveGraphDeviceTest {
         assertTrue(bound[0].endsWith(".KeystoreSecretStore"), bound[0])
         assertTrue(bound[1].endsWith(".BiometricPromptBiometrics"), bound[1])
         assertTrue(bound[2].endsWith(".ConnectivityManagerConnectivity"), bound[2])
+        // What the app receives as its SecretStore is the session cache over that device store (ADR-145).
+        assertTrue(
+            graph.resolve<SecretStore>()::class.qualifiedName.orEmpty().endsWith(".SessionCachingSecretStore"),
+        )
     }
 
     @Test

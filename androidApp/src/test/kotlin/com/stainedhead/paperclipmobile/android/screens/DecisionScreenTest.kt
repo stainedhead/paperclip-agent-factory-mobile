@@ -15,8 +15,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -24,7 +22,6 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 private const val TOO_LONG = 41
-private const val SETTLE_MILLIS = 500L
 
 /** AND-040: the billing decision on the demo graph; effects before the tap, the device-owner gate, inputs, finals. */
 @RunWith(AndroidJUnit4::class)
@@ -160,8 +157,7 @@ class DecisionScreenTest {
         show(AppRoute.Decision(DemoId.DECISION_KEYS), ready = "decision-input-reason")
 
         rule.onNodeWithTag("decision-input-reason").performTextInput("x".repeat(TOO_LONG))
-        rule.onNodeWithTag("decision-input-reason-help", useUnmergedTree = true).assertTextEquals("$TOO_LONG / 40")
-        settle()
+        rule.awaitText("decision-input-reason-help", "$TOO_LONG / 40", useUnmergedTree = true)
         rule.onNodeWithTag("decision-option-yes").performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.isSelected("decision-option-yes") }
         rule.onNodeWithTag("decision-confirm").performClick()
@@ -187,7 +183,8 @@ class DecisionScreenTest {
         show()
 
         rule.onNodeWithTag("decision-snooze").performClick()
-        rule.onNodeWithTag("snooze-sheet").assertIsDisplayed()
+        rule.awaitDisplayed("snooze-sheet")
+        rule.awaitDisplayed("snooze-Tonight")
         rule.onNodeWithTag("snooze-Tonight").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { app.pops == 1 }
@@ -224,6 +221,3 @@ class DecisionScreenTest {
         rule.hasTag("decision-confirm") shouldBe false
     }
 }
-
-/** The holder reads typed text on another dispatcher; give it a moment before the next tap asks what it made of it. */
-private fun settle() = runBlocking { delay(SETTLE_MILLIS) }

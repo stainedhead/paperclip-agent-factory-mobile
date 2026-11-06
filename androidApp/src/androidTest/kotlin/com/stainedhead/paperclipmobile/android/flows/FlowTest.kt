@@ -97,8 +97,14 @@ abstract class FlowTest {
 
     protected fun existsText(text: String) = rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
+    /** True when a node with [tag] is on the screen and not disabled: a tap on a disabled control does nothing. */
+    protected fun enabled(tag: String) =
+        rule.onAllNodesWithTag(tag).fetchSemanticsNodes().firstOrNull()?.config?.let {
+            SemanticsProperties.Disabled !in it
+        } == true
+
     protected fun tap(tag: String) {
-        waitFor { exists(tag) }
+        waitFor { enabled(tag) }
         // Controls outside a scrolling container (tabs, bars) have nothing to scroll; they are on screen already.
         runCatching { rule.onNodeWithTag(tag).performScrollTo() }
         rule.onNodeWithTag(tag).performClick()

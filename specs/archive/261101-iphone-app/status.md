@@ -34,4 +34,4 @@
 
 ## Phase 1a
 
-Spec created: [../archive/261101-phase-1a-shared-contracts/spec.md](../archive/261101-phase-1a-shared-contracts/spec.md) (2026-11-01).
+Spec created: [../archive/261101-phase-1a-shared-contracts/spec.md](../261101-phase-1a-shared-contracts/spec.md) (2026-11-01).

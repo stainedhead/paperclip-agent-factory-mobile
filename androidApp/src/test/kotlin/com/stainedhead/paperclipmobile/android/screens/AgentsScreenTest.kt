@@ -103,12 +103,15 @@ class AgentsScreenTest {
         show()
 
         tap("agents-filter-running")
-        rule.hasTag("agents-section-Running") shouldBe true
+        rule.waitUntil(WAIT_MILLIS) { rule.hasTag("agents-section-Running") && !rule.hasTag("agents-section-Idle") }
         rule.hasTag("agents-section-NeedsAttention") shouldBe false
         rule.hasTag("agent-row-${DemoId.AGENT_QA}") shouldBe false
 
         tap("agents-filter-attention")
-        rule.hasTag("agents-section-NeedsAttention") shouldBe true
+        rule.waitUntil(WAIT_MILLIS) {
+            rule.hasTag("agents-section-NeedsAttention") &&
+                !rule.hasTag("agents-section-Running")
+        }
         rule.hasTag("agents-section-Running") shouldBe false
 
         tap("agents-filter-all")
@@ -123,6 +126,7 @@ class AgentsScreenTest {
         tap("agent-${DemoId.AGENT_CTO}-view-run")
         tap("agent-${DemoId.AGENT_ENGINEER_2}-budget")
 
+        awaitThat("the three taps to push their screens") { app.pushed.size >= 3 }
         app.pushed shouldBe
             listOf(
                 AppRoute.Agent(DemoId.AGENT_QA),

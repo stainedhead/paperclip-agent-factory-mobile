@@ -197,7 +197,7 @@ internal fun canAuthenticate(context: Context): Boolean =
  * A prompt bound to a crypto object accepts only strong biometrics or the device credential (and the credential only
  * from Android 11), which is also what per-use Keystore keys need (R-001).
  */
-private const val CIPHER_AUTHENTICATORS =
+internal const val CIPHER_AUTHENTICATORS =
     BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
 /** Whether this device can authenticate the device owner for a crypto object right now. */

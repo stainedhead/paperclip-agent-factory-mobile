@@ -136,6 +136,7 @@ class WorkListScreenTest {
 
         rule.onNodeWithTag("work-row-${DemoId.ISSUE_RETRIES}").performScrollTo().performClick()
 
+        awaitThat("the issue screen to be pushed") { app.pushed.isNotEmpty() }
         app.pushed shouldBe listOf(AppRoute.Issue(DemoId.ISSUE_RETRIES))
     }
 
@@ -149,7 +150,7 @@ class WorkListScreenTest {
         rule.onNodeWithTag("work-create-title").performTextInput("   ")
         rule.onNodeWithTag("work-create-save").assertIsNotEnabled()
         rule.onNodeWithTag("work-create-title").performTextInput("Rotate")
-        rule.onNodeWithTag("work-create-save").assertIsEnabled()
+        rule.awaitEnabled("work-create-save")
         app.pushed shouldBe emptyList()
     }
 
@@ -160,6 +161,7 @@ class WorkListScreenTest {
         openCreateSheet()
         rule.onNodeWithTag("work-create-title").performTextInput("Rotate the webhook secret")
         rule.onNodeWithTag("work-create-priority-High").performClick()
+        rule.awaitEnabled("work-create-save")
         rule.onNodeWithTag("work-create-save").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { app.pushed.isNotEmpty() }

@@ -31,6 +31,26 @@ enum class SecretWriteResult {
     Failed,
 }
 
+/**
+ * The outcome of a read that must prove it authenticated the person (ADR-146). [Authenticated] is answered only when
+ * this very read opened a secret protected by the device owner's authentication, after a prompt the person approved.
+ * A plain [SecretReadResult.Found] proves nothing: the secret may be unprotected, or served from memory.
+ */
+sealed interface AttestedReadResult {
+    data class Authenticated(
+        val secret: Secret,
+    ) : AttestedReadResult
+
+    /** No attestation: the secret is unprotected, missing or could not be read for a reason other than a refusal. */
+    data object NotAttested : AttestedReadResult
+
+    /** The person refused or failed the prompt this read showed. */
+    data object Denied : AttestedReadResult
+
+    /** The protected key was invalidated (for example a new fingerprint); the factory needs pairing again. */
+    data object Invalidated : AttestedReadResult
+}
+
 sealed interface SecretReadResult {
     data class Found(
         val secret: Secret,

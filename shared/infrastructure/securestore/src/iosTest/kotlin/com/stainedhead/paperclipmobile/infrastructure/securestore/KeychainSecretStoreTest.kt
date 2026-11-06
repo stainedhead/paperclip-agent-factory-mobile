@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.infrastructure.securestore
 
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.Secret
 import com.stainedhead.paperclipmobile.domain.SecretKey
@@ -163,6 +164,46 @@ class KeychainSecretStoreTest {
             store.put(key, Secret.of("v"), protected) shouldBe SecretWriteResult.Failed
             backend.items.isEmpty() shouldBe true
             backend.addAttempts.none { it.second == Protection.None } shouldBe true
+        }
+
+    @Test
+    fun `ADR-146 a protected item read through its access control is attested`() =
+        runTest {
+            store.put(key, Secret.of("v"), protected)
+
+            store.readAttested(key, "unlock") shouldBe AttestedReadResult.Authenticated(Secret.of("v"))
+        }
+
+    @Test
+    fun `ADR-146 an unprotected item or a missing one attests nothing`() =
+        runTest {
+            store.readAttested(key, "unlock") shouldBe AttestedReadResult.NotAttested
+            store.put(key, Secret.of("v"), open)
+
+            store.readAttested(key, "unlock") shouldBe AttestedReadResult.NotAttested
+            backend.buffersHandedOut.all { buffer -> buffer.all { it == 0.toByte() } } shouldBe true
+        }
+
+    @Test
+    fun `ADR-146 a declined prompt on a protected item is Denied but attests nothing when unprotected`() =
+        runTest {
+            store.put(key, Secret.of("v"), protected)
+            backend.readFailure = errSecUserCanceled
+            store.readAttested(key, "unlock") shouldBe AttestedReadResult.Denied
+            backend.readFailure = errSecAuthFailed
+            store.readAttested(key, "unlock") shouldBe AttestedReadResult.Denied
+
+            store.put(key, Secret.of("w"), open)
+            store.readAttested(key, "unlock") shouldBe AttestedReadResult.NotAttested
+        }
+
+    @Test
+    fun `ADR-146 a protected item that disappeared with its marker left behind is Invalidated`() =
+        runTest {
+            store.put(key, Secret.of("v"), protected)
+            backend.items.remove("instance/a/boardToken")
+
+            store.readAttested(key, "unlock") shouldBe AttestedReadResult.Invalidated
         }
 
     @Test

@@ -1,6 +1,6 @@
 # Plan: iPhone app on a shared Kotlin core
 
-**Spec dir:** `specs/261101-iphone-app/` · **Source:** [PRD](../../paperclip-agent-factory-mobile-PRD.md), [design mocks](../../Paperclip-Remote-mobile-UI-design.html), [AGENTS.md](../../AGENTS.md), [INTENT.md](../../INTENT.md)
+**Spec dir:** `specs/261101-iphone-app/` · **Source:** [PRD](../../../paperclip-agent-factory-mobile-PRD.md), [design mocks](../../../Paperclip-Remote-mobile-UI-design.html), [AGENTS.md](../../../AGENTS.md), [INTENT.md](../../../INTENT.md)
 **Status:** Draft for owner review · **Date:** 2026-11-01
 
 This is the implementation plan. The other spec files (`spec.md`, `research.md`, `data-dictionary.md`, `architecture.md`, `tasks.md`, `implementation-notes.md`) are produced next with the `prd-to-spec` / `dev-flow:create-spec` skills, then `tasks.md` is broken down from the milestones below.

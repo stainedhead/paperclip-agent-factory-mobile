@@ -1,5 +1,6 @@
 package com.stainedhead.paperclipmobile.android.env
 
+import com.stainedhead.paperclipmobile.android.screens.awaitThat
 import com.stainedhead.paperclipmobile.presentation.InboxIntent
 import com.stainedhead.paperclipmobile.presentation.InboxState
 import com.stainedhead.paperclipmobile.umbrella.PaperclipCore
@@ -11,10 +12,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import java.util.concurrent.TimeUnit
-
-private const val WAIT_SECONDS = 5L
-private const val POLL_MILLIS = 10L
 
 /** R-007 (ADR-117): an Inbox holder with an approve or reject in flight is closed after the outcome is recorded. */
 class GraphSessionDeferralTest {
@@ -68,10 +65,7 @@ class GraphSessionDeferralTest {
         scope.cancel()
     }
 
-    private fun await(condition: () -> Boolean) {
-        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAIT_SECONDS)
-        while (!condition() && System.nanoTime() < deadline) Thread.sleep(POLL_MILLIS)
-    }
+    private fun await(condition: () -> Boolean) = awaitThat("the session to settle", condition = condition)
 
     @Test
     fun `a selection change keeps a working inbox holder until the outcome is recorded`() {

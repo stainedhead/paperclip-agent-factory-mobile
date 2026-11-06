@@ -27,6 +27,13 @@ class Secret private constructor(
     fun startsWith(prefix: String): Boolean =
         prefix.length <= chars.size && prefix.indices.all { chars[it] == prefix[it] }
 
+    /**
+     * An independent copy of the value, made without creating a `String`. Whoever holds the copy wipes it on its own,
+     * so a holder that hands the value out more than once (the unlock-session cache, ADR-145) gives each user a copy.
+     */
+    @HiddenFromObjC
+    fun copy(): Secret = Secret(chars.copyOf())
+
     /** Overwrites the in-memory copy. The instance stays usable but holds an empty value. */
     fun wipe() {
         chars.fill('\u0000')
