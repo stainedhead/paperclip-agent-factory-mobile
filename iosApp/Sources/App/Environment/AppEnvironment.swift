@@ -31,7 +31,7 @@ final class AppEnvironment {
 
     /// Screen models of the Factories family, closed when their route leaves its stack (see `ScreenKey`).
     @ObservationIgnored let models = ModelStore<ScreenKey>()
-    @ObservationIgnored private let privacyShield = PrivacyShieldController()
+    @ObservationIgnored let privacyShield = PrivacyShieldController()
     @ObservationIgnored private(set) var launchSettings: HolderModel<SettingsStateHolder>?
     @ObservationIgnored private var provider: any AppGraphProvider
     @ObservationIgnored private var inboxKey: [String]?
