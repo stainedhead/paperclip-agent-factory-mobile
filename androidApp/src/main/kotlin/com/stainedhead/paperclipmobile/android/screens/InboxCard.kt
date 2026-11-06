@@ -48,7 +48,8 @@ fun InboxCard(
     val context = cardContext(item.whyNow, item.originAgentName, separator)
     val line = kindLine(kindName, item.identifier, separator)
     val link = InboxCardLink.of(item)
-    val web = rememberWebDoor(item)
+    // Only a card that is a web door builds one (a state, a destination and a callback): the others never read it.
+    val web = if (link == InboxCardLink.OpenInWeb) rememberWebDoor(item) else null
     val elapsed = rememberElapsedSince(item.activityAtEpochMillis)
     val resources = LocalResources.current
     val severity = stringResource(item.severity.stringRes())
@@ -92,7 +93,7 @@ fun InboxCard(
         modifier = modifier.testTag("inbox-card-${item.id}"),
         subtitle = context,
         combinedLabel = spoken,
-        onOpen = if (link == InboxCardLink.OpenInWeb) web.open else actions.onOpen,
+        onOpen = web?.open ?: actions.onOpen,
         customActions = custom,
     ) { CardButtons(item, link, isDisabled, actions, web) }
 }
@@ -103,7 +104,7 @@ private fun CardButtons(
     link: InboxCardLink,
     isDisabled: Boolean,
     actions: InboxCardActions,
-    web: WebDoor,
+    web: WebDoor?,
 ) {
     val offered = item.inlineActions
     when (link) {
@@ -152,7 +153,7 @@ private fun CardButtons(
         }
 
         InboxCardLink.OpenInWeb -> {
-            OpenInWebButton(item, web)
+            if (web != null) OpenInWebButton(item, web)
         }
 
         InboxCardLink.Chevron -> {
