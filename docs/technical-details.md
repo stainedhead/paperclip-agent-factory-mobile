@@ -274,6 +274,20 @@ The Swift interop review (acceptance criterion 6, in the spec's implementation n
 
 The files are `.github/workflows/{shared,android,ios,contract,security}.yml`. `android.yml` has three jobs: `verify` (Android Lint, `testDebugUnitTest`, `verifyRoborazziDebug`, `assembleRelease`), `emulator` (KVM, API 34 x86_64, `connectedAndroidDeviceTest` of securestore, platform, persistence and umbrella, and `:androidApp:connectedDebugAndroidTest`, the demo-flow walk) and `benchmark` (the same emulator, `scripts/run-benchmarks.sh`; nightly at 03:17 UTC and on manual dispatch only, never on a pull request). Every checkout fetches the full history (`fetch-depth: 0`) because the app's `versionCode` is the commit count. The workflow has not run on the hosted runners yet; it uses the same Gradle tasks that passed locally (the emulator locally was API 37 arm64). Every action is pinned to a full commit SHA with its version in a comment, and the gitleaks image to a digest (`CiPinningRulesTest`). Deferred: pinning the `brew install` tools and the Xcode version (brew cannot pin by hash), narrowing the gitleaks `TESTONLY` allowlist, and a Gradle dependency-vulnerability job. Dependabot (`.github/dependabot.yml`) proposes weekly grouped updates for Gradle dependencies, GitHub Actions and the gitleaks Dockerfile. Dependabot alerts and dependency review need the repository's Dependency graph switched on in GitHub settings, which is not done yet. The workflows run on pull requests (draft PR #5 for this branch); `contract.yml` only when the paths it lists change, and on a nightly schedule.
 
+## iOS UI test stability
+
+The `ios (1/2/3)` shards run the UI tests on a 3-core macOS runner, much slower than a development machine. Findings from the failed CI runs (ADR-147):
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| `Clearing edit-address left "http" behind`, wrong `edit-name` value | The value is read from the accessibility tree, which trails the keyboard | `enterText` polls up to 4 s for the exact text (`awaitShownText`); value checks after navigation use `waitUntil` |
+| `testTheAppLockToggleAndLockAfterChange` timed out, later steps hit the lock screen | `waitUntilUnlocked` gave the lock screen only 3 s to appear | 10 s |
+| `the run never opened`, `Failed to tap ... inbox-undo-button` | Tap on a row still scrolling or transitioning | `scroll(to:)` waits for the row to rest; `tapOpening` retries only a navigation tap whose screen did not open |
+| `PrivacyShieldTests` saw 2 windows | The host app's own shield counted too | Tests check the controller's own `window` |
+| Undo tests | Five-second wall-clock window in shared Kotlin | Appearance wait raised to 15 s; the window itself is unchanged (residual risk) |
+
+Not reproduced locally: 135 of 135 executions of `EditFactoryUITests`, `InboxUITests` and `SettingsUITests` passed with six busy loops running. No retries are configured; a deterministic failure must stay red. The 16 `testAccessibilityAudit*` tests stay non-blocking (ADR-094).
+
 ## The Paperclip test server
 
 `docker/paperclip-test/compose.yml` runs `ghcr.io/paperclipai/paperclip:<paperclip-server>` with `PAPERCLIP_DEPLOYMENT_MODE=authenticated`, exposure `private`, no LLM keys, on host port 3199. `scripts/paperclip-test-server.sh` reads the version from the catalog, starts it, waits for health and checks the mode. The app refuses `local_trusted` servers, so a developer's usual local Paperclip cannot be used for contract tests (ADR-008). An Android device or emulator reaches it through `adb reverse tcp:3199 tcp:3199` as `http://localhost:3199` (the origin the server trusts; the debug build's network security config allows cleartext to `localhost` and `10.0.2.2` only, a release build allows none): `scripts/android-live-pairing.sh`.

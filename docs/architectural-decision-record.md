@@ -1214,3 +1214,13 @@ One entry per significant decision, numbered in order, newest last. Every entry 
 
 **Decision needed from the owner:** A, B or C, and for C the time bound. Then a change to ADR-139's consequences and the shared credentials path, test-first, with the prompt count recorded on a device. See `docs/technical-details.md` known limitations and `docs/android-verification-checklist.md`.
 
+
+## ADR-147: iOS UI tests wait for the exact condition, instead of reading the screen once or retrying the run (numbered 147 to avoid clashing with ADR-145 and ADR-146 on open branches)
+
+**Status:** Accepted.
+
+**Context.** The `ios (1/2/3)` jobs failed intermittently, each time on a different UI test, in pull requests that did not touch iOS code. The failures were: typed text read before the accessibility tree caught up (`Clearing edit-address left "http" behind`, a wrong `edit-name` value), the lock screen appearing after the 3 s window `waitUntilUnlocked` allowed it, a tap on a row that was still scrolling or a screen still transitioning (`the run never opened`), the five-second Undo offer expiring before a slow runner tapped it, and `PrivacyShieldTests` counting every window above alerts, which includes the shield of the app hosting the tests. None reproduced on a fast local machine (135 of 135 executions of the suspect classes passed with six busy loops running), so they are timing assumptions of the 3-core CI runners.
+
+**Decision.** Fix at the helper level and keep every assertion. `enterText` waits up to 4 s for the field to show exactly the typed text before it declares a dropped key; `scroll(to:)` waits for the row to come to rest; `tapOpening` taps a navigation row again only when the target screen has not appeared and the row is still on screen; `waitUntilUnlocked` waits up to 10 s for the lock screen to appear; value reads after a navigation use `waitUntil`; the shield tests check the controller's own `window`. We did not add `-retry-tests-on-failure` or `-test-iterations`: a retry would also hide a deterministic failure.
+
+**Consequences.** Every wait is bounded and still fails when its condition never holds. The Undo offer is a five-second wall-clock window in shared Kotlin (`UndoDismiss.UNDO_WINDOW`); the two Undo tests still race it on a very slow runner. Making the window injectable for demo mode is a shared-code change and is left as a follow-up. `PrivacyShieldController.window` and `AppEnvironment.privacyShield` are now readable by tests (no behaviour change).
