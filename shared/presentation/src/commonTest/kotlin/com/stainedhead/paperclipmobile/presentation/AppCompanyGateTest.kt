@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.domain.CompanyRef
@@ -6,6 +8,7 @@ import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
