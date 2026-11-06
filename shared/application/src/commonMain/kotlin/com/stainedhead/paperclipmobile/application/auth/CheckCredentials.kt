@@ -14,7 +14,10 @@ enum class CredentialState {
     Usable,
     Missing,
 
-    /** The device key was invalidated, for example by changed biometrics on iPhone or a removed screen lock on Android (PRD FR-015, ADR-149). */
+    /**
+     * The device key was invalidated, for example by changed biometrics on iPhone or a removed screen lock on
+     * Android (PRD FR-015, ADR-149).
+     */
     NeedsRePairing,
 
     /** The person declined device authentication; nothing changed. */

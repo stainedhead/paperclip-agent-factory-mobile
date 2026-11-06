@@ -28,7 +28,10 @@ internal sealed interface OpenOutcome {
     /** There is no such key. */
     data object KeyMissing : OpenOutcome
 
-    /** The key was permanently invalidated, for example by a removed screen lock (a new fingerprint does not, ADR-149). */
+    /**
+     * The key was permanently invalidated, for example by a removed screen lock (a new fingerprint does not,
+     * ADR-149).
+     */
     data object Invalidated : OpenOutcome
 
     /** Like [SealOutcome.NeedsAuthentication]: the operation completes with `finishOpen`. */
