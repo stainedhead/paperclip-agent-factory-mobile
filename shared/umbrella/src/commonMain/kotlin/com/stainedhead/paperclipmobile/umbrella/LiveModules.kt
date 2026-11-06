@@ -53,7 +53,7 @@ internal fun livePortsModule(
     single<Clock> { platform.clock }
     single<IdGenerator> { platform.idGenerator }
     single<DeviceTimeZone> { platform.timeZone }
-    single<SecretStore> { platform.secretStore }
+    single<SecretStore>(RawPort) { platform.secretStore }
     single<Biometrics> { platform.biometrics }
     single<Connectivity> { platform.connectivity }
     single<PairingBrowser> { pairingBrowser }

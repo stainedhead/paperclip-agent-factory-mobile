@@ -163,6 +163,11 @@ class BiometricPromptBiometricsTest {
         authenticatorsFor(sdkInt = ANDROID_9) shouldBe
             (BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
         authenticatorsFor(sdkInt = ANDROID_10) shouldBe authenticatorsFor(sdkInt = ANDROID_9)
+        // The key prompt is the unlock prompt now (ADR-146): it accepts the same authenticators,
+        // so a person with only a weak biometric still gets in with the device credential, as before.
+        CIPHER_AUTHENTICATORS shouldBe authenticatorsFor(sdkInt = ANDROID_11)
+        (CIPHER_AUTHENTICATORS and BiometricManager.Authenticators.DEVICE_CREDENTIAL) shouldBe
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
     }
 
     private companion object {

@@ -72,7 +72,7 @@ internal fun demoPortsModule(
     single<Clock> { FakeClock(DemoFactories.now) }
     single<IdGenerator> { FakeIdGenerator("demo-") }
     single<InstanceRepository> { FakeInstanceRepository(if (seeded) DemoFactories.instances() else emptyList()) }
-    single<SecretStore> {
+    single<SecretStore>(RawPort) {
         FakeSecretStore().apply {
             if (seeded) {
                 seed(SecretKey(InstanceId(DemoIds.HOME_FACTORY), SecretName.BoardToken), DemoFactories.HOME_TOKEN)

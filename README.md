@@ -30,7 +30,7 @@ All screenshots are taken in demo mode (fake data, never a real factory); the pa
 | [docs/product-details.md](./docs/product-details.md) | The 16 screens: state holder, behaviour by role, device authentication, offline; mocks versus built |
 | [docs/technical-details.md](./docs/technical-details.md) | Modules, graph API, layering rules, mutation order, refresh policy, errors, tests and coverage, iOS interop, known limitations |
 | [docs/android-verification-checklist.md](./docs/android-verification-checklist.md) | The Android evidence nobody has produced yet (live pairing, real fingerprint, TalkBack, devices, hosted CI), with commands, expected results and a place for each result |
-| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-144 (the numbering is not contiguous: 044 to 049 and 080 are absent; 121 to 144 are the Android app and its review fixes): why we chose what we chose |
+| [docs/architectural-decision-record.md](./docs/architectural-decision-record.md) | ADR-001 to ADR-146 (the numbering is not contiguous: 044 to 049 and 080 are absent; 121 to 144 are the Android app and its review fixes): why we chose what we chose |
 | [user-docs/README.md](./user-docs/README.md) | Index of the guides below |
 | [user-docs/getting-started.md](./user-docs/getting-started.md) | Prerequisites, build, gates, XCFramework, iOS tests, demo graph; Android build, emulator, device tests, benchmark, release smoke |
 | [user-docs/configuration-reference.md](./user-docs/configuration-reference.md) | Every build and configuration knob and validation rule, including the Android launch extras, build types, signing variables and scripts |

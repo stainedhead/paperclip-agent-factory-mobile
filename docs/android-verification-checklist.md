@@ -58,7 +58,7 @@ On a device with an enrolled fingerprint, with a paired factory (item 1), do eac
 | Cancel a run | Run viewer | same; cancel the prompt and the run is still running |
 | Reject an approval | Approval | same; cancel and the approval is still pending |
 | A destructive decision option | Decision | same |
-| Raise a budget | Agent detail, Set monthly budget (above the current amount, or zero) | the Save button shows the lock glyph and its spoken name says it asks the device owner; the system prompt appears once; cancel and the budget is unchanged. A **decrease** shows no lock and no prompt (run assumption DEC-1, ADR-141). |
+| Raise a budget | Agent detail, Set monthly budget (above the current amount, or zero) | the Save button shows the lock glyph and its spoken name says it asks the device owner; the system prompt appears once; cancel and the budget is unchanged. A **decrease** shows no lock and no prompt (DEC-1, confirmed by the owner 2026-11-05, ADR-141). |
 | Raise or resume from the budget incident | Budget incident sheet | same |
 | Remove a factory | Manage factories | confirmation sheet, then the system prompt |
 
@@ -70,13 +70,23 @@ Also check, once, that a prompt stays open for a long time (a minute) while anot
 
 Result: _not run_
 
-## 4. Prompts per refresh with app lock on (feeds an owner decision)
+## 4. Prompts at unlock and per refresh with the session cache (a device check of ADR-145)
 
-With app lock **on** (the board token is a protected secret) every gateway call reads the token and each read is its own system prompt (ADR-139). Count the prompts the person sees for: opening the app and landing on the Inbox, one pull to refresh on the Inbox, one automatic 15 second refresh on Factory home, opening an Agent detail, opening an Issue. A screen recording helps (`adb shell screenrecord /sdcard/prompts.mp4`, then `adb pull`; delete it afterwards, it may show real data).
+With app lock **on** and a factory paired **after** it was turned on, the board token is a protected secret. Since ADR-145 the app keeps it in memory from the first protected read until the app goes to the background, a 401 or a re-pair, so one refresh no longer asks once per gateway call. The device store itself is still per-use (ADR-139). Count the prompts the person sees for each step and record them:
 
-Expected: this is a measurement, not a pass or fail. Record the counts. If the app asks more than once per user action it is usable only with option B or C of the [open owner decision, ADR-144](./architectural-decision-record.md#adr-144-with-app-lock-on-how-often-may-a-refresh-ask-for-the-fingerprint-open-owner-decision-not-implemented) (one authorisation per refresh, or a short in-memory token for the foreground unlock session). Do not implement either before the owner decides.
+1. Cold start, then unlock: expected **one** prompt (the key prompt is the unlock, ADR-146). Repeat with a factory paired before app lock was turned on: one plain unlock prompt, no key prompt. Cancel the key prompt: the app stays locked and Unlock asks again.
+2. On the Inbox: one pull to refresh, one automatic 15 second refresh, opening an Agent detail, opening an Issue: expected **no further prompt** while the app stays in the foreground.
+3. Press Home, return inside the "Lock after" time: expected one prompt on the first call (the background empties the cache), none for the lock itself.
+4. Switch to a second factory that also has a protected key: one prompt for that factory.
+5. Pause an agent (or any destructive action) with the cache warm: the confirmation sheet and the system prompt appear every time.
+6. Re-pair a factory, then refresh: the next call uses the new key and the factory stays Signed in.
+7. Unlock with the PIN or pattern instead of the fingerprint, then refresh twice: the second refresh must not prompt (a system sheet must not look like the app going to the background and empty the cache).
 
-Result: _not run_ (counts: Inbox open _, Inbox pull _, auto refresh _, Agent detail _, Issue _)
+A screen recording helps (`adb shell screenrecord /sdcard/prompts.mp4`, then `adb pull`; delete it afterwards, it may show real data).
+
+Expected: the counts above. Any extra prompt per refresh is a bug in the cache; an extra prompt at unlock is the known two (ADR-145). Not observed on a device yet.
+
+Result: _not run_ (counts: unlock _, Inbox pull _, auto refresh _, Agent detail _, Issue _, return from background _, second factory _, destructive action _)
 
 ## 5. TalkBack
 
@@ -174,6 +184,6 @@ Result: _not run_
 
 | Open item | Where | Owner decision needed |
 |---|---|---|
-| Prompts per refresh with app lock on | item 4, [ADR-144](./architectural-decision-record.md#adr-144-with-app-lock-on-how-often-may-a-refresh-ask-for-the-fingerprint-open-owner-decision-not-implemented) | option A, B or C |
-| A budget raise asks the device owner | item 3, ADR-141 (DEC-1) | keep, or revert and amend AGENTS.md |
-| An unvalidated network counts as online | item 1 (Tailscale), ADR-142 (DEC-2) | keep, or revert |
+| Prompts at unlock and per refresh with the cache | item 4, [ADR-145](./architectural-decision-record.md#adr-145-the-board-token-is-held-in-memory-per-factory-for-the-foreground-unlock-session-resolves-adr-144-option-c) | decided (option C, 2026-11-05); only the device counts and the one-prompt-at-unlock follow-up are open |
+| A budget raise asks the device owner | item 3, ADR-141 (DEC-1) | decided: kept, confirmed by the owner 2026-11-05 |
+| An unvalidated network counts as online | item 1 (Tailscale), ADR-142 (DEC-2) | decided: kept, confirmed by the owner 2026-11-05 |

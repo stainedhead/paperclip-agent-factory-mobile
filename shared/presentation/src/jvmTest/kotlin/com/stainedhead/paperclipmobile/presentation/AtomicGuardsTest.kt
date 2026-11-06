@@ -1,10 +1,13 @@
 package com.stainedhead.paperclipmobile.presentation
 
 import com.stainedhead.paperclipmobile.application.DeviceAuthGuard
+import com.stainedhead.paperclipmobile.application.InstanceLocks
 import com.stainedhead.paperclipmobile.application.attention.DismissItem
+import com.stainedhead.paperclipmobile.application.auth.SignedOutMarker
 import com.stainedhead.paperclipmobile.application.decision.DecideDecision
 import com.stainedhead.paperclipmobile.application.decision.LoadDecision
 import com.stainedhead.paperclipmobile.application.settings.UnlockApp
+import com.stainedhead.paperclipmobile.application.settings.UnlockSession
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.Decision
 import com.stainedhead.paperclipmobile.domain.DecisionId
@@ -236,7 +239,11 @@ class AtomicGuardsTest {
                     AppUseCases(
                         env.observeSettings,
                         env.observeInstances,
-                        UnlockApp(CountingBiometrics(prompts)),
+                        UnlockSession(
+                            UnlockApp(CountingBiometrics(prompts)),
+                            env.secrets,
+                            SignedOutMarker(env.repository, InstanceLocks()),
+                        ),
                         env.shouldLock,
                         env.switchInstance,
                         env.switchCompany,

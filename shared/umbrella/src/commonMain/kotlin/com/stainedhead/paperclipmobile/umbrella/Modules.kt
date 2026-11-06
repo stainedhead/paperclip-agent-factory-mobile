@@ -52,6 +52,7 @@ import com.stainedhead.paperclipmobile.application.instance.UpdateInstance
 import com.stainedhead.paperclipmobile.application.settings.ObserveAppSettings
 import com.stainedhead.paperclipmobile.application.settings.ShouldLockApp
 import com.stainedhead.paperclipmobile.application.settings.UnlockApp
+import com.stainedhead.paperclipmobile.application.settings.UnlockSession
 import com.stainedhead.paperclipmobile.application.settings.UpdateAppSettings
 import com.stainedhead.paperclipmobile.domain.port.AppSettingsStore
 import com.stainedhead.paperclipmobile.domain.port.ApprovalGateway
@@ -115,7 +116,7 @@ internal fun portsModule() =
         single<Clock> { FakeClock() }
         single<IdGenerator> { FakeIdGenerator("factory-") }
         single<InstanceRepository> { FakeInstanceRepository() }
-        single<SecretStore> { FakeSecretStore() }
+        single<SecretStore>(RawPort) { FakeSecretStore() }
         single<AppSettingsStore> { FakeAppSettingsStore() }
         single<Biometrics> { FakeBiometrics() }
         single<Connectivity> { FakeConnectivity() }
@@ -138,7 +139,8 @@ internal fun useCaseModule(allowInsecureLocal: Boolean) =
         single { DeviceAuthGuard(get()) }
         single { KeyRevoker(get()) }
         single { InstanceLocks() }
-        single { SignedOutMarker(get(), get()) }
+        sessionTokens()
+        single { SignedOutMarker(get(), get(), get()) }
         guardedGateways()
         single { KeyEnrollment(get(), get(), get(), get(), get(), get()) }
         instanceUseCases()
@@ -180,6 +182,7 @@ private fun org.koin.core.module.Module.settingsUseCases() {
     single { ObserveAppSettings(get()) }
     single { UpdateAppSettings(get()) }
     single { UnlockApp(get()) }
+    single { UnlockSession(get(), get(), get()) }
     single { ShouldLockApp(get()) }
 }
 
