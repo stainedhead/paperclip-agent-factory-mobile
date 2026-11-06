@@ -35,6 +35,12 @@ struct LocalizationTests {
     @Test func everyServerKeyOutcomeHasText() { check(ServerKeyOutcome.allCases) }
     @Test func everyIdlePeriodHasText() { check(IdlePeriod.allCases) }
     @Test func everyPairedDevicesStatusHasText() { check(PairedDevicesStatus.allCases) }
+    @Test func everyCompanyGateHasText() { check(CompanyGate.allCases) }
+    @Test func everyCompanyGateMessageHasText() { check(CompanyGateMessage.allCases) }
+    @Test func everyCompanyGateHasItsOwnMessage() {
+        let messages = CompanyGate.allCases.map { L10n.text(CompanyGateMessage($0)) }
+        #expect(Set(messages).count == CompanyGate.allCases.count, "two gates share one message")
+    }
 
     @Test func everySourceKindHasACardAndAChipLabel() {
         check(SourceKindUi.allCases)
