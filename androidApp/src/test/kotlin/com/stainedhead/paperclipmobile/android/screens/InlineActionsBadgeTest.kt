@@ -6,8 +6,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -15,7 +13,6 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 private const val DEMO_CARDS = 9
-private const val SETTLE_MILLIS = 500L
 
 /**
  * Main PRD acceptance criterion 6 on Android: every inline Inbox action resolves its item, and the tab badge (the
@@ -58,8 +55,9 @@ class InlineActionsBadgeTest {
         rule.waitUntil(WAIT_MILLIS) { badge == 1 }
 
         rule.onNodeWithTag("inbox-reject-${ids.getValue("Approve the Q1 strategy")}").performClick()
+        rule.awaitDisplayed("note-field")
         rule.onNodeWithTag("note-field").performTextInput("Not this quarter")
-        runBlocking { delay(SETTLE_MILLIS) }
+        rule.awaitFieldText("note-field", "Not this quarter")
         rule.onNodeWithTag("note-confirm").performClick()
         rule.waitUntil(WAIT_MILLIS) { rule.cardCount() == DEMO_CARDS - 3 }
     }

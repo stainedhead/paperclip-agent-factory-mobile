@@ -8,11 +8,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.Density
 import com.stainedhead.paperclipmobile.android.designsystem.AppTheme
 import com.stainedhead.paperclipmobile.android.designsystem.LocalReferenceMillis
@@ -33,6 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import java.util.concurrent.locks.LockSupport
 
 const val WAIT_MILLIS = 10_000L
 
@@ -126,11 +132,87 @@ class DemoApp(
 fun firstRunApp() = DemoApp(::firstRunOpen)
 
 /**
- * Sheets slide in while the holders answer on other threads, so a sheet is not on the screen at the moment the tap
- * returns: wait until the node is displayed before asserting on what it shows.
+ * Holders answer on other threads and Compose catches up afterwards, so what a tap or a typed character causes is not
+ * on the screen when the call returns. Every wait below polls its condition for up to [timeoutMillis] and then fails,
+ * so a screen that never gets there is still a red test; none of them lowers what the test goes on to assert.
  */
-fun ComposeTestRule.awaitDisplayed(tag: String) {
-    waitUntil(WAIT_MILLIS) { runCatching { onNodeWithTag(tag).assertIsDisplayed() }.isSuccess }
+private const val POLL_NANOS = 5_000_000L
+
+private fun ComposeTestRule.passes(check: () -> Unit) = runCatching(check).isSuccess
+
+/** Waits for [condition] outside Compose (a navigator callback, a holder value); fails naming [what] on timeout. */
+fun awaitThat(
+    what: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+    condition: () -> Boolean,
+) {
+    val deadline = System.nanoTime() + timeoutMillis * NANOS_PER_MILLI
+    while (!condition()) {
+        if (System.nanoTime() > deadline) throw AssertionError("Timed out after $timeoutMillis ms waiting for $what")
+        LockSupport.parkNanos(POLL_NANOS)
+    }
+}
+
+private const val NANOS_PER_MILLI = 1_000_000L
+
+/** Sheets slide in while the holders answer: wait until the node is displayed before asserting on what it shows. */
+fun ComposeTestRule.awaitDisplayed(
+    tag: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+) = waitUntil(timeoutMillis) { passes { onNodeWithTag(tag).assertIsDisplayed() } }
+
+/** Waits for the text [text] to be displayed anywhere (a dialog title, a banner). */
+fun ComposeTestRule.awaitTextDisplayed(
+    text: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+    substring: Boolean = false,
+) = waitUntil(timeoutMillis) { passes { onNodeWithText(text, substring = substring).assertIsDisplayed() } }
+
+/** Waits for the node with [tag] to say exactly [text]. */
+fun ComposeTestRule.awaitText(
+    tag: String,
+    text: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+    useUnmergedTree: Boolean = false,
+) = waitUntil(timeoutMillis) {
+    passes { onNodeWithTag(tag, useUnmergedTree).assertTextEquals(text) }
+}
+
+/** Waits until no node carries [tag]. */
+fun ComposeTestRule.awaitGone(
+    tag: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+) = waitUntil(timeoutMillis) { onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
+
+/** Waits until exactly [count] nodes carry [tag]. */
+fun ComposeTestRule.awaitCount(
+    tag: String,
+    count: Int,
+    timeoutMillis: Long = WAIT_MILLIS,
+) = waitUntil(timeoutMillis) { onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().size == count }
+
+/** Waits until the node with [tag] is on the screen and enabled. */
+fun ComposeTestRule.awaitEnabled(
+    tag: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+) = waitUntil(timeoutMillis) { passes { onNodeWithTag(tag).assertIsEnabled() } }
+
+/** Waits until the node with [tag] is on the screen and disabled. */
+fun ComposeTestRule.awaitDisabled(
+    tag: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+) = waitUntil(timeoutMillis) { passes { onNodeWithTag(tag).assertIsNotEnabled() } }
+
+/** Waits until an editable node holds [text]: typed text reaches the holder only after the field shows it. */
+fun ComposeTestRule.awaitFieldText(
+    tag: String,
+    text: String,
+    timeoutMillis: Long = WAIT_MILLIS,
+) = waitUntil(timeoutMillis) {
+    onAllNodesWithTag(
+        tag,
+    ).fetchSemanticsNodes().firstOrNull()?.config?.getOrNull(SemanticsProperties.EditableText)?.text ==
+        text
 }
 
 // Unmerged: a field's help and issue are part of the field's merged node, and they are still on the screen.

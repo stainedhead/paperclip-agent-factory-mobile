@@ -101,6 +101,7 @@ class FactoriesScreenTest {
         rule.onNodeWithTag("settings-button").performClick()
         rule.onNodeWithTag("add-factory-button").performScrollTo().performClick()
 
+        awaitThat("the four doors to push their screens") { app.pushed.size >= 4 }
         app.pushed shouldBe
             listOf(
                 AppRoute.EditFactory(DemoId.HOME),

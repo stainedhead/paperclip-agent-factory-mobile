@@ -96,10 +96,18 @@ class SettingsScreenTest {
         show()
 
         rule.onNodeWithTag("settings-idle-period").performClick()
-        for (period in IdlePeriod.entries) rule.onNodeWithTag("idle-option-${period.name}").assertIsDisplayed()
+        for (period in IdlePeriod.entries) rule.awaitDisplayed("idle-option-${period.name}")
         rule.onNodeWithTag("idle-option-FifteenMinutes").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { stored().idlePeriod == IdlePeriod.FifteenMinutes }
+        rule.waitUntil(WAIT_MILLIS) {
+            runCatching {
+                rule
+                    .onNodeWithTag(
+                        "settings-idle-period",
+                    ).assertTextEquals("Lock after", "15 minutes")
+            }.isSuccess
+        }
         rule.onNodeWithTag("settings-idle-period").assertTextEquals("Lock after", "15 minutes")
     }
 
@@ -121,6 +129,7 @@ class SettingsScreenTest {
         rule.onNodeWithTag("settings-paired-devices").performScrollTo().performClick()
         rule.onNodeWithTag("settings-diagnostics").performScrollTo().performClick()
 
+        awaitThat("the three doors to push their screens") { app.pushed.size >= 3 }
         app.pushed shouldBe listOf(AppRoute.EditFactory(DemoId.CLOUD), AppRoute.PairedDevices, AppRoute.Diagnostics)
     }
 
@@ -129,12 +138,14 @@ class SettingsScreenTest {
         show()
 
         rule.onNodeWithTag("settings-sign-out-everywhere").performScrollTo().performClick()
-        rule.onNodeWithText("Sign out of every factory?").assertIsDisplayed()
+        rule.awaitTextDisplayed("Sign out of every factory?")
+        rule.awaitDisplayed("confirm-sheet-cancel")
         rule.onNodeWithTag("confirm-sheet-cancel").performClick()
         rule.waitUntil(WAIT_MILLIS) { !rule.hasTag("confirm-sheet") }
         rule.onNodeWithTag("settings-factory-status-demo-home", useUnmergedTree = true).assertTextEquals("Connected")
 
         rule.onNodeWithTag("settings-sign-out-everywhere").performScrollTo().performClick()
+        rule.awaitDisplayed("confirm-sheet-confirm")
         rule.onNodeWithTag("confirm-sheet-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) {

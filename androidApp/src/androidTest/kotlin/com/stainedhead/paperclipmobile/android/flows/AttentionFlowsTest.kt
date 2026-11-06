@@ -86,6 +86,7 @@ class AttentionFlowsTest : FlowTest() {
         tap("approval-reject")
         waitFor { exists("note-sheet") }
         rule.onNodeWithTag("note-field").performTextInput("Too expensive")
+        waitFor { existsText("Too expensive") }
         tap("note-confirm")
         waitFor { exists("note-issue") }
         assertEquals(prompts + 1, controls.biometricPromptCount)

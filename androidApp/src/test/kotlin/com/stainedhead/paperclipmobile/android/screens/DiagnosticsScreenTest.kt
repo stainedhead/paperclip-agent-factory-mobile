@@ -87,7 +87,7 @@ class DiagnosticsScreenTest {
 
         rule.onNodeWithTag("diagnostics-copy").performScrollTo().performClick()
 
-        rule.onNodeWithTag("diagnostics-copied").assertIsDisplayed()
+        rule.awaitDisplayed("diagnostics-copied")
         val copied = clipboardText()
         copied shouldBe
             app.session.diagnostics.report.value

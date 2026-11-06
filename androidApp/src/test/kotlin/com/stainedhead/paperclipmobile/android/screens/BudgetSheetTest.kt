@@ -18,15 +18,12 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-private const val SETTLE_MILLIS = 500L
 private const val SERVER_SPEND_CENTS = 30_000L
 private const val DEMO_CARDS = 9
 
@@ -62,7 +59,7 @@ class BudgetSheetTest {
 
     private fun typeAmount(text: String) {
         rule.onNodeWithTag("budget-amount").performTextInput(text)
-        runBlocking { delay(SETTLE_MILLIS) }
+        rule.awaitFieldText("budget-amount", text)
     }
 
     @Test
@@ -114,7 +111,7 @@ class BudgetSheetTest {
         rule.onNodeWithTag("budget-submit").assertIsNotEnabled()
 
         rule.onNodeWithTag("budget-amount").performTextReplacement("250")
-        runBlocking { delay(SETTLE_MILLIS) }
+        rule.awaitFieldText("budget-amount", "250")
         rule.waitUntil(WAIT_MILLIS) { rule.isEnabled("budget-submit") }
         rule.onNodeWithTag("budget-submit").assertTextEquals("Raise to $250 and resume")
         rule.onNodeWithTag("budget-submit").performClick()
