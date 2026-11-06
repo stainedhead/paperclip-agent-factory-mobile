@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.infrastructure.securestore
 
 import android.app.KeyguardManager
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
@@ -31,9 +32,25 @@ class KeystorePerUseDeviceTest {
         assumeTrue("needs a secure lock screen", keyguard.isDeviceSecure)
     }
 
+    /** Per-use keys need `setUserAuthenticationParameters` (API 30); below that a protected write fails closed. */
+    private fun needsPerUseKeys() {
+        needsALockScreen()
+        assumeTrue("per-use keys need API 30", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+    }
+
+    @Test
+    fun aProtectedWriteIsRefusedBelowApi30InsteadOfStoringAnUnprotectedKey() {
+        needsALockScreen()
+        assumeTrue("only below API 30", Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
+        val prefix = "pafm.test.${UUID.randomUUID()}/".also { prefixes += it }
+        val backend = AndroidKeystoreBackend(prefix)
+        assertEquals(SealOutcome.Failed, backend.seal("k", byteArrayOf(1), byteArrayOf(2), protection = true))
+        assertEquals(emptyList(), backend.aliases(""), "no key is left behind by a refused protected write")
+    }
+
     @Test
     fun aProtectedKeyIsAuthorisedForOneUseAndNotForAWindowOfSeconds() {
-        needsALockScreen()
+        needsPerUseKeys()
         val prefix = "pafm.test.${UUID.randomUUID()}/".also { prefixes += it }
         val backend = AndroidKeystoreBackend(prefix)
         val sealed = backend.seal("k", byteArrayOf(1), byteArrayOf(2), protection = true)
@@ -55,7 +72,7 @@ class KeystorePerUseDeviceTest {
 
     @Test
     fun aKeyMadeWithTheOldFiveSecondWindowReadsAsInvalidatedSoThePersonPairsAgain() {
-        needsALockScreen()
+        needsPerUseKeys()
         val prefix = "pafm.test.${UUID.randomUUID()}/".also { prefixes += it }
         val spec =
             KeyGenParameterSpec
