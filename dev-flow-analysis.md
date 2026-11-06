@@ -1,249 +1,138 @@
 # Dev-Flow Process Analysis
 
-**Feature:** Phase 1a shared contracts (domain, use cases, 16 state holders, fakes and demo data for the shared Kotlin core), plus the review-fix cycle that followed
-**Spec directory:** `specs/archive/261101-phase-1a-shared-contracts/` (fix spec: `specs/archive/261101-phase-1a-shared-contracts-auto-review/`)
-**Report generated:** 2026-11-01 (22:10 local, UTC-5). All times below are local (UTC-5) from `git log`.
+> This file replaces the Phase 1a analysis. The previous content is available from git history (`git log -- dev-flow-analysis.md`; the Phase 1a version is the one before this commit).
+
+**Feature:** Phase 2a Android app (Jetpack Compose UI, Keystore, BiometricPrompt, connectivity, benchmarks, CI) on the shared Kotlin core, plus the review-fix cycle that followed
+**Spec directory:** `specs/archive/261104-phase-2a-android-ui/` (fix spec: `specs/archive/261104-phase-2a-android-ui-auto-review/`)
+**Report generated:** 2026-11-05. Times are UTC (git author timestamps are UTC-5 and are converted here). Git is authoritative over `DEV-FLOW-STATUS.md`.
 
 ---
 
 ## 1. Executive Summary
 
-Phase 1a built the whole non-UI contract layer of the iPhone and Android apps in shared Kotlin: domain entities and ports, about 70 use cases, one state holder per screen (16 plus the app shell), a fake and a contract suite for every port, a demo data set matching the design mocks, a polling policy, and a Swift interop review. A 12-step dev-flow run then reviewed its own output with four independent reviewers and a verification stage, which found 51 defects (3 security-relevant P0s), fixed 50 of them test-first and deferred one, and finished with an independent re-review whose four Warnings were also fixed.
+The Android app for Paperclip Agent Factory Mobile was built on the shared core in milestones 2a-0 to 2a-9: first run, factories, Inbox, decisions, approvals, budgets, agents, run viewer, work and issues, an R8 release, a benchmark module and CI. A review then produced 40 findings (0 P0, 9 P1, 31 P2), and 39 of them were worked in one fix cycle.
 
-**Total runtime:** 457 minutes (7 h 37 min), first commit of the run (14:29:15) to the last (22:06:19), 118 commits. Steps 11 and 12 (this report and the pull request) were still open when the figure was taken.
-**Overall assessment:** the run delivered what the spec asked for and the quality gates held throughout (final: 2,585 test results with zero failures across JVM, Android host and iOS simulator, coverage core 97.98% and presentation 98.02% against 90% gates, all linters clean). The review stage earned its cost: the green gates had hidden three reproducible credential-handling defects and a number of tests and documents that claimed more than they proved. The weaknesses were in agent self-reporting (stale coverage numbers, TDD discipline) and in sequential execution forced by one Gradle build at a time.
+**Total runtime:** dashboard 2026-11-04 15:09Z to 2026-11-05 03:46Z, 12 h 37 min. The run's git commits span 14:59Z (the PRD commit, before the run started) to 02:59Z: 198 commits in 12 h. The last 47 minutes of the dashboard (Steps 10 and 11) left no commit after the archive commit at 02:59Z.
+**Overall assessment:** a large, mostly green result, and the review was worth its cost: it found real defects (R-005 and R-021 confirmed by failing tests). It also exposed process weaknesses (section 6). Three things are open, not done: R-009 (hardware evidence), R-008 (jank target missed) and live pairing.
 
 ---
 
 ## 2. Step-by-Step Timing
 
-Boundaries come from the commits that closed each step; `DEV-FLOW-STATUS.md` timestamps for steps 5 to 7 were written when I updated the file, not when the step ended, so git is used where they differ.
+Dashboard times (orchestrator) with git commit counts per window (UTC). Git has no step markers, so the dashboard boundaries are used to slice the git log.
 
-| Step | Name | Start | End | Runtime (min) | Key outputs |
-|---|---|---|---|---|---|
-| 1 | Verify spec initialized | 14:29 | 14:29 | 1 | all 8 spec files present, branch `feat/phase-1a-shared-contracts`, dashboard |
-| 2 | Implement product (slices 1a-1 to 1a-4) | 14:29 | 17:26 | 177 | 4 slices,       35 commits, 16 state holders, 27 contract suites |
-| 3 | Documentation and user docs | 17:26 | 17:41 | 15 | technical details, product docs, ADRs, 4 developer guides, snippets compiled and run |
-| 4 | Code and design review | 17:41 | 17:57 | 16 | 4 reviewers, verification, review PRD with 51 requirements |
-| 5 | Prepare review PRD | 17:57 | 18:12 | 15 | review-prd verdict "Needs revision", 5 warnings fixed |
-| 6 | Archive original spec | 18:12 | 18:14 | 2 | spec archived, 82 links checked |
-| 7 | Spec review fixes (create-spec) | 18:14 | 19:03 | 49 | fix spec with 51 tracked tasks (includes about 40 min waiting for the owner, see below) |
-| 8 | Implement review fixes (4 groups) | 19:03 | 21:37 | 154 | 50 of 51 findings fixed or decided, 1 deferred |
-| 9 | Archive fixes spec | 21:37 | 21:37 | 1 | fix spec archived, 90 links checked |
-| 10 | Final quality pass (incl. independent re-review) | 21:37 | in progress | 29 so far | re-review: no new Must Fix; 4 warnings fixed; counts refreshed |
-| 11 | Process analysis report | 22:10 | in progress | — | this file |
-| 12 | Open pull request | — | pending | — | draft PR #5 already exists for CI |
+| Step | Name | Start | End | Min | Commits in window | Key outputs |
+|---|---|---|---|---|---|---|
+| 1 | Create spec | 15:09 | 15:14 | 5 | 2 (steps 1 and 2) | 57 tasks |
+| 2 | Review spec | 15:14 | 15:18 | 4 | (above) | spec review fixes |
+| 3 | Implement | 15:18 | 21:28 | 370 | 64 | slices 2a-0 to 2a-8 |
+| 4 | Docs and user docs | 21:28 | 21:39 | 11 | 6 | docs, screenshots, milestone 2a-9 |
+| 5 | Code and design review | 21:39 | 21:55 | 16 | 1 | 40 findings |
+| 6 | Prepare review PRD | 21:55 | 21:58 | 4 | 3 (steps 6 to 8) | review PRD |
+| 7 | Archive original spec | 21:58 | 22:01 | 3 | (above) | archived |
+| 8 | Spec review fixes | 21:58 | 22:01 | 3 | (above) | DEC-1, DEC-2 recorded |
+| 9 | Implement review fixes | 22:01 | 02:58 | 297 | 119 | 39 of 40 tasks |
+| 10 | Archive fixes spec | 02:58 | 03:46 | 48 (shared with 11) | 1 | d43a3c8 |
+| 11 | Final quality pass | 02:58 | 03:46 | 48 | 0 | gates only |
+| 12 | This report | 03:46 | | | | |
 
-**Notable observations**
-- **Longest steps:** step 2 (177 min) and step 8 (154 min) were 73% of the run. Each slice or group took 24 to 49 minutes of agent time.
-- **Idle time:** step 7 shows 49 minutes but the work took about 10. The rest was the run waiting for the owner after step 6 finished (my status message ended the turn). The owner then told the run to carry on without asking.
-- **Retry or surprise:** the first default-settings gate run after step 8 failed once on a Spotless race (it walked `build/` while a parallel task deleted a class file); an agent had hidden it with `-Pkotlin.incremental=false`. Found by the orchestrator's own verification, fixed in `0c9a802`.
-- **CI:** the macOS `ios` workflow is the slowest signal (12 to 15 minutes, and later pushes cancelled earlier runs); its result for the final commit was still pending when this report was written.
+**Notable observations:**
+- Steps 3 and 9 are 667 of about 760 minutes (88%).
+- Steps 7 and 8 ran in one agent, and so did 10 and 11, so their per-step times are shared, not separate.
+- The dashboard shows Steps 10 and 11 running to 03:46Z, but the only commit in that window is at 02:59Z. Step 11 was verification only, so no commit is expected, but git cannot confirm the 47 minutes.
+- Step 5 took 16 minutes and produced the findings that drove a 297-minute fix cycle.
 
 ---
 
 ## 3. Commit and Push Summary
 
-**Total commits in the run:** 118 (first b7a351e, last 9df8e99). By type: 38 fix, 23 docs, 20 test, 17 feat, 15 chore, 3 refactor, 2 ci.
-**Size:** the branch added 354 files, +42,430 / -437 lines relative to the start of the run (code, tests, docs and specs); the review-fix cycle alone changed 164 files in `shared/` and `iosApp/` (+6,863 / -1,117).
-**Pushes:** after each stable group, all to `feat/phase-1a-shared-contracts`. Nothing was pushed to `main`; no force-push.
-**Pull requests (all draft, none merged):** #1 shared skeleton, #2 iPhone shell, #3 Docker test server and contract CI, #4 Phase 1a spec, #5 this feature (opened early at the end of step 2 so CI ran during later steps). The final description of #5 is written in step 12.
+**Total commits in the run:** 198 (a0748d3 at 14:59Z to d43a3c8 at 02:59Z). The repository has 640 commits in all.
 
-| Commit | Time | Message |
-|---|---|---|
-| b7a351e | 14:29 | chore: dev-flow dashboard for the Phase 1a run |
-| 0deda0d | 14:29 | chore: dev-flow dashboard, step 1 complete |
-| e8e2b49 | 14:37 | docs: slice 1a-1 research answers and ADR-011..014 |
-| 54cd8b8 | 14:38 | feat(domain): instances, secrets, roles, permissions, device-auth policy and ports |
-| 9e06c56 | 14:40 | test(testing): fakes for every slice 1a-1 port, fixtures and contract suites |
-| af4d02d | 14:45 | feat(application): instance, pairing, sign-out, key, expiry and settings use cases with fakes-based  |
-| d500b9c | 14:54 | feat(presentation): first-run, factories, manage, edit, settings and app state holders |
-| a625dad | 14:56 | feat(umbrella): wire slice 1a-1 graph in Koin; test: Konsist rules for fakes, Secret.reveal and pres |
-| 2db6336 | 14:59 | docs: slice 1a-1 status, implementation notes, technical details and README |
-| 4500196 | 15:03 | chore: dev-flow dashboard, slice 1a-1 verified |
-| af1bec2 | 15:12 | docs: slice 1a-2 research answers, ADR-015..020 and sequence diagrams |
-| 7a1bc44 | 15:20 | feat(domain): attention feed, decisions, approvals, budget incidents, snooze times and ports; test(t |
-| 98aa354 | 15:27 | feat(application): inbox load and mutations, decision, approval and budget use cases; test: Konsist  |
-| c291ea3 | 15:29 | feat(application): company context, snooze preset availability; refactor: approval use cases take id |
-| d83c244 | 15:35 | feat(presentation): Inbox state holder with grouping, filters, inline actions, snooze, dismiss and u |
-| deebb07 | 15:44 | feat(presentation): decision, approval and budget incident state holders; test(testing): decision ef |
-| 7ce328d | 15:50 | feat(umbrella): wire slice 1a-2 holders as graph.attention; test: iOS interop and docs |
-| 76ef2a6 | 15:50 | chore: dev-flow dashboard, slice 1a-2 verified |
-| 822805a | 15:56 | docs: slice 1a-3 research answers and ADR-021..024 |
-| e5bfb28 | 16:02 | chore: dev-flow dashboard, status report 21:03Z |
-| fb433e6 | 16:04 | feat(domain): issues, interactions, agents, runs, dashboard and ports; test(testing): fakes and fixt |
-| 2e928cb | 16:11 | feat(application): issue, interaction, agent, run and dashboard use cases; test: role and single-att |
-| 95b5bfc | 16:18 | feat(presentation): factory home, agents, agent detail, run viewer and work list state holders |
-| 88cb8b5 | 16:24 | feat(presentation): Issue state holder with thread, plan, runs, files, edits and interaction forms |
-| 2e32784 | 16:29 | feat(umbrella): wire slice 1a-3 holders as graph.work, graph.agents, graph.runs, graph.factory; test |
-| 462a35d | 16:33 | fix(presentation): Work list load more pages by the server's row count, not the rows left after the  |
-| 2310473 | 16:34 | fix(presentation): ignore filter and search changes while offline so rows are never labelled with an |
-| f72d396 | 16:35 | test(ios): assert stable values in the slice 1a-3 interop tests; docs: exact test counts, review fix |
-| e40f036 | 16:36 | chore: dev-flow dashboard, slice 1a-3 verified |
-| 5381210 | 16:55 | feat(testing): demo data set and PaperclipCore.createDemoGraph; feat(presentation): Decision Snooze  |
-| 7c7ffc0 | 17:07 | test(testing): contract suites for every gateway and platform port; feat(application): RefreshVisibl |
-| f2986c0 | 17:14 | test: requirement traceability and contract-per-port Konsist rules, error mapping tests; test(ios):  |
-| ae334d0 | 17:17 | docs: slice 1a-4 TDD log, Swift interop review, acceptance criteria evidence |
-| 41a57af | 17:25 | test: demo graph for Settings, Manage factories, Edit factory, App and First run from the four remai |
-| 3533a16 | 17:26 | chore: dev-flow dashboard, step 2 complete |
-| 182c1dc | 17:36 | docs: technical and product details, summary and ADR notes reflect the built Phase 1a core |
-| 776db02 | 17:40 | docs(user-docs): getting started, configuration reference, verified usage examples, testing guide, a |
-| 8c5a9fe | 17:40 | docs: README status, demo graph and links to every docs page |
-| d4e3b66 | 17:41 | chore: dev-flow dashboard, step 3 complete, step 4 started |
-| 7240ce7 | 17:57 | docs: Phase 1a auto-review PRD (51 findings: P0 3, P1 23, P2 25) and dashboard |
-| 57c4139 | 18:12 | docs: review-prd fixes for the Phase 1a review PRD (testable criteria, NFRs, order, P0 split) |
-| 480a1c6 | 18:12 | docs: add the P0/P1 split note to FR-R02 in the review PRD |
-| 81a8456 | 18:14 | chore: archive the Phase 1a spec to specs/archive and rewrite references |
-| 7edf31e | 19:03 | docs: create the Phase 1a review-fix spec from the review PRD |
-| 510a01f | 19:05 | test(testing): FakeAuthGateway records host and token of every authenticated call [F-C-8] |
-| 1ca031a | 19:08 | fix(auth): validate a pending key against the host that issued it and never write a stale instance [ |
-| cc404bd | 19:12 | fix(presentation): bind a probe result to the probed address in first run and edit screens [F-B-1] |
-| 05624e0 | 19:14 | fix(instance): AddInstance requires a probe bound to the address and refuses local_trusted itself [F |
-| 4ad957d | 19:16 | fix(auth): enrollment is cancellation-safe and compensates a failed write [F-A-5] |
-| 2663f69 | 19:18 | fix(auth): a cancelled sign out still deletes local credentials [F-A-2] |
-| e67e22c | 19:20 | fix(auth): sign out everywhere continues past a failing factory and reports it [F-A-2] |
-| eb1afad | 19:22 | fix(auth): bound the pairing wait and tolerate rate limiting [F-A-7] |
-| 6ce2e63 | 19:26 | test(presentation): cover the late-probe drop path with a probe that cannot be cancelled [F-B-1] |
-| cbda546 | 19:27 | docs: record Group 1 commit hashes and coverage |
-| 34ff31a | 19:28 | chore: dev-flow dashboard, Step 8 group 1 verified |
-| 1737df4 | 19:34 | fix(auth): a 401 anywhere marks the factory Signed out through gateway decorators [F-A-3] |
-| 8ed50dc | 19:38 | fix(mutations): timeout reconciliation compares with the pre-call state and reports Unknown [F-A-6] |
-| 1c2a2ac | 19:38 | fix(mutations): keep detekt clean for the Unknown reconciliation [F-A-6] |
-| 210b02a | 19:40 | fix(decision): DecideDecision reads the decision before deciding device authentication [F-A-8] |
-| f6e1d5d | 19:43 | fix(auth): serialise address edit, key enrollment and sign out per factory (residual race of [F-A-1] |
-| 7099838 | 19:44 | fix(presentation): the Decision screen never runs two execution pollers [F-B-2] |
-| 734ee6e | 19:45 | fix(presentation): sign-in outcomes map to one consistent set of error keys [F-B-3] |
-| d84eb48 | 19:46 | fix(presentation): inline Approve and Reject check the card type, the policy and the role [F-B-4] |
-| 4e23ba4 | 19:48 | refactor(presentation): gate every action through Permissions and give owner-only actions a disabled |
-| fb0b167 | 19:57 | fix(presentation): holder guards and shared fields are atomic [F-B-6] |
-| bc2966a | 19:59 | fix(presentation): a late read never overwrites the result of a finished action [F-B-7] |
-| 88d1d9f | 20:00 | fix(presentation): paired-devices loads are cancelled and the latest request wins [F-B-8] |
-| a5940a2 | 20:01 | fix(presentation): Run viewer retries a failed first load and Budget keeps its resolved outcome [F-B |
-| 9ee7576 | 20:02 | refactor(presentation): UI enum mappings are exhaustive when expressions [F-B-11] |
-| 047568d | 20:05 | fix(presentation): a 403 on a mutation re-resolves the role once and re-renders the actions [F-D-2] |
-| e145f9a | 20:07 | fix(application): read retries share a budget, stop offline and skip certificate failures [F-A-11] |
-| f9155c5 | 20:09 | fix(application): CriticalAndHigh pages fill across server pages and dead parameters go [F-A-12] |
-| 968bdc6 | 20:11 | test: keep new test names and helpers valid on Kotlin/Native |
-| 990d085 | 20:12 | test(application): every signed-out decorator method is forwarded |
-| 89c7647 | 20:12 | docs: record Group 2 commit hashes and coverage |
-| 8c71a50 | 20:15 | chore: dev-flow dashboard, Step 8 group 2 verified |
-| 4b2354a | 20:17 | fix(testing): DecisionContract and FakeDecisionGateway follow the pinned server [F-C-1] |
-| d40b0e4 | 20:19 | test(presentation): Run viewer Cancel run is disabled offline after the run loaded [F-C-2] |
-| cd11bf5 | 20:22 | test(application): role and timeout matrices cover every mutation use case [F-C-3] |
-| 86e2465 | 20:25 | test(testing): platform contract suites assert obligations a real adapter could break [F-C-4] |
-| a54e491 | 20:26 | test(architecture): a requirement tag must be in a @Test function name, partial coverage is listed [ |
-| acb32d1 | 20:27 | ci: contract workflow runs real smoke checks and the nightly drift job can fail [F-C-6] |
-| 5bd1e1d | 20:28 | ci: pin every action to a commit SHA and the gitleaks image to a digest [F-C-7] |
-| b1106a7 | 20:29 | fix(architecture): keep detekt clean for the traceability and CI pinning rules |
-| f6e90f0 | 20:31 | test(testing): a challenge or key from one server is NotFound or Unauthorized on another [F-C-8] |
-| b3de91a | 20:32 | test(architecture): contract-per-port and Secret.reveal rules can fail, wildcard port imports are ca |
-| be73235 | 20:33 | test(architecture): the infrastructure rule scans every source set and is proven on a fixture [F-D-7 |
-| 6fe6058 | 20:35 | test(umbrella): refresh wiring tests wait for signals, not timers, and prove teardown by subscriber  |
-| e94bf03 | 20:35 | test(application): DeviceAuthGuardTest states the six destructive actions instead of reading the pol |
-| 9a5b8f2 | 20:36 | chore: every detekt deviation has a reason, ADRs for shipped fakes and test honesty, heap dump remov |
-| 7d1a4a4 | 20:40 | fix(ios): FirstRunModel closes its holder from the view's lifecycle and the model is created once [F |
-| 3891996 | 20:40 | test(ios): interop tests assert a state change caused by their intents and no longer close holders m |
-| fe4db74 | 20:40 | chore(ios): swift-format uses its default rule set and SwiftLint enables force_unwrapping [F-D-13] |
-| 310c44d | 20:40 | docs: record Group 3 evidence and hashes |
-| 314aacc | 20:47 | test(ios): no mid-flight close in the grouped interop tests; docs match the Group 3 rules |
-| 6f9f428 | 20:47 | docs: Group 3 deferrals in status.md |
-| b358760 | 20:58 | chore: dev-flow dashboard, Step 8 group 3 verified |
-| 3d95028 | 21:01 | fix(domain): Secret.startsWith compares in place and never materialises the key [F-A-9] |
-| d32bedd | 21:01 | fix(domain): BaseUri validates the path and odd hosts [F-A-10] |
-| 060593c | 21:03 | fix(presentation): a read that answers Forbidden re-resolves the role once [F-D-2] |
-| 30168e3 | 21:04 | fix(application): revoking a key is refused when this phone's own key id is unknown [F-A-3] |
-| 9118611 | 21:05 | feat(umbrella): AppLifecycleBridge.setForeground drives both the app lock and the refresh policy [F- |
-| 0026607 | 21:07 | refactor(presentation): Swift-facing 'description' properties are 'summary', a Konsist rule keeps NS |
-| 28022f5 | 21:07 | fix(scripts): build-kit.sh preflights and swaps the framework only when complete, ios-test.sh checks |
-| 26f4e1c | 21:10 | docs(adr): Decision paragraphs of ADR-018/022/023/024 use the real symbols, ADR-037 for the fakes-ba |
-| 3900860 | 21:14 | docs: technical details, README, product details and user docs match the code after Groups 1 to 3 an |
-| 4ee49b9 | 21:14 | docs(prd): FR-001 uses the real field names, FR-005 no longer promises a pre-pairing server version, |
-| c5de41f | 21:16 | docs(spec): archived Phase 1a spec, status, tasks, data dictionary and notes corrected after review, |
-| 0bd8b7b | 21:17 | fix(ios): shorten the InvalidPath message to the SwiftLint line limit [F-A-10] |
-| deb01e7 | 21:19 | docs(spec): review fix status ticks every FR-R or marks it deferred, final finding table, Group 4 no |
-| 0c9a802 | 21:36 | fix(build): spotless prunes build directories during the walk instead of filtering after it |
-| 4dba7e8 | 21:37 | chore: archive the Phase 1a review-fix spec; dashboard steps 8 and 9 complete |
-| ba91903 | 21:47 | fix(application): SwitchCompany, CheckCredentials and LoadInstanceAccess write field-level changes o |
-| 80defbf | 21:48 | fix(application): UpdateInstance deletes the key and records the new address as one uncancellable st |
-| 1f7a5cc | 21:49 | fix(test): pin the FirstRun late-probe address check and SignOutEverywhere's cancellation rethrow [F |
-| c88c524 | 21:51 | fix(ios): FirstRunModel is owned by the App, a view's task ending no longer closes the holder [F-R-4 |
-| 6b2b1c9 | 21:51 | docs(spec): independent re-review (Step 10) fixes and deferred findings |
-| 9df8e99 | 22:06 | docs: refresh test and coverage numbers after the independent re-review fixes |
+| Type | Count |
+|---|---|
+| test | 59 |
+| fix | 48 |
+| feat | 41 |
+| docs | 29 |
+| refactor | 10 |
+| chore | 6 |
+| style | 4 |
+| ci | 1 |
+
+By step: Step 3 had 40 feat, 11 test, 5 fix, 4 docs, 2 chore, 1 ci, 1 style. Step 9 had 48 test, 43 fix, 13 docs, 10 refactor, 3 style, 1 feat, 1 chore.
+
+Key commits: a0748d3 (PRD and plan), da990ec (spec review), 0490ccb (review PRD, DEC-1 and DEC-2), 380eac4 (archive original spec), 21131c3 (archived status mapped to named tests), d43a3c8 (archive the fix spec). Full list: `git log a0748d3^..d43a3c8`. No PR yet (Step 14).
 
 ---
 
 ## 4. Spec vs. Implementation Comparison
 
-The spec sized work in relative terms (S, M, L), not hours, so "planned" is a size and "actual" is the agent's wall-clock time from its completion notice, not from commit gaps.
-
-| Phase | Planned (spec) | Actual | Notes |
+| Phase | Planned | Actual | Notes |
 |---|---|---|---|
-| Research (questions Q1 to Q9) | before each slice | folded into each slice, about 5 to 10 min each | Q1 (badge) was decided by the owner; Q8 (decision inputs) answered from server source |
-| Slice 1a-1 instances, secrets, settings, auth, roles | M | 32 min | 7 commits; application and presentation tests not written red-first (later flagged) |
-| Slice 1a-2 attention, decisions, approvals, budgets | L | 47 min | strict red-first demanded; two mapper files still written before tests; agent reported stale coverage |
-| Slice 1a-3 work, agents, runs, factory | L | 45 min | 208 tests; two real bugs found by the agent's own review |
-| Slice 1a-4 demo data, contracts, polling, interop | M | 49 min | traceability test, 27 contract suites, Swift interop review |
-| Docs (not a separate phase in the spec) | n/a | 14 min | added by the dev-flow skill |
-| Review and verification | not in the spec | 31 min | 4 reviewers (4 to 6 min each) and a verification agent (8 min) |
-| Review fixes (Groups 1 to 4) | not in the spec | 24 + 45 + 41 + 37 min | one commit per finding, TDD enforced |
-| Independent re-review and its fixes | not in the spec (spec criterion 5 of the fix spec) | 7 + 20 min | 4 Warnings fixed |
+| Spec and spec review | no estimate | 9 min | 57 tasks |
+| Implementation | milestones 2a-0 to 2a-9 | 370 min + 11 min docs | all built; live pairing and jank target not met |
+| Review | no estimate | 16 min | 40 findings |
+| Fixes | 40 tasks | 297 min, 39 done | T-009 open |
+| Final gates | | 48 min | see section 2 |
 
-**Phases skipped:** none from the spec. The planned "sequence diagrams before slice 1a-2" were done; the use-case list stayed an approximate count.
-**Phases added:** the whole review and fix cycle (steps 4 to 10), the early draft PR for CI, the independent re-review, and several fix items the original spec did not anticipate (per-factory lock, central 401 handling, SHA-pinned CI actions, a contract smoke script run against the real pinned server).
+**Phases skipped:** extra PRD validation (owner decision); live pairing against the pinned server (Docker would not start); hardware evidence.
+**Phases added:** the whole review and fix cycle (Steps 5 to 11), including shared and iPhone changes for DEC-1 and several Konsist input fixes.
+
+Review findings: 40 total, 0 P0, 9 P1, 31 P2.
+- Fixed, mostly with a red regression test first: 38 of the 40 (all P1 except R-009).
+- R-005 (log tail stops following) and R-021 (lock leaks holders) were confirmed real: the verify-first test failed before the fix.
+- R-024 was demoted: its test passed at once, so there was no bug left to fix.
+- R-008 (Inbox fling jank) only partly met: 52% to 41% janky frames on the Pixel_9_Pro emulator against the 5% target. The criterion stays open for the Pixel 6.
+- R-009 (acceptance evidence) left open for the owner: a checklist and an evidence table are packaged, every result is "Not run".
+- R-038 (attachments) is design only (ADR-143), as the PRD said.
+- R-029 and R-030 were partial: some pseudo-locale, large-font, error-state and Viewer-role items were replaced or demoted.
 
 ---
 
 ## 5. Token / Message Usage
 
-Exact orchestrator counts are unavailable. For sub-agents the harness reported tokens and tool calls on completion; these figures are as reported and exclude the orchestrator's own turns.
-
-| Stage | Agents | Tokens (reported) | Tool calls |
-|---|---|---|---|
-| Step 2, slices 1a-1 to 1a-4 | 4 | 1,965,851 | 686 |
-| Step 3, documentation | 1 | 258,519 | 83 |
-| Step 4, reviewers A to D | 4 | 709,988 | 149 |
-| Step 4, verification | 1 | 171,706 | 69 |
-| Step 8, Groups 1 to 4 | 4 | 1,535,040 | 729 |
-| Step 10, re-review and its fixes | 2 | 289,712 | 82 |
-| **Total sub-agents** | **16** | **about 4.93 million** | **about 1,800** |
-
-The orchestrator ran several hundred turns (verifications, status reports, dashboard edits, link checks, one Spotless fix); its token count is not recorded here. Counts are not cost: no pricing was applied.
+Exact token counts are unavailable. Rough estimate: about one sub-agent per slice (nine in Step 3) and per group (five in Step 9), plus one for each other step. No numbers were measured.
 
 ---
 
 ## 6. Process Observations
 
 ### What worked well
-- **Independent review caught what gates could not.** Green coverage and architecture gates coexisted with three reproducible security defects (key sent to the wrong host on an address edit, secret left after a cancelled sign-out, unprobed address accepted after a late probe). A separate verification stage reproduced 12 of 14 sampled findings and corrected three ratings, so the fix PRD contained real bugs.
-- **Orchestrator verification caught agent errors every time:** stale coverage figures (slice 1a-2), a false "AGENTS.md is stale" claim and a false "no PR exists" claim (docs agent), and the Spotless race. Re-running the gate and regenerating coverage from XML was cheap and decisive.
-- **One commit per finding, test first,** with red evidence written into the notes, made the fix cycle auditable. An independent mutation re-check of the three P0 fixes and 11 other findings confirmed the regression tests really fail without the fixes.
-- **Early draft PR** gave real CI results (including the contract smoke script against the pinned Paperclip image, which the dev machine could not run) while later steps continued.
-- **Honesty rules held:** deferrals, narrowed findings (F-A-8) and refuted findings are recorded with reasons.
+- Verify-first tests found two real bugs (R-005, R-021) and one non-bug (R-024) before any code changed.
+- Konsist rules with planted-violation tests held the architecture. The review judged layering and the security shell strong.
+- Moving business rules into shared Kotlin (Group 1) gave the iPhone the same fix.
+- A review PRD with explicit priorities and counter-tests kept the P0 call reasoned.
 
 ### What caused delays or rework
-- **Agent self-reporting was unreliable.** Stale Kover numbers, TDD claims that did not hold (slice 1a-1 tests written with the code; two mapper files and several fakes before tests; F-A-6 and F-R-4 without a separate red), and commits pushed with detekt failures (at least three) all needed correction.
-- **Sequential execution.** Only one Gradle build can run safely on the dev machine, so slices, groups and reviewers' reproductions ran one after another; parallel agents and git worktrees (suggested by the skill) were not usable for anything that built.
-- **Docker Desktop would not start locally,** so the test server and contract script were verified only in CI.
-- **Wait for the owner** after step 6 (about 40 minutes) because the turn ended with a status report instead of continuing.
-- **Dashboard timestamps** recorded update time, not step end time, so steps 5 to 7 looked wrong in the file.
+- **Test-first was not consistent.** Step 3 has 40 feat commits against 11 test commits. Group 1 and the 2a-5 and 2a-7 screens were sometimes written before their tests, and the tests for T1.3 and T1.4 were written after the code. Step 3 counts are not red-first evidence. Step 9 is better (48 test commits, 43 fix commits), but the pairing was not machine-checked. T-035 records the weak TDD evidence for security code as a known deviation.
+- **Flaky `awaitDisplayed` assertions** were found late and cost reruns.
+- **The stale-pass Konsist bug was found twice** (R-014, then again for docs inputs in T-039): a rule that can pass on stale inputs was written twice.
+- **Product issues found late.** The Keystore 5 s window instead of per-use authorisation was flagged at slice 2a-1 but not decided until the review; the prompts-per-refresh question with app lock on was found only at Group 1 and is still an owner decision (ADR-144, not implemented).
+- **Orchestration friction** from the worktree guard: commands had to be split into plain steps and sub-agents could not always write where the work was.
+- **Acceptance evidence was left to the end.** Jank was measured only after the review (67% without the content wait, 52% with it, 41% after fixes) and never reached the target.
 
 ### Recommendations for future runs
-- Make red-first checkable: a CI or pre-push check that the commit adding a test precedes (or is the same commit as, with the failing run attached) the production change, instead of trusting self-reports.
-- Require every agent report to include numbers read from generated artifacts (Kover XML, JUnit XML) with the command, and have the orchestrator re-derive them (done here, keep it).
-- Gate every commit on `check` with `&&` in the agent brief; at least three detekt failures reached the remote.
-- Open the draft PR at the end of the first implementation slice, not step 2's end, so CI feedback arrives earlier; and cancel superseded macOS runs less aggressively or split the ios workflow so UI tests do not block quick feedback.
-- Make the dashboard write the step end time when the step actually ends, not when the next step starts.
-- For long unattended runs, state at the start that the run continues through all steps without confirmation, and keep the final-confirmation steps (archive, PR) explicit in the brief.
-- Run independent verification before writing the review PRD for all reviewers' Must Fix items (done), and consider a second reviewer on security-critical diffs by default.
+- Commit the failing test before the fix as a separate commit, and check that in a script, so red-first is evidence and not a claim.
+- Decide protocol-level questions (per-use authorisation, prompts per refresh) before the slice that implements them.
+- Run the benchmark and the live pairing script early and record the result in the first status.
+- Run the Konsist input check on every new rule on its first write.
+- Do not mark a step complete on documents alone; say which evidence is local and which waits for hardware.
+
+### Run assumptions the owner can overturn
+- **DEC-1 (R-004):** a budget raise asks for the device owner; a decrease does not. It also changes iPhone behaviour. If overturned: amend AGENTS.md to "budget incident raise" only.
+- **DEC-2 (R-012):** connectivity is online when a default network declares INTERNET, validated or not. If overturned, only R-012, its ADR text and tests change.
+
+### Never proven in this run
+- Live pairing against the pinned Paperclip server (Docker would not start; `scripts/android-live-pairing.sh` never run).
+- TalkBack and spoken output.
+- Real fingerprint flows: key invalidation after enrolment, the system prompt on a destructive action, StrongBox, adb backup.
+- Hosted CI: `android.yml` has never run on GitHub.
+- Pixel 6, Samsung, API 28 and API 33. Only the Pixel_9_Pro API 37 emulator was used.
 
 ---
 
 ## 7. Manual vs. Automated Comparison
 
-**Estimated manual duration:** 5 to 7 weeks for one senior Kotlin Multiplatform engineer (about 200 to 280 working hours), covering: studying the Paperclip server types and routes for every entity, modelling about 70 use cases and 16 state holders test-first, writing fakes and 27 contract suites, the demo data set, Konsist rules, a Swift interop review, documentation and ADRs, a peer code review with fixes, and a re-review. Assumes no meetings and excludes waiting on others.
-**Actual automated runtime:** 7 h 37 min wall-clock from first to last commit (about 6 h of agent execution plus orchestration), for roughly 42,000 added lines including tests and docs.
-**Efficiency gain:** roughly 25 to 35 times faster in wall-clock time. The comparison is rough and flatters the automated run in two ways: it excludes the owner's own review time of the output (not yet done at the time of writing), and the 154-minute fix cycle shows that a meaningful share of agent output needed correction. It also understates the automated run's advantage in one way: the review, verification and re-review stages (about 1.2 hours) delivered an adversarial audit that a solo human would rarely afford.
-
----
-
-*Caveats:* CI for the final commit (macOS `ios` workflow) was pending when this report was written; the figures above for tests and coverage were regenerated locally at commit `6b2b1c9` plus a docs-only commit.
+**Estimated manual duration:** about 4 to 6 weeks for one senior Android developer who knows Compose and the shared core (app, shared-core changes, 700+ tests, docs, review and fixes). Excludes meetings and hardware testing.
+**Actual automated runtime:** about 12.5 hours elapsed (dashboard 12 h 37 min; git 14:59Z to 02:59Z).
+**Efficiency gain:** roughly 10 times on elapsed time, a rough guess. Part of the gain is only apparent: the hardware, live-server and TalkBack evidence that a person would have gathered along the way has not been gathered, and it will cost the owner time later.

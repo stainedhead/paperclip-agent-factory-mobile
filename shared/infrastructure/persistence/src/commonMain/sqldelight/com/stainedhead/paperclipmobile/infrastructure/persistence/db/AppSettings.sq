@@ -1,0 +1,15 @@
+-- The device-wide preferences: one row, id fixed to 1 (AD-020). Nothing secret.
+CREATE TABLE app_settings (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    device_name TEXT NOT NULL,
+    app_lock_enabled INTEGER NOT NULL,
+    idle_period TEXT NOT NULL,
+    selected_instance_id TEXT
+);
+
+select:
+SELECT * FROM app_settings WHERE id = 1;
+
+upsert:
+INSERT OR REPLACE INTO app_settings(id, device_name, app_lock_enabled, idle_period, selected_instance_id)
+VALUES (1, ?, ?, ?, ?);

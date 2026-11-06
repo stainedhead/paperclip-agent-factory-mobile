@@ -35,6 +35,7 @@ import com.stainedhead.paperclipmobile.application.auth.RevokeBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SaveManualBoardKey
 import com.stainedhead.paperclipmobile.application.auth.SignOutEverywhere
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
+import com.stainedhead.paperclipmobile.application.auth.SignOutInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.auth.SignedOutMarker
 import com.stainedhead.paperclipmobile.application.budget.LoadBudgetIncident
 import com.stainedhead.paperclipmobile.application.budget.ResolveBudgetIncident
@@ -49,6 +50,7 @@ import com.stainedhead.paperclipmobile.application.instance.GetInstance
 import com.stainedhead.paperclipmobile.application.instance.ObserveInstances
 import com.stainedhead.paperclipmobile.application.instance.ProbeInstance
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
+import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.ReorderInstances
 import com.stainedhead.paperclipmobile.application.instance.SwitchCompany
 import com.stainedhead.paperclipmobile.application.instance.SwitchInstance
@@ -63,6 +65,7 @@ import com.stainedhead.paperclipmobile.application.issue.ListIssueAttachments
 import com.stainedhead.paperclipmobile.application.issue.ListIssues
 import com.stainedhead.paperclipmobile.application.issue.LoadIssue
 import com.stainedhead.paperclipmobile.application.issue.LoadIssuePlan
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.application.issue.SearchIssues
 import com.stainedhead.paperclipmobile.application.run.CancelRun
 import com.stainedhead.paperclipmobile.application.run.ListIssueRuns
@@ -71,6 +74,7 @@ import com.stainedhead.paperclipmobile.application.run.TailRunLog
 import com.stainedhead.paperclipmobile.application.settings.ObserveAppSettings
 import com.stainedhead.paperclipmobile.application.settings.ShouldLockApp
 import com.stainedhead.paperclipmobile.application.settings.UnlockApp
+import com.stainedhead.paperclipmobile.application.settings.UnlockSession
 import com.stainedhead.paperclipmobile.application.settings.UpdateAppSettings
 import com.stainedhead.paperclipmobile.domain.AppSettings
 import com.stainedhead.paperclipmobile.domain.CompanyScope
@@ -157,12 +161,14 @@ class Env(
     val reorder = ReorderInstances(repository)
     val remove = RemoveInstance(repository, secrets, revoker, deviceAuth, locks)
     val signOut = SignOutInstance(repository, secrets, revoker, locks)
+    val removeHereOnly = RemoveInstanceHereOnly(repository, secrets, deviceAuth, locks)
+    val signOutHereOnly = SignOutInstanceHereOnly(repository, secrets, deviceAuth, locks)
     val signOutEverywhere = SignOutEverywhere(repository, signOut)
     val listKeys = ListBoardKeys(repository, auth, signedOutMarker)
     val revokeKey = RevokeBoardKey(repository, auth, signOut, signedOutMarker)
     val expiry = KeyExpiryStatus(clock)
     val checkCredentials = CheckCredentials(repository, secrets, locks)
-    val unlock = UnlockApp(biometrics)
+    val unlock = UnlockSession(UnlockApp(biometrics), secrets, signedOutMarker)
     val shouldLock = ShouldLockApp(clock)
     val validateAddress = validate
 
@@ -201,7 +207,7 @@ class Env(
     val approval =
         ApprovalUseCases(
             resolveContext,
-            LoadApproval(approvals, connectivity),
+            LoadApproval(approvals, agents, connectivity),
             ApproveApproval(approvals),
             RejectApproval(approvals, deviceAuth),
             RequestRevision(approvals),
@@ -215,12 +221,17 @@ class Env(
             ResolveBudgetIncident(budgets, deviceAuth),
         )
 
-    private val listAgents = ListAgents(agents)
+    private val listAgents = ListAgents(agents, runs, LoadIssueRefs(issues))
     private val pauseAgent = PauseAgent(agents, deviceAuth)
     private val resumeAgent = ResumeAgent(agents)
     private val invoke = InvokeHeartbeat(agents, runs)
 
-    val factory = FactoryHomeUseCases(resolveContext, LoadDashboard(dashboard, runs), LoadWindowSpend(dashboard))
+    val factory =
+        FactoryHomeUseCases(
+            resolveContext,
+            LoadDashboard(dashboard, runs, LoadIssueRefs(issues)),
+            LoadWindowSpend(dashboard),
+        )
 
     val agentList = AgentsUseCases(resolveContext, listAgents, pauseAgent, resumeAgent, invoke)
 
@@ -231,10 +242,16 @@ class Env(
             pauseAgent,
             resumeAgent,
             invoke,
-            SetAgentBudget(agents),
+            SetAgentBudget(agents, deviceAuth),
         )
 
-    val runViewer = RunViewerUseCases(resolveContext, LoadRun(runs), TailRunLog(runs), CancelRun(runs, deviceAuth))
+    val runViewer =
+        RunViewerUseCases(
+            resolveContext,
+            LoadRun(runs, LoadIssueRefs(issues)),
+            TailRunLog(runs),
+            CancelRun(runs, deviceAuth),
+        )
 
     val workList =
         WorkListUseCases(

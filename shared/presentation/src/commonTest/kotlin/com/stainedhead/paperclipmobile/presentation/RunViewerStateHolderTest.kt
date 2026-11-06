@@ -46,6 +46,8 @@ class RunViewerLoadTest {
             state.run?.status shouldBe RunStatusUi.Running
             state.run?.agentName shouldBe "Engineer 1"
             state.run?.issueId shouldBe "pap-1182"
+            state.run?.issueIdentifier shouldBe "PAP-1182"
+            state.run?.finishedAtEpochMillis shouldBe null
             state.isLive shouldBe true
             state.events.map { it.seq } shouldBe listOf(1L, 2L)
             state.events.first().message shouldBe "Run started"

@@ -50,4 +50,9 @@ internal suspend fun <T> retryingRead(
 
 internal fun DomainResult<*>.isTransientFailure(): Boolean =
     this is DomainResult.Failure &&
-        (error == DomainError.Unreachable || error == DomainError.Timeout || error == DomainError.ServerError)
+        (
+            error == DomainError.Unreachable ||
+                error == DomainError.ConnectionLost ||
+                error == DomainError.Timeout ||
+                error == DomainError.ServerError
+        )

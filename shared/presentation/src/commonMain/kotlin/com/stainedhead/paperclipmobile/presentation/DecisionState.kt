@@ -60,6 +60,16 @@ enum class EffectStatusUi {
     Skipped,
     Failed,
     Unknown,
+    ;
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Executed -> ToneUi.Success
+                Skipped -> ToneUi.Warn
+                Failed -> ToneUi.Critical
+                Claimed, Unknown -> ToneUi.Neutral
+            }
 }
 
 /** [reason] is the server's code, for example `target_changed`. */
@@ -127,7 +137,10 @@ data class DecisionState(
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isSubmitting
+}
 
 sealed interface DecisionIntent {
     data class OptionSelected(

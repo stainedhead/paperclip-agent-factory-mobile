@@ -534,6 +534,33 @@ class InboxActionsTest {
         }
 
     @Test
+    fun `FR-034 a second dismiss replaces the undo of the first and the first timer does not clear it`() =
+        runTest {
+            val env = env()
+            val holder =
+                loaded(env, listOf(AttentionFixtures.approvalItem("ap-1"), AttentionFixtures.approvalItem("ap-2")))
+
+            holder.onIntent(InboxIntent.DismissTapped("approval:ap-1"))
+            runCurrent()
+            advanceTimeBy(3_000)
+            holder.onIntent(InboxIntent.DismissTapped("approval:ap-2"))
+            runCurrent()
+            holder.state.value.undo
+                ?.itemId shouldBe "approval:ap-2"
+
+            // The first card's five seconds are over; the second's are not.
+            advanceTimeBy(2_001)
+            holder.state.value.undo
+                ?.itemId shouldBe "approval:ap-2"
+
+            advanceTimeBy(3_000)
+            holder.state.value.undo shouldBe null
+            holder.onIntent(InboxIntent.UndoTapped)
+            runCurrent()
+            env.attention.count("restore") shouldBe 0
+        }
+
+    @Test
     fun `FR-034 dismiss then undo restores the card exactly once even across a refresh`() =
         runTest {
             val env = env()
@@ -554,6 +581,21 @@ class InboxActionsTest {
                 .items()
                 .map { it.id } shouldBe listOf("approval:ap-1")
             holder.state.value.undo shouldBe null
+        }
+
+    @Test
+    fun `a second dismiss of a card that is already dismissed never reaches the gateway`() =
+        runTest {
+            val env = env()
+            val holder = loaded(env)
+            env.attention.servesStaleFeed = true
+
+            holder.onIntent(InboxIntent.DismissTapped("approval:ap-1"))
+            advanceUntilIdle()
+            holder.onIntent(InboxIntent.DismissTapped("approval:ap-1"))
+            advanceUntilIdle()
+
+            env.attention.count("dismiss") shouldBe 1
         }
 
     @Test

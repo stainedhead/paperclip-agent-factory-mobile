@@ -18,6 +18,7 @@ import com.stainedhead.paperclipmobile.application.issue.ListIssueAttachments
 import com.stainedhead.paperclipmobile.application.issue.ListIssues
 import com.stainedhead.paperclipmobile.application.issue.LoadIssue
 import com.stainedhead.paperclipmobile.application.issue.LoadIssuePlan
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.application.issue.SearchIssues
 import com.stainedhead.paperclipmobile.application.refresh.RefreshVisibleScreen
 import com.stainedhead.paperclipmobile.application.run.CancelRun
@@ -66,7 +67,12 @@ internal fun Module.sliceThreePorts() {
 /** Live events and the app lifecycle (slice 1a-4). The WebSocket has no real adapter: board keys fail on it. */
 internal fun Module.signalPorts() {
     single<LiveEvents> { FakeLiveEvents() }
-    single { AppLifecycleBridge() }
+    lifecyclePorts()
+}
+
+/** The app lifecycle and the refresh policy: shared by the fake and the live graph, which differ in live events. */
+internal fun Module.lifecyclePorts() {
+    single { AppLifecycleBridge(get()) }
     single<AppLifecycle> { get<AppLifecycleBridge>() }
     single { RefreshVisibleScreen(get(), get(), get()) }
 }
@@ -82,6 +88,7 @@ private fun Module.workUseCases() {
     single { SearchIssues(get()) }
     single { LoadIssue(get(), get(), get()) }
     single { LoadIssuePlan(get()) }
+    single { LoadIssueRefs(get()) }
     single { ListIssueAttachments(get()) }
     single { CommentOnIssue(get()) }
     single { ChangeIssueStatus(get()) }
@@ -92,20 +99,20 @@ private fun Module.workUseCases() {
 
 private fun Module.agentUseCases() {
     single { RespondToInteraction(get()) }
-    single { ListAgents(get()) }
+    single { ListAgents(get(), get(), get()) }
     single { LoadAgent(get(), get(), get()) }
     single { PauseAgent(get(), get()) }
     single { ResumeAgent(get()) }
     single { InvokeHeartbeat(get(), get()) }
-    single { SetAgentBudget(get()) }
+    single { SetAgentBudget(get(), get()) }
 }
 
 private fun Module.runUseCases() {
-    single { LoadRun(get()) }
+    single { LoadRun(get(), get()) }
     single { TailRunLog(get()) }
     single { CancelRun(get(), get()) }
     single { ListIssueRuns(get()) }
-    single { LoadDashboard(get(), get()) }
+    single { LoadDashboard(get(), get(), get()) }
     single { LoadWindowSpend(get()) }
 }
 

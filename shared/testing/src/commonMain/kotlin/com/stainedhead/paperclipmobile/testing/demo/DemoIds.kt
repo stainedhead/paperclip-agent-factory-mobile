@@ -17,6 +17,7 @@ object DemoIds {
     const val ISSUE_BILLING = "pap-1182"
     const val ISSUE_RETRIES = "pap-1204"
     const val ISSUE_REFUNDS = "pap-1190"
+    const val ISSUE_EMAIL_DESIGN = "pap-1199"
     const val RUN_RETRIES_LIVE = "run-1204-live"
     const val RUN_QA_TIMEOUT = "run-qa-1190"
 

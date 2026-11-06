@@ -32,6 +32,9 @@ enum class Action(
     RaiseBudgetAndResume(ActionScope.Company),
     SetAgentBudget(ActionScope.Company),
 
+    /** A monthly budget set above the current one, or to zero: more spend allowed, so a destructive action (DEC-1). */
+    RaiseAgentBudget(ActionScope.Company),
+
     // Work
     CommentOnIssue(ActionScope.Company),
     ChangeIssueStatus(ActionScope.Company),

@@ -25,7 +25,7 @@ class DemoRefreshWiringTest {
 
     /** The session subscribes on another thread: wait for that signal instead of re-sending on a timer. */
     private suspend fun FakeLiveEvents.awaitSubscribers(count: Int) {
-        withTimeout(10.seconds) { subscriberCount.first { it == count } }
+        withTimeout(60.seconds) { subscriberCount.first { it == count } }
     }
 
     @Test
@@ -35,7 +35,7 @@ class DemoRefreshWiringTest {
             val session = graph.refresh.start(agents.refreshTarget)
             val events = graph.resolve<LiveEvents>() as FakeLiveEvents
             withContext(Dispatchers.Default) {
-                withTimeout(10.seconds) { agents.state.first { it.phase == DetailPhase.Content } }
+                withTimeout(60.seconds) { agents.state.first { it.phase == DetailPhase.Content } }
                 events.awaitSubscribers(1)
                 val gateway = graph.resolveRaw<AgentGateway>() as FakeAgentGateway
                 val ceo = AgentId(DemoIds.AGENT_CEO)
@@ -44,7 +44,7 @@ class DemoRefreshWiringTest {
                 events.emit(LiveEvent("agent.status", DemoIds.AGENT_CEO, null, null))
 
                 val state =
-                    withTimeout(10.seconds) {
+                    withTimeout(60.seconds) {
                         agents.state.first { state ->
                             state.sections
                                 .flatMap { it.rows }

@@ -134,7 +134,7 @@ private fun org.koin.core.module.Module.decisionUseCases() {
 }
 
 private fun org.koin.core.module.Module.approvalUseCases() {
-    single { LoadApproval(get(), get()) }
+    single { LoadApproval(get(), get(), get()) }
     single { ApproveApproval(get()) }
     single { RejectApproval(get(), get()) }
     single { RequestRevision(get()) }

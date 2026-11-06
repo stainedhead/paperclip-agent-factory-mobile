@@ -7,6 +7,9 @@ import com.stainedhead.paperclipmobile.application.budget.ResolveBudgetIncident
 enum class BudgetThresholdUi {
     Hard,
     Soft,
+    ;
+
+    val tone: ToneUi get() = if (this == Hard) ToneUi.Critical else ToneUi.Warn
 }
 
 enum class BudgetChoice {
@@ -53,16 +56,24 @@ data class BudgetIncidentState(
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isSubmitting
+}
 
 sealed interface BudgetIntent {
     data class ChoiceSelected(
         val choice: BudgetChoice,
     ) : BudgetIntent
 
-    /** The new monthly budget in cents, or null when the field is cleared. */
-    data class AmountChanged(
-        val minorUnits: Long?,
+    /**
+     * The amount field's text as typed. The app passes only the locale's decimal separator and the currency's fraction
+     * digits; shared code reads and validates it (A4).
+     */
+    data class AmountTyped(
+        val text: String,
+        val decimalSeparator: String,
+        val fractionDigits: Int,
     ) : BudgetIntent
 
     data object SubmitTapped : BudgetIntent

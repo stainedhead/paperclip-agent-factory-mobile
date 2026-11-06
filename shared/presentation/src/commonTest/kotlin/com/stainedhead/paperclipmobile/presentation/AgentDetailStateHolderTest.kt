@@ -46,6 +46,8 @@ class AgentDetailLoadTest {
             state.currentRun?.runId shouldBe "run-live"
             state.currentIssue?.identifier shouldBe "PAP-1182"
             state.recentRuns.size shouldBe 2
+            state.currentRun?.issueIdentifier shouldBe "PAP-1182"
+            state.recentRuns.all { it.issueIdentifier == "PAP-1182" } shouldBe true
             state.monthSpend shouldBe MoneyUi(25_000, "USD")
             state.monthlyBudget shouldBe MoneyUi(100_000, "USD")
             state.budgetPercentUsed shouldBe 25
@@ -89,7 +91,8 @@ class AgentDetailActionsTest {
             advanceUntilIdle()
             holder.state.value.canSetBudget shouldBe true
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 1
@@ -106,7 +109,8 @@ class AgentDetailActionsTest {
             advanceUntilIdle()
             holder.state.value.canSetBudget shouldBe false
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 0
@@ -119,7 +123,8 @@ class AgentDetailActionsTest {
             val holder = detailHolder(env)
             advanceUntilIdle()
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(-1))
+            holder.enterBudget("-1")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 0
@@ -190,7 +195,8 @@ class AgentDetailActionsTest {
             val holder = detailHolder(env)
             advanceUntilIdle()
 
-            holder.onIntent(AgentDetailIntent.BudgetSubmitted(50_000))
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
             advanceUntilIdle()
 
             env.agents.count("setBudget") shouldBe 1
@@ -258,5 +264,114 @@ class AgentDetailStaleLoadTest {
 
             holder.state.value.agent
                 ?.status shouldBe AgentStatusUi.Paused
+        }
+}
+
+private fun dollars(minorUnits: Long): String = "${minorUnits / 100}.${(minorUnits % 100).toString().padStart(2, '0')}"
+
+internal fun AgentDetailStateHolder.enterBudget(text: String) =
+    onIntent(AgentDetailIntent.BudgetAmountTyped(text, ".", 2))
+
+class AgentDetailBudgetInputTest {
+    @Test
+    fun `A4 the typed budget is parsed in shared code and says what is wrong`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AgentDetailIntent.BudgetAmountTyped("250,50", ".", 2))
+            runCurrent()
+            holder.state.value.budgetAmountIssue shouldBe InvalidKey.AmountNotNumeric
+            holder.state.value.canSaveBudget shouldBe false
+
+            holder.onIntent(AgentDetailIntent.BudgetAmountTyped("250,50", ",", 2))
+            runCurrent()
+            holder.state.value.budgetAmountIssue shouldBe null
+            holder.state.value.budgetAmountMinorUnits shouldBe 25_050L
+            holder.state.value.canSaveBudget shouldBe true
+        }
+
+    @Test
+    fun `R-004 the lock flag is on for a raise and off for a decrease or the same amount`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            val current = checkNotNull(holder.state.value.monthlyBudget).minorUnits
+
+            holder.enterBudget(dollars(current + 1))
+            runCurrent()
+            holder.state.value.canSaveBudget shouldBe true
+            holder.state.value.saveBudgetNeedsDeviceAuth shouldBe true
+
+            holder.enterBudget(dollars(current))
+            runCurrent()
+            holder.state.value.saveBudgetNeedsDeviceAuth shouldBe false
+
+            holder.enterBudget(dollars(current - 1))
+            runCurrent()
+            holder.state.value.saveBudgetNeedsDeviceAuth shouldBe false
+
+            holder.enterBudget("")
+            runCurrent()
+            holder.state.value.saveBudgetNeedsDeviceAuth shouldBe false
+        }
+
+    @Test
+    fun `R-004 a cancelled prompt on a raise sends nothing and keeps the amount`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            val current = checkNotNull(holder.state.value.monthlyBudget).minorUnits
+            env.biometrics.result = BiometricResult.Cancelled
+
+            holder.enterBudget(dollars(current + 1))
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
+            advanceUntilIdle()
+
+            env.agents.count("setBudget") shouldBe 0
+            env.biometrics.calls shouldBe 1
+            holder.state.value.budgetSavedCount shouldBe 0
+            holder.state.value.budgetAmountMinorUnits shouldBe current + 1
+        }
+
+    @Test
+    fun `A11 zero is not a budget and nothing is sent`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+
+            holder.enterBudget("0")
+            runCurrent()
+            holder.state.value.canSaveBudget shouldBe false
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
+            advanceUntilIdle()
+
+            env.agents.count("setBudget") shouldBe 0
+        }
+
+    @Test
+    fun `B-06 a saved budget is reported once and a failed one keeps the amount`() =
+        runTest {
+            val env = workEnv(Role.Owner)
+            val holder = detailHolder(env)
+            advanceUntilIdle()
+            env.agents.failures["setBudget"] = DomainError.Timeout
+            holder.enterBudget("500.00")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
+            advanceUntilIdle()
+
+            holder.state.value.budgetSavedCount shouldBe 0
+            holder.state.value.budgetAmountMinorUnits shouldBe 50_000L
+
+            env.agents.failures.remove("setBudget")
+            holder.onIntent(AgentDetailIntent.BudgetSubmitted)
+            advanceUntilIdle()
+
+            holder.state.value.budgetSavedCount shouldBe 1
+            holder.state.value.budgetAmountMinorUnits shouldBe null
         }
 }

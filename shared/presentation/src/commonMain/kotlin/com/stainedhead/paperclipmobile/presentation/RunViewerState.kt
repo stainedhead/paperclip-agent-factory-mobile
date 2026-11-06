@@ -59,7 +59,10 @@ data class RunViewerState(
     val refreshIntervalSeconds: Int = 0,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isCancelling
+}
 
 sealed interface RunViewerIntent {
     data object Refresh : RunViewerIntent

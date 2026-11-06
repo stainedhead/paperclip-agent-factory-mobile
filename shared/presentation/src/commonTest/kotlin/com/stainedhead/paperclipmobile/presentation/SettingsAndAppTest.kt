@@ -5,7 +5,12 @@ package com.stainedhead.paperclipmobile.presentation
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
 import com.stainedhead.paperclipmobile.domain.IdlePeriod
+import com.stainedhead.paperclipmobile.domain.InstanceId
 import com.stainedhead.paperclipmobile.domain.InstanceStatus
+import com.stainedhead.paperclipmobile.domain.Secret
+import com.stainedhead.paperclipmobile.domain.SecretKey
+import com.stainedhead.paperclipmobile.domain.SecretName
+import com.stainedhead.paperclipmobile.domain.SecretPolicy
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import com.stainedhead.paperclipmobile.testing.TestData
 import io.kotest.matchers.shouldBe
@@ -37,6 +42,7 @@ class SettingsStateHolderTest {
                 env.revokeKey,
                 env.signOut,
                 env.signOutEverywhere,
+                env.signOutHereOnly,
             )
         return SettingsStateHolder(useCases, env.connectivity, CoroutineScope(StandardTestDispatcher(testScheduler)))
     }
@@ -197,6 +203,25 @@ class SettingsStateHolderTest {
         }
 
     @Test
+    fun `F-A-2 a declined key prompt on sign out changes nothing and says so`() =
+        runTest {
+            val env = Env(listOf(home))
+            env.storeToken(home)
+            val holder = ready(env)
+            env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.DeviceAuthDeclined)
+
+            holder.onIntent(SettingsIntent.SignOutRequested("home"))
+            holder.onIntent(SettingsIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.AuthDeclined)
+            holder.state.value.lastSignOutKey shouldBe null
+            holder.state.value.isBusy shouldBe false
+            env.secrets.paths.isEmpty() shouldBe false
+            env.repository.get(home.id)?.status shouldBe InstanceStatus.SignedIn
+        }
+
+    @Test
     fun `FR-024 sign out asks first and reports whether the server confirmed`() =
         runTest {
             val env = Env(listOf(home))
@@ -342,6 +367,85 @@ class AppStateHolderTest {
             holder.onIntent(AppIntent.UnlockRequested)
             advanceUntilIdle()
             env.biometrics.calls shouldBe 2
+        }
+
+    private suspend fun Env.storeToken(
+        instance: String,
+        protected: Boolean,
+    ) {
+        secrets.put(
+            SecretKey(InstanceId(instance), SecretName.BoardToken),
+            Secret.of(TestData.TOKEN),
+            SecretPolicy(requireUserPresence = protected),
+        )
+    }
+
+    @Test
+    fun `ADR-146 a protected token of the selected factory unlocks with its own prompt and no second one`() =
+        runTest {
+            val env = Env(listOf(home, cloud))
+            env.storeToken("home", protected = true)
+            val holder = holder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AppIntent.UnlockRequested)
+            advanceUntilIdle()
+
+            holder.state.value.lock shouldBe LockState.Unlocked
+            env.biometrics.calls shouldBe 0
+            env.secrets.attestedReads shouldBe 1
+        }
+
+    @Test
+    fun `ADR-146 only the selected factory token is used and another factory token does not unlock`() =
+        runTest {
+            val env = Env(listOf(home, cloud))
+            env.storeToken("cloud", protected = true)
+            val holder = holder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AppIntent.UnlockRequested)
+            advanceUntilIdle()
+
+            env.biometrics.calls shouldBe 1
+            holder.state.value.lock shouldBe LockState.Unlocked
+        }
+
+    @Test
+    fun `ADR-146 a declined key prompt keeps the app locked and a retry asks again`() =
+        runTest {
+            val env = Env(listOf(home))
+            env.storeToken("home", protected = true)
+            val holder = holder(env)
+            advanceUntilIdle()
+            env.secrets.denyReads = true
+
+            holder.onIntent(AppIntent.UnlockRequested)
+            advanceUntilIdle()
+            holder.state.value.lock shouldBe LockState.Locked
+            holder.state.value.unlockIssue shouldBe DeviceAuthIssue.Cancelled
+            env.biometrics.calls shouldBe 0
+
+            env.secrets.denyReads = false
+            holder.onIntent(AppIntent.UnlockRequested)
+            advanceUntilIdle()
+            holder.state.value.lock shouldBe LockState.Unlocked
+            holder.state.value.unlockIssue shouldBe null
+        }
+
+    @Test
+    fun `ADR-146 an unprotected token falls back to the plain unlock prompt`() =
+        runTest {
+            val env = Env(listOf(home))
+            env.storeToken("home", protected = false)
+            val holder = holder(env)
+            advanceUntilIdle()
+
+            holder.onIntent(AppIntent.UnlockRequested)
+            advanceUntilIdle()
+
+            env.biometrics.calls shouldBe 1
+            holder.state.value.lock shouldBe LockState.Unlocked
         }
 
     @Test

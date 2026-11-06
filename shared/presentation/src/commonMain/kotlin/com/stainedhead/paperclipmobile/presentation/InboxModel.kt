@@ -60,5 +60,6 @@ internal data class InboxModel(
         )
     }
 
-    fun find(itemId: String): AttentionItem? = items.firstOrNull { it.id == itemId }
+    /** The card the person can act on: a dismissed or snoozed (hidden) card is gone from the screen and from here. */
+    fun find(itemId: String): AttentionItem? = items.firstOrNull { it.id == itemId && it.id !in hidden }
 }

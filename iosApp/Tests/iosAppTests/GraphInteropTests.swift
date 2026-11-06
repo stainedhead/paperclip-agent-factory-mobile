@@ -136,7 +136,8 @@ struct GraphInteropTests {
         _ = IssueIntentCommentSubmitted(body: "hi", reopen: false, interrupt: false)
         _ = IssueIntentStatusSelected(status: .inReview)
         _ = IssueIntentInteractionVerdictChosen(interactionId: "i", itemId: "x", verdict: .reject)
-        _ = AgentDetailIntentBudgetSubmitted(minorUnits: 50_000)
+        _ = AgentDetailIntentBudgetAmountTyped(text: "500", decimalSeparator: ".", fractionDigits: 2)
+        _ = AgentDetailIntentBudgetSubmitted.shared
         _ = ApprovalIntentNoteConfirmed(note: "no")
     }
 }

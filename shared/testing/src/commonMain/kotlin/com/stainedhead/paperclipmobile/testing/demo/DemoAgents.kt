@@ -86,12 +86,18 @@ object DemoAgents {
             run(DemoIds.RUN_RETRIES_LIVE, DemoIds.AGENT_ENGINEER_1, DemoIds.ISSUE_RETRIES, RunStatus.Running, RUN_AGE),
             run("run-1204-failed", DemoIds.AGENT_ENGINEER_1, DemoIds.ISSUE_RETRIES, RunStatus.Failed, 1.hours),
             run("run-1204-done", DemoIds.AGENT_ENGINEER_1, DemoIds.ISSUE_RETRIES, RunStatus.Succeeded, 3.hours),
-            run("run-cto-live", DemoIds.AGENT_CTO, DemoIds.ISSUE_BILLING, RunStatus.Running, 12.minutes),
-            run("run-design-live", DemoIds.AGENT_DESIGNER, null, RunStatus.Running, 6.minutes),
+            run("run-cto-live", DemoIds.AGENT_CTO, DemoIds.ISSUE_BILLING, RunStatus.Running, 1.minutes),
+            run(
+                "run-design-live",
+                DemoIds.AGENT_DESIGNER,
+                DemoIds.ISSUE_EMAIL_DESIGN,
+                RunStatus.Running,
+                12.minutes,
+            ),
             run(DemoIds.RUN_QA_TIMEOUT, DemoIds.AGENT_QA, DemoIds.ISSUE_REFUNDS, RunStatus.TimedOut, 5.hours),
         )
 
-    private val RUN_AGE = 4.minutes
+    private val RUN_AGE = 4.minutes + 12.seconds
     private const val FIRST_SEQ = 1L
     private const val THIRD_SEQ = 3L
     private const val FOURTH_SEQ = 4L
@@ -116,33 +122,32 @@ object DemoAgents {
     /** Events of Engineer 1's heartbeat at 0:02, 0:40, 2:55 and 3:58 after it started (the Run viewer mock). */
     fun events(): List<RunEvent> =
         listOf(
-            event(FIRST_SEQ, "run.started", RunStream.System, "Heartbeat started on PAP-1204", 2.seconds),
-            event(FIRST_SEQ + 1, "tool.call", RunStream.Stdout, "Read ingest/retry.ts", 40.seconds),
+            event(FIRST_SEQ, "run.started", RunStream.System, "Checked out PAP-1204", 2.seconds),
+            event(FIRST_SEQ + 1, "tool.call", RunStream.Stdout, "Opened a branch and edited 3 files", 40.seconds),
             event(
                 THIRD_SEQ,
                 "tool.call",
                 RunStream.Stdout,
-                "Ran pnpm test --filter webhook-ingest",
+                "Ran tests: 2 failing",
                 TEST_RUN_SECONDS.seconds,
             ),
             event(
                 FOURTH_SEQ,
-                "run.output",
-                RunStream.Stderr,
-                "1 test failing: dead-letter queue",
+                "run.question",
+                RunStream.System,
+                "Asked you 2 questions",
                 FAILURE_SECONDS.seconds,
             ),
         )
 
-    /** The tail of `pnpm test` that Engineer 1 sees. */
+    /** The tail of `pnpm test webhooks` and the wait for the board that the Run viewer mock shows. */
     const val LOG =
-        "\$ pnpm test --filter webhook-ingest\n" +
-            " RUN  v1.6.0\n" +
-            " ✓ ingest/retry.test.ts (4 tests) 212ms\n" +
-            " ✓ ingest/backoff.test.ts (3 tests) 98ms\n" +
-            " ❯ ingest/dead-letter.test.ts (2 tests | 1 failed)\n" +
-            "   × moves exhausted deliveries to the dead-letter queue\n" +
-            " Test Files  1 failed | 2 passed (3)\n"
+        "\$ pnpm test webhooks\n" +
+            "✓ ingest accepts signed payload\n" +
+            "✗ retries on 503 (expected 5 tries)\n" +
+            "✗ dead-letters after final failure\n" +
+            "Tests: 2 failed, 14 passed\n" +
+            "Waiting for board answer on retry policy…\n"
 
     private const val MONTH_SPEND_CENTS = 124_000L
     private const val MONTH_BUDGET_CENTS = 200_000L

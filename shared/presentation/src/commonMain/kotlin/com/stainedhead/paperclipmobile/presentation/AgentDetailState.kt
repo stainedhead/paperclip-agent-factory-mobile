@@ -13,6 +13,15 @@ data class AgentDetailState(
     val actions: List<AgentActionUi> = emptyList(),
     /** Owner only (PRD FR-071). */
     val canSetBudget: Boolean = false,
+    /** The budget typed so far, in minor units; null while empty or invalid. */
+    val budgetAmountMinorUnits: Long? = null,
+    val budgetAmountIssue: InvalidKey? = null,
+    /** True when the typed budget can be saved now: valid, positive, allowed and nothing else in flight. */
+    val canSaveBudget: Boolean = false,
+    /** True when saving the typed budget asks the device owner first: a raise or zero, never a decrease (DEC-1). */
+    val saveBudgetNeedsDeviceAuth: Boolean = false,
+    /** Counts budgets saved; the form closes when it changes, and stays (with its text) when a save fails. */
+    val budgetSavedCount: Int = 0,
     val confirmPause: Boolean = false,
     val isBusy: Boolean = false,
     val role: RoleUi? = null,
@@ -25,7 +34,10 @@ data class AgentDetailState(
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isBusy
+}
 
 sealed interface AgentDetailIntent {
     data object Refresh : AgentDetailIntent
@@ -40,10 +52,15 @@ sealed interface AgentDetailIntent {
 
     data object RunNowTapped : AgentDetailIntent
 
-    /** The new monthly budget in cents. */
-    data class BudgetSubmitted(
-        val minorUnits: Long,
+    /** The budget field's text as typed; shared code reads and validates it (A4). */
+    data class BudgetAmountTyped(
+        val text: String,
+        val decimalSeparator: String,
+        val fractionDigits: Int,
     ) : AgentDetailIntent
+
+    /** Sends the amount last typed. */
+    data object BudgetSubmitted : AgentDetailIntent
 
     data object MessageDismissed : AgentDetailIntent
 }

@@ -6,6 +6,7 @@ import com.stainedhead.paperclipmobile.domain.AgentStatus
 import com.stainedhead.paperclipmobile.domain.CompanyScope
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.InvokeOutcome
 import com.stainedhead.paperclipmobile.domain.Money
 import com.stainedhead.paperclipmobile.domain.PauseReason
@@ -26,6 +27,9 @@ class FakeAgentGateway(
 
     /** Runs when `invokeHeartbeat` is called, before any scripted failure: what the server did meanwhile. */
     var onInvoke: (() -> Unit)? = null
+
+    /** Receives the run a successful `invokeHeartbeat` started, so a demo can add it to its run store. */
+    var onRunStarted: ((HeartbeatRun) -> Unit)? = null
 
     /** Runs after `get` has read the agent and before it answers: the answer is then older than what follows. */
     var afterRead: (suspend () -> Unit)? = null
@@ -77,6 +81,8 @@ class FakeAgentGateway(
         scripted?.let { return DomainResult.Failure(it) }
         val agent = store[id] ?: return DomainResult.Failure(DomainError.NotFound)
         val run = AgentFixtures.run("run-invoked-${id.value}", RunStatus.Queued, agent.id, null)
+        store[id] = agent.copy(status = AgentStatus.Running)
+        onRunStarted?.invoke(run)
         return DomainResult.Success(InvokeOutcome.Started(run))
     }
 

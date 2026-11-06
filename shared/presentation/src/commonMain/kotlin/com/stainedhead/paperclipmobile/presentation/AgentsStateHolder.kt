@@ -6,7 +6,10 @@ import com.stainedhead.paperclipmobile.domain.Agent
 import com.stainedhead.paperclipmobile.domain.AgentGrouping
 import com.stainedhead.paperclipmobile.domain.AgentId
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.HeartbeatRun
 import com.stainedhead.paperclipmobile.domain.Invalidation
+import com.stainedhead.paperclipmobile.domain.IssueId
+import com.stainedhead.paperclipmobile.domain.IssueRef
 import com.stainedhead.paperclipmobile.domain.Role
 import com.stainedhead.paperclipmobile.domain.port.Clock
 import com.stainedhead.paperclipmobile.domain.port.Connectivity
@@ -21,6 +24,8 @@ import kotlinx.coroutines.launch
 
 private data class AgentsModel(
     val agents: List<Agent> = emptyList(),
+    val liveRuns: List<HeartbeatRun> = emptyList(),
+    val issueRefs: Map<IssueId, IssueRef> = emptyMap(),
     val role: Role? = null,
     val loaded: Boolean = false,
     val loading: Boolean = false,
@@ -105,6 +110,8 @@ class AgentsStateHolder(
                             } else {
                                 it.copy(
                                     agents = result.value.agents,
+                                    liveRuns = result.value.liveRuns,
+                                    issueRefs = result.value.issueRefs,
                                     role = context.role,
                                     loaded = true,
                                     loadedAtMillis = clock.now().toEpochMilliseconds(),
@@ -168,6 +175,8 @@ class AgentsStateHolder(
                             ?: m.agents,
                 )
             }
+            // A started run is not in the list yet: read it again so the row shows what the agent is doing now.
+            if (action == AgentActionUi.RunNow && result.feedback == null) load()
         }
     }
 }
@@ -187,16 +196,10 @@ private fun render(
             AgentGrouping.group(model.agents).map { section ->
                 AgentSectionUi(
                     section.group.toUi(),
-                    section.agents.map {
-                        it.toRow(
-                            if (model.busy ==
-                                null
-                            ) {
-                                it.actionsFor(model.role, online)
-                            } else {
-                                emptyList()
-                            },
-                        )
+                    section.agents.map { agent ->
+                        val actions = if (model.busy == null) agent.actionsFor(model.role, online) else emptyList()
+                        val run = model.liveRuns.firstOrNull { it.agentId == agent.id }
+                        agent.toRow(actions, run?.toRow(model.issueRefs[run.issueId]))
                     },
                 )
             },
@@ -205,6 +208,8 @@ private fun render(
         role = model.role?.toUi(),
         isOffline = !online,
         actionsDisabledReason = disabledReason(online, model.role, Action.PauseAgent),
+        canSetBudget = mayAct(online, model.role, Action.SetAgentBudget),
+        budgetDisabledReason = disabledReason(online, model.role, Action.SetAgentBudget),
         updatedAtEpochMillis = model.loadedAtMillis,
         error = model.error,
         feedback = model.feedback,

@@ -13,6 +13,7 @@ abstract class InstanceRepositoryContract {
         addedInstancesAreObservedInSortOrder()
         updateReplacesTheStoredInstance()
         reorderSetsSortOrderFromPosition()
+        updateNeverUndoesAReorder()
         deleteRemovesOnlyThatInstance()
     }
 
@@ -39,6 +40,19 @@ abstract class InstanceRepositoryContract {
         repo.add(TestData.instance("b", "B", sortOrder = 1))
         repo.reorder(listOf(InstanceId("b"), InstanceId("a")))
         check(repo.observeAll().first().map { it.id.value } == listOf("b", "a")) { "reorder must change the order" }
+    }
+
+    /** F-B-6: the order belongs to `add` and `reorder`; an update from an older read must not revert a reorder. */
+    private suspend fun updateNeverUndoesAReorder() {
+        val repo = create()
+        repo.add(TestData.instance("a", "A", sortOrder = 0))
+        repo.add(TestData.instance("b", "B", sortOrder = 1))
+        val staleRead = checkNotNull(repo.get(InstanceId("a")))
+        repo.reorder(listOf(InstanceId("b"), InstanceId("a")))
+        repo.update(staleRead.copy(displayName = "Renamed after the reorder"))
+        check(repo.observeAll().first().map { it.id.value } == listOf("b", "a")) { "update must not undo a reorder" }
+        check(repo.get(InstanceId("a"))?.sortOrder == 1) { "update must keep the sort order set by reorder" }
+        check(repo.get(InstanceId("a"))?.displayName == "Renamed after the reorder") { "update must still apply" }
     }
 
     private suspend fun deleteRemovesOnlyThatInstance() {

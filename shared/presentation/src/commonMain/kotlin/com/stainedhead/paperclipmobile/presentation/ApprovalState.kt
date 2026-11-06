@@ -22,6 +22,16 @@ enum class ApprovalStatusUi {
     Rejected,
     Cancelled,
     Unknown,
+    ;
+
+    val tone: ToneUi
+        get() =
+            when (this) {
+                Approved -> ToneUi.Success
+                Rejected -> ToneUi.Critical
+                Pending, RevisionRequested -> ToneUi.Warn
+                Cancelled, Unknown -> ToneUi.Neutral
+            }
 }
 
 /** The payload of each approval type as the screen shows it (PRD FR-050). Every field may be missing. */
@@ -32,6 +42,8 @@ sealed interface ApprovalPayloadUi {
         val title: String?,
         val adapterType: String?,
         val reportsToAgentId: String?,
+        /** The manager's name when it could be read; show it instead of the id. */
+        val reportsToName: String?,
         val monthlyBudget: MoneyUi?,
         val skills: List<String>,
         val capabilities: String?,
@@ -101,6 +113,8 @@ data class ApprovalState(
     val decidedAtEpochMillis: Long? = null,
     val issues: List<LinkedIssueUi> = emptyList(),
     val comments: List<CommentUi> = emptyList(),
+    /** Counts the person's own comments that reached the thread; the comment box clears when it changes (A5). */
+    val commentPostedCount: Int = 0,
     /** What can be tapped now: by status, role and connectivity (PRD FR-051). */
     val actions: List<ApprovalActionUi> = emptyList(),
     val rejectNeedsDeviceAuth: Boolean = false,
@@ -116,7 +130,10 @@ data class ApprovalState(
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isSubmitting
+}
 
 sealed interface ApprovalIntent {
     data object ApproveTapped : ApprovalIntent

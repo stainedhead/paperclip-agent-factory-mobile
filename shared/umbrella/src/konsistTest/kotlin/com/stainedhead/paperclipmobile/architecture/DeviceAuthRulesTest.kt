@@ -12,10 +12,13 @@ class DeviceAuthRulesTest {
     private val destructive =
         setOf(
             "RemoveInstance",
+            "RemoveInstanceHereOnly",
+            "SignOutInstanceHereOnly",
             "DecideDecision",
             "RejectApproval",
             "ResolveBudgetIncident",
             "PauseAgent",
+            "SetAgentBudget",
             "CancelRun",
         )
 

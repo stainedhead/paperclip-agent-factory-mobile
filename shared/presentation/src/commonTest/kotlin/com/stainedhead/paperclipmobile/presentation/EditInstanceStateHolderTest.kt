@@ -44,6 +44,8 @@ class EditInstanceStateHolderTest {
                 env.pair,
                 env.signOut,
                 env.remove,
+                env.removeHereOnly,
+                env.signOutHereOnly,
                 env.expiry,
             )
         return EditInstanceStateHolder(
@@ -157,6 +159,38 @@ class EditInstanceStateHolderTest {
 
             holder.onIntent(EditInstanceIntent.AddressChanged("https://moved.example.com"))
             holder.state.value.addressChangeClearsKey shouldBe false
+        }
+
+    @Test
+    fun `A11 the state says when the address can be checked so the app holds no rule`() =
+        runTest {
+            val (holder, _) = loaded()
+            holder.state.value.canCheckAddress shouldBe true
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("http://home.example.com"))
+            holder.state.value.canCheckAddress shouldBe false
+
+            holder.onIntent(EditInstanceIntent.AddressChanged(""))
+            holder.state.value.canCheckAddress shouldBe false
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://moved.example.com"))
+            holder.state.value.canCheckAddress shouldBe true
+        }
+
+    @Test
+    fun `B-14 the state says when there is something typed that Cancel would throw away`() =
+        runTest {
+            val (holder, _) = loaded()
+            holder.state.value.hasUnsavedChanges shouldBe false
+
+            holder.onIntent(EditInstanceIntent.NameChanged("Renamed"))
+            holder.state.value.hasUnsavedChanges shouldBe true
+
+            holder.onIntent(EditInstanceIntent.NameChanged("Home factory"))
+            holder.state.value.hasUnsavedChanges shouldBe false
+
+            holder.onIntent(EditInstanceIntent.AddressChanged("https://moved.example.com"))
+            holder.state.value.hasUnsavedChanges shouldBe true
         }
 
     @Test
@@ -378,6 +412,24 @@ class EditInstanceStateHolderTest {
             env.auth.count("revokeCurrentKey") shouldBe 1
             env.secrets.paths shouldBe emptySet()
             env.repository.current.size shouldBe 1
+        }
+
+    @Test
+    fun `F-A-2 a declined key prompt on sign out keeps the factory signed in and shows the declined key`() =
+        runTest {
+            val env = Env(listOf(home))
+            env.storeToken(home)
+            val (holder, _) = loaded(env)
+            env.auth.revokeCurrentResult = DomainResult.Failure(DomainError.DeviceAuthDeclined)
+
+            holder.onIntent(EditInstanceIntent.SignOutRequested)
+            holder.onIntent(EditInstanceIntent.ConfirmationAccepted)
+            advanceUntilIdle()
+
+            holder.state.value.error shouldBe ErrorUi(ErrorKey.AuthDeclined)
+            holder.state.value.status shouldBe FactoryStatusUi.SignedIn
+            holder.state.value.isBusy shouldBe false
+            env.secrets.paths.isEmpty() shouldBe false
         }
 
     @Test

@@ -65,17 +65,9 @@ class BudgetIncidentStateHolder(
                 choose(intent.choice)
             }
 
-            is BudgetIntent.AmountChanged -> {
-                model.update {
-                    it.copy(
-                        amount =
-                            intent.minorUnits?.takeIf { cents ->
-                                cents >=
-                                    0
-                            },
-                        feedback = null,
-                    )
-                }
+            is BudgetIntent.AmountTyped -> {
+                val parsed = MoneyInput.parse(intent.text, intent.decimalSeparator, intent.fractionDigits)
+                model.update { it.copy(amount = parsed.minorUnits, amountInputIssue = parsed.issue, feedback = null) }
             }
 
             BudgetIntent.SubmitTapped -> {
@@ -156,7 +148,15 @@ class BudgetIncidentStateHolder(
     private fun choose(choice: BudgetChoice) {
         val state = BudgetIncidentRenderer.render(model.value, connectivity.isOnline.value)
         val allowed = if (choice == BudgetChoice.KeepPaused) state.canKeepPaused else state.canRaise
-        if (allowed) model.update { it.copy(choice = choice, feedback = null) }
+        if (!allowed) return
+        // Leaving Raise forgets the amount: a field no longer shown must not hold a value Submit would send (R-024).
+        model.update {
+            if (choice == BudgetChoice.RaiseAndResume || it.choice == choice) {
+                it.copy(choice = choice, feedback = null)
+            } else {
+                it.copy(choice = choice, amount = null, amountInputIssue = null, feedback = null)
+            }
+        }
     }
 
     private fun submit() {

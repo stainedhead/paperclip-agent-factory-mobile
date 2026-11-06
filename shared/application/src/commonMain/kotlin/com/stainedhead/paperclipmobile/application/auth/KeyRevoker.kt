@@ -17,6 +17,12 @@ enum class RevokeOutcome {
     Unconfirmed,
 
     NotAttempted,
+
+    /**
+     * The person declined the prompt that guards the key, so nothing was sent and nothing changed. The key is still
+     * live on the server and on the phone; the person can try again (review1b F-A-2).
+     */
+    Declined,
 }
 
 /** Best-effort `POST /api/cli-auth/revoke-current`. It is a mutation, so it runs once and is never retried. */
@@ -30,10 +36,10 @@ class KeyRevoker(
             }
 
             is DomainResult.Failure -> {
-                if (result.error == DomainError.Unauthorized || result.error == DomainError.NotFound) {
-                    RevokeOutcome.AlreadyInvalid
-                } else {
-                    RevokeOutcome.Unconfirmed
+                when (result.error) {
+                    DomainError.Unauthorized, DomainError.NotFound -> RevokeOutcome.AlreadyInvalid
+                    DomainError.DeviceAuthDeclined -> RevokeOutcome.Declined
+                    else -> RevokeOutcome.Unconfirmed
                 }
             }
         }

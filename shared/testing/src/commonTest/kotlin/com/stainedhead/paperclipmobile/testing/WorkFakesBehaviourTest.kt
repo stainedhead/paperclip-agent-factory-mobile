@@ -25,10 +25,12 @@ import com.stainedhead.paperclipmobile.testing.fakes.FakeDashboardGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeInteractionGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeIssueGateway
 import com.stainedhead.paperclipmobile.testing.fakes.FakeRunGateway
+import com.stainedhead.paperclipmobile.testing.fakes.cancelElsewhere
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.days
 
 private fun <T> DomainResult<T>.value(): T = (this as DomainResult.Success).value
 
@@ -131,6 +133,38 @@ class WorkFakesBehaviourTest {
         }
 
     @Test
+    fun `run now puts the agent to work and reports the run it started`() =
+        runTest {
+            val gateway = FakeAgentGateway()
+            val started = mutableListOf<RunId>()
+            gateway.onRunStarted = { started += it.id }
+            val id = AgentId("agent-qa")
+            gateway.get(scope, id).value().status shouldBe AgentStatus.Error
+
+            val outcome = gateway.invokeHeartbeat(scope, id).value()
+
+            outcome.shouldBeInstanceOf<InvokeOutcome.Started>()
+            started shouldBe listOf(outcome.run.id)
+            gateway.get(scope, id).value().status shouldBe AgentStatus.Running
+        }
+
+    @Test
+    fun `a run cancelled elsewhere reads as cancelled and a finished or unknown run is left alone`() =
+        runTest {
+            val gateway = FakeRunGateway()
+            val id = RunId("run-live")
+            gateway.get(scope, id).value().status shouldBe RunStatus.Running
+
+            gateway.cancelElsewhere(id) shouldBe true
+
+            gateway.get(scope, id).value().status shouldBe RunStatus.Cancelled
+            gateway.live(scope).value().none { it.id == id } shouldBe true
+            gateway.cancel(scope, id).error() shouldBe DomainError.Conflict
+            gateway.cancelElsewhere(id) shouldBe false
+            gateway.cancelElsewhere(RunId("no-such-run")) shouldBe false
+        }
+
+    @Test
     fun `runs tail by offset and sequence and only an active run can be cancelled`() =
         runTest {
             val gateway = FakeRunGateway()
@@ -156,5 +190,32 @@ class WorkFakesBehaviourTest {
                 .value()
                 .monthBudget.minorUnits shouldBe 500_000
             gateway.windowSpend(scope).value().isNotEmpty() shouldBe true
+        }
+
+    @Test
+    fun `an answered interaction tells the hook and a refused answer does not`() =
+        runTest {
+            val gateway = FakeInteractionGateway()
+            val answered = mutableListOf<String>()
+            gateway.onAnswered = { answered += it }
+            val pending = gateway.list(scope, pap).value().first { it.meta.status == InteractionStatus.Pending }
+
+            gateway.answer(scope, pap, pending.meta.id, InteractionAnswer.Respond(emptyList()))
+            answered shouldBe emptyList()
+            gateway.answer(scope, pap, pending.meta.id, InteractionAnswer.Accept)
+            answered shouldBe listOf(pending.meta.id.value)
+        }
+
+    @Test
+    fun `a new comment carries the time the fake was told and is not older than the thread`() =
+        runTest {
+            val later = TestData.epoch + 3.days
+            val gateway = FakeIssueGateway().apply { now = { later } }
+            gateway.addComment(scope, pap, "Hello", CommentOptions())
+            gateway
+                .comments(scope, pap)
+                .value()
+                .last()
+                .createdAt shouldBe later
         }
 }

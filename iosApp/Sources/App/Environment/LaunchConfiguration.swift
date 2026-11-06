@@ -1,0 +1,131 @@
+import PaperclipKit
+
+/// What the process was launched with. Everything here is for demo mode and UI tests; none of it changes how a real
+/// factory behaves.
+///
+/// - `-demo`: run on the demo graph (the design mocks' data) instead of the live seam.
+/// - `-demo-first-run`: run on fakes that start with no factory and approve every pairing (the first-run flow).
+/// - `-demo-biometrics cancelled,failed,approved`: script the device-owner prompt for the demo graph, in order.
+/// - `-demo-idle immediately`: set the app lock's idle period at launch (so one background trip re-locks).
+/// - `-demo-tab factories`: start on that tab. `-demo-open settings|manage|add|edit:<id>`: push that screen on it.
+/// - `-demo-offline`: take the demo phone offline once the Inbox has loaded, so the offline states can be seen.
+/// - `-demo-resolved-elsewhere decision,approval,budget`: those items were already resolved on the web, so their
+///   screens open on the final state (their Inbox cards may still be listed, as in a feed read a moment earlier).
+/// - `-demo-budget-server-spend <minor units>`: the server's own figure for the spend is that high (above what the
+///   incident showed), so a raise that clears the shown spend can still be refused with the server's reason.
+/// - `-demo-offline-after-detail`: go offline once the first Decision, Approval or Budget screen has its content.
+/// - `-demo-open decision:<id>|approval:<id>|budget:<id>|run:<id>|agent:<id>|issue:<id>`: also open one of those
+///   screens.
+/// - `-demo-server-error`: the demo factory answers every Factory home, Agents and Run read with a server error.
+/// - `-demo-no-auto-refresh`: do not start the Inbox's 15 s refresh timer (pull to refresh and returning to the
+///   screen still refresh), so a slow start cannot age the demo's "Updated 12s ago" before a test reads it.
+/// - `-demo-diagnostics`: show a small read-only counter overlay (prompt count) that UI tests can read.
+struct LaunchConfiguration {
+    let useDemo: Bool
+    let useFirstRunDemo: Bool
+    let scriptedBiometrics: [BiometricResult]
+    let demoIdlePeriod: IdlePeriod?
+    let showsDiagnostics: Bool
+    let goesOffline: Bool
+    let pausesAutoRefresh: Bool
+    let offlineAfterDetail: Bool
+    let failsReads: Bool
+    let budgetServerSpend: Int64?
+    let resolvedElsewhere: Set<String>
+    let startTab: AppTab?
+    let startRoute: String?
+
+    /// Demo flags and the diagnostics overlay exist in Debug builds only (which is what CI and the UI tests build). A
+    /// Release build ignores every `-demo*` flag, so a shipped binary cannot be steered onto fakes (A7).
+    static var buildAllowsDemoControls: Bool {
+        #if DEBUG
+            true
+        #else
+            false
+        #endif
+    }
+
+    init(arguments rawArguments: [String], allowsDemoControls: Bool = LaunchConfiguration.buildAllowsDemoControls) {
+        let arguments = allowsDemoControls ? rawArguments : []
+        useDemo = arguments.contains("-demo")
+        useFirstRunDemo = arguments.contains("-demo-first-run")
+        showsDiagnostics = arguments.contains("-demo-diagnostics")
+        goesOffline = arguments.contains("-demo-offline")
+        pausesAutoRefresh = arguments.contains("-demo-no-auto-refresh")
+        offlineAfterDetail = arguments.contains("-demo-offline-after-detail")
+        failsReads = arguments.contains("-demo-server-error")
+        budgetServerSpend = Self.value(after: "-demo-budget-server-spend", in: arguments).flatMap { Int64($0) }
+        resolvedElsewhere = Set(
+            (Self.value(after: "-demo-resolved-elsewhere", in: arguments) ?? "").split(separator: ",").map(String.init))
+        startTab = Self.value(after: "-demo-tab", in: arguments).flatMap { AppTab(rawValue: $0) }
+        startRoute = Self.value(after: "-demo-open", in: arguments)
+        scriptedBiometrics =
+            (Self.value(after: "-demo-biometrics", in: arguments) ?? "")
+            .split(separator: ",")
+            .compactMap { Self.biometricResult(String($0)) }
+        demoIdlePeriod = Self.value(after: "-demo-idle", in: arguments).flatMap(Self.idlePeriod)
+    }
+
+    static var current: LaunchConfiguration {
+        LaunchConfiguration(arguments: CommandLine.arguments)
+    }
+
+    private static func value(after flag: String, in arguments: [String]) -> String? {
+        guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
+        return arguments[index + 1]
+    }
+
+    private static func biometricResult(_ word: String) -> BiometricResult? {
+        switch word.lowercased() {
+        case "approved": .approved
+        case "cancelled": .cancelled
+        case "failed": .failed
+        case "lockedout": .lockedOut
+        case "unavailable": .unavailable
+        default: nil
+        }
+    }
+
+    private static func idlePeriod(_ word: String) -> IdlePeriod? {
+        switch word.lowercased() {
+        case "immediately": .immediately
+        case "oneminute": .oneMinute
+        case "fiveminutes": .fiveMinutes
+        case "fifteenminutes": .fifteenMinutes
+        case "thirtyminutes": .thirtyMinutes
+        case "onehour": .oneHour
+        default: nil
+        }
+    }
+}
+
+/// Where `-demo-open` begins: a pushed route, or a presented sheet. A lookup over launch text, nothing more.
+enum StartLocation: Equatable {
+    case route(AppRoute)
+    case sheet(AppSheet)
+
+    static func parse(_ name: String) -> StartLocation? {
+        switch name {
+        case "settings": return .route(.settings)
+        case "manage": return .route(.manageFactories)
+        case "add": return .route(.editFactory(id: nil))
+        default: break
+        }
+        let parts = name.split(separator: ":", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return nil }
+        if parts[0] == "budget" { return .sheet(.budgetIncident(id: parts[1])) }
+        return route(parts[0], id: parts[1]).map { .route($0) }
+    }
+
+    private static func route(_ kind: String, id: String) -> AppRoute? {
+        switch kind {
+        case "edit": .editFactory(id: id)
+        case "decision": .decision(id: id)
+        case "approval": .approval(id: id)
+        case "run": .run(id: id)
+        case "agent": .agent(id: id)
+        case "issue": .issue(id: id)
+        default: nil
+        }
+    }
+}

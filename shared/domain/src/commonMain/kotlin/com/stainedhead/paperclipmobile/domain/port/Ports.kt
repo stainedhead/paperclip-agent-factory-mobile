@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.domain.port
 
 import com.stainedhead.paperclipmobile.domain.AppSettings
+import com.stainedhead.paperclipmobile.domain.AttestedReadResult
 import com.stainedhead.paperclipmobile.domain.BaseUri
 import com.stainedhead.paperclipmobile.domain.BoardAccess
 import com.stainedhead.paperclipmobile.domain.BoardKey
@@ -69,10 +70,28 @@ interface SecretStore {
         reason: String,
     ): SecretReadResult
 
+    /**
+     * Reads like [get] and says whether this very read authenticated the person (ADR-146). Answers
+     * [AttestedReadResult.Authenticated] only when a protected secret was opened by a prompt the person approved for
+     * this call; every other outcome is not an authentication. The default attests nothing, so a store that does not
+     * implement it can never unlock the app. A caching layer must pass this through to the device store.
+     */
+    suspend fun readAttested(
+        key: SecretKey,
+        reason: String,
+    ): AttestedReadResult = AttestedReadResult.NotAttested
+
     suspend fun delete(key: SecretKey)
 
     /** Deletes every secret under `instance/{instanceId}/`. */
     suspend fun deleteNamespace(instanceId: InstanceId)
+
+    /**
+     * The instance ids that have at least one secret stored, whether or not a factory is configured for them. Lists
+     * names only: no value is read and no prompt is shown. Used to sweep secrets whose factory record is gone (the
+     * Keychain outlives the app's database and its reinstall, review1b F-B-2).
+     */
+    suspend fun namespaces(): Set<InstanceId>
 }
 
 /** Device owner authentication (Face ID, fingerprint, device PIN). */

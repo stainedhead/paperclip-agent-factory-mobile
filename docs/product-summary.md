@@ -18,14 +18,15 @@ The owner or operator of one or more Paperclip instances, at home or in the clou
 
 ## Platforms
 
-iPhone (iOS 17 and later) first, then Android (9 and later). Both use one shared Kotlin core, so they behave the same.
+iPhone (iOS 17 and later) and Android (9 and later, phones). Both use one shared Kotlin core, so they behave the same; each follows its own platform's look and conventions. On Android the "are you the owner of this phone" check is the system prompt for a fingerprint, face or screen lock.
 
 ## Where it stands
 
-Phase 1a (shared contracts) is built on the branch `feat/phase-1a-shared-contracts`, awaiting pull requests. In plain terms:
+- **Built and tested:** the shared Kotlin core and the whole of both apps, iPhone and Android: setting up and managing factories, the Inbox, decisions, approvals, budget incidents, Factory home, agents and runs, issues and their interaction forms, settings and app lock. They enforce roles, ask for the device owner (Face ID, fingerprint or screen lock) before destructive actions, never retry a change, keep working from their last data when offline, and support large text, dark mode, screen-reader labels, reduced motion and large touch targets.
+- **Runs on demo data:** every screen works end to end on a built-in demo factory (no server), in debug builds and in the Android `releaseDemo` build.
+- **Not built:** notifications (Phase 3), scanning a QR code or opening a link to add a factory, opening an issue's attachments in the app, and formatted (markdown) comments on Android.
+- **Not yet proven:** the connection to a real Paperclip server and key storage in the Keychain and the Android Keystore are built and tested against fakes, a stubbed server and an emulator, but no pairing from either app against a live server has been run. On Android, the system prompt with a real enrolled fingerprint, new-fingerprint invalidation, scroll smoothness on a real phone and a screen reader pass have not been done.
 
-- **Built and tested:** the shared Kotlin core for 15 screens: setting up and managing factories, the Inbox, decisions, approvals, budget incidents, issues and their interaction forms, agents, runs and the factory overview. It enforces roles, asks for Face ID or a PIN before destructive actions, never retries a change, and keeps working from its last data when offline. It runs on built-in demo data with no server.
-- **Built UI:** one iPhone screen, the first-run address check.
-- **Not built:** the iPhone and Android screens beyond that (Phase 2), the connection to a real Paperclip server and secure storage on the device (Phase 1b), notifications (Phase 3), and the Android app.
+So the apps cannot yet be said to manage a real factory; they can be built, run and tried on the demo factory. See [user-docs/getting-started.md](../user-docs/getting-started.md) and [product-details.md](./product-details.md).
 
-So the app cannot yet be installed and used to manage a factory. Developers can build the core, run its tests and drive every screen's logic on the demo data; see [user-docs/getting-started.md](../user-docs/getting-started.md) and [product-details.md](./product-details.md). The plan is in [specs/261101-iphone-app/plan.md](../specs/261101-iphone-app/plan.md).
+<img src="images/inbox.png" alt="The iPhone Inbox in demo mode" width="220"> <img src="images/android-inbox.png" alt="The Android Inbox in demo mode" width="220">

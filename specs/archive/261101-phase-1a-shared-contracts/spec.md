@@ -5,7 +5,7 @@
 
 **Feature:** domain model, ports, use cases, presentation state holders, fakes and demo data for the shared Kotlin core
 **Created:** 2026-11-01 · **Status:** Built and archived (Phase 1a complete; review fixes tracked in `specs/archive/261101-phase-1a-shared-contracts-auto-review/`) · **Spec dir:** `specs/archive/261101-phase-1a-shared-contracts/`
-**Parent plan:** [../261101-iphone-app/plan.md](../../261101-iphone-app/plan.md) section 4, slices 1a-1 to 1a-4
+**Parent plan:** [../261101-iphone-app/plan.md](../261101-iphone-app/plan.md) section 4, slices 1a-1 to 1a-4
 
 ## 1. Executive summary
 
@@ -147,5 +147,5 @@ Relative sizes only. Each slice is its own pull request (shared first, then the 
 
 - PRD: [../../paperclip-agent-factory-mobile-PRD.md](../../../paperclip-agent-factory-mobile-PRD.md) (kept at the repository root: it is the product-level document several specs share, and `README.md`, `AGENTS.md` and `CLAUDE.md` link to it)
 - Design mocks: [../../Paperclip-Remote-mobile-UI-design.html](../../../Paperclip-Remote-mobile-UI-design.html)
-- [INTENT.md](../../../INTENT.md), [AGENTS.md](../../../AGENTS.md), [parent plan](../../261101-iphone-app/plan.md)
+- [INTENT.md](../../../INTENT.md), [AGENTS.md](../../../AGENTS.md), [parent plan](../261101-iphone-app/plan.md)
 - Server types read: `@paperclipai/shared` 2026.1023.0 (`types/attention.d.ts`, `types/decision.d.ts`, `constants.d.ts`)

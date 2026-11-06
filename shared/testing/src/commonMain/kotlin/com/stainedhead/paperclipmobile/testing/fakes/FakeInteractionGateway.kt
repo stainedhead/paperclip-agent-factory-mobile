@@ -35,6 +35,9 @@ class FakeInteractionGateway(
     val failures = mutableMapOf<String, DomainError>()
     val answers = mutableListOf<InteractionAnswer>()
 
+    /** Called with the interaction's id after an answer is accepted, so a demo graph can clear the Inbox card. */
+    var onAnswered: ((String) -> Unit)? = null
+
     fun count(name: String): Int = calls[name] ?: 0
 
     private fun record(name: String): DomainError? {
@@ -64,9 +67,22 @@ class FakeInteractionGateway(
         val current = list[index]
         val status = statusFor(current, answer)
         return when {
-            !current.meta.status.isOpen -> DomainResult.Failure(DomainError.Conflict)
-            status == null -> DomainResult.Failure(DomainError.Rejected("This interaction cannot take that answer"))
-            else -> DomainResult.Success(current.withStatus(status).also { list[index] = it })
+            !current.meta.status.isOpen -> {
+                DomainResult.Failure(DomainError.Conflict)
+            }
+
+            status == null -> {
+                DomainResult.Failure(DomainError.Rejected("This interaction cannot take that answer"))
+            }
+
+            else -> {
+                DomainResult.Success(
+                    current.withStatus(status).also {
+                        list[index] = it
+                        onAnswered?.invoke(interactionId.value)
+                    },
+                )
+            }
         }
     }
 

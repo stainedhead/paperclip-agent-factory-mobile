@@ -45,7 +45,15 @@ data class AgentRowUi(
     val budgetPercentUsed: Int,
     val lastHeartbeatAtEpochMillis: Long?,
     val actions: List<AgentActionUi>,
-)
+    /** The run the agent has in progress, with its issue; null when it is not running. */
+    val currentRun: RunRowUi?,
+) {
+    /** True while the agent has a run in progress: the row offers View run where Run now would be (R-019). */
+    val offersViewRun: Boolean get() = currentRun?.status?.isLive == true
+
+    /** The buttons the row shows: no second run is started by a tap meant for the first. */
+    val visibleActions: List<AgentActionUi> get() = actions.filter { !(it == AgentActionUi.RunNow && offersViewRun) }
+}
 
 data class AgentSectionUi(
     val group: AgentGroupUi,
@@ -61,11 +69,18 @@ data class AgentsState(
     val role: RoleUi? = null,
     val isOffline: Boolean = false,
     val actionsDisabledReason: ActionsDisabledReason? = null,
+    /** Owner only (PRD FR-071): whether a row offers its budget. */
+    val canSetBudget: Boolean = false,
+    /** Why a budget is not offered: offline, or the role is not an owner. */
+    val budgetDisabledReason: ActionsDisabledReason? = null,
     val updatedAtEpochMillis: Long? = null,
     val refreshIntervalSeconds: Int = SCREEN_REFRESH_SECONDS,
     val error: ErrorUi? = null,
     val feedback: FeedbackUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = busyAgentId != null
+}
 
 sealed interface AgentsIntent {
     data object Refresh : AgentsIntent
@@ -117,16 +132,19 @@ internal fun Agent.actionsFor(
         AgentActionUi.RunNow.takeIf { canRunNow && mayAct(online, role, Action.RunAgentNow) },
     )
 
-internal fun Agent.toRow(actions: List<AgentActionUi>) =
-    AgentRowUi(
-        id = id.value,
-        name = name,
-        role = role,
-        status = status.toUi(),
-        lifecycleState = visibleLifecycle,
-        isBudgetPaused = isBudgetPaused,
-        hasBudget = hasBudget,
-        budgetPercentUsed = budgetPercentUsed,
-        lastHeartbeatAtEpochMillis = lastHeartbeatAt?.toEpochMilliseconds(),
-        actions = actions,
-    )
+internal fun Agent.toRow(
+    actions: List<AgentActionUi>,
+    currentRun: RunRowUi? = null,
+) = AgentRowUi(
+    id = id.value,
+    name = name,
+    role = role,
+    status = status.toUi(),
+    lifecycleState = visibleLifecycle,
+    isBudgetPaused = isBudgetPaused,
+    hasBudget = hasBudget,
+    budgetPercentUsed = budgetPercentUsed,
+    lastHeartbeatAtEpochMillis = lastHeartbeatAt?.toEpochMilliseconds(),
+    actions = actions,
+    currentRun = currentRun,
+)

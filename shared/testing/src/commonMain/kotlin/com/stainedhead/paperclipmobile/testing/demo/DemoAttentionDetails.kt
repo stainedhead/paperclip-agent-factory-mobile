@@ -1,6 +1,7 @@
 package com.stainedhead.paperclipmobile.testing.demo
 
 import com.stainedhead.paperclipmobile.domain.Approval
+import com.stainedhead.paperclipmobile.domain.ApprovalComment
 import com.stainedhead.paperclipmobile.domain.ApprovalId
 import com.stainedhead.paperclipmobile.domain.ApprovalPayload
 import com.stainedhead.paperclipmobile.domain.ApprovalStatus
@@ -39,6 +40,7 @@ object DemoAttentionDetails {
     private val now = DemoFactories.now
     private val arrived: Instant = now - 3.days
     private const val NOTE_LIMIT = 500
+    private const val REASON_LIMIT = 40
     private const val BUDGET_CENTS = 20_000L
     private const val HIRE_BUDGET_CENTS = 15_000L
     private val hardStop = Money.usdCents(BUDGET_CENTS)
@@ -124,8 +126,11 @@ object DemoAttentionDetails {
                 DecisionOption("yes", "Yes", null, OptionStyle.Primary, emptyList()),
                 DecisionOption("no", "Not now", null, OptionStyle.Default, emptyList()),
             ),
-        inputs = emptyList(),
+        inputs = if (id == DemoIds.DEC_KEYS) listOf(reasonInput) else emptyList(),
     )
+
+    /** The one demo decision with a required answer, so the validation can be seen (UI-030). */
+    private val reasonInput = DecisionInput("reason", "Why now? (required)", "A few words", true, REASON_LIMIT)
 
     fun approvals(): List<Approval> =
         listOf(
@@ -156,6 +161,18 @@ object DemoAttentionDetails {
                 createdAt = now - 2.days,
                 requestedByAgentId = DemoIds.AGENT_CEO,
                 requestedByAgentName = "CEO",
+            ),
+        )
+
+    /** The discussion under the hire approval of the mock. */
+    fun approvalComments() =
+        listOf(
+            ApprovalComment(
+                "c-hire-1",
+                "Refund regressions slipped twice this month. A dedicated QA agent would own regression runs " +
+                    "before each release.",
+                now - 50.minutes,
+                authorAgentId = DemoIds.AGENT_CEO,
             ),
         )
 

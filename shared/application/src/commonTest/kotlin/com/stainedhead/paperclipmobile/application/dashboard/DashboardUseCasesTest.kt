@@ -1,8 +1,10 @@
 package com.stainedhead.paperclipmobile.application.dashboard
 
 import com.stainedhead.paperclipmobile.application.Env
+import com.stainedhead.paperclipmobile.application.issue.LoadIssueRefs
 import com.stainedhead.paperclipmobile.domain.DomainError
 import com.stainedhead.paperclipmobile.domain.DomainResult
+import com.stainedhead.paperclipmobile.domain.IssueId
 import com.stainedhead.paperclipmobile.domain.SpendWindowKind
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
@@ -14,10 +16,38 @@ class DashboardUseCasesTest {
         runTest {
             val env = Env()
 
-            val home = (LoadDashboard(env.dashboard, env.runs)(env.scope) as DomainResult.Success).value
+            val home =
+                (
+                    LoadDashboard(
+                        env.dashboard,
+                        env.runs,
+                        LoadIssueRefs(env.issues),
+                    )(env.scope) as DomainResult.Success
+                ).value
 
             home.summary.pendingApprovals shouldBe 2
             home.liveRuns.map { it.id.value } shouldBe listOf("run-live")
+        }
+
+    @Test
+    fun `the runs in progress come with the identifier and title of their issue`() =
+        runTest {
+            val env = Env()
+
+            val home =
+                (
+                    LoadDashboard(
+                        env.dashboard,
+                        env.runs,
+                        LoadIssueRefs(env.issues),
+                    )(env.scope) as DomainResult.Success
+                ).value
+
+            home.issueRefs.getValue(IssueId("pap-1182")).identifier shouldBe "PAP-1182"
+            home.issueRefs
+                .getValue(IssueId("pap-1182"))
+                .title
+                .isNotEmpty() shouldBe true
         }
 
     @Test
@@ -25,11 +55,24 @@ class DashboardUseCasesTest {
         runTest {
             val env = Env()
             env.runs.failures["live"] = DomainError.ServerError
-            val home = (LoadDashboard(env.dashboard, env.runs)(env.scope) as DomainResult.Success).value
+            val home =
+                (
+                    LoadDashboard(
+                        env.dashboard,
+                        env.runs,
+                        LoadIssueRefs(env.issues),
+                    )(env.scope) as DomainResult.Success
+                ).value
             home.liveRuns shouldBe emptyList()
 
             env.dashboard.failures["dashboard"] = DomainError.Forbidden
-            (LoadDashboard(env.dashboard, env.runs)(env.scope) as DomainResult.Failure).error shouldBe
+            (
+                LoadDashboard(
+                    env.dashboard,
+                    env.runs,
+                    LoadIssueRefs(env.issues),
+                )(env.scope) as DomainResult.Failure
+            ).error shouldBe
                 DomainError.Forbidden
             env.dashboard.count("dashboard") shouldBe 2 // one call per load: Forbidden is not retried
         }

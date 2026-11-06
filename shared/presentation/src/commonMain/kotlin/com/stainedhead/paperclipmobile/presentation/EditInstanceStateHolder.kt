@@ -5,7 +5,9 @@ import com.stainedhead.paperclipmobile.application.auth.KeyExpiryStatus
 import com.stainedhead.paperclipmobile.application.auth.LoadInstanceAccess
 import com.stainedhead.paperclipmobile.application.auth.PairInstance
 import com.stainedhead.paperclipmobile.application.auth.SignInResult
+import com.stainedhead.paperclipmobile.application.auth.SignOutHereOnlyResult
 import com.stainedhead.paperclipmobile.application.auth.SignOutInstance
+import com.stainedhead.paperclipmobile.application.auth.SignOutInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.auth.SignOutResult
 import com.stainedhead.paperclipmobile.application.instance.AddInstance
 import com.stainedhead.paperclipmobile.application.instance.AddInstanceResult
@@ -15,6 +17,7 @@ import com.stainedhead.paperclipmobile.application.instance.InstanceNameIssue
 import com.stainedhead.paperclipmobile.application.instance.ProbeInstance
 import com.stainedhead.paperclipmobile.application.instance.ProbeResult
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstance
+import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceHereOnly
 import com.stainedhead.paperclipmobile.application.instance.RemoveInstanceResult
 import com.stainedhead.paperclipmobile.application.instance.UpdateInstance
 import com.stainedhead.paperclipmobile.application.instance.UpdateInstanceResult
@@ -45,6 +48,12 @@ enum class EditMode {
 enum class EditConfirmation {
     SignOut,
     Remove,
+
+    /** The key could not be read: sign out on this phone only; the key stays live on the server (F-R-2). */
+    SignOutHereOnly,
+
+    /** The key could not be read: remove the factory from this phone only; the key stays live on the server. */
+    RemoveHereOnly,
 }
 
 data class EditInstanceState(
@@ -77,10 +86,20 @@ data class EditInstanceState(
     val isOffline: Boolean = false,
     val isBusy: Boolean = false,
     val canSave: Boolean = false,
+    /** The name or address typed differs from what is saved, so Cancel would throw something away. */
+    val hasUnsavedChanges: Boolean = false,
+    /** What the saved factory has (empty while adding), to tell whether anything was typed. */
+    val savedName: String = "",
+    val savedAddress: String = "",
+    /** The address is valid and no check is running, so Check address can be tapped. */
+    val canCheckAddress: Boolean = false,
     val saved: Boolean = false,
     val removed: Boolean = false,
     val error: ErrorUi? = null,
-)
+) {
+    /** True while a change is in flight; the screen must not be torn down yet. */
+    val isWorking: Boolean get() = isBusy
+}
 
 sealed interface EditInstanceIntent {
     data class NameChanged(
@@ -136,6 +155,8 @@ data class EditInstanceUseCases(
     val pair: PairInstance,
     val signOut: SignOutInstance,
     val remove: RemoveInstance,
+    val removeHereOnly: RemoveInstanceHereOnly,
+    val signOutHereOnly: SignOutInstanceHereOnly,
     val expiry: KeyExpiryStatus,
 )
 
@@ -285,7 +306,11 @@ class EditInstanceStateHolder(
 private fun EditInstanceState.revalidated(): EditInstanceState {
     val addressOk = addressIssue == null && address.isNotBlank()
     val needsProbe = mode == EditMode.Add || addressChangeClearsKey
-    return copy(canSave = name.isNotBlank() && addressOk && (!needsProbe || probe == ProbeStatus.Accepted))
+    return copy(
+        canSave = name.isNotBlank() && addressOk && (!needsProbe || probe == ProbeStatus.Accepted),
+        canCheckAddress = addressOk && probe != ProbeStatus.Probing,
+        hasUnsavedChanges = name != savedName || address != savedAddress,
+    )
 }
 
 /** What the parts of the edit screen share: the loaded factory, the probe report and the state. */
@@ -309,6 +334,8 @@ internal class EditInstanceSession(
                     instanceId = instance.id.value,
                     name = instance.displayName,
                     address = instance.baseUri.value,
+                    savedName = instance.displayName,
+                    savedAddress = instance.baseUri.value,
                     addressIssue = null,
                     addressChangeClearsKey = false,
                     status = instance.status.toUi(),
@@ -606,20 +633,15 @@ internal class EditInstanceTeardown(
         state.update {
             it.copy(
                 isBusy = true,
-                confirmation =
-                    if (confirmation ==
-                        EditConfirmation.Remove
-                    ) {
-                        it.confirmation
-                    } else {
-                        null
-                    },
+                confirmation = if (confirmation.staysWhileBusy()) it.confirmation else null,
             )
         }
         scope.launch {
             when (confirmation) {
                 EditConfirmation.SignOut -> signOut(id)
                 EditConfirmation.Remove -> remove(id)
+                EditConfirmation.SignOutHereOnly -> signOutHereOnly(id)
+                EditConfirmation.RemoveHereOnly -> removeHereOnly(id)
             }
         }
     }
@@ -627,12 +649,49 @@ internal class EditInstanceTeardown(
     private suspend fun signOut(id: InstanceId) {
         val result = useCases.signOut(id)
         useCases.get(id)?.let { session.show(it) }
+        if (result == SignOutResult.Declined) {
+            state.update {
+                it.copy(
+                    isBusy = false,
+                    error = ErrorUi(ErrorKey.AuthDeclined),
+                    confirmation = EditConfirmation.SignOutHereOnly,
+                )
+            }
+            return
+        }
         val outcome = (result as? SignOutResult.SignedOut)?.serverKey?.toUi()
         state.update { it.copy(isBusy = false, serverKeyOutcome = outcome, companies = emptyList()) }
     }
 
     private suspend fun remove(id: InstanceId) {
-        when (val result = useCases.remove(id)) {
+        afterRemoval(useCases.remove(id))
+    }
+
+    private suspend fun removeHereOnly(id: InstanceId) {
+        afterRemoval(useCases.removeHereOnly(id))
+    }
+
+    private suspend fun signOutHereOnly(id: InstanceId) {
+        when (val result = useCases.signOutHereOnly(id)) {
+            is SignOutHereOnlyResult.SignedOut -> {
+                useCases.get(id)?.let { session.show(it) }
+                state.update {
+                    it.copy(isBusy = false, serverKeyOutcome = result.serverKey.toUi(), companies = emptyList())
+                }
+            }
+
+            is SignOutHereOnlyResult.NotAuthorized -> {
+                state.update { it.copy(isBusy = false, deviceAuthIssue = result.result.toIssue()) }
+            }
+
+            SignOutHereOnlyResult.NotFound -> {
+                state.update { it.copy(isBusy = false, confirmation = null, removed = true) }
+            }
+        }
+    }
+
+    private fun afterRemoval(result: RemoveInstanceResult) {
+        when (result) {
             is RemoveInstanceResult.Removed -> {
                 state.update {
                     it.copy(
@@ -648,9 +707,23 @@ internal class EditInstanceTeardown(
                 state.update { it.copy(isBusy = false, deviceAuthIssue = result.result.toIssue()) }
             }
 
+            RemoveInstanceResult.KeyReadDenied -> {
+                state.update {
+                    it.copy(
+                        isBusy = false,
+                        error = ErrorUi(ErrorKey.AuthDeclined),
+                        confirmation = EditConfirmation.RemoveHereOnly,
+                    )
+                }
+            }
+
             RemoveInstanceResult.NotFound -> {
                 state.update { it.copy(isBusy = false, confirmation = null, removed = true) }
             }
         }
     }
 }
+
+/** A removal keeps its dialog open while it runs, so a refusal or a failure is shown in place. */
+private fun EditConfirmation.staysWhileBusy() =
+    this == EditConfirmation.Remove || this == EditConfirmation.RemoveHereOnly

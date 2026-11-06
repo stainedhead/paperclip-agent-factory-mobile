@@ -17,6 +17,14 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
+/** The amount as the person types it: whole cents at a point-decimal, two-digit currency phone. */
+internal fun typed(minorUnits: Long?): BudgetIntent.AmountTyped =
+    BudgetIntent.AmountTyped(
+        if (minorUnits == null) "" else "${minorUnits / 100}.${(minorUnits % 100).toString().padStart(2, '0')}",
+        ".",
+        2,
+    )
+
 internal fun TestScope.budgetEnv(role: Role = Role.Owner): Env {
     val env = Env(listOf(TestData.instance())) { testScheduler.currentTime }
     env.auth.meResult = DomainResult.Success(TestData.access(role))
@@ -89,6 +97,7 @@ class BudgetIncidentLoadingTest {
 
             holder.state.value.phase shouldBe DetailPhase.Content
             holder.state.value.outcome shouldBe BudgetOutcomeUi.NoLongerActive
+            holder.state.value.refreshIntervalSeconds shouldBe 0
             holder.state.value.canKeepPaused shouldBe false
             holder.state.value.canRaise shouldBe false
         }
@@ -133,18 +142,18 @@ class BudgetIncidentActionsTest {
             val holder = loaded(env)
 
             holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            holder.onIntent(BudgetIntent.AmountChanged(10_000))
+            holder.onIntent(typed(10_000))
             runCurrent()
             holder.state.value.amountIssue shouldBe InvalidKey.AmountMustExceedObserved
             holder.state.value.canSubmit shouldBe false
 
-            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(typed(20_000))
             runCurrent()
             holder.state.value.amountIssue shouldBe null
             holder.state.value.canSubmit shouldBe true
             holder.state.value.submitNeedsDeviceAuth shouldBe true
 
-            holder.onIntent(BudgetIntent.AmountChanged(null))
+            holder.onIntent(typed(null))
             runCurrent()
             holder.state.value.canSubmit shouldBe false
         }
@@ -156,7 +165,7 @@ class BudgetIncidentActionsTest {
             val holder = loaded(env)
 
             holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(typed(20_000))
             holder.onIntent(BudgetIntent.SubmitTapped)
             advanceUntilIdle()
 
@@ -189,7 +198,7 @@ class BudgetIncidentActionsTest {
             val holder = loaded(env)
 
             holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(typed(20_000))
             holder.onIntent(BudgetIntent.SubmitTapped)
             advanceUntilIdle()
 
@@ -205,7 +214,7 @@ class BudgetIncidentActionsTest {
             val holder = loaded(env)
 
             holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(typed(20_000))
             holder.onIntent(BudgetIntent.SubmitTapped)
             advanceUntilIdle()
 
@@ -223,7 +232,7 @@ class BudgetIncidentActionsTest {
             val holder = loaded(env)
 
             holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(typed(20_000))
             holder.onIntent(BudgetIntent.SubmitTapped)
             advanceUntilIdle()
 
@@ -321,7 +330,7 @@ class BudgetIncidentActionsTest {
             env.biometrics.result = BiometricResult.Cancelled
             val holder = loaded(env)
             holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(typed(20_000))
             holder.onIntent(BudgetIntent.SubmitTapped)
             advanceUntilIdle()
             holder.state.value.feedback
@@ -346,7 +355,7 @@ class BudgetIncidentActionsTest {
             val env = budgetEnv()
             val holder = loaded(env)
             holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
-            holder.onIntent(BudgetIntent.AmountChanged(20_000))
+            holder.onIntent(typed(20_000))
             holder.onIntent(BudgetIntent.SubmitTapped)
             advanceUntilIdle()
             holder.state.value.outcome shouldBe BudgetOutcomeUi.Raised
@@ -355,5 +364,94 @@ class BudgetIncidentActionsTest {
             advanceUntilIdle()
 
             holder.state.value.outcome shouldBe BudgetOutcomeUi.Raised
+        }
+}
+
+class BudgetAmountInputTest {
+    private suspend fun TestScope.raising(env: Env): BudgetIncidentStateHolder {
+        val holder = budgetHolder(env)
+        advanceUntilIdle()
+        holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
+        return holder
+    }
+
+    @Test
+    fun `A4 a comma decimal in a point locale is refused not read as a hundred times more`() =
+        runTest {
+            val holder = raising(budgetEnv())
+
+            holder.onIntent(BudgetIntent.AmountTyped("250,50", ".", 2))
+            runCurrent()
+
+            holder.state.value.amountIssue shouldBe InvalidKey.AmountNotNumeric
+            holder.state.value.amountMinorUnits shouldBe null
+            holder.state.value.canSubmit shouldBe false
+        }
+
+    @Test
+    fun `R-024 an amount typed before choosing Keep paused is gone when Raise is chosen again`() =
+        runTest {
+            val holder = raising(budgetEnv())
+            holder.onIntent(typed(25_000))
+            runCurrent()
+            holder.state.value.amountMinorUnits shouldBe 25_000L
+
+            holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.KeepPaused))
+            runCurrent()
+            holder.state.value.amountMinorUnits shouldBe null
+
+            holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
+            runCurrent()
+            holder.state.value.amountMinorUnits shouldBe null
+            holder.state.value.amountIssue shouldBe null
+            holder.state.value.canSubmit shouldBe false
+        }
+
+    @Test
+    fun `R-024 choosing the same option again keeps what was typed`() =
+        runTest {
+            val holder = raising(budgetEnv())
+            holder.onIntent(typed(25_000))
+            runCurrent()
+
+            holder.onIntent(BudgetIntent.ChoiceSelected(BudgetChoice.RaiseAndResume))
+            runCurrent()
+
+            holder.state.value.amountMinorUnits shouldBe 25_000L
+        }
+
+    @Test
+    fun `A4 the amount the person will approve is in the state`() =
+        runTest {
+            val holder = raising(budgetEnv())
+
+            holder.onIntent(BudgetIntent.AmountTyped("1.200,50", ",", 2))
+            runCurrent()
+
+            holder.state.value.amountMinorUnits shouldBe 120_050L
+            holder.state.value.amountIssue shouldBe null
+            holder.state.value.canSubmit shouldBe true
+        }
+
+    @Test
+    fun `A4 zero negative and huge amounts cannot be submitted`() =
+        runTest {
+            val env = budgetEnv()
+            val holder = raising(env)
+            val cases =
+                mapOf(
+                    "0" to InvalidKey.AmountNotPositive,
+                    "-20" to InvalidKey.AmountNotPositive,
+                    "99999999999999999999" to InvalidKey.AmountTooLarge,
+                )
+            for ((text, key) in cases) {
+                holder.onIntent(BudgetIntent.AmountTyped(text, ".", 2))
+                runCurrent()
+                holder.state.value.amountIssue shouldBe key
+                holder.state.value.canSubmit shouldBe false
+            }
+            holder.onIntent(BudgetIntent.SubmitTapped)
+            advanceUntilIdle()
+            env.budgets.count("resolve") shouldBe 0
         }
 }

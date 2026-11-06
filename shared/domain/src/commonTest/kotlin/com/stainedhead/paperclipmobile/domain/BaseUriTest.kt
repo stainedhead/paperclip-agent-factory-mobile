@@ -42,6 +42,24 @@ class BaseUriTest {
     }
 
     @Test
+    fun `F-R-3 the default port of the scheme is the same address as no port`() {
+        valid("https://paperclip.example.com:443") shouldBe "https://paperclip.example.com"
+        valid("https://paperclip.example.com:443/") shouldBe "https://paperclip.example.com"
+        valid("HTTPS://Paperclip.Example.com:0443/paperclip") shouldBe "https://paperclip.example.com/paperclip"
+        valid("http://localhost:80", allowInsecureLocal = true) shouldBe "http://localhost"
+        valid("https://[2001:db8::1]:443") shouldBe "https://[2001:db8::1]"
+        BaseUri.parse("https://h.example.com:443") shouldBe BaseUri.parse("https://h.example.com")
+    }
+
+    @Test
+    fun `F-R-3 a port that is not the default of its scheme is kept in its canonical spelling`() {
+        valid("https://h.example.com:80") shouldBe "https://h.example.com:80"
+        valid("http://localhost:443", allowInsecureLocal = true) shouldBe "http://localhost:443"
+        valid("https://h.example.com:08443") shouldBe "https://h.example.com:8443"
+        valid("https://[2001:db8::1]:8443") shouldBe "https://[2001:db8::1]:8443"
+    }
+
+    @Test
     fun `rejects blank input`() {
         invalid("   ") shouldBe BaseUriError.Empty
     }

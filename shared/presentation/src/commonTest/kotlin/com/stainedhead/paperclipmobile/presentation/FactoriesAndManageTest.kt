@@ -205,7 +205,10 @@ class ManageFactoriesStateHolderTest {
     private val b = TestData.instance("b", "Cloud", sortOrder = 1, status = InstanceStatus.SignedOut)
 
     private fun TestScope.holder(env: Env) =
-        ManageFactoriesStateHolder(ManageFactoriesUseCases(env.observeInstances, env.reorder, env.remove), testScope())
+        ManageFactoriesStateHolder(
+            ManageFactoriesUseCases(env.observeInstances, env.reorder, env.remove, env.removeHereOnly),
+            testScope(),
+        )
 
     @Test
     fun `FR-006 rows follow the saved order and a reorder is saved`() =

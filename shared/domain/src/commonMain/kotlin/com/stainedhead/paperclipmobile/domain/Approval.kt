@@ -99,6 +99,8 @@ data class ApprovalDetail(
     val approval: Approval,
     val issues: List<LinkedIssue>,
     val comments: List<ApprovalComment>,
+    /** Agent id to name, for the agents the payload names (the hire's manager). Empty when they could not be read. */
+    val agentNames: Map<String, String> = emptyMap(),
 )
 
 enum class ApprovalAction {
