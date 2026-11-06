@@ -27,7 +27,7 @@ sealed interface DomainError {
     data object DeviceAuthDeclined : DomainError
 
     /**
-     * The phone's key was invalidated, for example by a new fingerprint (FR-015). No request was sent. The factory
+     * The phone's key was invalidated (FR-015): on iPhone by a changed biometric set, on Android by a removed screen lock (a new fingerprint does not, ADR-149). No request was sent. The factory
      * needs re-pairing; the key on the server may still be live (review1b F-A-2).
      */
     data object KeyInvalidated : DomainError

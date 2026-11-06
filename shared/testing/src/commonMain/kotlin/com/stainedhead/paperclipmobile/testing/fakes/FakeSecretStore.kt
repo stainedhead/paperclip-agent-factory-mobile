@@ -20,7 +20,7 @@ class FakeSecretStore : SecretStore {
     var attestedReads = 0
         private set
 
-    /** When true every read reports [SecretReadResult.Invalidated] (a new fingerprint was enrolled, FR-015). */
+    /** When true every read reports [SecretReadResult.Invalidated] (the key was invalidated, FR-015). */
     var invalidated = false
 
     /** When true every read reports [SecretReadResult.Denied]. */
