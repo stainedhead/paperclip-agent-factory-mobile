@@ -16,7 +16,7 @@ class KeyPolicyTest {
         PROTECTED_KEY_AUTHENTICATORS shouldBe
             (KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL)
         // Pinned numerically as well, so a change of both sides at once is still noticed.
-        PROTECTED_KEY_AUTHENTICATORS shouldBe 3
+        PROTECTED_KEY_AUTHENTICATORS shouldBe STRONG_OR_CREDENTIAL
     }
 
     @Test
@@ -24,5 +24,10 @@ class KeyPolicyTest {
         PROTECTED_KEY_AUTHENTICATORS shouldNotBe KeyProperties.AUTH_BIOMETRIC_STRONG
         (PROTECTED_KEY_AUTHENTICATORS and KeyProperties.AUTH_DEVICE_CREDENTIAL) shouldBe
             KeyProperties.AUTH_DEVICE_CREDENTIAL
+    }
+
+    private companion object {
+        /** `AUTH_BIOMETRIC_STRONG` (1) or `AUTH_DEVICE_CREDENTIAL` (2), written out so a changed constant fails. */
+        const val STRONG_OR_CREDENTIAL = 3
     }
 }

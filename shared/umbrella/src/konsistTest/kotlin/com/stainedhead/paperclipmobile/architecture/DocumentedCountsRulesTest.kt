@@ -102,6 +102,7 @@ class DocumentedCountsRulesTest {
                     listOf(
                         "acceptance criterion 8 in virtual time",
                         "new-fingerprint invalidation of the Keystore key",
+                        "new-fingerprint key invalidation",
                     ),
                 "docs/product-details.md" to
                     listOf("within one 5 s virtual cycle", "New-fingerprint invalidation, the system prompt"),
@@ -109,6 +110,8 @@ class DocumentedCountsRulesTest {
                 "paperclip-agent-factory-mobile-PRD.md" to listOf("enrolling a new fingerprint forces a re-pair"),
                 "user-docs/key-expiry-and-repairing.md" to listOf("enrolled a new fingerprint"),
                 "user-docs/app-lock.md" to listOf("The same happens when new fingerprints are enrolled"),
+                "docs/product-summary.md" to listOf("new-fingerprint invalidation"),
+                "README.md" to listOf("new-fingerprint key invalidation"),
                 "docs/architectural-decision-record.md" to
                     listOf("a new fingerprint on Android invalidates the key"),
             )
