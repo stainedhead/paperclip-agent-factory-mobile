@@ -15,15 +15,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stainedhead.paperclipmobile.android.shell.AppRoute
 import com.stainedhead.paperclipmobile.domain.port.BiometricResult
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-
-private const val SETTLE_MILLIS = 500L
 
 /** AND-041: the QA hire approval and the Q1 strategy on the demo graph; payload, actions, note, device owner. */
 @RunWith(AndroidJUnit4::class)
@@ -112,7 +108,7 @@ class ApprovalScreenTest {
         app.controls.biometricPromptCount shouldBe 0
 
         rule.onNodeWithTag("note-field").performTextInput("Too expensive")
-        runBlocking { delay(SETTLE_MILLIS) }
+        rule.awaitFieldText("note-field", "Too expensive")
         rule.onNodeWithTag("note-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasTag("note-issue") }
@@ -134,7 +130,7 @@ class ApprovalScreenTest {
         rule.awaitDisplayed("note-sheet")
         rule.hasTag("note-lock") shouldBe false
         rule.onNodeWithTag("note-field").performTextInput("Lower the budget")
-        runBlocking { delay(SETTLE_MILLIS) }
+        rule.awaitFieldText("note-field", "Lower the budget")
         rule.onNodeWithTag("note-confirm").performClick()
 
         rule.waitUntil(WAIT_MILLIS) { rule.hasText("Revision requested") }
