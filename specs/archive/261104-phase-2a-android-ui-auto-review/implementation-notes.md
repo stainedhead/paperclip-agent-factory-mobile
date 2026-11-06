@@ -32,6 +32,46 @@ DEC-1 (R-004) and DEC-2 (R-012) are run assumptions the owner may overturn.
 
 - Group 5 (docs): predictive back was fixed in code (the manifest attribute, a Konsist rule per variant, `tools:targetApi="33"` for lint) rather than by rewording. The deep-link claim was reworded: the scheme is not registered. `konsistTest` did not list the documents its documentation rules read as inputs, so a docs-only edit left it UP-TO-DATE (the R-014 bug class); fixed with the inputs and a red case in `scripts/test-konsist-inputs.sh`. ADR-143 (attachments, design only) and ADR-144 (prompts per refresh, an open OWNER decision, not implemented) are new. No hosted issues were filed for the R-038 follow-ups (an external action). T-009 is packaged, not produced.
 
+## Round 2: Inbox scroll jank, 2026-11-06 (R-008 follow-up, branch perf/inbox-scroll-jank-round-2)
+
+Emulator: Pixel_9_Pro AVD, API 37, arm64, host GPU, `benchmark` build type (R8 plus the baseline profile), `flingTwoHundredInboxCards` (209 cards, 5 flings down and 5 up, about 2520 frames per run). "Over deadline" is the share of frames with `frameOverrunMs` above 0 over the 5 iterations of a run (the measure the earlier 40.7% used). Numbers are an emulator regression guard; the owner measures on a Pixel (docs/android-verification-checklist.md, item 8). Traces: Perfetto traces the benchmark itself records, read with `trace_processor`.
+
+**Where the frame time goes (measured on the unchanged main, 5 traces)**
+
+| Evidence | Value |
+|---|---|
+| UI thread, `Choreographer#doFrame`, average | 3.0 to 4.6 ms |
+| Compose `Recomposer:animation` + `AndroidOwner:measureAndLayout`, total over a 52 s run | about 150 ms |
+| UI frames over 12 ms (58 of 509 in the sampled trace): share of their time in `postAndWait` (waiting for the RenderThread) | 1007 of 1012 ms |
+| FrameTimeline jank type, share of frames | Buffer Stuffing about 92%; App Deadline Missed 2% to 3% |
+| RenderThread `Drawing` average | 10.3 to 11.9 ms, of which flush commands about 5.0 ms and `eglSwapBuffers`/`dequeueBuffer` about 4 ms |
+| Text atlas drawing | about 1.2 ms a frame (about 12 ops) |
+| Offscreen layer flushes | about 110 frames, 0.6 to 0.7 s a run (look like the stretch overscroll at the list ends; not changed) |
+
+So the frames are late because the RenderThread and the buffer queue behind it are slow on the emulator's host GPU, not because composition is slow. Recomposition during a fling is nil already (`InboxClockTickTest`; `InboxScrollCompositionTest`: a whole down-and-up scroll of 40 cards composes each card at most twice). What the app controls is the work per card that scrolls in.
+
+**Fixes, with the per-card cost (composables one approval card composes on first composition, with the theme around it, counted by `InboxCardCostTest` with the `CompositionTracer`)**
+
+| Step | Composables | LaunchedEffects | Roborazzi (73 baselines) |
+|---|---|---|---|
+| main | 210 | 9 | n/a |
+| Web door only for cards that are one | 208 | 9 | unchanged |
+| `AppButton` drawn directly (ADR-145), no Material Button/Surface | 133 | 3 | unchanged (the modifier order copies the Surface's; a first version that clipped first changed 41 baselines by at most 0.027% of pixels, corner anti-aliasing) |
+
+| Frames over deadline, median of the 3 runs (min to max) | Run 1 | Run 2 | Run 3 | Median |
+|---|---|---|---|---|
+| Baseline, main | 38.3% | 47.6% | 43.2% | 43.2% (38.3 to 47.6) |
+| After both fixes, profile not regenerated | 48.6% | 44.4% | 51.5% | 48.6% (44.4 to 51.5) |
+| After both fixes, baseline profile regenerated (final) | 44.6% | 47.7% | 47.8% | 47.7% (44.6 to 47.8) |
+
+The per-fling spread inside one run is 26% to 72%, much wider than any difference between the rows, so the per-fix frame change is below the noise floor and was not measured fix by fix; the two fixes are shown as the composable counts above. On the emulator the result is no improvement (a small regression cannot be ruled out), and the budget of 5% is not met (frameOverrunMs P95 about 22 ms to 24 ms). App Deadline Missed stayed at 8 to 15 frames of about 505 (2% to 3%). The final `run-benchmarks.sh` also gave a cold start to the Inbox with content of 350 ms median of 10 (338.8 ms without the profile; the earlier 315 ms is within the emulator's run to run spread, 261 to 477 ms). The CPU P90 of the frame is 33 ms on main today against the 25.9 ms recorded in round 1; this was not explained.
+
+**Measured and not done**
+
+- Hoisting the per-card `ActionRow`/`CardButtons` `buildList` lambdas and the `CustomAccessibilityAction` lists into `remember`: the accessibility list was already remembered; a card in a fling is composed once and not recomposed (test above), so a `remember` only adds a slot to the one composition it gets. The Compose compiler also remembers lambdas whose captures are stable.
+- Stretch overscroll at the list ends (offscreen layers): a platform behaviour and a look; not changed.
+- A Pixel profile: owner track (R-009). If the Pixel's UI thread is the limit, the next step is the card's remaining structure (`SwipeToDismissBox` anchors per card, eight `Text` nodes) from that trace.
+
 ## Lessons learned
 
 - A change that makes a list lazy breaks every connected test that taps a row below the fold; Robolectric screens are tall enough to hide it. The connected flows are the only check, so run them after UI-structure changes (R-032 broke two of 14).
