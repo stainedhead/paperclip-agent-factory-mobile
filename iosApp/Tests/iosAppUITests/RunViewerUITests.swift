@@ -10,8 +10,9 @@ final class RunViewerUITests: XCTestCase {
     private func openLiveRun(biometrics: String = "approved", extra: [String] = []) -> XCUIApplication {
         let app = launchFactoryHome(biometrics: biometrics, extra: extra)
         app.scroll(to: "factory-run-run-1204-live", in: "factory-root")
-        app.element("factory-run-run-1204-live").tap()
-        XCTAssertTrue(app.element("run-screen").waitForExistence(timeout: 15), "the run never opened")
+        XCTAssertTrue(
+            app.tapOpening(app.element("factory-run-run-1204-live"), screen: app.element("run-screen")),
+            "the run never opened")
         XCTAssertTrue(app.element("run-log").waitForExistence(timeout: 15), "the log never loaded")
         return app
     }

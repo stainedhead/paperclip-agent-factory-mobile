@@ -47,6 +47,7 @@ final class SettingsUITests: XCTestCase {
         XCTAssertTrue(app.buttons["settings-button"].waitForExistence(timeout: 10))
         app.buttons["settings-button"].tap()
         XCTAssertTrue(app.textFields["settings-device-name"].waitForExistence(timeout: 10))
+        waitUntil(app.textFields["settings-device-name"], "value == 'Studio phone'")
         XCTAssertEqual(app.textFields["settings-device-name"].value as? String, "Studio phone")
     }
 
@@ -61,6 +62,7 @@ final class SettingsUITests: XCTestCase {
         XCTAssertTrue(app.buttons["settings-button"].waitForExistence(timeout: 10))
         app.buttons["settings-button"].tap()
         XCTAssertTrue(app.textFields["settings-device-name"].waitForExistence(timeout: 10))
+        waitUntil(app.textFields["settings-device-name"], "value == 'Desk phone'")
         XCTAssertEqual(app.textFields["settings-device-name"].value as? String, "Desk phone")
     }
 
@@ -69,8 +71,12 @@ final class SettingsUITests: XCTestCase {
         let app = openSettings()
         let toggle = app.switches["settings-app-lock-toggle"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        waitUntil(toggle, "isHittable == true")
+        app.settle(toggle)
         toggle.tap()
-        // The switch follows the shared state holder, one asynchronous round trip after the tap.
+        // The switch follows the shared state holder, one asynchronous round trip after the tap. A tap that landed
+        // while the screen was still settling is lost: when the switch has not moved after 10 s it is tapped once more.
+        if !toggle.waitForValue("0", timeout: 10) { toggle.tap() }
         waitUntil(toggle, "value == '0'", timeout: 45)
 
         app.element("settings-idle-period").tap()

@@ -56,6 +56,7 @@ final class EditFactoryUITests: XCTestCase {
         XCTAssertTrue(again.buttons["Keep editing"].waitForExistence(timeout: 5), "typed changes need a prompt")
         again.buttons["Keep editing"].tap()
         XCTAssertTrue(again.element("edit-factory").exists, "Keep editing stays on the form")
+        waitUntil(again.textFields["edit-name"], "value == 'Studio factory'")
         XCTAssertEqual(again.textFields["edit-name"].value as? String, "Studio factory")
 
         again.buttons["edit-cancel-button"].tap()

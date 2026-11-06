@@ -11,8 +11,9 @@ final class AgentDetailUITests: XCTestCase {
         // Prompts in order: unlock, the budget raise (DEC-1), a cancelled pause, the pause.
         let app = launchAgents(biometrics: "approved,approved,cancelled,approved")
         app.scroll(to: "agent-row-\(OpsIds.engineer1)", in: "agents-root")
-        app.element("agent-row-\(OpsIds.engineer1)").tap()
-        XCTAssertTrue(app.element("agent-detail-screen").waitForExistence(timeout: 15))
+        XCTAssertTrue(
+            app.tapOpening(app.element("agent-row-\(OpsIds.engineer1)"), screen: app.element("agent-detail-screen")),
+            "the agent never opened")
         XCTAssertTrue(app.element("agent-current-issue").waitForExistence(timeout: 15))
         XCTAssertEqual(app.text("agent-name"), "Engineer 1")
         XCTAssertEqual(app.text("agent-role"), "Role: Engineer")
@@ -41,8 +42,9 @@ final class AgentDetailUITests: XCTestCase {
         XCTAssertTrue(app.text("status-pill").contains("Paused"))
 
         app.scroll(to: "agent-run-\(OpsIds.doneRun)", in: "agent-detail-screen")
-        app.element("agent-run-\(OpsIds.doneRun)").tap()
-        XCTAssertTrue(app.element("run-screen").waitForExistence(timeout: 15))
+        XCTAssertTrue(
+            app.tapOpening(app.element("agent-run-\(OpsIds.doneRun)"), screen: app.element("run-screen")),
+            "the run never opened")
         XCTAssertTrue(app.text("status-pill").contains("Succeeded"))
         XCTAssertFalse(app.buttons["run-cancel"].exists, "a finished run cannot be cancelled")
     }

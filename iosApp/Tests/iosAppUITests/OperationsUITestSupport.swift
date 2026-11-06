@@ -57,6 +57,37 @@ extension XCUIApplication {
             element(container).swipeUp()
             swipes += 1
         }
+        settle(element(identifier))
+    }
+
+    /// Waits until the element stops moving (a swipe's momentum scroll is still running when the swipe returns, and a
+    /// tap on a moving row is lost). Bounded at three seconds; the caller's next step still fails if it never rests.
+    @MainActor
+    func settle(_ target: XCUIElement) {
+        let deadline = Date().addingTimeInterval(3)
+        var last = target.frame
+        while Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.3)
+            let now = target.frame
+            if now == last { return }
+            last = now
+        }
+    }
+
+    /// Taps a row that opens a screen and waits for that screen. A tap that lands while the list is still moving or
+    /// the screen is still transitioning is lost, so when the screen has not appeared after `patience` seconds and the
+    /// row is still on screen (nothing opened), it is tapped again. A row that has gone (the screen opened late) is
+    /// never tapped twice, and a screen that never opens still fails after the last attempt.
+    @MainActor
+    func tapOpening(
+        _ row: XCUIElement, screen: XCUIElement, attempts: Int = 3, patience: TimeInterval = 10
+    ) -> Bool {
+        for attempt in 1...attempts {
+            if row.exists && row.isHittable { row.tap() }
+            if screen.waitForExistence(timeout: patience) { return true }
+            if attempt == attempts { break }
+        }
+        return screen.exists
     }
 
     @MainActor
