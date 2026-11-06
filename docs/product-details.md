@@ -116,7 +116,7 @@ Two things are checked across every screen: `AccessibilityTest` (name, role, 48 
 | Pull-to-refresh spinner on Agents, Run viewer, Issue, Work | not compared | None: those states have no `isRefreshing` | shared gap (2a-6 and 2a-7 notes) |
 | Unsupported interaction kinds | Open in the web app | Open in the web app, https only | `WebOpenerTest` |
 | Android only | n/a | Predictive back, dynamic colour for neutrals, Custom Tabs, screen-lock fallback in the prompt, Keystore keys with StrongBox where present | ADR-123, ADR-125, ADR-133 |
-| Not proven on a device | | New-fingerprint invalidation, the system prompt on a destructive action with enrolled credentials, the number of prompts per refresh with app lock on (a device measurement; the design is decided, ADR-145), StrongBox hardware, a pairing against the pinned server, TalkBack, API 28 and 33, Pixel 6 and Samsung, the first hosted CI run; steps and a result line for each: [android-verification-checklist.md](./android-verification-checklist.md) | [known limitations](./technical-details.md#known-limitations-and-gaps), ADR-137 |
+| Not proven on a device | | Real-phone check that a new fingerprint leaves the Android key valid (ADR-149), the system prompt on a destructive action with enrolled credentials, the number of prompts per refresh with app lock on (a device measurement; the design is decided, ADR-145), StrongBox hardware, a pairing against the pinned server, TalkBack, API 28 and 33, Pixel 6 and Samsung, the first hosted CI run; steps and a result line for each: [android-verification-checklist.md](./android-verification-checklist.md) | [known limitations](./technical-details.md#known-limitations-and-gaps), ADR-137 |
 
 ## Screen reference: state holders
 

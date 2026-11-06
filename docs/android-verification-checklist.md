@@ -35,7 +35,7 @@ Result (2026-11-06, Pixel_9_Pro emulator API 37 arm64, `main` 0693434; second ru
 - **App bug, not fixed (finding F-1):** against a fresh server with no company, the Inbox and Factory tabs show "Loading..." forever and the app makes no request after the pairing calls (server log checked), while Factories says Connected. After creating a company on the server and pulling to refresh on Factories, the company appeared and the Inbox loaded ("Nothing needs you"). Same on `main` and on the ADR-144 branch. It needs an empty or error state and a refresh of the access list on start. Root cause not established.
 - **Still the owner's:** pairing over Tailscale (R-012); a real browser sign-in instead of the script's approver. The contract smoke (`scripts/contract-smoke.sh`) was not run.
 
-## 2. Real key invalidation after fingerprint enrolment
+## 2. Key behaviour after fingerprint enrolment (a new fingerprint must NOT invalidate the key)
 
 A protected secret needs app lock **on**, so first pair a factory (item 1), then Settings, turn on **Lock app**, and pair again (or sign out and back in) so the board key is stored protected. Then add a fingerprint: on a phone, Settings, Security, Fingerprint, add one; on an emulator, Settings, Security, Fingerprint, then `adb -e emu finger touch 1` for each touch.
 
@@ -58,7 +58,7 @@ Result (2026-11-06, Pixel_9_Pro emulator API 37, `main` 0693434 plus this PR's t
 - `connectedAndroidDeviceTest -P...invalidationPhase=1` passed (phase 1 not skipped), but **Gradle uninstalls the test APK afterwards, which deletes its Keystore keys, so a later phase 2 passes vacuously**. Run the phases by hand: `adb install -r -t shared/infrastructure/securestore/build/outputs/apk/androidTest/securestore-androidTest.apk`, then `adb shell am instrument -w -e invalidationPhase 1 -e class com.stainedhead.paperclipmobile.infrastructure.securestore.KeystoreInvalidationDeviceTest com.stainedhead.paperclipmobile.shared.infrastructure.securestore.test/androidx.test.runner.AndroidJUnitRunner`, change the lock or the fingerprints, then the same with `invalidationPhase 2`.
 - After enrolling a **second** fingerprint, phase 2 **failed**: `got NeedsAuthentication`. The key was still usable (the test only accepts `KeyMissing` or `Invalidated`, which is what removing the PIN gives).
 - A scratch instrumented test (not committed) made two per-use keys, `AUTH_BIOMETRIC_STRONG` only and `AUTH_BIOMETRIC_STRONG or AUTH_DEVICE_CREDENTIAL` (the shipping `AndroidKeystoreBackend` setting), both with `setInvalidatedByBiometricEnrollment(true)`. After enrolling a **third** fingerprint the biometric-only key threw `KeyPermanentlyInvalidatedException` and the shipping combination was still `usable`. So on this emulator a key that allows the screen lock as an authenticator is not invalidated by a new fingerprint, while the emulator does invalidate biometric-only keys: it is the key configuration, not the emulator.
-- Meaning: the `Invalidated` and "Pair again" path on enrolment is unreachable with `BIOMETRIC_STRONG | DEVICE_CREDENTIAL`; a person who knows the PIN can add a fingerprint and the app keeps working (they could already use the PIN). **Owner decision (2026-11-06): keep the PIN fallback.** A new fingerprint does not invalidate the Android key; FR-015, the ADR and the manual phase 2 test text are to be corrected to say so (ADR pending in another PR; the phase 2 test expectation for the enrolment case is a documentation and test follow-up there). No app change in this PR.
+- Meaning: the `Invalidated` and "Pair again" path on enrolment is unreachable with `BIOMETRIC_STRONG | DEVICE_CREDENTIAL`; a person who knows the PIN can add a fingerprint and the app keeps working (they could already use the PIN). **Owner decision (2026-11-06): keep the PIN fallback.** A new fingerprint does not invalidate the Android key; FR-015, the ADR and the manual phase 2 test text are to be corrected to say so (ADR-149 records it; FR-015, the docs and the phase 2 test text now say so, and `KeyPolicyTest` pins the authenticators). No app change.
 - Not re-run: removing the screen lock deleting the key (observed in ADR-123).
 - **Still the owner's:** the same on a real Pixel, to confirm the platform behaves like the emulator.
 
@@ -226,7 +226,7 @@ Run without the owner's hardware on the Pixel_9_Pro (API 37), Pixel_API28 and Pi
 | Id | Finding | State |
 |---|---|---|
 | F-1 | A factory with no company leaves Inbox and Factory on "Loading..." forever (item 1) | open, no fix |
-| F-2 | A new fingerprint does not invalidate the shipping key because it also allows the screen lock (item 2) | decided: keep PIN fallback, ADR pending |
+| F-2 | A new fingerprint does not invalidate the shipping key because it also allows the screen lock (item 2) | fixed: docs corrected, ADR-149, policy pinned by `KeyPolicyTest` |
 | F-3 | The key prompt subtitle reads `call paperclip` (item 3) | open, no fix |
 | F-4 | `android-live-pairing.sh` checks passed vacuously (quoting) | fixed, 305aedb |
 | F-5 | `KeystorePerUseDeviceTest` failed on API 28 (no API 30 gate) | fixed, 4e5b03c |
