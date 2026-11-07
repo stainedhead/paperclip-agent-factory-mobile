@@ -148,7 +148,7 @@ The alternative of a single Compose Multiplatform UI for both platforms was cons
 
 **FR-014:** The app requires device authentication (Face ID / Touch ID / fingerprint / device PIN) to open the app after more than a configurable idle period (default 5 minutes; the user can turn app lock off in Settings, FR-017) and, always and with no setting to disable it, before any destructive action: pausing an agent (FR-071), cancelling a run (FR-075), destructive decision options (FR-041), rejecting an approval (FR-051), raising a budget (FR-052) and setting an agent's monthly budget above its current amount or to zero (FR-071; run assumption DEC-1 of the Android review, owner may overturn, ADR-141).
 
-**FR-015:** If biometrics change (new fingerprint enrolled) and the key is invalidated, the app reports "Credentials for <instance> need re-pairing" and offers one-tap re-pair. It never silently falls back to unprotected storage.
+**FR-015:** If the secure store invalidates the key, the app reports "Credentials for <instance> need re-pairing" and offers one-tap re-pair. It never silently falls back to unprotected storage. What invalidates a key differs by platform (ADR-149): on iPhone a change of the enrolled biometrics (`.biometryCurrentSet`); on Android a protected key accepts strong biometrics or the device credential (PIN fallback, owner decision 2026-11-06), so **enrolling a new fingerprint does not invalidate it**, and only removing the screen lock (or deleting the key) does.
 
 **FR-016:** Optional certificate pinning per instance (`pinnedSpkiSha256`), recommended for public cloud instances. A pin mismatch blocks all requests to that instance.
 
@@ -323,7 +323,7 @@ Navigation: five tabs (Inbox, Factory, Work, Agents, Factories). Details push on
 1. A user adds two instances by URI (one over Tailscale, one public HTTPS), pairs both through the browser approval flow, and switches between them; each instance's board key is present only in the Keychain / Keystore (verified by inspecting the SQLDelight file and app backups).
 2. Adding a `local_trusted` instance is refused with an explanation; an `http://` URI is refused in a release build.
 3. Deleting an instance removes its config, cache and secrets and revokes its key on the server.
-4. With biometrics enabled, rejecting an approval and pausing an agent each require Face ID / fingerprint; enrolling a new fingerprint forces a re-pair.
+4. With biometrics enabled, rejecting an approval and pausing an agent each require Face ID / fingerprint; on iPhone a change of the enrolled biometrics forces a re-pair, on Android removing the screen lock does (a new fingerprint does not; ADR-149).
 5. A decision with three options shows each option's effects; choosing one calls `decide`, then shows per-effect results.
 6. Every inline Inbox action resolves the item and the badge count updates without a manual refresh.
 7. An `ask_user_questions` interaction can be answered on the phone and the answer appears in the web app thread.

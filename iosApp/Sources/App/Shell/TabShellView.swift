@@ -47,6 +47,16 @@ struct TabShellView: View {
     }
 
     @ViewBuilder private func root(for tab: AppTab) -> some View {
+        // A company tab of a factory without a usable company says why, instead of loading for good (F-1).
+        if tab != .factories, environment.app.state.companyGate != .ready {
+            CompanyGateView(environment: environment)
+                .navigationTitle(tab.title)
+        } else {
+            tabRoot(for: tab)
+        }
+    }
+
+    @ViewBuilder private func tabRoot(for tab: AppTab) -> some View {
         switch tab {
         case .inbox: InboxView(environment: environment)
         case .factories: FactoriesView(environment: environment)

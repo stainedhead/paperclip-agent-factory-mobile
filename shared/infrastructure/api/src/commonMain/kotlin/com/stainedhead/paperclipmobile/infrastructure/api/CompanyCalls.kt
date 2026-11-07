@@ -14,8 +14,9 @@ internal class CompanyCalls(
     private val client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String,
 ) {
-    private val stored = StoredCredentials(instances, secrets)
+    private val stored = StoredCredentials(instances, secrets, keyReadReason)
 
     suspend fun send(
         instanceId: InstanceId,

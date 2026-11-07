@@ -41,6 +41,7 @@ struct LiveSettings {
     let dataDirectory: URL
     let unlockReason: String
     let confirmReason: String
+    let keyReadReason: String
 
     /// The app's own: the board-key Keychain service, `Application Support/Paperclip`, the localised reasons.
     @MainActor static var app: LiveSettings {
@@ -48,7 +49,8 @@ struct LiveSettings {
         return LiveSettings(
             keychainService: "com.stainedhead.paperclipmobile.board-keys",
             dataDirectory: support.appendingPathComponent("Paperclip", isDirectory: true),
-            unlockReason: ShellLabel.biometricUnlockReason.text, confirmReason: ShellLabel.biometricConfirmReason.text)
+            unlockReason: ShellLabel.biometricUnlockReason.text, confirmReason: ShellLabel.biometricConfirmReason.text,
+            keyReadReason: ShellLabel.biometricKeyReadReason.text)
     }
 }
 
@@ -82,6 +84,7 @@ struct LiveGraphProvider: AppGraphProvider {
             allowInsecureLocal: allowInsecureLocal, pairingBrowser: pairingBrowser,
             settings: IosLiveSettings(
                 keychainService: settings.keychainService, dataDirectory: settings.dataDirectory.path,
-                unlockReason: settings.unlockReason, confirmReason: settings.confirmReason))
+                unlockReason: settings.unlockReason, confirmReason: settings.confirmReason,
+                keyReadReason: settings.keyReadReason))
     }
 }

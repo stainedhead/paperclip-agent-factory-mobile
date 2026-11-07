@@ -51,7 +51,13 @@ private const val TEST_ALIAS_PREFIX = "pafm.test.livegraph/"
 class AndroidLiveGraphDeviceTest {
     private val context = InstrumentationRegistry.getInstrumentation().context
     private val settings =
-        AndroidLiveSettings("Unlock", "Confirm", "Protect the board key", keyAliasPrefix = TEST_ALIAS_PREFIX)
+        AndroidLiveSettings(
+            "Unlock",
+            "Confirm",
+            "Protect the board key",
+            "Read the board key",
+            keyAliasPrefix = TEST_ALIAS_PREFIX,
+        )
     private val opened = mutableListOf<PaperclipGraph>()
 
     @After

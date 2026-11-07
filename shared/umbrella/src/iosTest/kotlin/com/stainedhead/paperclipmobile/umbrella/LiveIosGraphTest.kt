@@ -29,7 +29,7 @@ class LiveIosGraphTest {
             LiveIosGraph.createLiveGraph(
                 allowInsecureLocal = false,
                 FakePairingBrowser(),
-                IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", directory, "Unlock", "Confirm"),
+                IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", directory, "Unlock", "Confirm", "Read"),
             )
 
         graph
@@ -53,7 +53,7 @@ class LiveIosGraphTest {
                 LiveIosGraph.openLiveGraph(
                     allowInsecureLocal = false,
                     FakePairingBrowser(),
-                    IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", blocker, "Unlock", "Confirm"),
+                    IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", blocker, "Unlock", "Confirm", "Read"),
                 )
             }.exceptionOrNull()
 
@@ -67,7 +67,7 @@ class LiveIosGraphTest {
             LiveIosGraph.openLiveGraph(
                 allowInsecureLocal = false,
                 FakePairingBrowser(),
-                IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", directory, "Unlock", "Confirm"),
+                IosLiveSettings("pafm.live.test.${NSUUID().UUIDString}", directory, "Unlock", "Confirm", "Read"),
             )
 
         graph

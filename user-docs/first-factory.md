@@ -13,6 +13,10 @@ A **factory** is one Paperclip server. On first launch the app shows "Add your f
 
 **Current state.** A launch without `-demo` runs this flow against the real server; `-demo-first-run` (Debug builds) runs it on fakes. Private servers: see [Tailscale and allowed hostnames](./tailscale-and-hostnames.md). Problems: [troubleshooting](./troubleshooting.md).
 
+A new Paperclip server has no company yet. If you pair it before creating one, the Inbox, Factory, Work and Agents tabs say **No company yet** with a **Check again** button: create a company in the Paperclip web app, come back and tap it (or pull down); the app selects the company by itself when there is exactly one.
+
+<img src="images/android-no-company.png" alt="Android: No company yet, with an explanation and a Check again button" width="260">
+
 ## On Android
 
 <img src="images/android-first-run.png" alt="Android first run: Add your first factory, with address and name fields, Check address and Try the demo factory" width="260">

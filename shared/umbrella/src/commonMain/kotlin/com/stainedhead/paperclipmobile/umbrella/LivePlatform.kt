@@ -26,9 +26,15 @@ internal interface LivePlatform {
     val connectivity: Connectivity
     val persistence: PaperclipPersistence
 
+    /** The sentence a system prompt shows when an API call reads the board key (F-3, ADR-151), localized. */
+    val keyReadReason: String get() = DEFAULT_KEY_READ_REASON
+
     /** The client for this graph: the platform's engine unless a test supplies another. */
     fun httpClient(allowInsecureLocal: Boolean): PaperclipHttpClient = createPaperclipHttpClient(allowInsecureLocal)
 
     /** Lets go of what the platform created besides the database and the HTTP client, such as a network monitor. */
     fun release()
 }
+
+/** English text for a platform that supplies none (the default graphs and tests). The apps pass localized text. */
+internal const val DEFAULT_KEY_READ_REASON = "Read the board key to talk to the factory"

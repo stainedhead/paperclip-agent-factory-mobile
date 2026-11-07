@@ -27,8 +27,9 @@ class BudgetGatewayAdapter(
     client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String = "",
 ) : BudgetGateway {
-    private val calls = CompanyCalls(client, instances, secrets)
+    private val calls = CompanyCalls(client, instances, secrets, keyReadReason)
 
     override suspend fun incident(
         scope: CompanyScope,

@@ -168,9 +168,14 @@ class BiometricPromptBiometricsTest {
         CIPHER_AUTHENTICATORS shouldBe authenticatorsFor(sdkInt = ANDROID_11)
         (CIPHER_AUTHENTICATORS and BiometricManager.Authenticators.DEVICE_CREDENTIAL) shouldBe
             BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        // ADR-149 pins the value: the key (securestore, BIOMETRIC_STRONG or DEVICE_CREDENTIAL) and this prompt must
+        // name the same set, so a person who can only use the PIN can still open a key made for it.
+        CIPHER_AUTHENTICATORS shouldBe ANDROID_STRONG_OR_CREDENTIAL
     }
 
     private companion object {
+        /** `BIOMETRIC_STRONG` (0x000F) or `DEVICE_CREDENTIAL` (0x8000), written out so a changed constant fails. */
+        const val ANDROID_STRONG_OR_CREDENTIAL = 0x800F
         const val ANDROID_9 = 28
         const val ANDROID_10 = 29
         const val ANDROID_11 = 30

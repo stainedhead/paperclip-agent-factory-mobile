@@ -151,7 +151,7 @@ class StubPaperclipServer(
             }
 
             method == HttpMethod.Get && path == "/companies" -> {
-                json(ServerFixtures.companies())
+                json(server.companiesJson)
             }
 
             method == HttpMethod.Get && path == "/board-api-keys" -> {
@@ -314,6 +314,9 @@ class StubHost(
 ) {
     internal val work = StubWork(clock)
     var health: HealthMode = HealthMode.Ready
+
+    /** What `GET /companies` answers; a test sets `"[]"` for a server that has no company yet (F-1). */
+    var companiesJson: String = ServerFixtures.companies()
     internal val challenges = mutableMapOf<String, StubChallenge>()
     internal val keys = mutableMapOf<String, StubKey>()
 }

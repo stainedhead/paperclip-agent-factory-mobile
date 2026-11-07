@@ -10,6 +10,7 @@ import com.stainedhead.paperclipmobile.domain.IdlePeriod
 import com.stainedhead.paperclipmobile.domain.ProbeRefusal
 import com.stainedhead.paperclipmobile.presentation.ActionsDisabledReason
 import com.stainedhead.paperclipmobile.presentation.AddressIssue
+import com.stainedhead.paperclipmobile.presentation.CompanyGate
 import com.stainedhead.paperclipmobile.presentation.DeviceAuthIssue
 import com.stainedhead.paperclipmobile.presentation.ErrorKey
 import com.stainedhead.paperclipmobile.presentation.ErrorUi
@@ -196,6 +197,28 @@ fun PairedDevicesStatus.stringRes(): Int =
         PairedDevicesStatus.Loading -> R.string.paired_devices_loading
         PairedDevicesStatus.Loaded -> R.string.paired_devices_loaded
         PairedDevicesStatus.Failed -> R.string.paired_devices_failed
+    }
+
+/** The heading of a company gate state (F-1): what the company tabs say instead of a spinner. */
+@StringRes
+fun CompanyGate.stringRes(): Int =
+    when (this) {
+        CompanyGate.Ready -> R.string.company_gate_ready
+        CompanyGate.Checking -> R.string.company_gate_checking
+        CompanyGate.NoCompany -> R.string.company_gate_no_company
+        CompanyGate.ChooseCompany -> R.string.company_gate_choose_company
+        CompanyGate.Failed -> R.string.company_gate_failed
+    }
+
+/** The sentence under the heading of a company gate state. */
+@StringRes
+fun CompanyGate.messageRes(): Int =
+    when (this) {
+        CompanyGate.Ready -> R.string.company_gate_message_ready
+        CompanyGate.Checking -> R.string.company_gate_message_checking
+        CompanyGate.NoCompany -> R.string.company_gate_message_no_company
+        CompanyGate.ChooseCompany -> R.string.company_gate_message_choose_company
+        CompanyGate.Failed -> R.string.company_gate_message_failed
     }
 
 /** The message for an error: its key's text, followed by the server's own reason for a rejection (never raw JSON). */

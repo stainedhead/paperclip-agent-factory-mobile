@@ -6,6 +6,7 @@
     <string name="biometric_unlock_reason">Unlock Paperclip</string>
     <string name="biometric_confirm_reason">Confirm this action</string>
     <string name="biometric_write_reason">Protect the key for this factory</string>
+    <string name="biometric_key_read_reason">Read the board key to talk to the factory</string>
 
     <!-- Shared labels. -->
     <string name="common_loading">Loading…</string>
@@ -207,6 +208,20 @@
     <string name="paired_devices_loading">Loading keys…</string>
     <string name="paired_devices_loaded">Keys</string>
     <string name="paired_devices_failed">The keys could not be loaded.</string>
+
+    <!-- A factory with no company the tabs can show (F-1, ADR-150): the title and message of each CompanyGate. -->
+    <string name="company_gate_ready">Company ready</string>
+    <string name="company_gate_checking">Looking for your companies…</string>
+    <string name="company_gate_no_company">No company yet</string>
+    <string name="company_gate_choose_company">Choose a company</string>
+    <string name="company_gate_failed">Couldn\'t read the companies</string>
+    <string name="company_gate_message_ready">A company is selected.</string>
+    <string name="company_gate_message_checking">Asking the factory which companies this key can open.</string>
+    <string name="company_gate_message_no_company">This factory has no company you can open yet. Create one in the Paperclip web app, then check again.</string>
+    <string name="company_gate_message_choose_company">This factory has several companies. Open Factories and choose the one to work in.</string>
+    <string name="company_gate_message_failed">The factory did not answer the question, so nothing is shown as current.</string>
+    <string name="company_gate_recheck">Check again</string>
+    <string name="company_gate_open_factories">Open Factories</string>
 
     <!-- Add and edit factory (screen 9). -->
     <string name="common_save">Save</string>

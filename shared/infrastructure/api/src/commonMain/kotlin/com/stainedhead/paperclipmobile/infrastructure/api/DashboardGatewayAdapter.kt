@@ -22,8 +22,9 @@ class DashboardGatewayAdapter(
     client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String = "",
 ) : DashboardGateway {
-    private val calls = CompanyCalls(client, instances, secrets)
+    private val calls = CompanyCalls(client, instances, secrets, keyReadReason)
 
     override suspend fun dashboard(scope: CompanyScope): DomainResult<DashboardSummary> =
         calls

@@ -34,8 +34,9 @@ class AuthGatewayAdapter(
     private val client: PaperclipHttpClient,
     instances: InstanceRepository,
     secrets: SecretStore,
+    keyReadReason: String = "",
 ) : AuthGateway {
-    private val stored = StoredCredentials(instances, secrets)
+    private val stored = StoredCredentials(instances, secrets, keyReadReason)
     private val pinsOf = PinLookup(instances)
 
     override suspend fun createChallenge(

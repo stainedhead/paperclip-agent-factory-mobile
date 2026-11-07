@@ -107,7 +107,8 @@ struct LiveGraphInteropTests {
             keychainService: "pafm.live.test.\(UUID().uuidString)",
             dataDirectory: folder.path,
             unlockReason: "Unlock Paperclip",
-            confirmReason: "Confirm this action")
+            confirmReason: "Confirm this action",
+            keyReadReason: "Read the board key")
         let graph = LiveIosGraph.shared.createLiveGraph(
             allowInsecureLocal: true, pairingBrowser: pages.makeBrowser(), settings: settings)
         return (graph, folder)
@@ -218,7 +219,7 @@ struct LiveGraphInteropTests {
             allowInsecureLocal: false, pairingBrowser: pages.makeBrowser(),
             settings: IosLiveSettings(
                 keychainService: "pafm.live.test.\(UUID().uuidString)", dataDirectory: folder.path,
-                unlockReason: "Unlock", confirmReason: "Confirm"))
+                unlockReason: "Unlock", confirmReason: "Confirm", keyReadReason: "Read"))
         let firstRun = graph.createFirstRunStateHolder()
 
         firstRun.onIntent(intent: FirstRunIntentAddressChanged(text: "http://localhost:\(port)"))

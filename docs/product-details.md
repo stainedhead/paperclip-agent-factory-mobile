@@ -96,6 +96,12 @@ Two things are checked across every screen: `AccessibilityTest` (name, role, 48 
 
 ### Behaviour that is Android's own
 
+- **No company yet (F-1).** A factory that has no company shows this on Inbox, Factory, Work and Agents; Factories stays usable. Check again reads the companies; one company is selected on its own, several ask you to choose on Factories.
+
+  <img src="images/android-no-company.png" alt="Android: No company yet, with the explanation and a Check again button" width="260">
+
+- **Key prompt wording (F-3).** The system prompt for reading the board key says "Read the board key to talk to the factory" (`strings.xml`), not an internal word.
+- **Key policy (ADR-149).** The key protecting the board key accepts a strong biometric or the screen lock, so a new fingerprint does not force a re-pair; removing the screen lock does.
 - **Device prompt.** A destructive action shows the app's confirmation sheet (lock glyph), then the shared use case asks `BiometricPromptBiometrics`: strong biometrics or the screen lock on API 30 and later, weak biometrics or the screen lock on API 28 and 29. No screen lock means the action is refused, never allowed.
 - **Pairing** opens the approval page in a Custom Tab and finishes with the shared pairing flow ([pairing guide](../user-docs/pairing.md)). The window is `FLAG_SECURE` while the app is locked and while pairing, so Recents shows a blank thumbnail.
 - **Navigation.** Five tabs with a back stack each, system and predictive back (the manifest sets `android:enableOnBackInvokedCallback`, checked by `AndroidManifestRulesTest` for every build type; the animation itself is for the API 33 and 34 run, [checklist](./android-verification-checklist.md) item 7), state restored after rotation and process death. Switching factory or company returns every tab to its root, so a detail screen of the old factory never stays on the stack (`TabShellTest`); locking the app closes every screen's holder and unlock lands on the tab root. System Back on the first-run Pair step cancels the pairing; on the Secure step it does nothing (the shared holder ignores it). A screen's holder is closed when its entry is cleared and kept across rotation (`HolderViewModelTest`, `HolderViewModelRotationTest`).
@@ -116,7 +122,7 @@ Two things are checked across every screen: `AccessibilityTest` (name, role, 48 
 | Pull-to-refresh spinner on Agents, Run viewer, Issue, Work | not compared | None: those states have no `isRefreshing` | shared gap (2a-6 and 2a-7 notes) |
 | Unsupported interaction kinds | Open in the web app | Open in the web app, https only | `WebOpenerTest` |
 | Android only | n/a | Predictive back, dynamic colour for neutrals, Custom Tabs, screen-lock fallback in the prompt, Keystore keys with StrongBox where present | ADR-123, ADR-125, ADR-133 |
-| Not proven on a device | | New-fingerprint invalidation, the system prompt on a destructive action with enrolled credentials, the number of prompts per refresh with app lock on (a device measurement; the design is decided, ADR-145), StrongBox hardware, a pairing against the pinned server, TalkBack, API 28 and 33, Pixel 6 and Samsung, the first hosted CI run; steps and a result line for each: [android-verification-checklist.md](./android-verification-checklist.md) | [known limitations](./technical-details.md#known-limitations-and-gaps), ADR-137 |
+| Not proven on a device | | Real-phone check that a new fingerprint leaves the Android key valid (ADR-149), the system prompt on a destructive action with enrolled credentials, the number of prompts per refresh with app lock on (a device measurement; the design is decided, ADR-145), StrongBox hardware, a pairing against the pinned server, TalkBack, API 28 and 33, Pixel 6 and Samsung, the first hosted CI run; steps and a result line for each: [android-verification-checklist.md](./android-verification-checklist.md) | [known limitations](./technical-details.md#known-limitations-and-gaps), ADR-137 |
 
 ## Screen reference: state holders
 
@@ -131,7 +137,7 @@ Each screen below is a `StateFlow<State>` plus `onIntent(Intent)` in `shared/pre
 | 16 | Manage factories | `ManageFactoriesStateHolder` | Reorder; remove a factory after a confirmation that lists what goes (configuration, cached data, stored key, server key). | Remove needs device authentication. |
 | 9 | Add / edit factory | `EditInstanceStateHolder` | Name, address, server check, default company, your roles, certificate pins (SHA-256 SPKI, base64), re-pair, sign out, remove. Changing the address drops the stored key and leaves the factory signed out (ADR-012). | Remove needs device authentication; sign out always deletes local secrets and reports whether the server revoke was confirmed. |
 | 13 | Settings and profile | `SettingsStateHolder` | Device name (1 to 60 characters), app lock on or off, idle period (immediately, 1, 5, 15, 30 minutes or 1 hour), the factories with status, the signed-in person, paired devices and board keys with revoke, sign out of one factory or everywhere. "Destructive actions always ask" is always on. | Revoke and sign out need no authentication. Revoking a key is refused ("this phone does not know which key is its own") when the factory has no stored key id. |
-| - | App shell | `AppStateHolder` | Lock state (locked on a cold launch when app lock is on; relocks after the idle period), whether to show setup or the tabs, the selected factory and company. | Unlock asks the device owner. |
+| - | App shell | `AppStateHolder` | Lock state (locked on a cold launch when app lock is on; relocks after the idle period), whether to show setup or the tabs, the selected factory and company, and a company gate (F-1, ADR-150): a factory with no company reads "No company yet" (or "Choose a company" when several exist and none was chosen, or the error when the companies could not be read) on the four company tabs instead of loading for good, and re-checks after the unlock, on foreground, on **Check again** and on a pull. | Unlock asks the device owner. |
 
 ### Decide and intervene
 

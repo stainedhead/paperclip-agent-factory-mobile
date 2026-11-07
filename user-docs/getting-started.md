@@ -80,7 +80,7 @@ Other extras: `demo_biometrics cancelled,approved` (a string: the scripted answe
 **The unit and screenshot tests** run on the JVM, no device:
 
 ```bash
-./gradlew :androidApp:testDebugUnitTest         # JUnit 4 + Robolectric for the Compose tests, JUnit 5 for the pure ones; 592 tests
+./gradlew :androidApp:testDebugUnitTest         # JUnit 4 + Robolectric for the Compose tests, JUnit 5 for the pure ones; 621 tests
 ./gradlew :androidApp:verifyRoborazziDebug      # compares every screen with its baseline in androidApp/src/test/screenshots
 ./gradlew :androidApp:recordRoborazziDebug      # re-records the baselines after an intended visual change; look at the images before committing
 ```
