@@ -31,7 +31,7 @@ jobs:
           # The runner images stop at Xcode 26.6 and the iOS 26.5 simulator runtime (checked with a diagnostics step):
           # newer Xcode releases are not installed there, so the UI tests must pass on 26.5 as well as locally.
           xcode-version: latest-stable
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: 21
